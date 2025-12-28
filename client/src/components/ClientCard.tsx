@@ -1,11 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ClientForm } from "./ClientForm";
 import { useState } from "react";
 import { useDeleteClient } from "@/hooks/use-clients";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import type { Client } from "@shared/schema";
 
 interface ClientCardProps {
@@ -36,53 +37,24 @@ export function ClientCard({ client }: ClientCardProps) {
   return (
     <>
       <Card 
-        className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border/50 overflow-hidden"
+        className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-border/50 overflow-hidden cursor-pointer group"
         data-testid={`card-client-${client.id}`}
       >
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-foreground truncate">{client.name}</h3>
-                {client.billNumber && (
-                  <p className="text-xs text-muted-foreground">{client.billNumber}</p>
-                )}
+        <Link href={`/clients/${client.id}`}>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-foreground truncate group-hover:text-primary transition-colors">{client.name}</h3>
+                  {client.billNumber && (
+                    <p className="text-xs text-muted-foreground">{client.billNumber}</p>
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
               </div>
-              <div className="flex gap-1">
-                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-8 w-8 rounded-md"
-                      data-testid="button-edit"
-                    >
-                      ✎
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl font-display text-primary">Edit Client</DialogTitle>
-                    </DialogHeader>
-                    <ClientForm 
-                      mode="edit"
-                      client={client}
-                      onSuccess={() => setIsEditOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="h-8 w-8 rounded-md text-destructive hover:bg-destructive/10"
-                  onClick={handleDelete}
-                  data-testid="button-delete"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
 
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-3">
@@ -103,27 +75,47 @@ export function ClientCard({ client }: ClientCardProps) {
                 AED {parseFloat(client.balance || "0").toFixed(2)}
               </p>
             </div>
-
-            {/* Contact */}
-            {client.contact && (
-              <a 
-                href={client.contact}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 font-semibold transition-colors"
-                data-testid={`link-contact-${client.id}`}
+            </div>
+          </CardContent>
+        </Link>
+        
+        {/* Action Buttons - Outside the Link */}
+        <div className="px-6 pb-4 pt-0 flex gap-2 border-t border-border/50">
+          <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+            <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="flex-1 rounded-md h-9"
+                data-testid="button-edit"
               >
-                Contact via WhatsApp
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            )}
-
-            {/* Address */}
-            {client.address && (
-              <p className="text-xs text-muted-foreground">{client.address}</p>
-            )}
-          </div>
-        </CardContent>
+                Edit
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-display text-primary">Edit Client</DialogTitle>
+              </DialogHeader>
+              <ClientForm 
+                mode="edit"
+                client={client}
+                onSuccess={() => setIsEditOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="h-9 w-9 rounded-md text-destructive hover:bg-destructive/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
+            data-testid="button-delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       </Card>
     </>
   );
