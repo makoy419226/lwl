@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { Navigation } from "@/components/Navigation";
+import { TopBar } from "@/components/TopBar";
 import { ClientCard } from "@/components/ClientCard";
 import { useClients } from "@/hooks/use-clients";
 import { Loader2, Users } from "lucide-react";
 import { motion } from "framer-motion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/ClientForm";
 
 export default function Clients() {
@@ -30,22 +28,19 @@ export default function Clients() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation 
-        currentPage="clients"
+    <div className="flex flex-col h-screen">
+      <TopBar 
         onSearch={setSearchTerm} 
         searchValue={searchTerm}
         onAddClick={() => setIsCreateOpen(true)}
         addButtonLabel="Add Client"
+        pageTitle="Clients"
       />
 
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <h2 className="text-3xl font-display font-bold text-foreground">Clients</h2>
-            <p className="text-muted-foreground mt-1">Manage your customer accounts and balances.</p>
-          </div>
-          <div className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
+      <main className="flex-1 container mx-auto px-4 py-8 overflow-auto">
+        <div className="mb-8">
+          <p className="text-muted-foreground">Manage your customer accounts and balances.</p>
+          <div className="mt-4 text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full inline-block">
             Total Clients: <span className="text-primary">{clients?.length || 0}</span>
           </div>
         </div>
@@ -98,9 +93,6 @@ export default function Clients() {
         </DialogContent>
       </Dialog>
 
-      <footer className="py-6 border-t border-border bg-white text-center text-sm text-muted-foreground">
-        <p>© 2024 Liquid Washes Laundry. All rights reserved.</p>
-      </footer>
     </div>
   );
 }

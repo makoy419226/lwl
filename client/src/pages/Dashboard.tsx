@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { Navigation } from "@/components/Navigation";
+import { TopBar } from "@/components/TopBar";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/use-products";
 import { Loader2, PackageOpen } from "lucide-react";
 import { motion } from "framer-motion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProductForm } from "@/components/ProductForm";
 
 export default function Dashboard() {
@@ -31,22 +29,19 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation 
-        currentPage="products"
+    <div className="flex flex-col h-screen">
+      <TopBar 
         onSearch={setSearchTerm} 
         searchValue={searchTerm}
         onAddClick={() => setIsCreateOpen(true)}
         addButtonLabel="Add Product"
+        pageTitle="Inventory"
       />
 
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <h2 className="text-3xl font-display font-bold text-foreground">Inventory</h2>
-            <p className="text-muted-foreground mt-1">Manage your laundry products and stock levels.</p>
-          </div>
-          <div className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
+      <main className="flex-1 container mx-auto px-4 py-8 overflow-auto">
+        <div className="mb-8">
+          <p className="text-muted-foreground">Manage your laundry products and stock levels.</p>
+          <div className="mt-4 text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full inline-block">
             Total Items: <span className="text-primary">{products?.length || 0}</span>
           </div>
         </div>
@@ -99,9 +94,6 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      <footer className="py-6 border-t border-border bg-white text-center text-sm text-muted-foreground">
-        <p>© 2024 Liquid Washes Laundry. All rights reserved.</p>
-      </footer>
     </div>
   );
 }
