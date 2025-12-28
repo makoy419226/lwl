@@ -26,7 +26,13 @@ export const clients = pgTable("clients", {
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
-export const insertClientSchema = createInsertSchema(clients).omit({ id: true });
+export const insertClientSchema = createInsertSchema(clients)
+  .omit({ id: true })
+  .extend({
+    amount: z.union([z.string(), z.number()]).optional(),
+    deposit: z.union([z.string(), z.number()]).optional(),
+    balance: z.union([z.string(), z.number()]).optional(),
+  });
 
 export type Product = typeof products.$inferSelect;
 export type Client = typeof clients.$inferSelect;
