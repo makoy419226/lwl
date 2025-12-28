@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertProductSchema, products } from './schema';
+import { insertProductSchema, insertClientSchema, products, clients } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -15,6 +15,53 @@ export const errorSchemas = {
 };
 
 export const api = {
+  clients: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/clients',
+      input: z.object({
+        search: z.string().optional(),
+      }).optional(),
+      responses: {
+        200: z.array(z.custom<typeof clients.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/clients/:id',
+      responses: {
+        200: z.custom<typeof clients.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/clients',
+      input: insertClientSchema,
+      responses: {
+        201: z.custom<typeof clients.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/clients/:id',
+      input: insertClientSchema.partial(),
+      responses: {
+        200: z.custom<typeof clients.$inferSelect>(),
+        404: errorSchemas.notFound,
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/clients/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
   products: {
     list: {
       method: 'GET' as const,
@@ -79,3 +126,5 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
 
 export type ProductInput = z.infer<typeof api.products.create.input>;
 export type ProductUpdateInput = z.infer<typeof api.products.update.input>;
+export type ClientInput = z.infer<typeof api.clients.create.input>;
+export type ClientUpdateInput = z.infer<typeof api.clients.update.input>;

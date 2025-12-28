@@ -1,9 +1,13 @@
 import { db } from "./db";
 import {
   products,
+  clients,
   type Product,
+  type Client,
   type InsertProduct,
-  type UpdateProductRequest
+  type InsertClient,
+  type UpdateProductRequest,
+  type UpdateClientRequest
 } from "@shared/schema";
 import { eq, ilike, or } from "drizzle-orm";
 
@@ -13,6 +17,11 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, updates: UpdateProductRequest): Promise<Product>;
   deleteProduct(id: number): Promise<void>;
+  getClients(search?: string): Promise<Client[]>;
+  getClient(id: number): Promise<Client | undefined>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: number, updates: UpdateClientRequest): Promise<Client>;
+  deleteClient(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -49,6 +58,42 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProduct(id: number): Promise<void> {
     await db.delete(products).where(eq(products.id, id));
+  }
+
+  async getClients(search?: string): Promise<Client[]> {
+    if (search) {
+      const searchPattern = `%${search}%`;
+      return await db.select().from(clients).where(
+        or(
+          ilike(clients.name, searchPattern),
+          ilike(clients.address || '', searchPattern),
+          ilike(clients.contact || '', searchPattern)
+        )
+      );
+    }
+    return await db.select().from(clients);
+  }
+
+  async getClient(id: number): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
+  }
+
+  async createClient(insertClient: InsertClient): Promise<Client> {
+    const [client] = await db.insert(clients).values(insertClient).returning();
+    return client;
+  }
+
+  async updateClient(id: number, updates: UpdateClientRequest): Promise<Client> {
+    const [updated] = await db.update(clients)
+      .set(updates)
+      .where(eq(clients.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteClient(id: number): Promise<void> {
+    await db.delete(clients).where(eq(clients.id, id));
   }
 }
 

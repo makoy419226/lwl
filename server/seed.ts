@@ -2,10 +2,11 @@ import { storage } from "./storage";
 
 export async function seedDatabase() {
   const existingProducts = await storage.getProducts();
+  const existingClients = await storage.getClients();
+  
   if (existingProducts.length === 0) {
-    console.log("Seeding database...");
+    console.log("Seeding products...");
     
-    // Sample data based on likely contents of a Laundry Wash file
     const products = [
       {
         name: "Ocean Breeze Liquid Detergent",
@@ -43,19 +44,66 @@ export async function seedDatabase() {
         sku: "STAIN-GEL-500ML",
         imageUrl: "https://images.unsplash.com/photo-1626806775351-53806825943a?q=80&w=2970&auto=format&fit=crop"
       },
-       {
+      {
         name: "Eco-Friendly Pods",
         description: "Biodegradable laundry pods. Pack of 40.",
         price: "15.00",
         category: "Pods",
         stockQuantity: 75,
         sku: "PODS-ECO-40",
-         imageUrl: "https://images.unsplash.com/photo-1604187351544-98e25e120da6?q=80&w=2970&auto=format&fit=crop"
+        imageUrl: "https://images.unsplash.com/photo-1604187351544-98e25e120da6?q=80&w=2970&auto=format&fit=crop"
       }
     ];
 
     for (const product of products) {
       await storage.createProduct(product);
+    }
+  }
+
+  if (existingClients.length === 0) {
+    console.log("Seeding clients...");
+    
+    const clients = [
+      {
+        name: "Abdullah",
+        address: "",
+        amount: "11.00",
+        deposit: "11.00",
+        balance: "0.00",
+        contact: "http://wa.me/+971543956492",
+        billNumber: ""
+      },
+      {
+        name: "Ahmed Al-Mansouri",
+        address: "Dubai, UAE",
+        amount: "150.00",
+        deposit: "50.00",
+        balance: "100.00",
+        contact: "http://wa.me/+971501234567",
+        billNumber: "BL-2024-001"
+      },
+      {
+        name: "Fatima Al-Ketbi",
+        address: "Abu Dhabi, UAE",
+        amount: "275.50",
+        deposit: "100.00",
+        balance: "175.50",
+        contact: "http://wa.me/+971507654321",
+        billNumber: "BL-2024-002"
+      },
+      {
+        name: "Mohammed Al-Falahi",
+        address: "Sharjah, UAE",
+        amount: "89.75",
+        deposit: "25.00",
+        balance: "64.75",
+        contact: "http://wa.me/+971509876543",
+        billNumber: "BL-2024-003"
+      }
+    ];
+
+    for (const client of clients) {
+      await storage.createClient(client);
     }
     console.log("Seeding complete.");
   }

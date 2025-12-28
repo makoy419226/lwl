@@ -13,6 +13,62 @@ export async function registerRoutes(
   // Seed database on startup
   await seedDatabase();
 
+  // Client routes
+  app.get(api.clients.list.path, async (req, res) => {
+    const search = req.query.search as string | undefined;
+    const clientList = await storage.getClients(search);
+    res.json(clientList);
+  });
+
+  app.get(api.clients.get.path, async (req, res) => {
+    const client = await storage.getClient(Number(req.params.id));
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+    res.json(client);
+  });
+
+  app.post(api.clients.create.path, async (req, res) => {
+    try {
+      const input = api.clients.create.input.parse(req.body);
+      const client = await storage.createClient(input);
+      res.status(201).json(client);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.put(api.clients.update.path, async (req, res) => {
+    try {
+      const input = api.clients.update.input.parse(req.body);
+      const client = await storage.updateClient(Number(req.params.id), input);
+      if (!client) {
+        return res.status(404).json({ message: 'Client not found' });
+      }
+      res.json(client);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.clients.delete.path, async (req, res) => {
+    await storage.deleteClient(Number(req.params.id));
+    res.status(204).send();
+  });
+
+  // Product routes
   app.get(api.products.list.path, async (req, res) => {
     const search = req.query.search as string | undefined;
     const products = await storage.getProducts(search);
