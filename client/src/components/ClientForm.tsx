@@ -25,6 +25,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
     defaultValues: {
       name: client?.name || "",
       address: client?.address || "",
+      phone: client?.phone || "",
       amount: client?.amount || "0",
       deposit: client?.deposit || "0",
       balance: client?.balance || "0",
@@ -87,6 +88,20 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
               <FormLabel>Address</FormLabel>
               <FormControl>
                 <Input placeholder="Enter address" {...field} data-testid="input-address" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter phone number" {...field} data-testid="input-phone" />
               </FormControl>
               <FormMessage />
             </FormItem>

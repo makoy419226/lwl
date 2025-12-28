@@ -122,6 +122,12 @@ export default function ClientDetails() {
                   <p className="text-foreground">{client.address}</p>
                 </div>
               )}
+              {client.phone && (
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium mb-1">Phone Number</p>
+                  <p className="text-foreground">{client.phone}</p>
+                </div>
+              )}
               {client.contact && (
                 <div>
                   <p className="text-sm text-muted-foreground font-medium mb-1">WhatsApp</p>

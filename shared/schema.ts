@@ -17,6 +17,7 @@ export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   address: text("address"),
+  phone: text("phone"),
   amount: numeric("amount", { precision: 12, scale: 2 }).default("0"),
   deposit: numeric("deposit", { precision: 12, scale: 2 }).default("0"),
   balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
