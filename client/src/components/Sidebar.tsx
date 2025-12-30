@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List } from "lucide-react";
+import { Package, Users, FileText, List, Phone } from "lucide-react";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -8,6 +8,7 @@ export function Sidebar() {
   const isPriceList = location === "/products";
   const isClients = location === "/clients" || location.startsWith("/clients/");
   const isBills = location === "/bills";
+  const isContact = location === "/contact";
 
   return (
     <div className="w-64 h-screen bg-white border-r border-border sticky top-0 flex flex-col">
@@ -83,6 +84,21 @@ export function Sidebar() {
           >
             <FileText className="w-5 h-5" />
             Bills
+          </Button>
+        </Link>
+
+        <Link href="/contact">
+          <Button
+            variant={isContact ? "default" : "ghost"}
+            className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
+              isContact
+                ? "bg-primary text-white shadow-md"
+                : "text-foreground hover:bg-muted/50"
+            }`}
+            data-testid="nav-contact"
+          >
+            <Phone className="w-5 h-5" />
+            Contact
           </Button>
         </Link>
       </nav>

@@ -9,6 +9,7 @@ import Products from "@/pages/Products";
 import Clients from "@/pages/Clients";
 import ClientDetails from "@/pages/ClientDetails";
 import Bills from "@/pages/Bills";
+import Contact from "@/pages/Contact";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/clients" component={Clients} />
       <Route path="/clients/:id" component={ClientDetails} />
       <Route path="/bills" component={Bills} />
+      <Route path="/contact" component={Contact} />
       <Route component={NotFound} />
     </Switch>
   );
