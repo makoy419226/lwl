@@ -73,7 +73,7 @@ export default function Products() {
             <p className="font-semibold text-lg">Failed to load products</p>
           </div>
         ) : (
-          <div className="bg-card rounded-lg border overflow-hidden">
+          <div className="bg-card rounded-2xl border overflow-hidden shadow-sm">
             <Table>
               <TableHeader>
                 <TableRow className="bg-primary/10">
@@ -102,7 +102,7 @@ export default function Products() {
                       {index + 1}
                     </TableCell>
                     <TableCell className="py-3">
-                      <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto">
+                      <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/20">
                         {getCategoryIcon(product.category)}
                       </div>
                     </TableCell>
