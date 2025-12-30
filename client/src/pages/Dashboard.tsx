@@ -2,7 +2,8 @@ import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/use-products";
-import { Loader2, PackageOpen } from "lucide-react";
+import { Loader2, PackageOpen, Phone, Mail, Globe } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProductForm } from "@/components/ProductForm";
@@ -94,6 +95,59 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
+      <footer className="bg-primary/5 border-t border-border py-6 px-4">
+        <div className="container mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-6 mb-4">
+            <a 
+              href="tel:026815824" 
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              data-testid="footer-tel"
+            >
+              <Phone className="w-4 h-4" />
+              026 815 824
+            </a>
+            <a 
+              href="tel:+971563380001" 
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              data-testid="footer-phone"
+            >
+              <Phone className="w-4 h-4" />
+              +971 56 338 0001
+            </a>
+            <a 
+              href="https://wa.me/971563380001" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-green-600 hover:text-green-700 transition-colors"
+              data-testid="footer-whatsapp"
+            >
+              <SiWhatsapp className="w-4 h-4" />
+              WhatsApp
+            </a>
+            <a 
+              href="mailto:info@lwl.ae" 
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              data-testid="footer-email"
+            >
+              <Mail className="w-4 h-4" />
+              info@lwl.ae
+            </a>
+            <a 
+              href="https://www.lwl.ae" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              data-testid="footer-website"
+            >
+              <Globe className="w-4 h-4" />
+              www.lwl.ae
+            </a>
+          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            © 2024 Liquid Washes. All Rights Reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
