@@ -73,6 +73,7 @@ export class DatabaseStorage implements IStorage {
       return await db.select().from(clients).where(
         or(
           ilike(clients.name, searchPattern),
+          ilike(clients.phone || '', searchPattern),
           ilike(clients.address || '', searchPattern),
           ilike(clients.contact || '', searchPattern)
         )

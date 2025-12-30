@@ -27,7 +27,7 @@ export function TopBar({ onSearch, searchValue, onAddClick, addButtonLabel, page
           </div>
           <Input
             className="pl-10 h-11 rounded-full border-2 border-muted bg-muted/30 focus:bg-white focus:border-primary/50 transition-all duration-300"
-            placeholder={`Search ${pageTitle.toLowerCase()}...`}
+            placeholder={pageTitle === "Clients" ? "Search by name or phone..." : `Search ${pageTitle.toLowerCase()}...`}
             value={searchValue}
             onChange={(e) => onSearch(e.target.value)}
             data-testid="input-search"
