@@ -34,12 +34,12 @@ export default function Dashboard() {
       <div className="bg-primary text-white overflow-hidden">
         <div className="animate-marquee whitespace-nowrap py-2 flex gap-16">
           <span className="flex items-center gap-2">
-            <Phone className="w-4 h-4" />
-            Tel: 026 815 824
+            <Phone className="w-4 h-4 animate-blink" />
+            <span className="animate-blink font-bold">Tel: 026 815 824</span>
           </span>
           <span className="flex items-center gap-2">
-            <Phone className="w-4 h-4" />
-            Phone: +971 56 338 0001
+            <Phone className="w-4 h-4 animate-blink" />
+            <span className="animate-blink font-bold">Phone: +971 56 338 0001</span>
           </span>
           <span className="flex items-center gap-2">
             <Mail className="w-4 h-4" />
@@ -50,12 +50,12 @@ export default function Dashboard() {
             www.lwl.ae
           </span>
           <span className="flex items-center gap-2">
-            <Phone className="w-4 h-4" />
-            Tel: 026 815 824
+            <Phone className="w-4 h-4 animate-blink" />
+            <span className="animate-blink font-bold">Tel: 026 815 824</span>
           </span>
           <span className="flex items-center gap-2">
-            <Phone className="w-4 h-4" />
-            Phone: +971 56 338 0001
+            <Phone className="w-4 h-4 animate-blink" />
+            <span className="animate-blink font-bold">Phone: +971 56 338 0001</span>
           </span>
           <span className="flex items-center gap-2">
             <Mail className="w-4 h-4" />
