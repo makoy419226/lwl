@@ -88,7 +88,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.category || "General"}
           </span>
           <span className="text-lg font-bold text-primary font-display">
-            ${product.price ? Number(product.price).toFixed(2) : '0.00'}
+            AED {product.price ? Number(product.price).toFixed(2) : '0.00'}
           </span>
         </div>
 
