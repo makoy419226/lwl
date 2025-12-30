@@ -1,11 +1,36 @@
 import { Product } from "@shared/schema";
-import { Edit2, Trash2, Package, Droplets } from "lucide-react";
+import { Edit2, Trash2, Package, Shirt, Footprints, Home, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ProductForm } from "./ProductForm";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useDeleteProduct } from "@/hooks/use-products";
+
+const getCategoryIcon = (category: string | null) => {
+  switch (category) {
+    case "Traditional Wear":
+    case "Formal Wear":
+    case "Tops":
+    case "Bottoms":
+    case "Outerwear":
+    case "Workwear":
+    case "Specialty":
+      return <Shirt size={64} strokeWidth={1.5} />;
+    case "Undergarments":
+    case "Accessories":
+      return <Sparkles size={64} strokeWidth={1.5} />;
+    case "Bedding":
+    case "Home Linens":
+    case "Bathroom":
+    case "Flooring":
+      return <Home size={64} strokeWidth={1.5} />;
+    case "Footwear":
+      return <Footprints size={64} strokeWidth={1.5} />;
+    default:
+      return <Shirt size={64} strokeWidth={1.5} />;
+  }
+};
 
 interface ProductCardProps {
   product: Product;
@@ -30,7 +55,7 @@ export function ProductCard({ product }: ProductCardProps) {
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-primary/40 group-hover:text-primary/60 transition-colors">
-            <Droplets size={64} strokeWidth={1.5} />
+            {getCategoryIcon(product.category)}
           </div>
         )}
         
