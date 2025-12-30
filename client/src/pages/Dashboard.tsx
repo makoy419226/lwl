@@ -1,33 +1,48 @@
 import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
-import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/use-products";
-import { Loader2, PackageOpen, Phone, Mail, Globe } from "lucide-react";
+import { Loader2, PackageOpen, Phone, Mail, Globe, Shirt, Footprints, Home, Sparkles } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProductForm } from "@/components/ProductForm";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const getCategoryIcon = (category: string | null) => {
+  switch (category) {
+    case "Traditional Wear":
+    case "Formal Wear":
+    case "Tops":
+    case "Bottoms":
+    case "Outerwear":
+    case "Workwear":
+    case "Specialty":
+      return <Shirt className="w-8 h-8 text-primary" />;
+    case "Undergarments":
+    case "Accessories":
+      return <Sparkles className="w-8 h-8 text-primary" />;
+    case "Bedding":
+    case "Home Linens":
+    case "Bathroom":
+    case "Flooring":
+      return <Home className="w-8 h-8 text-primary" />;
+    case "Footwear":
+      return <Footprints className="w-8 h-8 text-primary" />;
+    default:
+      return <Shirt className="w-8 h-8 text-primary" />;
+  }
+};
 
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  // Debounce could be added here for production
   const { data: products, isLoading, isError } = useProducts(searchTerm);
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -75,12 +90,10 @@ export default function Dashboard() {
         pageTitle="Inventory"
       />
 
-      <main className="flex-1 container mx-auto px-4 py-8 overflow-auto">
-        <div className="mb-8">
-          <p className="text-muted-foreground">Manage your laundry products and stock levels.</p>
-          <div className="mt-4 text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full inline-block">
-            Total Items: <span className="text-primary">{products?.length || 0}</span>
-          </div>
+      <main className="flex-1 container mx-auto px-4 py-6 overflow-auto">
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-foreground mb-2">Laundry Price List</h2>
+          <p className="text-muted-foreground">All 43 laundry service items with prices in AED</p>
         </div>
 
         {isLoading ? (
@@ -104,18 +117,53 @@ export default function Dashboard() {
             </p>
           </div>
         ) : (
-          <motion.div 
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-          >
-            {products?.map((product) => (
-              <motion.div key={product.id} variants={item}>
-                <ProductCard product={product} />
-              </motion.div>
-            ))}
-          </motion.div>
+          <div className="bg-card rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-primary/10">
+                  <TableHead className="font-bold text-foreground text-base py-4 w-16 text-center">
+                    #
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-base py-4 w-20 text-center">
+                    Image
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-base py-4">
+                    ITEM Name
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-base py-4 text-right">
+                    Price (AED)
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products?.map((product, index) => (
+                  <TableRow 
+                    key={product.id}
+                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                    data-testid={`row-product-${product.id}`}
+                  >
+                    <TableCell className="font-medium py-3 text-center text-muted-foreground">
+                      {index + 1}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto">
+                        {getCategoryIcon(product.category)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium py-3" data-testid={`text-product-name-${product.id}`}>
+                      {product.name}
+                    </TableCell>
+                    <TableCell className="text-right py-3 font-bold text-primary text-lg" data-testid={`text-product-price-${product.id}`}>
+                      {product.price ? `${parseFloat(product.price).toFixed(0)} AED` : "-"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="p-4 border-t bg-muted/30 text-sm text-muted-foreground">
+              Total Items: <span className="font-semibold text-primary">{products?.length || 0}</span>
+            </div>
+          </div>
         )}
       </main>
       
