@@ -31,6 +31,42 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col h-screen">
+      <div className="bg-primary text-white overflow-hidden">
+        <div className="animate-marquee whitespace-nowrap py-2 flex gap-16">
+          <span className="flex items-center gap-2">
+            <Phone className="w-4 h-4" />
+            Tel: 026 815 824
+          </span>
+          <span className="flex items-center gap-2">
+            <Phone className="w-4 h-4" />
+            Phone: +971 56 338 0001
+          </span>
+          <span className="flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Email: info@lwl.ae
+          </span>
+          <span className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            www.lwl.ae
+          </span>
+          <span className="flex items-center gap-2">
+            <Phone className="w-4 h-4" />
+            Tel: 026 815 824
+          </span>
+          <span className="flex items-center gap-2">
+            <Phone className="w-4 h-4" />
+            Phone: +971 56 338 0001
+          </span>
+          <span className="flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Email: info@lwl.ae
+          </span>
+          <span className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            www.lwl.ae
+          </span>
+        </div>
+      </div>
       <TopBar 
         onSearch={setSearchTerm} 
         searchValue={searchTerm}
