@@ -4,30 +4,16 @@ import { api } from "@shared/routes";
 import type { Client, CreateClientRequest, UpdateClientRequest } from "@shared/schema";
 
 export function useClients(search?: string) {
-  return useQuery({
-    queryKey: [api.clients.list.path, search],
-    queryFn: async () => {
-      const response = await apiRequest(
-        api.clients.list.path,
-        "GET",
-        undefined,
-        search ? { search } : undefined
-      );
-      return response as Client[];
-    },
+  const url = search ? `${api.clients.list.path}?search=${encodeURIComponent(search)}` : api.clients.list.path;
+  return useQuery<Client[]>({
+    queryKey: [url],
   });
 }
 
 export function useClient(id: number) {
-  return useQuery({
-    queryKey: [api.clients.get.path, id],
-    queryFn: async () => {
-      const response = await apiRequest(
-        api.clients.get.path.replace(":id", String(id)),
-        "GET"
-      );
-      return response as Client;
-    },
+  const url = api.clients.get.path.replace(":id", String(id));
+  return useQuery<Client>({
+    queryKey: [url],
   });
 }
 
@@ -36,8 +22,8 @@ export function useCreateClient() {
 
   return useMutation({
     mutationFn: async (data: CreateClientRequest) => {
-      const response = await apiRequest(api.clients.create.path, "POST", data);
-      return response as Client;
+      const response = await apiRequest("POST", api.clients.create.path, data);
+      return response.json() as Promise<Client>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.clients.list.path] });
@@ -50,12 +36,9 @@ export function useUpdateClient() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: UpdateClientRequest }) => {
-      const response = await apiRequest(
-        api.clients.update.path.replace(":id", String(id)),
-        "PUT",
-        data
-      );
-      return response as Client;
+      const url = api.clients.update.path.replace(":id", String(id));
+      const response = await apiRequest("PUT", url, data);
+      return response.json() as Promise<Client>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.clients.list.path] });
@@ -68,7 +51,8 @@ export function useDeleteClient() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(api.clients.delete.path.replace(":id", String(id)), "DELETE");
+      const url = api.clients.delete.path.replace(":id", String(id));
+      await apiRequest("DELETE", url);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.clients.list.path] });

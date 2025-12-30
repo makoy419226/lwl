@@ -4,25 +4,15 @@ import { api } from "@shared/routes";
 import type { Bill, CreateBillRequest } from "@shared/schema";
 
 export function useBills() {
-  return useQuery({
+  return useQuery<Bill[]>({
     queryKey: [api.bills.list.path],
-    queryFn: async () => {
-      const response = await apiRequest(api.bills.list.path, "GET");
-      return response as Bill[];
-    },
   });
 }
 
 export function useBill(id: number) {
-  return useQuery({
-    queryKey: [api.bills.get.path, id],
-    queryFn: async () => {
-      const response = await apiRequest(
-        api.bills.get.path.replace(":id", String(id)),
-        "GET"
-      );
-      return response as Bill;
-    },
+  const url = api.bills.get.path.replace(":id", String(id));
+  return useQuery<Bill>({
+    queryKey: [url],
   });
 }
 
@@ -31,8 +21,8 @@ export function useCreateBill() {
 
   return useMutation({
     mutationFn: async (data: CreateBillRequest) => {
-      const response = await apiRequest(api.bills.create.path, "POST", data);
-      return response as Bill;
+      const response = await apiRequest("POST", api.bills.create.path, data);
+      return response.json() as Promise<Bill>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.bills.list.path] });
@@ -45,7 +35,8 @@ export function useDeleteBill() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(api.bills.delete.path.replace(":id", String(id)), "DELETE");
+      const url = api.bills.delete.path.replace(":id", String(id));
+      await apiRequest("DELETE", url);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.bills.list.path] });
