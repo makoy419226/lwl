@@ -1,0 +1,88 @@
+import { useState } from "react";
+import { useProducts } from "@/hooks/use-products";
+import { Loader2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+export default function Products() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: products, isLoading, isError } = useProducts(searchTerm);
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="sticky top-0 z-30 w-full bg-white/80 dark:bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
+        <div className="h-20 px-6 flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-display font-bold text-foreground">
+            Price List
+          </h1>
+          <div className="flex-1 max-w-md relative group">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+              <Search className="w-5 h-5" />
+            </div>
+            <Input
+              className="pl-10 h-11 rounded-full border-2 border-muted bg-muted/30 focus:bg-white dark:focus:bg-background focus:border-primary/50 transition-all duration-300"
+              placeholder="Search items..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="input-search-products"
+            />
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-1 container mx-auto px-4 py-6 overflow-auto">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
+            <p>Loading price list...</p>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-20 text-destructive">
+            <p className="font-semibold text-lg">Failed to load products</p>
+          </div>
+        ) : (
+          <div className="bg-card rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-primary/10">
+                  <TableHead className="font-bold text-foreground text-base py-4">
+                    ITEM Name
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-base py-4 text-right">
+                    Price for Normal Wash and Iron
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products?.map((product, index) => (
+                  <TableRow 
+                    key={product.id}
+                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                    data-testid={`row-product-${product.id}`}
+                  >
+                    <TableCell className="font-medium py-3" data-testid={`text-product-name-${product.id}`}>
+                      {product.name}
+                    </TableCell>
+                    <TableCell className="text-right py-3 font-semibold" data-testid={`text-product-price-${product.id}`}>
+                      {product.price ? `${parseFloat(product.price).toFixed(0)} AED` : "-"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="p-4 border-t bg-muted/30 text-sm text-muted-foreground">
+              Total Items: <span className="font-semibold text-primary">{products?.length || 0}</span>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

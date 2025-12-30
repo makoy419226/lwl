@@ -1,10 +1,11 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText } from "lucide-react";
+import { Package, Users, FileText, List } from "lucide-react";
 
 export function Sidebar() {
   const [location] = useLocation();
-  const isProducts = location === "/" || location === "/products";
+  const isInventory = location === "/" || location === "/inventory";
+  const isPriceList = location === "/products";
   const isClients = location === "/clients" || location.startsWith("/clients/");
   const isBills = location === "/bills";
 
@@ -25,18 +26,33 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
-        <Link href="/products">
+        <Link href="/inventory">
           <Button
-            variant={isProducts ? "default" : "ghost"}
+            variant={isInventory ? "default" : "ghost"}
             className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
-              isProducts
+              isInventory
                 ? "bg-primary text-white shadow-md"
                 : "text-foreground hover:bg-muted/50"
             }`}
-            data-testid="nav-products"
+            data-testid="nav-inventory"
           >
             <Package className="w-5 h-5" />
-            Products
+            Inventory
+          </Button>
+        </Link>
+
+        <Link href="/products">
+          <Button
+            variant={isPriceList ? "default" : "ghost"}
+            className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
+              isPriceList
+                ? "bg-primary text-white shadow-md"
+                : "text-foreground hover:bg-muted/50"
+            }`}
+            data-testid="nav-price-list"
+          >
+            <List className="w-5 h-5" />
+            Price List
           </Button>
         </Link>
 
