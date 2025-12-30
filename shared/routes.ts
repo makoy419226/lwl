@@ -1,54 +1,165 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { api } from "@shared/routes";
-import type { Bill, CreateBillRequest } from "@shared/schema";
+import { z } from 'zod';
+import { insertProductSchema, insertClientSchema, insertBillSchema, products, clients, bills } from './schema';
 
-export function useBills() {
-  return useQuery({
-    queryKey: [api.bills.list.path],
-    queryFn: async () => {
-      const response = await apiRequest(api.bills.list.path, "GET");
-      return response as Bill[];
+export const errorSchemas = {
+  validation: z.object({
+    message: z.string(),
+    field: z.string().optional(),
+  }),
+  notFound: z.object({
+    message: z.string(),
+  }),
+  internal: z.object({
+    message: z.string(),
+  }),
+};
+
+export const api = {
+  clients: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/clients',
+      input: z.object({
+        search: z.string().optional(),
+      }).optional(),
+      responses: {
+        200: z.array(z.custom<typeof clients.$inferSelect>()),
+      },
     },
-  });
+    get: {
+      method: 'GET' as const,
+      path: '/api/clients/:id',
+      responses: {
+        200: z.custom<typeof clients.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/clients',
+      input: insertClientSchema,
+      responses: {
+        201: z.custom<typeof clients.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/clients/:id',
+      input: insertClientSchema.partial(),
+      responses: {
+        200: z.custom<typeof clients.$inferSelect>(),
+        404: errorSchemas.notFound,
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/clients/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  products: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/products',
+      input: z.object({
+        search: z.string().optional(),
+        category: z.string().optional(),
+      }).optional(),
+      responses: {
+        200: z.array(z.custom<typeof products.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/products/:id',
+      responses: {
+        200: z.custom<typeof products.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/products',
+      input: insertProductSchema,
+      responses: {
+        201: z.custom<typeof products.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/products/:id',
+      input: insertProductSchema.partial(),
+      responses: {
+        200: z.custom<typeof products.$inferSelect>(),
+        404: errorSchemas.notFound,
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/products/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  bills: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/bills',
+      responses: {
+        200: z.array(z.custom<typeof bills.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/bills/:id',
+      responses: {
+        200: z.custom<typeof bills.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/bills',
+      input: insertBillSchema,
+      responses: {
+        201: z.custom<typeof bills.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/bills/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+};
+
+export function buildUrl(path: string, params?: Record<string, string | number>): string {
+  let url = path;
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (url.includes(`:${key}`)) {
+        url = url.replace(`:${key}`, String(value));
+      }
+    });
+  }
+  return url;
 }
 
-export function useBill(id: number) {
-  return useQuery({
-    queryKey: [api.bills.get.path, id],
-    queryFn: async () => {
-      const response = await apiRequest(
-        api.bills.get.path.replace(":id", String(id)),
-        "GET"
-      );
-      return response as Bill;
-    },
-  });
-}
-
-export function useCreateBill() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: CreateBillRequest) => {
-      const response = await apiRequest(api.bills.create.path, "POST", data);
-      return response as Bill;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.bills.list.path] });
-    },
-  });
-}
-
-export function useDeleteBill() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest(api.bills.delete.path.replace(":id", String(id)), "DELETE");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.bills.list.path] });
-    },
-  });
-}
+export type ProductInput = z.infer<typeof api.products.create.input>;
+export type ProductUpdateInput = z.infer<typeof api.products.update.input>;
+export type ClientInput = z.infer<typeof api.clients.create.input>;
+export type ClientUpdateInput = z.infer<typeof api.clients.update.input>;
+export type BillInput = z.infer<typeof api.bills.create.input>;

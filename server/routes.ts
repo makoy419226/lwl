@@ -123,5 +123,40 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Bill routes
+  app.get(api.bills.list.path, async (req, res) => {
+    const billList = await storage.getBills();
+    res.json(billList);
+  });
+
+  app.get(api.bills.get.path, async (req, res) => {
+    const bill = await storage.getBill(Number(req.params.id));
+    if (!bill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+    res.json(bill);
+  });
+
+  app.post(api.bills.create.path, async (req, res) => {
+    try {
+      const input = api.bills.create.input.parse(req.body);
+      const bill = await storage.createBill(input);
+      res.status(201).json(bill);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.bills.delete.path, async (req, res) => {
+    await storage.deleteBill(Number(req.params.id));
+    res.status(204).send();
+  });
+
   return httpServer;
 }
