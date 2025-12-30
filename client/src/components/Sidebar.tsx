@@ -1,64 +1,153 @@
-import { Link, useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Package, Users } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { insertBillSchema } from "@shared/schema";
+import { useCreateBill } from "@/hooks/use-bills";
+import { useClients } from "@/hooks/use-clients";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export function Sidebar() {
-  const [location] = useLocation();
-  const isProducts = location === "/" || location === "/products";
-  const isClients = location === "/clients";
+interface BillFormProps {
+  onSuccess?: () => void;
+}
+
+export function BillForm({ onSuccess }: BillFormProps) {
+  const { toast } = useToast();
+  const { mutate: createBill, isPending: isCreating } = useCreateBill();
+  const { data: clients = [] } = useClients();
+
+  const form = useForm({
+    resolver: zodResolver(insertBillSchema),
+    defaultValues: {
+      clientId: undefined,
+      amount: "",
+      description: "",
+      billDate: new Date().toISOString().split('T')[0],
+      referenceNumber: "",
+    },
+  });
+
+  const onSubmit = form.handleSubmit((data) => {
+    createBill(
+      {
+        ...data,
+        clientId: Number(data.clientId),
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Bill added",
+            description: "The bill entry has been created successfully.",
+          });
+          onSuccess?.();
+        },
+      }
+    );
+  });
 
   return (
-    <div className="w-64 h-screen bg-white border-r border-border sticky top-0 flex flex-col">
-      {/* Brand */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold font-display text-xl">
-            L
-          </div>
-          <div>
-            <h2 className="text-lg font-display font-bold text-foreground">Liquid</h2>
-            <p className="text-xs text-primary font-semibold">Washes</p>
-          </div>
-        </div>
-      </div>
+    <Form {...form}>
+      <form onSubmit={onSubmit} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="clientId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Client *</FormLabel>
+              <Select value={String(field.value || "")} onValueChange={(value) => field.onChange(Number(value))}>
+                <FormControl>
+                  <SelectTrigger data-testid="select-client">
+                    <SelectValue placeholder="Select a client" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={String(client.id)}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        <Link href="/products">
-          <Button
-            variant={isProducts ? "default" : "ghost"}
-            className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
-              isProducts
-                ? "bg-primary text-white shadow-md"
-                : "text-foreground hover:bg-muted/50"
-            }`}
-            data-testid="nav-products"
-          >
-            <Package className="w-5 h-5" />
-            Products
-          </Button>
-        </Link>
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount (AED) *</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-amount" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <Link href="/clients">
-          <Button
-            variant={isClients ? "default" : "ghost"}
-            className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
-              isClients
-                ? "bg-primary text-white shadow-md"
-                : "text-foreground hover:bg-muted/50"
-            }`}
-            data-testid="nav-clients"
-          >
-            <Users className="w-5 h-5" />
-            Clients
-          </Button>
-        </Link>
-      </nav>
+        <FormField
+          control={form.control}
+          name="billDate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bill Date *</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} data-testid="input-date" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      {/* Footer */}
-      <div className="p-4 border-t border-border text-xs text-muted-foreground text-center">
-        <p>© 2024 Liquid Washes</p>
-      </div>
-    </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input placeholder="Bill description" {...field} data-testid="input-description" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="referenceNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Reference Number</FormLabel>
+              <FormControl>
+                <Input placeholder="INV-001" {...field} data-testid="input-reference" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button
+          type="submit"
+          className="w-full rounded-full bg-primary hover:bg-primary/90 font-semibold"
+          disabled={isCreating}
+          data-testid="button-submit"
+        >
+          {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Add Bill
+        </Button>
+      </form>
+    </Form>
   );
 }
