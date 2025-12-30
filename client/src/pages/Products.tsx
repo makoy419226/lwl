@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useProducts } from "@/hooks/use-products";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, Shirt, Footprints, Home, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -10,6 +10,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+const getCategoryIcon = (category: string | null) => {
+  switch (category) {
+    case "Traditional Wear":
+    case "Formal Wear":
+    case "Tops":
+    case "Bottoms":
+    case "Outerwear":
+    case "Workwear":
+    case "Specialty":
+      return <Shirt className="w-8 h-8 text-primary" />;
+    case "Undergarments":
+    case "Accessories":
+      return <Sparkles className="w-8 h-8 text-primary" />;
+    case "Bedding":
+    case "Home Linens":
+    case "Bathroom":
+    case "Flooring":
+      return <Home className="w-8 h-8 text-primary" />;
+    case "Footwear":
+      return <Footprints className="w-8 h-8 text-primary" />;
+    default:
+      return <Shirt className="w-8 h-8 text-primary" />;
+  }
+};
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,11 +77,17 @@ export default function Products() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-primary/10">
+                  <TableHead className="font-bold text-foreground text-base py-4 w-16 text-center">
+                    #
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-base py-4 w-20 text-center">
+                    Image
+                  </TableHead>
                   <TableHead className="font-bold text-foreground text-base py-4">
                     ITEM Name
                   </TableHead>
                   <TableHead className="font-bold text-foreground text-base py-4 text-right">
-                    Price for Normal Wash and Iron
+                    Price (AED)
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -67,10 +98,18 @@ export default function Products() {
                     className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
                     data-testid={`row-product-${product.id}`}
                   >
+                    <TableCell className="font-medium py-3 text-center text-muted-foreground">
+                      {index + 1}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto">
+                        {getCategoryIcon(product.category)}
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium py-3" data-testid={`text-product-name-${product.id}`}>
                       {product.name}
                     </TableCell>
-                    <TableCell className="text-right py-3 font-semibold" data-testid={`text-product-price-${product.id}`}>
+                    <TableCell className="text-right py-3 font-bold text-primary text-lg" data-testid={`text-product-price-${product.id}`}>
                       {product.price ? `${parseFloat(product.price).toFixed(0)} AED` : "-"}
                     </TableCell>
                   </TableRow>
