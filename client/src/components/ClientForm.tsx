@@ -35,8 +35,15 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
   });
 
   const onSubmit = form.handleSubmit((data) => {
+    const payload = {
+      ...data,
+      amount: data.amount || "0",
+      deposit: data.deposit || "0",
+      balance: data.balance || "0",
+    };
+    
     if (mode === "create") {
-      createClient(data, {
+      createClient(payload, {
         onSuccess: () => {
           toast({
             title: "Client added",
@@ -44,10 +51,17 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
           });
           onSuccess?.();
         },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to add client",
+            variant: "destructive",
+          });
+        },
       });
     } else if (client) {
       updateClient(
-        { id: client.id, data },
+        { id: client.id, data: payload },
         {
           onSuccess: () => {
             toast({
@@ -55,6 +69,13 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
               description: `${data.name} has been updated successfully.`,
             });
             onSuccess?.();
+          },
+          onError: (error) => {
+            toast({
+              title: "Error",
+              description: error.message || "Failed to update client",
+              variant: "destructive",
+            });
           },
         }
       );
