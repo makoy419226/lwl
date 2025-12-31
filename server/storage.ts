@@ -15,7 +15,7 @@ import {
   type UpdateProductRequest,
   type UpdateClientRequest
 } from "@shared/schema";
-import { eq, ilike, or, desc } from "drizzle-orm";
+import { eq, ilike, or, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   getProducts(search?: string): Promise<Product[]>;
@@ -25,6 +25,7 @@ export interface IStorage {
   deleteProduct(id: number): Promise<void>;
   getClients(search?: string): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
+  findClientByNameAndPhone(name: string, phone: string): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, updates: UpdateClientRequest): Promise<Client>;
   deleteClient(id: number): Promise<void>;
@@ -91,6 +92,16 @@ export class DatabaseStorage implements IStorage {
 
   async getClient(id: number): Promise<Client | undefined> {
     const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
+  }
+
+  async findClientByNameAndPhone(name: string, phone: string): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(
+      and(
+        ilike(clients.name, name),
+        ilike(clients.phone || '', phone)
+      )
+    );
     return client;
   }
 

@@ -3,11 +3,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle, UserCheck } from "lucide-react";
 import { insertClientSchema } from "@shared/schema";
 import { useCreateClient, useUpdateClient } from "@/hooks/use-clients";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Client } from "@shared/schema";
 
 interface ClientFormProps {
@@ -20,6 +22,8 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
   const { toast } = useToast();
   const { mutate: createClient, isPending: isCreating } = useCreateClient();
   const { mutate: updateClient, isPending: isUpdating } = useUpdateClient();
+  const [existingClient, setExistingClient] = useState<Client | null>(null);
+  const [showAddBillMode, setShowAddBillMode] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(insertClientSchema),
@@ -35,8 +39,42 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
     },
   });
 
+  const watchName = form.watch("name");
+  const watchPhone = form.watch("phone");
   const watchAmount = form.watch("amount");
   const watchDeposit = form.watch("deposit");
+
+  const checkDuplicate = useCallback(async (name: string, phone: string) => {
+    if (!name || !phone || mode === "edit") return;
+    try {
+      const response = await fetch("/api/clients/check-duplicate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone }),
+      });
+      const data = await response.json();
+      if (data.exists && data.client) {
+        setExistingClient(data.client);
+      } else {
+        setExistingClient(null);
+        setShowAddBillMode(false);
+      }
+    } catch (err) {
+      setExistingClient(null);
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (watchName && watchPhone) {
+        checkDuplicate(watchName.trim(), watchPhone.trim());
+      } else {
+        setExistingClient(null);
+        setShowAddBillMode(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [watchName, watchPhone, checkDuplicate]);
 
   useEffect(() => {
     const amt = parseFloat(watchAmount || "0");
@@ -45,7 +83,43 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
     form.setValue("balance", bal);
   }, [watchAmount, watchDeposit, form]);
 
+  const addBillMutation = useMutation({
+    mutationFn: async ({ clientId, amount, description }: { clientId: number; amount: string; description: string }) => {
+      return await apiRequest("POST", `/api/clients/${clientId}/bill`, { amount, description });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Bill Added",
+        description: `New bill added to ${existingClient?.name}`,
+      });
+      onSuccess?.();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add bill",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddBillToExisting = () => {
+    if (!existingClient) return;
+    const amount = form.getValues("amount");
+    const billNumber = form.getValues("billNumber");
+    addBillMutation.mutate({
+      clientId: existingClient.id,
+      amount: amount || "0",
+      description: billNumber ? `Bill #${billNumber}` : "New bill",
+    });
+  };
+
   const onSubmit = form.handleSubmit((data) => {
+    if (existingClient && !showAddBillMode) {
+      return;
+    }
+
     const amount = parseFloat(data.amount || "0");
     const deposit = parseFloat(data.deposit || "0");
     const balance = (amount - deposit).toFixed(2);
@@ -97,7 +171,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
     }
   });
 
-  const isPending = isCreating || isUpdating;
+  const isPending = isCreating || isUpdating || addBillMutation.isPending;
 
   return (
     <Form {...form}>
@@ -143,6 +217,45 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
             </FormItem>
           )}
         />
+
+        {existingClient && mode === "create" && (
+          <div className="p-4 rounded-lg border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 space-y-3" data-testid="existing-client-warning">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+              <div className="space-y-1">
+                <p className="font-semibold text-amber-800 dark:text-amber-400">Client Already Exists</p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  A client with this name and phone number already exists in the system.
+                </p>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-background/50 rounded-md p-3 space-y-1 border">
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-primary" />
+                <span className="font-medium">{existingClient.name}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Phone: {existingClient.phone}</p>
+              <p className="text-sm text-muted-foreground">Address: {existingClient.address || "N/A"}</p>
+              <div className="flex gap-4 text-sm mt-2 pt-2 border-t">
+                <span>Total Bill: <strong className="text-primary">{existingClient.amount} AED</strong></span>
+                <span>Deposit: <strong className="text-green-600">{existingClient.deposit} AED</strong></span>
+                <span>Due: <strong className="text-destructive">{existingClient.balance} AED</strong></span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={handleAddBillToExisting}
+                disabled={isPending}
+                className="flex-1"
+                data-testid="button-add-bill-existing"
+              >
+                {addBillMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Add New Bill ({watchAmount || "0"} AED) to This Client
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <FormField
@@ -219,11 +332,15 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
         <Button
           type="submit"
           className="w-full rounded-full bg-primary hover:bg-primary/90 font-semibold"
-          disabled={isPending}
+          disabled={isPending || (existingClient !== null && mode === "create")}
           data-testid="button-submit"
         >
           {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          {mode === "create" ? "Add Client" : "Update Client"}
+          {existingClient && mode === "create" 
+            ? "Client Already Exists - Use Add Bill Button Above" 
+            : mode === "create" 
+              ? "Add New Client" 
+              : "Update Client"}
         </Button>
       </form>
     </Form>

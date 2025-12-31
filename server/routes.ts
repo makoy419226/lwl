@@ -28,6 +28,15 @@ export async function registerRoutes(
     res.json(client);
   });
 
+  app.post("/api/clients/check-duplicate", async (req, res) => {
+    const { name, phone } = req.body;
+    if (!name || !phone) {
+      return res.json({ exists: false, client: null });
+    }
+    const existingClient = await storage.findClientByNameAndPhone(name, phone);
+    res.json({ exists: !!existingClient, client: existingClient || null });
+  });
+
   app.post(api.clients.create.path, async (req, res) => {
     try {
       const input = api.clients.create.input.parse(req.body);
