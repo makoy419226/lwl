@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { TopBar } from "@/components/TopBar";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
-import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet, Calendar, Search } from "lucide-react";
+import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet, Calendar, Search, Printer } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/ClientForm";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Invoice } from "@/components/Invoice";
 import type { Client, ClientTransaction } from "@shared/schema";
 
 export default function Clients() {
@@ -33,6 +34,16 @@ export default function Clients() {
   const [filterToDate, setFilterToDate] = useState("");
   const [filterType, setFilterType] = useState<"all" | "bill" | "deposit">("all");
   const [showDueClientsOnly, setShowDueClientsOnly] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<{
+    invoiceNumber: string;
+    date: string;
+    clientName: string;
+    clientPhone?: string;
+    clientAddress?: string;
+    totalAmount: number;
+    paidAmount: number;
+    paymentMethod?: string;
+  } | null>(null);
   const { data: clients, isLoading, isError } = useClients(searchTerm);
   const { mutate: deleteClient } = useDeleteClient();
   const { toast } = useToast();
@@ -66,10 +77,7 @@ export default function Clients() {
 
   const addBillMutation = useMutation({
     mutationFn: async ({ clientId, amount, description }: { clientId: number; amount: string; description: string }) => {
-      return apiRequest(`/api/clients/${clientId}/bill`, {
-        method: 'POST',
-        body: JSON.stringify({ amount, description }),
-      });
+      return apiRequest("POST", `/api/clients/${clientId}/bill`, { amount, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
@@ -82,17 +90,33 @@ export default function Clients() {
 
   const addDepositMutation = useMutation({
     mutationFn: async ({ clientId, amount, description }: { clientId: number; amount: string; description: string }) => {
-      return apiRequest(`/api/clients/${clientId}/deposit`, {
-        method: 'POST',
-        body: JSON.stringify({ amount, description }),
-      });
+      return apiRequest("POST", `/api/clients/${clientId}/deposit`, { amount, description });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
       queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'transactions'] });
+      
+      if (transactionClient) {
+        const newDepositAmount = parseFloat(depositAmount);
+        const totalBillAmount = parseFloat(transactionClient.amount || "0");
+        const previousDeposits = parseFloat(transactionClient.deposit || "0");
+        const totalPaidToDate = previousDeposits + newDepositAmount;
+        
+        setInvoiceData({
+          invoiceNumber: `REC-${Date.now().toString().slice(-8)}`,
+          date: new Date().toISOString(),
+          clientName: transactionClient.name,
+          clientPhone: transactionClient.phone || undefined,
+          clientAddress: transactionClient.address || undefined,
+          totalAmount: totalBillAmount,
+          paidAmount: totalPaidToDate,
+          paymentMethod: "Cash",
+        });
+      }
+      
       setDepositAmount("");
       setDepositDescription("");
-      toast({ title: "Deposit added", description: "Deposit recorded successfully." });
+      toast({ title: "Deposit added", description: "Deposit recorded successfully. Receipt is ready to print." });
     },
   });
 
@@ -515,6 +539,20 @@ export default function Clients() {
           )}
         </DialogContent>
       </Dialog>
+
+      {invoiceData && (
+        <Invoice
+          invoiceNumber={invoiceData.invoiceNumber}
+          date={invoiceData.date}
+          clientName={invoiceData.clientName}
+          clientPhone={invoiceData.clientPhone}
+          clientAddress={invoiceData.clientAddress}
+          totalAmount={invoiceData.totalAmount}
+          paidAmount={invoiceData.paidAmount}
+          paymentMethod={invoiceData.paymentMethod}
+          onClose={() => setInvoiceData(null)}
+        />
+      )}
     </div>
   );
 }

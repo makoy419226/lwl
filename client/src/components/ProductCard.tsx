@@ -50,12 +50,14 @@ const activeColors = [
 export function ProductCard({ product }: ProductCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isActive, setIsActive] = useState(false);
-  const [colorIndex, setColorIndex] = useState(0);
+  const [colorIndex, setColorIndex] = useState(() => Math.floor(Math.random() * activeColors.length));
   const deleteProduct = useDeleteProduct();
 
   const handleCardClick = () => {
-    setIsActive(true);
-    setColorIndex((prev) => (prev + 1) % activeColors.length);
+    setIsActive(!isActive);
+    if (!isActive) {
+      setColorIndex((prev) => (prev + 1) % activeColors.length);
+    }
   };
 
   const placeholderGradient = isActive 
@@ -64,8 +66,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div 
-      className={`group relative bg-card rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full cursor-pointer ${
-        isActive ? "border-primary border-2 ring-2 ring-primary/30" : "border-border hover:border-primary/20"
+      className={`group relative bg-card rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-300 overflow-visible flex flex-col h-full cursor-pointer ${
+        isActive 
+          ? "border-primary border-2 ring-4 ring-primary/40 animate-pulse" 
+          : "border-border hover:border-primary/20"
       }`}
       onClick={handleCardClick}
       data-testid={`card-product-${product.id}`}
