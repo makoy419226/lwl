@@ -30,6 +30,7 @@ export interface IStorage {
   getClients(search?: string): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
   findClientByNameAndPhone(name: string, phone: string): Promise<Client | undefined>;
+  findClientByPhone(phone: string, excludeId?: number): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, updates: UpdateClientRequest): Promise<Client>;
   deleteClient(id: number): Promise<void>;
@@ -110,6 +111,19 @@ export class DatabaseStorage implements IStorage {
         ilike(clients.name, name),
         ilike(clients.phone || '', phone)
       )
+    );
+    return client;
+  }
+
+  async findClientByPhone(phone: string, excludeId?: number): Promise<Client | undefined> {
+    if (excludeId) {
+      const results = await db.select().from(clients).where(
+        ilike(clients.phone || '', phone)
+      );
+      return results.find(c => c.id !== excludeId);
+    }
+    const [client] = await db.select().from(clients).where(
+      ilike(clients.phone || '', phone)
     );
     return client;
   }

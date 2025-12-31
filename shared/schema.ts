@@ -84,6 +84,9 @@ export const insertProductSchema = createInsertSchema(products).omit({ id: true 
 export const insertClientSchema = createInsertSchema(clients)
   .omit({ id: true })
   .extend({
+    name: z.string().min(1, "Client name is required"),
+    phone: z.string().min(1, "Phone number is required"),
+    address: z.string().min(1, "Address is required"),
     amount: z.union([z.string(), z.number()]).optional(),
     deposit: z.union([z.string(), z.number()]).optional(),
     balance: z.union([z.string(), z.number()]).optional(),

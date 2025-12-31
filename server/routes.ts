@@ -122,6 +122,18 @@ export async function registerRoutes(
   app.post(api.clients.create.path, async (req, res) => {
     try {
       const input = api.clients.create.input.parse(req.body);
+      
+      // Check for duplicate phone number
+      if (input.phone) {
+        const existingClient = await storage.findClientByPhone(input.phone);
+        if (existingClient) {
+          return res.status(409).json({
+            message: `A client with phone number "${input.phone}" already exists`,
+            field: 'phone',
+          });
+        }
+      }
+      
       const client = await storage.createClient(input);
       res.status(201).json(client);
     } catch (err) {
@@ -138,7 +150,20 @@ export async function registerRoutes(
   app.put(api.clients.update.path, async (req, res) => {
     try {
       const input = api.clients.update.input.parse(req.body);
-      const client = await storage.updateClient(Number(req.params.id), input);
+      const clientId = Number(req.params.id);
+      
+      // Check for duplicate phone number (excluding current client)
+      if (input.phone) {
+        const existingClient = await storage.findClientByPhone(input.phone, clientId);
+        if (existingClient) {
+          return res.status(409).json({
+            message: `A client with phone number "${input.phone}" already exists`,
+            field: 'phone',
+          });
+        }
+      }
+      
+      const client = await storage.updateClient(clientId, input);
       if (!client) {
         return res.status(404).json({ message: 'Client not found' });
       }

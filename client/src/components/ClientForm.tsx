@@ -195,7 +195,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Address</FormLabel>
+              <FormLabel>Address *</FormLabel>
               <FormControl>
                 <Input placeholder="Enter address" {...field} data-testid="input-address" />
               </FormControl>
@@ -209,7 +209,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone Number</FormLabel>
+              <FormLabel>Phone Number *</FormLabel>
               <FormControl>
                 <Input placeholder="Enter phone number" {...field} data-testid="input-phone" />
               </FormControl>
