@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { insertClientSchema } from "@shared/schema";
 import { useCreateClient, useUpdateClient } from "@/hooks/use-clients";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 import type { Client } from "@shared/schema";
 
 interface ClientFormProps {
@@ -34,12 +35,26 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
     },
   });
 
+  const watchAmount = form.watch("amount");
+  const watchDeposit = form.watch("deposit");
+
+  useEffect(() => {
+    const amt = parseFloat(watchAmount || "0");
+    const dep = parseFloat(watchDeposit || "0");
+    const bal = (amt - dep).toFixed(2);
+    form.setValue("balance", bal);
+  }, [watchAmount, watchDeposit, form]);
+
   const onSubmit = form.handleSubmit((data) => {
+    const amount = parseFloat(data.amount || "0");
+    const deposit = parseFloat(data.deposit || "0");
+    const balance = (amount - deposit).toFixed(2);
+    
     const payload = {
       ...data,
-      amount: data.amount || "0",
-      deposit: data.deposit || "0",
-      balance: data.balance || "0",
+      amount: amount.toFixed(2),
+      deposit: deposit.toFixed(2),
+      balance: balance,
     };
     
     if (mode === "create") {
