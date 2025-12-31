@@ -17,14 +17,9 @@ export default function Contact() {
         <div className="max-w-2xl mx-auto">
           <Card className="overflow-hidden">
             <div className="bg-primary p-6 text-white">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold font-display text-2xl">
-                  L
-                </div>
-                <div>
-                  <h2 className="text-2xl font-display font-bold">Liquid Washes</h2>
-                  <p className="text-white/80 text-sm">Professional Laundry Services</p>
-                </div>
+              <div className="text-center">
+                <h2 className="text-2xl font-display font-bold">Liquide Washes Laundry</h2>
+                <p className="text-white/80 text-sm">Smartness Partners</p>
               </div>
             </div>
             
@@ -92,6 +87,24 @@ export default function Contact() {
                   >
                     www.lwl.ae
                   </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/50">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Address</p>
+                  <p className="text-lg font-semibold text-foreground" data-testid="text-address">
+                    Centra Market D/109
+                  </p>
+                  <p className="text-muted-foreground">
+                    Al Dhanna City, Al Ruwais
+                  </p>
+                  <p className="text-muted-foreground">
+                    Abu Dhabi - UAE
+                  </p>
                 </div>
               </div>
 

@@ -102,8 +102,12 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border text-xs text-muted-foreground text-center">
-        <p>© 2024 Liquid Washes</p>
+      <div className="p-4 border-t border-border text-xs text-muted-foreground text-center space-y-1">
+        <p className="font-semibold text-foreground">Liquide Washes Laundry</p>
+        <p>Centra Market D/109</p>
+        <p>Al Dhanna City, Al Ruwais</p>
+        <p>Abu Dhabi - UAE</p>
+        <p className="pt-1">© 2024</p>
       </div>
     </div>
   );
