@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { TopBar } from "@/components/TopBar";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
-import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet } from "lucide-react";
+import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet, Calendar, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/ClientForm";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { format } from "date-fns";
+import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns";
 import {
   Table,
   TableBody,
@@ -29,6 +29,10 @@ export default function Clients() {
   const [depositAmount, setDepositAmount] = useState("");
   const [billDescription, setBillDescription] = useState("");
   const [depositDescription, setDepositDescription] = useState("");
+  const [filterFromDate, setFilterFromDate] = useState("");
+  const [filterToDate, setFilterToDate] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "bill" | "deposit">("all");
+  const [showDueClientsOnly, setShowDueClientsOnly] = useState(false);
   const { data: clients, isLoading, isError } = useClients(searchTerm);
   const { mutate: deleteClient } = useDeleteClient();
   const { toast } = useToast();
@@ -37,6 +41,28 @@ export default function Clients() {
     queryKey: ['/api/clients', transactionClient?.id, 'transactions'],
     enabled: !!transactionClient,
   });
+
+  const filteredTransactions = useMemo(() => {
+    if (!transactions) return [];
+    
+    return transactions.filter((tx) => {
+      if (filterType !== "all" && tx.type !== filterType) return false;
+      
+      if (filterFromDate || filterToDate) {
+        const txDate = new Date(tx.date);
+        if (filterFromDate && txDate < startOfDay(new Date(filterFromDate))) return false;
+        if (filterToDate && txDate > endOfDay(new Date(filterToDate))) return false;
+      }
+      
+      return true;
+    });
+  }, [transactions, filterFromDate, filterToDate, filterType]);
+
+  const filteredTotals = useMemo(() => {
+    const bills = filteredTransactions.filter(tx => tx.type === 'bill').reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+    const deposits = filteredTransactions.filter(tx => tx.type === 'deposit').reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+    return { bills, deposits, due: bills - deposits };
+  }, [filteredTransactions]);
 
   const addBillMutation = useMutation({
     mutationFn: async ({ clientId, amount, description }: { clientId: number; amount: string; description: string }) => {
@@ -93,6 +119,16 @@ export default function Clients() {
   const totalDeposit = clients?.reduce((sum, c) => sum + parseFloat(c.deposit || "0"), 0) || 0;
   const totalBalance = clients?.reduce((sum, c) => sum + parseFloat(c.balance || "0"), 0) || 0;
 
+  const displayedClients = useMemo(() => {
+    if (!clients) return [];
+    if (showDueClientsOnly) {
+      return clients.filter(c => parseFloat(c.balance || "0") > 0);
+    }
+    return clients;
+  }, [clients, showDueClientsOnly]);
+
+  const dueClientsCount = clients?.filter(c => parseFloat(c.balance || "0") > 0).length || 0;
+
   return (
     <div className="flex flex-col h-screen">
       <TopBar 
@@ -141,18 +177,41 @@ export default function Clients() {
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border p-4">
+          <div 
+            className={`bg-card rounded-lg border p-4 cursor-pointer transition-all hover-elevate ${showDueClientsOnly ? 'ring-2 ring-destructive' : ''}`}
+            onClick={() => setShowDueClientsOnly(!showDueClientsOnly)}
+            data-testid="card-total-due"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
                 <Receipt className="w-5 h-5 text-destructive" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Due</p>
+                <p className="text-sm text-muted-foreground">Total Due ({dueClientsCount} clients)</p>
                 <p className="text-2xl font-bold text-destructive" data-testid="text-total-balance">{totalBalance.toFixed(2)} AED</p>
+                {showDueClientsOnly && (
+                  <p className="text-xs text-destructive mt-1">Click to show all</p>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {showDueClientsOnly && (
+          <div className="mb-4 p-3 bg-destructive/10 rounded-lg flex items-center justify-between">
+            <p className="text-sm font-medium text-destructive">
+              Showing {dueClientsCount} clients with outstanding balance
+            </p>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowDueClientsOnly(false)}
+              className="text-destructive"
+            >
+              Show All Clients
+            </Button>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -164,14 +223,16 @@ export default function Clients() {
             <p className="font-semibold text-lg">Failed to load clients</p>
             <p className="text-sm opacity-80">Please try refreshing the page.</p>
           </div>
-        ) : clients?.length === 0 ? (
+        ) : displayedClients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed border-border rounded-lg bg-card/50">
             <Users className="w-16 h-16 mb-4 opacity-50" />
             <h3 className="text-xl font-bold text-foreground mb-2">No clients found</h3>
             <p className="max-w-md text-center">
-              {searchTerm 
-                ? `No clients match "${searchTerm}". Try a different search term.` 
-                : "Your client list is empty. Click the 'Add Client' button to get started."}
+              {showDueClientsOnly
+                ? "No clients with outstanding balance."
+                : searchTerm 
+                  ? `No clients match "${searchTerm}". Try a different search term.` 
+                  : "Your client list is empty. Click the 'Add Client' button to get started."}
             </p>
           </div>
         ) : (
@@ -189,7 +250,7 @@ export default function Clients() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients?.map((client, index) => (
+                {displayedClients.map((client, index) => (
                   <TableRow 
                     key={client.id}
                     className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
