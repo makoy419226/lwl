@@ -3,16 +3,19 @@ import {
   products,
   clients,
   bills,
+  clientTransactions,
   type Product,
   type Client,
   type Bill,
+  type ClientTransaction,
   type InsertProduct,
   type InsertClient,
   type InsertBill,
+  type InsertTransaction,
   type UpdateProductRequest,
   type UpdateClientRequest
 } from "@shared/schema";
-import { eq, ilike, or } from "drizzle-orm";
+import { eq, ilike, or, desc } from "drizzle-orm";
 
 export interface IStorage {
   getProducts(search?: string): Promise<Product[]>;
@@ -29,6 +32,10 @@ export interface IStorage {
   getBill(id: number): Promise<Bill | undefined>;
   createBill(bill: InsertBill): Promise<Bill>;
   deleteBill(id: number): Promise<void>;
+  getClientTransactions(clientId: number): Promise<ClientTransaction[]>;
+  createTransaction(transaction: InsertTransaction): Promise<ClientTransaction>;
+  addClientBill(clientId: number, amount: string, description?: string): Promise<ClientTransaction>;
+  addClientDeposit(clientId: number, amount: string, description?: string): Promise<ClientTransaction>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -120,6 +127,70 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBill(id: number): Promise<void> {
     await db.delete(bills).where(eq(bills.id, id));
+  }
+
+  async getClientTransactions(clientId: number): Promise<ClientTransaction[]> {
+    return await db.select().from(clientTransactions)
+      .where(eq(clientTransactions.clientId, clientId))
+      .orderBy(desc(clientTransactions.date));
+  }
+
+  async createTransaction(transaction: InsertTransaction): Promise<ClientTransaction> {
+    const [created] = await db.insert(clientTransactions).values({
+      ...transaction,
+      date: new Date(transaction.date),
+    }).returning();
+    return created;
+  }
+
+  async addClientBill(clientId: number, amount: string, description?: string): Promise<ClientTransaction> {
+    const client = await this.getClient(clientId);
+    if (!client) throw new Error("Client not found");
+
+    const billAmount = parseFloat(amount);
+    const currentAmount = parseFloat(client.amount || "0");
+    const currentDeposit = parseFloat(client.deposit || "0");
+    const newAmount = currentAmount + billAmount;
+    const newBalance = newAmount - currentDeposit;
+
+    await this.updateClient(clientId, {
+      amount: newAmount.toFixed(2),
+      balance: newBalance.toFixed(2),
+    });
+
+    return await this.createTransaction({
+      clientId,
+      type: "bill",
+      amount: billAmount.toFixed(2),
+      description: description || "Bill added",
+      date: new Date(),
+      runningBalance: newBalance.toFixed(2),
+    });
+  }
+
+  async addClientDeposit(clientId: number, amount: string, description?: string): Promise<ClientTransaction> {
+    const client = await this.getClient(clientId);
+    if (!client) throw new Error("Client not found");
+
+    const depositAmount = parseFloat(amount);
+    const currentAmount = parseFloat(client.amount || "0");
+    const currentDeposit = parseFloat(client.deposit || "0");
+    const newDeposit = currentDeposit + depositAmount;
+    const newBalance = currentAmount - newDeposit;
+
+    await this.updateClient(clientId, {
+      deposit: newDeposit.toFixed(2),
+      balance: newBalance.toFixed(2),
+    });
+
+    return await this.createTransaction({
+      clientId,
+      type: "deposit",
+      amount: depositAmount.toFixed(2),
+      description: description || "Deposit received",
+      date: new Date(),
+      runningBalance: newBalance.toFixed(2),
+    });
   }
 }
 

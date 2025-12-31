@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
-import { Loader2, Users, Trash2, Edit, MessageCircle } from "lucide-react";
+import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/ClientForm";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
 import {
   Table,
   TableBody,
@@ -14,15 +18,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Client } from "@shared/schema";
+import type { Client, ClientTransaction } from "@shared/schema";
 
 export default function Clients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [transactionClient, setTransactionClient] = useState<Client | null>(null);
+  const [billAmount, setBillAmount] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [billDescription, setBillDescription] = useState("");
+  const [depositDescription, setDepositDescription] = useState("");
   const { data: clients, isLoading, isError } = useClients(searchTerm);
   const { mutate: deleteClient } = useDeleteClient();
   const { toast } = useToast();
+
+  const { data: transactions } = useQuery<ClientTransaction[]>({
+    queryKey: ['/api/clients', transactionClient?.id, 'transactions'],
+    enabled: !!transactionClient,
+  });
+
+  const addBillMutation = useMutation({
+    mutationFn: async ({ clientId, amount, description }: { clientId: number; amount: string; description: string }) => {
+      return apiRequest(`/api/clients/${clientId}/bill`, {
+        method: 'POST',
+        body: JSON.stringify({ amount, description }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'transactions'] });
+      setBillAmount("");
+      setBillDescription("");
+      toast({ title: "Bill added", description: "Amount added to client's total." });
+    },
+  });
+
+  const addDepositMutation = useMutation({
+    mutationFn: async ({ clientId, amount, description }: { clientId: number; amount: string; description: string }) => {
+      return apiRequest(`/api/clients/${clientId}/deposit`, {
+        method: 'POST',
+        body: JSON.stringify({ amount, description }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'transactions'] });
+      setDepositAmount("");
+      setDepositDescription("");
+      toast({ title: "Deposit added", description: "Deposit recorded successfully." });
+    },
+  });
 
   const handleDelete = (client: Client) => {
     if (confirm(`Are you sure you want to delete ${client.name}?`)) {
@@ -43,6 +89,10 @@ export default function Clients() {
     }
   };
 
+  const totalAmount = clients?.reduce((sum, c) => sum + parseFloat(c.amount || "0"), 0) || 0;
+  const totalDeposit = clients?.reduce((sum, c) => sum + parseFloat(c.deposit || "0"), 0) || 0;
+  const totalBalance = clients?.reduce((sum, c) => sum + parseFloat(c.balance || "0"), 0) || 0;
+
   return (
     <div className="flex flex-col h-screen">
       <TopBar 
@@ -54,10 +104,53 @@ export default function Clients() {
       />
 
       <main className="flex-1 container mx-auto px-4 py-6 overflow-auto">
-        <div className="mb-6">
-          <p className="text-muted-foreground">Manage your customer accounts and balances.</p>
-          <div className="mt-4 text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full inline-block">
-            Total Clients: <span className="text-primary">{clients?.length || 0}</span>
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Clients</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="text-total-clients">{clients?.length || 0}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Receipt className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Bills</p>
+                <p className="text-2xl font-bold text-blue-600" data-testid="text-total-amount">{totalAmount.toFixed(2)} AED</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Deposits</p>
+                <p className="text-2xl font-bold text-green-600" data-testid="text-total-deposit">{totalDeposit.toFixed(2)} AED</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Receipt className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Due</p>
+                <p className="text-2xl font-bold text-destructive" data-testid="text-total-balance">{totalBalance.toFixed(2)} AED</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -89,8 +182,10 @@ export default function Clients() {
                   <TableHead className="font-bold text-foreground w-16">No.</TableHead>
                   <TableHead className="font-bold text-foreground">Client Name</TableHead>
                   <TableHead className="font-bold text-foreground">Contact / Address</TableHead>
-                  <TableHead className="font-bold text-foreground text-right">Due Bill (AED)</TableHead>
-                  <TableHead className="font-bold text-foreground text-center w-32">Actions</TableHead>
+                  <TableHead className="font-bold text-foreground text-right">Total Bill</TableHead>
+                  <TableHead className="font-bold text-foreground text-right">Deposit</TableHead>
+                  <TableHead className="font-bold text-foreground text-right">Due</TableHead>
+                  <TableHead className="font-bold text-foreground text-center w-40">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -119,6 +214,12 @@ export default function Clients() {
                         )}
                       </div>
                     </TableCell>
+                    <TableCell className="text-right font-medium text-blue-600" data-testid={`text-client-amount-${client.id}`}>
+                      {parseFloat(client.amount || "0").toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-green-600" data-testid={`text-client-deposit-${client.id}`}>
+                      {parseFloat(client.deposit || "0").toFixed(2)}
+                    </TableCell>
                     <TableCell 
                       className={`text-right font-bold ${parseFloat(client.balance || "0") > 0 ? "text-destructive" : "text-primary"}`}
                       data-testid={`text-client-balance-${client.id}`}
@@ -127,6 +228,16 @@ export default function Clients() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-primary"
+                          onClick={() => setTransactionClient(client)}
+                          data-testid={`button-history-${client.id}`}
+                          title="Add Bill/Deposit"
+                        >
+                          <History className="w-4 h-4" />
+                        </Button>
                         {client.contact && (
                           <Button
                             variant="ghost"
@@ -189,6 +300,157 @@ export default function Clients() {
               client={editingClient}
               onSuccess={() => setEditingClient(null)} 
             />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!transactionClient} onOpenChange={(open) => !open && setTransactionClient(null)}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-display text-primary">
+              {transactionClient?.name} - Transaction History
+            </DialogTitle>
+          </DialogHeader>
+          
+          {transactionClient && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Total Bill</p>
+                  <p className="text-xl font-bold text-blue-600">{parseFloat(transactionClient.amount || "0").toFixed(2)} AED</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Deposit</p>
+                  <p className="text-xl font-bold text-green-600">{parseFloat(transactionClient.deposit || "0").toFixed(2)} AED</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Due</p>
+                  <p className="text-xl font-bold text-destructive">{parseFloat(transactionClient.balance || "0").toFixed(2)} AED</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 p-4 border rounded-lg">
+                  <h4 className="font-semibold text-blue-600 flex items-center gap-2">
+                    <Receipt className="w-4 h-4" /> Add Bill
+                  </h4>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Amount (AED)"
+                    value={billAmount}
+                    onChange={(e) => setBillAmount(e.target.value)}
+                    data-testid="input-bill-amount"
+                  />
+                  <Input
+                    placeholder="Description (optional)"
+                    value={billDescription}
+                    onChange={(e) => setBillDescription(e.target.value)}
+                    data-testid="input-bill-description"
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      if (billAmount && transactionClient) {
+                        addBillMutation.mutate({
+                          clientId: transactionClient.id,
+                          amount: billAmount,
+                          description: billDescription,
+                        });
+                      }
+                    }}
+                    disabled={!billAmount || addBillMutation.isPending}
+                    data-testid="button-add-bill"
+                  >
+                    {addBillMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                    Add Bill
+                  </Button>
+                </div>
+
+                <div className="space-y-2 p-4 border rounded-lg">
+                  <h4 className="font-semibold text-green-600 flex items-center gap-2">
+                    <Wallet className="w-4 h-4" /> Add Deposit
+                  </h4>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Amount (AED)"
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    data-testid="input-deposit-amount"
+                  />
+                  <Input
+                    placeholder="Description (optional)"
+                    value={depositDescription}
+                    onChange={(e) => setDepositDescription(e.target.value)}
+                    data-testid="input-deposit-description"
+                  />
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      if (depositAmount && transactionClient) {
+                        addDepositMutation.mutate({
+                          clientId: transactionClient.id,
+                          amount: depositAmount,
+                          description: depositDescription,
+                        });
+                      }
+                    }}
+                    disabled={!depositAmount || addDepositMutation.isPending}
+                    data-testid="button-add-deposit"
+                  >
+                    {addDepositMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                    Add Deposit
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <History className="w-4 h-4" /> Transaction History
+                </h4>
+                {transactions && transactions.length > 0 ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="text-right">Balance</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.map((tx) => (
+                          <TableRow key={tx.id}>
+                            <TableCell className="text-sm">
+                              {format(new Date(tx.date), "dd/MM/yyyy HH:mm")}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`text-xs font-semibold px-2 py-1 rounded ${tx.type === 'bill' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                {tx.type === 'bill' ? 'Bill' : 'Deposit'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {tx.description}
+                            </TableCell>
+                            <TableCell className={`text-right font-medium ${tx.type === 'bill' ? 'text-blue-600' : 'text-green-600'}`}>
+                              {tx.type === 'bill' ? '+' : '-'}{parseFloat(tx.amount).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-right font-bold">
+                              {parseFloat(tx.runningBalance).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <p className="text-center py-8 text-muted-foreground">No transactions yet</p>
+                )}
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

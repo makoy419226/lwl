@@ -158,5 +158,31 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Transaction routes
+  app.get("/api/clients/:id/transactions", async (req, res) => {
+    const transactions = await storage.getClientTransactions(Number(req.params.id));
+    res.json(transactions);
+  });
+
+  app.post("/api/clients/:id/bill", async (req, res) => {
+    try {
+      const { amount, description } = req.body;
+      const transaction = await storage.addClientBill(Number(req.params.id), amount, description);
+      res.status(201).json(transaction);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/clients/:id/deposit", async (req, res) => {
+    try {
+      const { amount, description } = req.body;
+      const transaction = await storage.addClientDeposit(Number(req.params.id), amount, description);
+      res.status(201).json(transaction);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
   return httpServer;
 }
