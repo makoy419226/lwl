@@ -36,25 +36,52 @@ interface ProductCardProps {
   product: Product;
 }
 
+const activeColors = [
+  "from-blue-500 to-blue-600",
+  "from-purple-500 to-purple-600",
+  "from-pink-500 to-pink-600",
+  "from-indigo-500 to-indigo-600",
+  "from-cyan-500 to-cyan-600",
+  "from-teal-500 to-teal-600",
+  "from-orange-500 to-orange-600",
+  "from-emerald-500 to-emerald-600",
+];
+
 export function ProductCard({ product }: ProductCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const [colorIndex, setColorIndex] = useState(0);
   const deleteProduct = useDeleteProduct();
 
-  // Fresh blue gradient for placeholder if no image
-  const placeholderGradient = "bg-gradient-to-br from-blue-100 to-blue-50";
+  const handleCardClick = () => {
+    setIsActive(true);
+    setColorIndex((prev) => (prev + 1) % activeColors.length);
+  };
+
+  const placeholderGradient = isActive 
+    ? `bg-gradient-to-br ${activeColors[colorIndex]}` 
+    : "bg-gradient-to-br from-blue-100 to-blue-50";
 
   return (
-    <div className="group relative bg-card rounded-2xl border border-border shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 overflow-hidden flex flex-col h-full">
+    <div 
+      className={`group relative bg-card rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full cursor-pointer ${
+        isActive ? "border-primary border-2 ring-2 ring-primary/30" : "border-border hover:border-primary/20"
+      }`}
+      onClick={handleCardClick}
+      data-testid={`card-product-${product.id}`}
+    >
       {/* Image / Icon Area */}
       <div className={`h-48 w-full ${placeholderGradient} flex items-center justify-center overflow-hidden relative`}>
         {product.imageUrl ? (
           <img 
             src={product.imageUrl} 
             alt={product.name} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 animate-pulse"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center text-primary/40 group-hover:text-primary/60 transition-colors">
+          <div className={`flex flex-col items-center justify-center animate-pulse ${
+            isActive ? "text-white" : "text-primary/40 group-hover:text-primary/60"
+          } transition-colors`}>
             {getCategoryIcon(product.category)}
           </div>
         )}

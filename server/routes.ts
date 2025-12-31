@@ -275,5 +275,59 @@ export async function registerRoutes(
     }
   });
 
+  // Order routes
+  app.get("/api/orders", async (req, res) => {
+    const search = req.query.search as string | undefined;
+    const orderList = await storage.getOrders(search);
+    res.json(orderList);
+  });
+
+  app.get("/api/orders/due-soon", async (req, res) => {
+    const windowMinutes = parseInt(req.query.window as string) || 60;
+    const allOrders = await storage.getOrders();
+    const now = new Date();
+    const dueSoon = allOrders.filter(order => {
+      if (!order.expectedDeliveryAt || order.delivered) return false;
+      const timeDiff = new Date(order.expectedDeliveryAt).getTime() - now.getTime();
+      const minutesLeft = timeDiff / (1000 * 60);
+      return minutesLeft > 0 && minutesLeft <= windowMinutes;
+    });
+    res.json(dueSoon);
+  });
+
+  app.get("/api/orders/:id", async (req, res) => {
+    const order = await storage.getOrder(Number(req.params.id));
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json(order);
+  });
+
+  app.post("/api/orders", async (req, res) => {
+    try {
+      const order = await storage.createOrder(req.body);
+      res.status(201).json(order);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.put("/api/orders/:id", async (req, res) => {
+    try {
+      const order = await storage.updateOrder(Number(req.params.id), req.body);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      res.json(order);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.delete("/api/orders/:id", async (req, res) => {
+    await storage.deleteOrder(Number(req.params.id));
+    res.status(204).send();
+  });
+
   return httpServer;
 }

@@ -46,6 +46,31 @@ export const bills = pgTable("bills", {
   referenceNumber: text("reference_number"),
 });
 
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  orderNumber: text("order_number").notNull(),
+  items: text("items"),
+  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
+  paidAmount: numeric("paid_amount", { precision: 12, scale: 2 }).default("0"),
+  status: text("status").default("entry"),
+  deliveryType: text("delivery_type").default("takeaway"),
+  expectedDeliveryAt: timestamp("expected_delivery_at"),
+  entryDate: timestamp("entry_date").notNull(),
+  entryBy: text("entry_by"),
+  washingDone: boolean("washing_done").default(false),
+  washingDate: timestamp("washing_date"),
+  washingBy: text("washing_by"),
+  packingDone: boolean("packing_done").default(false),
+  packingDate: timestamp("packing_date"),
+  packingBy: text("packing_by"),
+  delivered: boolean("delivered").default(false),
+  deliveryDate: timestamp("delivery_date"),
+  deliveryBy: text("delivery_by"),
+  notes: text("notes"),
+  urgent: boolean("urgent").default(false),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -78,17 +103,30 @@ export const insertTransactionSchema = createInsertSchema(clientTransactions)
     date: z.union([z.date(), z.string()]),
   });
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export const insertOrderSchema = createInsertSchema(orders)
+  .omit({ id: true })
+  .extend({
+    totalAmount: z.union([z.string(), z.number()]),
+    paidAmount: z.union([z.string(), z.number()]).optional(),
+    entryDate: z.union([z.date(), z.string()]),
+    expectedDeliveryAt: z.union([z.date(), z.string()]).optional().nullable(),
+    washingDate: z.union([z.date(), z.string()]).optional().nullable(),
+    packingDate: z.union([z.date(), z.string()]).optional().nullable(),
+    deliveryDate: z.union([z.date(), z.string()]).optional().nullable(),
+  });
 
 export type Product = typeof products.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Bill = typeof bills.$inferSelect;
 export type ClientTransaction = typeof clientTransactions.$inferSelect;
 export type User = typeof users.$inferSelect;
+export type Order = typeof orders.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertBill = z.infer<typeof insertBillSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
 
 // Explicit API types
 export type ProductResponse = Product;
@@ -102,3 +140,6 @@ export type CreateBillRequest = InsertBill;
 export type UpdateBillRequest = Partial<InsertBill>;
 export type TransactionResponse = ClientTransaction;
 export type CreateTransactionRequest = InsertTransaction;
+export type OrderResponse = Order;
+export type CreateOrderRequest = InsertOrder;
+export type UpdateOrderRequest = Partial<InsertOrder>;

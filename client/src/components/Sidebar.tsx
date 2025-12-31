@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet } from "lucide-react";
+import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logoImage from "@assets/image_1767220512226.png";
 
@@ -22,7 +22,8 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isPriceList = location === "/products";
   const isClients = location === "/clients" || location.startsWith("/clients/");
   const isBills = location === "/bills";
-  const isDailySales = location === "/daily-sales";
+  const isOrders = location === "/orders";
+  const isSalesReports = location === "/sales-reports";
   const isContact = location === "/contact";
 
   return (
@@ -99,18 +100,33 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
           </Button>
         </Link>
 
-        <Link href="/daily-sales">
+        <Link href="/orders">
           <Button
-            variant={isDailySales ? "default" : "ghost"}
+            variant={isOrders ? "default" : "ghost"}
             className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
-              isDailySales
+              isOrders
                 ? "bg-primary text-white shadow-md"
                 : "text-foreground hover:bg-muted/50"
             }`}
-            data-testid="nav-daily-sales"
+            data-testid="nav-orders"
+          >
+            <ClipboardList className="w-5 h-5" />
+            Orders
+          </Button>
+        </Link>
+
+        <Link href="/sales-reports">
+          <Button
+            variant={isSalesReports ? "default" : "ghost"}
+            className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
+              isSalesReports
+                ? "bg-primary text-white shadow-md"
+                : "text-foreground hover:bg-muted/50"
+            }`}
+            data-testid="nav-sales-reports"
           >
             <TrendingUp className="w-5 h-5" />
-            Daily Sales
+            Sales Reports
           </Button>
         </Link>
 

@@ -4,16 +4,20 @@ import {
   clients,
   bills,
   clientTransactions,
+  orders,
   type Product,
   type Client,
   type Bill,
   type ClientTransaction,
+  type Order,
   type InsertProduct,
   type InsertClient,
   type InsertBill,
   type InsertTransaction,
+  type InsertOrder,
   type UpdateProductRequest,
-  type UpdateClientRequest
+  type UpdateClientRequest,
+  type UpdateOrderRequest
 } from "@shared/schema";
 import { eq, ilike, or, desc, and } from "drizzle-orm";
 
@@ -37,6 +41,11 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<ClientTransaction>;
   addClientBill(clientId: number, amount: string, description?: string): Promise<ClientTransaction>;
   addClientDeposit(clientId: number, amount: string, description?: string): Promise<ClientTransaction>;
+  getOrders(search?: string): Promise<Order[]>;
+  getOrder(id: number): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: number, updates: UpdateOrderRequest): Promise<Order>;
+  deleteOrder(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -106,13 +115,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClient(insertClient: InsertClient): Promise<Client> {
-    const [client] = await db.insert(clients).values(insertClient).returning();
+    const clientData = {
+      ...insertClient,
+      amount: insertClient.amount?.toString(),
+      deposit: insertClient.deposit?.toString(),
+      balance: insertClient.balance?.toString(),
+    };
+    const [client] = await db.insert(clients).values(clientData).returning();
     return client;
   }
 
   async updateClient(id: number, updates: UpdateClientRequest): Promise<Client> {
+    const updateData: any = { ...updates };
+    if (updates.amount !== undefined) updateData.amount = updates.amount.toString();
+    if (updates.deposit !== undefined) updateData.deposit = updates.deposit.toString();
+    if (updates.balance !== undefined) updateData.balance = updates.balance.toString();
+    
     const [updated] = await db.update(clients)
-      .set(updates)
+      .set(updateData)
       .where(eq(clients.id, id))
       .returning();
     return updated;
@@ -132,7 +152,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBill(insertBill: InsertBill): Promise<Bill> {
-    const [bill] = await db.insert(bills).values(insertBill).returning();
+    const billData = {
+      ...insertBill,
+      amount: insertBill.amount.toString(),
+      billDate: new Date(insertBill.billDate),
+    };
+    const [bill] = await db.insert(bills).values(billData).returning();
     return bill;
   }
 
@@ -147,10 +172,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<ClientTransaction> {
-    const [created] = await db.insert(clientTransactions).values({
-      ...transaction,
+    const txData = {
+      clientId: transaction.clientId,
+      type: transaction.type,
+      amount: transaction.amount.toString(),
+      description: transaction.description,
       date: new Date(transaction.date),
-    }).returning();
+      runningBalance: transaction.runningBalance.toString(),
+      paymentMethod: transaction.paymentMethod || "cash",
+      discount: transaction.discount?.toString() || "0",
+    };
+    const [created] = await db.insert(clientTransactions).values(txData).returning();
     return created;
   }
 
@@ -202,6 +234,71 @@ export class DatabaseStorage implements IStorage {
       date: new Date(),
       runningBalance: newBalance.toFixed(2),
     });
+  }
+
+  async getOrders(search?: string): Promise<Order[]> {
+    if (search) {
+      const searchPattern = `%${search}%`;
+      return await db.select().from(orders).where(
+        or(
+          ilike(orders.orderNumber, searchPattern),
+          ilike(orders.items || '', searchPattern),
+          ilike(orders.notes || '', searchPattern)
+        )
+      ).orderBy(desc(orders.entryDate));
+    }
+    return await db.select().from(orders).orderBy(desc(orders.entryDate));
+  }
+
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const orderData = {
+      clientId: insertOrder.clientId,
+      orderNumber: insertOrder.orderNumber,
+      items: insertOrder.items,
+      totalAmount: insertOrder.totalAmount.toString(),
+      paidAmount: insertOrder.paidAmount?.toString() || "0",
+      status: insertOrder.status || "entry",
+      deliveryType: insertOrder.deliveryType || "takeaway",
+      expectedDeliveryAt: insertOrder.expectedDeliveryAt ? new Date(insertOrder.expectedDeliveryAt) : null,
+      entryDate: new Date(insertOrder.entryDate),
+      entryBy: insertOrder.entryBy,
+      washingDone: insertOrder.washingDone || false,
+      washingDate: insertOrder.washingDate ? new Date(insertOrder.washingDate) : null,
+      washingBy: insertOrder.washingBy,
+      packingDone: insertOrder.packingDone || false,
+      packingDate: insertOrder.packingDate ? new Date(insertOrder.packingDate) : null,
+      packingBy: insertOrder.packingBy,
+      delivered: insertOrder.delivered || false,
+      deliveryDate: insertOrder.deliveryDate ? new Date(insertOrder.deliveryDate) : null,
+      deliveryBy: insertOrder.deliveryBy,
+      notes: insertOrder.notes,
+      urgent: insertOrder.urgent || false,
+    };
+    const [order] = await db.insert(orders).values(orderData).returning();
+    return order;
+  }
+
+  async updateOrder(id: number, updates: UpdateOrderRequest): Promise<Order> {
+    const updateData: any = { ...updates };
+    if (updates.entryDate) updateData.entryDate = new Date(updates.entryDate);
+    if (updates.washingDate) updateData.washingDate = new Date(updates.washingDate);
+    if (updates.packingDate) updateData.packingDate = new Date(updates.packingDate);
+    if (updates.deliveryDate) updateData.deliveryDate = new Date(updates.deliveryDate);
+    
+    const [updated] = await db.update(orders)
+      .set(updateData)
+      .where(eq(orders.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteOrder(id: number): Promise<void> {
+    await db.delete(orders).where(eq(orders.id, id));
   }
 }
 
