@@ -1,6 +1,7 @@
 import { db } from "./db";
-import { products, clients } from "@shared/schema";
+import { products, clients, users } from "@shared/schema";
 import { storage } from "./storage";
+import { eq } from "drizzle-orm";
 
 const laundryItems = [
   { name: "Kandoora/Thob", description: "Traditional men's robe", price: "5.00", category: "Traditional Wear", stockQuantity: 100, sku: "KAND-001" },
@@ -121,5 +122,22 @@ export async function seedDatabase() {
       await storage.createClient(client);
     }
     console.log("Seeding complete.");
+  }
+
+  // Seed default users if none exist
+  const existingUsers = await db.select().from(users);
+  if (existingUsers.length === 0) {
+    console.log("Seeding default users...");
+    
+    const defaultUsers = [
+      { username: "admin", password: "admin123", role: "admin", name: "Administrator", active: true },
+      { username: "manager", password: "manager123", role: "manager", name: "Manager", active: true },
+      { username: "cashier", password: "cashier123", role: "cashier", name: "Cashier", active: true },
+    ];
+
+    for (const user of defaultUsers) {
+      await db.insert(users).values(user);
+    }
+    console.log("Default users created: admin, manager, cashier");
   }
 }

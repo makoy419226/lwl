@@ -33,6 +33,8 @@ export const clientTransactions = pgTable("client_transactions", {
   description: text("description"),
   date: timestamp("date").notNull(),
   runningBalance: numeric("running_balance", { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: text("payment_method").default("cash"), // 'cash', 'card', 'bank'
+  discount: numeric("discount", { precision: 12, scale: 2 }).default("0"),
 });
 
 export const bills = pgTable("bills", {
@@ -42,6 +44,15 @@ export const bills = pgTable("bills", {
   description: text("description"),
   billDate: timestamp("bill_date").notNull(),
   referenceNumber: text("reference_number"),
+});
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  role: text("role").notNull().default("cashier"), // 'admin', 'manager', 'cashier'
+  name: text("name"),
+  active: boolean("active").default(true),
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
@@ -66,15 +77,18 @@ export const insertTransactionSchema = createInsertSchema(clientTransactions)
     runningBalance: z.union([z.string(), z.number()]),
     date: z.union([z.date(), z.string()]),
   });
+export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 
 export type Product = typeof products.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Bill = typeof bills.$inferSelect;
 export type ClientTransaction = typeof clientTransactions.$inferSelect;
+export type User = typeof users.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertBill = z.infer<typeof insertBillSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 
 // Explicit API types
 export type ProductResponse = Product;

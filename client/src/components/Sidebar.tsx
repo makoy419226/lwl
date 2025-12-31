@@ -1,9 +1,22 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone, TrendingUp } from "lucide-react";
+import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import logoImage from "@assets/image_1767220512226.png";
 
-export function Sidebar() {
+interface UserInfo {
+  id: number;
+  username: string;
+  role: string;
+  name: string;
+}
+
+interface SidebarProps {
+  user?: UserInfo | null;
+  onLogout?: () => void;
+}
+
+export function Sidebar({ user, onLogout }: SidebarProps) {
   const [location] = useLocation();
   const isInventory = location === "/" || location === "/inventory";
   const isPriceList = location === "/products";
@@ -116,6 +129,39 @@ export function Sidebar() {
           </Button>
         </Link>
       </nav>
+
+      {/* User Info */}
+      {user && (
+        <div className="p-4 border-t border-border space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              {user.role === "admin" ? (
+                <Shield className="w-5 h-5 text-primary" />
+              ) : user.role === "manager" ? (
+                <UserCog className="w-5 h-5 text-primary" />
+              ) : (
+                <Wallet className="w-5 h-5 text-primary" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground truncate">{user.name || user.username}</p>
+              <Badge variant="secondary" className="text-xs capitalize">
+                {user.role}
+              </Badge>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full gap-2"
+            onClick={onLogout}
+            data-testid="button-logout"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="p-4 border-t border-border text-xs text-muted-foreground text-center space-y-1">

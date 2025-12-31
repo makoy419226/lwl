@@ -3,6 +3,9 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 import { seedDatabase } from "./seed";
 
@@ -12,6 +15,85 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Seed database on startup
   await seedDatabase();
+
+  // Auth routes
+  app.post("/api/auth/login", async (req, res) => {
+    const { username, password } = req.body;
+    
+    const [user] = await db.select().from(users).where(
+      and(
+        eq(users.username, username),
+        eq(users.password, password),
+        eq(users.active, true)
+      )
+    );
+    
+    if (user) {
+      res.json({ 
+        success: true, 
+        message: "Login successful",
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          name: user.name
+        }
+      });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid username or password" });
+    }
+  });
+
+  // Get all users (admin only)
+  app.get("/api/users", async (req, res) => {
+    const userList = await db.select({
+      id: users.id,
+      username: users.username,
+      role: users.role,
+      name: users.name,
+      active: users.active
+    }).from(users);
+    res.json(userList);
+  });
+
+  // Create user
+  app.post("/api/users", async (req, res) => {
+    const { username, password, role, name } = req.body;
+    try {
+      const [newUser] = await db.insert(users).values({
+        username,
+        password,
+        role: role || "cashier",
+        name,
+        active: true
+      }).returning();
+      res.status(201).json({ id: newUser.id, username: newUser.username, role: newUser.role, name: newUser.name });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Failed to create user" });
+    }
+  });
+
+  // Update user
+  app.put("/api/users/:id", async (req, res) => {
+    const { password, role, name, active } = req.body;
+    const updates: any = {};
+    if (password) updates.password = password;
+    if (role) updates.role = role;
+    if (name !== undefined) updates.name = name;
+    if (active !== undefined) updates.active = active;
+    
+    const [updated] = await db.update(users).set(updates).where(eq(users.id, Number(req.params.id))).returning();
+    if (!updated) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ id: updated.id, username: updated.username, role: updated.role, name: updated.name, active: updated.active });
+  });
+
+  // Delete user
+  app.delete("/api/users/:id", async (req, res) => {
+    await db.delete(users).where(eq(users.id, Number(req.params.id)));
+    res.status(204).send();
+  });
 
   // Client routes
   app.get(api.clients.list.path, async (req, res) => {

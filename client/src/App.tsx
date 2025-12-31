@@ -11,7 +11,9 @@ import ClientDetails from "@/pages/ClientDetails";
 import Bills from "@/pages/Bills";
 import DailySales from "@/pages/DailySales";
 import Contact from "@/pages/Contact";
+import Login, { type UserInfo } from "@/pages/Login";
 import NotFound from "@/pages/not-found";
+import { useState, useEffect } from "react";
 
 function Router() {
   return (
@@ -30,11 +32,46 @@ function Router() {
 }
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const storedUser = localStorage.getItem("user");
+    if (loggedIn && storedUser) {
+      setIsLoggedIn(true);
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLogin = (userData: UserInfo) => {
+    setIsLoggedIn(true);
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUser(null);
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Login onLogin={handleLogin} />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="flex h-screen w-full bg-background">
-          <Sidebar />
+          <Sidebar user={user} onLogout={handleLogout} />
           <div className="flex-1 flex flex-col overflow-hidden">
             <Router />
           </div>
