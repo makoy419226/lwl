@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone } from "lucide-react";
+import { Package, Users, FileText, List, Phone, TrendingUp } from "lucide-react";
 import logoImage from "@assets/image_1767220512226.png";
 
 export function Sidebar() {
@@ -9,6 +9,7 @@ export function Sidebar() {
   const isPriceList = location === "/products";
   const isClients = location === "/clients" || location.startsWith("/clients/");
   const isBills = location === "/bills";
+  const isDailySales = location === "/daily-sales";
   const isContact = location === "/contact";
 
   return (
@@ -82,6 +83,21 @@ export function Sidebar() {
           >
             <FileText className="w-5 h-5" />
             Bills
+          </Button>
+        </Link>
+
+        <Link href="/daily-sales">
+          <Button
+            variant={isDailySales ? "default" : "ghost"}
+            className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
+              isDailySales
+                ? "bg-primary text-white shadow-md"
+                : "text-foreground hover:bg-muted/50"
+            }`}
+            data-testid="nav-daily-sales"
+          >
+            <TrendingUp className="w-5 h-5" />
+            Daily Sales
           </Button>
         </Link>
 
