@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Package, Users, FileText, List, Phone } from "lucide-react";
+import logoImage from "@assets/image_1767220512226.png";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -13,16 +14,13 @@ export function Sidebar() {
   return (
     <div className="w-64 h-screen bg-white border-r border-border sticky top-0 flex flex-col">
       {/* Brand */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold font-display text-xl">
-            L
-          </div>
-          <div>
-            <h2 className="text-lg font-display font-bold text-foreground">Liquid</h2>
-            <p className="text-xs text-primary font-semibold">Washes</p>
-          </div>
-        </div>
+      <div className="p-4 border-b border-border">
+        <img 
+          src={logoImage} 
+          alt="Liquid Washes Laundry" 
+          className="w-full h-auto max-h-24 object-contain"
+          data-testid="img-logo"
+        />
       </div>
 
       {/* Navigation */}
