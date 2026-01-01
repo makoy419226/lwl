@@ -540,6 +540,17 @@ function OrderForm({ clients, onSubmit, isLoading }: {
     });
   };
 
+  const handleManualQuantity = (productId: number, value: string) => {
+    const qty = parseInt(value) || 0;
+    setQuantities(prev => {
+      if (qty <= 0) {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [productId]: qty };
+    });
+  };
+
   const orderItems = useMemo(() => {
     if (!products) return [];
     return Object.entries(quantities)
@@ -629,9 +640,15 @@ function OrderForm({ clients, onSubmit, isLoading }: {
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className={`w-6 text-center text-sm font-bold ${quantities[product.id] ? "text-primary" : "text-muted-foreground"}`}>
-                        {quantities[product.id] || 0}
-                      </span>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={quantities[product.id] || ""}
+                        onChange={(e) => handleManualQuantity(product.id, e.target.value)}
+                        className="w-12 h-7 text-center text-sm font-bold p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        placeholder="0"
+                        data-testid={`input-qty-${product.id}`}
+                      />
                       <Button
                         type="button"
                         size="icon"
