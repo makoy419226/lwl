@@ -38,10 +38,32 @@ export default function Orders() {
     queryKey: ["/api/clients"],
   });
 
+  const { data: products } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
   const { data: dueSoonOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders/due-soon"],
     refetchInterval: 60000,
   });
+
+  const parseOrderItems = (itemsString: string | null) => {
+    if (!itemsString) return [];
+    return itemsString.split(", ").map(item => {
+      const match = item.match(/^(.+)\s+x(\d+)$/);
+      if (match) {
+        return { name: match[1], quantity: parseInt(match[2]) };
+      }
+      return { name: item, quantity: 1 };
+    });
+  };
+
+  const getProductImage = (productName: string) => {
+    const product = products?.find(p => 
+      p.name.toLowerCase() === productName.toLowerCase()
+    );
+    return product?.imageUrl;
+  };
 
   useEffect(() => {
     if (dueSoonOrders && dueSoonOrders.length > 0) {
@@ -335,7 +357,24 @@ export default function Orders() {
                                 </TableCell>
                               </>
                             ) : null}
-                            <TableCell className="max-w-xs truncate">{order.items}</TableCell>
+                            <TableCell className="max-w-xs">
+                              <div className="flex flex-wrap gap-1">
+                                {parseOrderItems(order.items).map((item, i) => {
+                                  const imageUrl = getProductImage(item.name);
+                                  return (
+                                    <div key={i} className="flex items-center gap-1 bg-muted/50 rounded px-1.5 py-0.5">
+                                      {imageUrl ? (
+                                        <img src={imageUrl} alt={item.name} className="w-4 h-4 object-contain" />
+                                      ) : (
+                                        <Shirt className="w-4 h-4 text-muted-foreground" />
+                                      )}
+                                      <span className="text-xs">{item.name}</span>
+                                      <Badge variant="secondary" className="text-xs px-1 py-0 h-4">{item.quantity}</Badge>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </TableCell>
                             <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>
                             <TableCell>
                               {order.deliveryType === 'delivery' ? (
