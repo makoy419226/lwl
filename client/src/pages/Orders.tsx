@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,14 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Loader2, Package, Shirt, CheckCircle2, Truck, Clock, 
-  AlertTriangle, Plus, Search, Bell, Printer
+  AlertTriangle, Plus, Minus, Search, Bell, Printer
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OrderReceipt } from "@/components/OrderReceipt";
-import type { Order, Client } from "@shared/schema";
+import type { Order, Client, Product } from "@shared/schema";
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -379,20 +380,62 @@ function OrderForm({ clients, onSubmit, isLoading }: {
 }) {
   const [formData, setFormData] = useState({
     clientId: "",
-    items: "",
-    totalAmount: "",
     deliveryType: "takeaway",
     expectedDeliveryAt: "",
     notes: "",
   });
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [productSearch, setProductSearch] = useState("");
+
+  const { data: products } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
+  const filteredProducts = products?.filter(p => 
+    p.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const handleQuantityChange = (productId: number, delta: number) => {
+    setQuantities(prev => {
+      const current = prev[productId] || 0;
+      const newQty = Math.max(0, current + delta);
+      if (newQty === 0) {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [productId]: newQty };
+    });
+  };
+
+  const orderItems = useMemo(() => {
+    if (!products) return [];
+    return Object.entries(quantities)
+      .filter(([_, qty]) => qty > 0)
+      .map(([productId, qty]) => {
+        const product = products.find(p => p.id === parseInt(productId));
+        return product ? { product, quantity: qty } : null;
+      })
+      .filter(Boolean) as { product: Product; quantity: number }[];
+  }, [quantities, products]);
+
+  const orderTotal = useMemo(() => {
+    return orderItems.reduce((sum, item) => {
+      return sum + (parseFloat(item.product.price || "0") * item.quantity);
+    }, 0);
+  }, [orderItems]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.clientId || orderItems.length === 0) return;
+    
+    const itemsText = orderItems.map(item => `${item.quantity}x ${item.product.name}`).join(", ");
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
     onSubmit({
       ...formData,
       clientId: parseInt(formData.clientId),
       orderNumber,
+      items: itemsText,
+      totalAmount: orderTotal.toFixed(2),
       entryDate: new Date().toISOString(),
       expectedDeliveryAt: formData.expectedDeliveryAt || null,
     });
@@ -417,51 +460,101 @@ function OrderForm({ clients, onSubmit, isLoading }: {
       </div>
 
       <div className="space-y-2">
-        <Label>Items</Label>
-        <Textarea
-          placeholder="Enter items (e.g., 2x Kandoora, 3x Shirts)"
-          value={formData.items}
-          onChange={(e) => setFormData({ ...formData, items: e.target.value })}
-          data-testid="input-items"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Total Amount (AED)</Label>
+        <Label>Select Items</Label>
         <Input
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          value={formData.totalAmount}
-          onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
-          data-testid="input-amount"
+          placeholder="Search items..."
+          value={productSearch}
+          onChange={(e) => setProductSearch(e.target.value)}
+          className="mb-2"
+          data-testid="input-product-search"
         />
+        <ScrollArea className="h-64 border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-1/2">Item</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-center w-32">Qty</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProducts?.map((product) => (
+                <TableRow key={product.id} className={quantities[product.id] ? "bg-primary/5" : ""}>
+                  <TableCell className="font-medium text-sm">{product.name}</TableCell>
+                  <TableCell className="text-right text-sm text-primary font-semibold">
+                    {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-1">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="h-7 w-7"
+                        onClick={() => handleQuantityChange(product.id, -1)}
+                        disabled={!quantities[product.id]}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className={`w-6 text-center text-sm font-bold ${quantities[product.id] ? "text-primary" : "text-muted-foreground"}`}>
+                        {quantities[product.id] || 0}
+                      </span>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="h-7 w-7"
+                        onClick={() => handleQuantityChange(product.id, 1)}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
       </div>
 
-      <div className="space-y-2">
-        <Label>Delivery Type</Label>
-        <Select value={formData.deliveryType} onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}>
-          <SelectTrigger data-testid="select-delivery-type">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="takeaway">Take Away</SelectItem>
-            <SelectItem value="delivery">Delivery</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {formData.deliveryType === 'delivery' && (
-        <div className="space-y-2">
-          <Label>Expected Delivery Time</Label>
-          <Input
-            type="datetime-local"
-            value={formData.expectedDeliveryAt}
-            onChange={(e) => setFormData({ ...formData, expectedDeliveryAt: e.target.value })}
-            data-testid="input-delivery-time"
-          />
+      {orderItems.length > 0 && (
+        <div className="p-3 bg-primary/5 rounded-lg border">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium">{orderItems.length} item(s) selected</span>
+            <span className="text-lg font-bold text-primary">{orderTotal.toFixed(2)} AED</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {orderItems.map(item => `${item.quantity}x ${item.product.name}`).join(", ")}
+          </p>
         </div>
       )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Delivery Type</Label>
+          <Select value={formData.deliveryType} onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}>
+            <SelectTrigger data-testid="select-delivery-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="takeaway">Take Away</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {formData.deliveryType === 'delivery' && (
+          <div className="space-y-2">
+            <Label>Expected Delivery</Label>
+            <Input
+              type="datetime-local"
+              value={formData.expectedDeliveryAt}
+              onChange={(e) => setFormData({ ...formData, expectedDeliveryAt: e.target.value })}
+              data-testid="input-delivery-time"
+            />
+          </div>
+        )}
+      </div>
 
       <div className="space-y-2">
         <Label>Notes</Label>
@@ -473,9 +566,14 @@ function OrderForm({ clients, onSubmit, isLoading }: {
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-submit-order">
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={isLoading || !formData.clientId || orderItems.length === 0} 
+        data-testid="button-submit-order"
+      >
         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        Create Order
+        Create Order ({orderTotal.toFixed(2)} AED)
       </Button>
     </form>
   );
