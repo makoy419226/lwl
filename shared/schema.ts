@@ -64,6 +64,7 @@ export const orders = pgTable("orders", {
   packingDone: boolean("packing_done").default(false),
   packingDate: timestamp("packing_date"),
   packingBy: text("packing_by"),
+  packingWorkerId: integer("packing_worker_id"),
   delivered: boolean("delivered").default(false),
   deliveryDate: timestamp("delivery_date"),
   deliveryBy: text("delivery_by"),
@@ -128,6 +129,7 @@ export const insertOrderSchema = createInsertSchema(orders)
     washingDate: z.union([z.date(), z.string()]).optional().nullable(),
     packingDate: z.union([z.date(), z.string()]).optional().nullable(),
     deliveryDate: z.union([z.date(), z.string()]).optional().nullable(),
+    packingWorkerId: z.number().optional().nullable(),
   });
 
 export type Product = typeof products.$inferSelect;

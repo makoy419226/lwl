@@ -87,6 +87,7 @@ export default function Orders() {
             packingDone: true,
             packingDate: new Date().toISOString(),
             packingBy: data.worker.name,
+            packingWorkerId: data.worker.id,
           },
         });
         setPackingPinDialog(null);

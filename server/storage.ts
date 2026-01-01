@@ -1,4 +1,5 @@
 import { db } from "./db";
+import bcrypt from "bcryptjs";
 import {
   products,
   clients,
@@ -334,13 +335,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPackingWorker(worker: InsertPackingWorker): Promise<PackingWorker> {
-    const [created] = await db.insert(packingWorkers).values(worker).returning();
+    const hashedPin = await bcrypt.hash(worker.pin, 10);
+    const [created] = await db.insert(packingWorkers).values({ ...worker, pin: hashedPin }).returning();
     return created;
   }
 
   async updatePackingWorker(id: number, updates: Partial<InsertPackingWorker>): Promise<PackingWorker> {
+    const updateData: any = { ...updates };
+    if (updates.pin) {
+      updateData.pin = await bcrypt.hash(updates.pin, 10);
+    }
     const [updated] = await db.update(packingWorkers)
-      .set(updates)
+      .set(updateData)
       .where(eq(packingWorkers.id, id))
       .returning();
     return updated;
@@ -351,13 +357,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null> {
-    const [worker] = await db.select().from(packingWorkers).where(
-      and(
-        eq(packingWorkers.pin, pin),
-        eq(packingWorkers.active, true)
-      )
+    const activeWorkers = await db.select().from(packingWorkers).where(
+      eq(packingWorkers.active, true)
     );
-    return worker || null;
+    for (const worker of activeWorkers) {
+      const isMatch = await bcrypt.compare(pin, worker.pin);
+      if (isMatch) {
+        return worker;
+      }
+    }
+    return null;
   }
 }
 
