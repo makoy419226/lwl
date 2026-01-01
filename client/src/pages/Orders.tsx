@@ -12,16 +12,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   Loader2, Package, Shirt, CheckCircle2, Truck, Clock, 
-  AlertTriangle, Plus, Search, Bell
+  AlertTriangle, Plus, Search, Bell, Printer
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { OrderReceipt } from "@/components/OrderReceipt";
 import type { Order, Client } from "@shared/schema";
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const { toast } = useToast();
 
   const { data: orders, isLoading } = useQuery<Order[]>({
@@ -282,6 +284,14 @@ export default function Orders() {
                           <TableCell>{getStatusBadge(order)}</TableCell>
                           <TableCell>
                             <div className="flex gap-1">
+                              <Button 
+                                size="icon" 
+                                variant="ghost"
+                                onClick={() => setPrintOrder(order)}
+                                data-testid={`button-print-${order.id}`}
+                              >
+                                <Printer className="w-4 h-4" />
+                              </Button>
                               {!order.washingDone && (
                                 <Button 
                                   size="sm" 
@@ -327,6 +337,14 @@ export default function Orders() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {printOrder && (
+        <OrderReceipt
+          order={printOrder}
+          client={clients?.find(c => c.id === printOrder.clientId)}
+          onClose={() => setPrintOrder(null)}
+        />
+      )}
     </div>
   );
 }
