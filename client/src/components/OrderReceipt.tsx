@@ -1,8 +1,9 @@
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Printer, X } from "lucide-react";
-import type { Order, Client } from "@shared/schema";
+import type { Order, Client, Product } from "@shared/schema";
 
 interface OrderReceiptProps {
   order: Order;
@@ -19,6 +20,26 @@ const companyInfo = {
 
 export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
+
+  const { data: products } = useQuery<Product[]>({
+    queryKey: ["/api/products"],
+  });
+
+  const parsedItems = useMemo(() => {
+    if (!order.items) return [];
+    const itemParts = order.items.split(",").map(s => s.trim());
+    return itemParts.map(part => {
+      const match = part.match(/^(\d+)x\s+(.+)$/i);
+      if (match) {
+        const qty = parseInt(match[1]);
+        const name = match[2].trim();
+        const product = products?.find(p => p.name.toLowerCase() === name.toLowerCase());
+        const price = product ? parseFloat(product.price || "0") : 0;
+        return { name, qty, price, total: qty * price };
+      }
+      return { name: part, qty: 1, price: 0, total: 0 };
+    });
+  }, [order.items, products]);
 
   const handlePrint = () => {
     if (receiptRef.current) {
@@ -51,6 +72,13 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               .items-section { margin: 20px 0; padding: 15px; background: #f9fafb; border-radius: 8px; }
               .items-title { font-weight: 600; margin-bottom: 10px; }
               .items-list { white-space: pre-wrap; font-size: 14px; }
+              .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              .items-table th, .items-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e5e5e5; }
+              .items-table th { background: #f3f4f6; font-weight: 600; font-size: 12px; color: #666; }
+              .items-table td { font-size: 14px; }
+              .items-table .qty-col { text-align: center; width: 60px; }
+              .items-table .price-col { text-align: right; width: 80px; }
+              .items-table .total-col { text-align: right; width: 100px; font-weight: 600; }
               .status-section { margin: 20px 0; }
               .status-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e5e5; }
               .status-label { font-weight: 500; }
@@ -161,10 +189,29 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             </div>
           )}
 
-          {order.items && (
+          {parsedItems.length > 0 && (
             <div className="items-section">
               <div className="items-title">Items / Services</div>
-              <div className="items-list">{order.items}</div>
+              <table className="items-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th className="qty-col">Qty</th>
+                    <th className="price-col">Price</th>
+                    <th className="total-col">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedItems.map((item, idx) => (
+                    <tr key={idx}>
+                      <td>{item.name}</td>
+                      <td className="qty-col">{item.qty}</td>
+                      <td className="price-col">{item.price.toFixed(2)}</td>
+                      <td className="total-col">{item.total.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
