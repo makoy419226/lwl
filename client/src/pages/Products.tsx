@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useProducts } from "@/hooks/use-products";
-import { Loader2, Search, Shirt, Footprints, Home, Sparkles } from "lucide-react";
+import { useProducts, useUpdateProduct } from "@/hooks/use-products";
+import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Edit2, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -38,7 +39,29 @@ const getCategoryIcon = (category: string | null) => {
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingImageId, setEditingImageId] = useState<number | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const { data: products, isLoading, isError } = useProducts(searchTerm);
+  const updateProduct = useUpdateProduct();
+
+  const handleEditImage = (productId: number, currentUrl: string | null) => {
+    setEditingImageId(productId);
+    setImageUrl(currentUrl || "");
+  };
+
+  const handleSaveImage = (productId: number) => {
+    updateProduct.mutate({ id: productId, imageUrl }, {
+      onSuccess: () => {
+        setEditingImageId(null);
+        setImageUrl("");
+      }
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingImageId(null);
+    setImageUrl("");
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -102,8 +125,56 @@ export default function Products() {
                       {index + 1}
                     </TableCell>
                     <TableCell className="py-3">
-                      <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/20">
-                        {getCategoryIcon(product.category)}
+                      <div className="relative group">
+                        {editingImageId === product.id ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              value={imageUrl}
+                              onChange={(e) => setImageUrl(e.target.value)}
+                              placeholder="Image URL..."
+                              className="h-8 text-xs w-32"
+                              data-testid={`input-image-url-${product.id}`}
+                            />
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8"
+                              onClick={() => handleSaveImage(product.id)}
+                              disabled={updateProduct.isPending}
+                              data-testid={`button-save-image-${product.id}`}
+                            >
+                              <Check className="w-4 h-4 text-green-600" />
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8"
+                              onClick={handleCancelEdit}
+                              data-testid={`button-cancel-image-${product.id}`}
+                            >
+                              <X className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div 
+                            className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/20 overflow-hidden cursor-pointer"
+                            onClick={() => handleEditImage(product.id, product.imageUrl)}
+                            title="Click to edit image"
+                          >
+                            {product.imageUrl ? (
+                              <img 
+                                src={product.imageUrl} 
+                                alt={product.name} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              getCategoryIcon(product.category)
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                              <Edit2 className="w-4 h-4 text-white" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="font-medium py-3" data-testid={`text-product-name-${product.id}`}>
