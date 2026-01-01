@@ -123,6 +123,17 @@ export async function registerRoutes(
     try {
       const input = api.clients.create.input.parse(req.body);
       
+      // Check for duplicate name
+      if (input.name) {
+        const existingClient = await storage.findClientByName(input.name);
+        if (existingClient) {
+          return res.status(409).json({
+            message: `A client with name "${input.name}" already exists`,
+            field: 'name',
+          });
+        }
+      }
+      
       // Check for duplicate phone number
       if (input.phone) {
         const existingClient = await storage.findClientByPhone(input.phone);
@@ -130,6 +141,17 @@ export async function registerRoutes(
           return res.status(409).json({
             message: `A client with phone number "${input.phone}" already exists`,
             field: 'phone',
+          });
+        }
+      }
+      
+      // Check for duplicate address
+      if (input.address) {
+        const existingClient = await storage.findClientByAddress(input.address);
+        if (existingClient) {
+          return res.status(409).json({
+            message: `A client with address "${input.address}" already exists`,
+            field: 'address',
           });
         }
       }

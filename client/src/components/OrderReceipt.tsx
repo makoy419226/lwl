@@ -60,9 +60,12 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
                 color: #333;
               }
               .receipt-container { max-width: 600px; margin: 0 auto; }
-              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1e40af; padding-bottom: 20px; }
-              .company-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 8px; }
-              .company-address { font-size: 12px; color: #666; line-height: 1.5; }
+              .header { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 30px; border-bottom: 2px solid #1e40af; padding-bottom: 20px; }
+              .logo { width: 60px; height: 60px; background: #1e40af; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+              .logo svg { width: 36px; height: 36px; fill: white; }
+              .company-info { flex: 1; }
+              .company-name { font-size: 22px; font-weight: bold; color: #1e40af; margin-bottom: 6px; }
+              .company-address { font-size: 11px; color: #666; line-height: 1.5; }
               .receipt-title { font-size: 20px; font-weight: bold; text-align: center; margin: 20px 0; color: #1e40af; }
               .info-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
               .info-section { width: 48%; }
@@ -147,11 +150,20 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
 
         <div ref={receiptRef} className="p-6 receipt-container">
           <div className="header">
-            <div className="company-name">{companyInfo.name}</div>
-            <div className="company-address">
-              {companyInfo.address}<br />
-              {companyInfo.city}<br />
-              {companyInfo.phone}
+            <div className="logo">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                <circle cx="12" cy="12" r="3" fill="white"/>
+                <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" fill="white"/>
+              </svg>
+            </div>
+            <div className="company-info">
+              <div className="company-name">{companyInfo.name}</div>
+              <div className="company-address">
+                {companyInfo.address}<br />
+                {companyInfo.city}<br />
+                {companyInfo.phone}
+              </div>
             </div>
           </div>
 

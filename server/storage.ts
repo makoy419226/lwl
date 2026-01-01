@@ -35,6 +35,8 @@ export interface IStorage {
   getClient(id: number): Promise<Client | undefined>;
   findClientByNameAndPhone(name: string, phone: string): Promise<Client | undefined>;
   findClientByPhone(phone: string, excludeId?: number): Promise<Client | undefined>;
+  findClientByName(name: string, excludeId?: number): Promise<Client | undefined>;
+  findClientByAddress(address: string, excludeId?: number): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, updates: UpdateClientRequest): Promise<Client>;
   deleteClient(id: number): Promise<void>;
@@ -134,6 +136,32 @@ export class DatabaseStorage implements IStorage {
     }
     const [client] = await db.select().from(clients).where(
       ilike(clients.phone || '', phone)
+    );
+    return client;
+  }
+
+  async findClientByName(name: string, excludeId?: number): Promise<Client | undefined> {
+    if (excludeId) {
+      const results = await db.select().from(clients).where(
+        ilike(clients.name, name)
+      );
+      return results.find(c => c.id !== excludeId);
+    }
+    const [client] = await db.select().from(clients).where(
+      ilike(clients.name, name)
+    );
+    return client;
+  }
+
+  async findClientByAddress(address: string, excludeId?: number): Promise<Client | undefined> {
+    if (excludeId) {
+      const results = await db.select().from(clients).where(
+        ilike(clients.address || '', address)
+      );
+      return results.find(c => c.id !== excludeId);
+    }
+    const [client] = await db.select().from(clients).where(
+      ilike(clients.address || '', address)
     );
     return client;
   }

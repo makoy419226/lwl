@@ -6,19 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Loader2, Package, Shirt, CheckCircle2, Truck, Clock, 
-  AlertTriangle, Plus, Minus, Search, Bell, Printer
+  AlertTriangle, Plus, Minus, Search, Bell, Printer, User, Receipt
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OrderReceipt } from "@/components/OrderReceipt";
-import type { Order, Client, Product } from "@shared/schema";
+import type { Order, Client, Product, Bill } from "@shared/schema";
+import { format } from "date-fns";
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +48,18 @@ export default function Orders() {
     queryKey: ["/api/orders/due-soon"],
     refetchInterval: 60000,
   });
+
+  const { data: bills } = useQuery<Bill[]>({
+    queryKey: ["/api/bills"],
+  });
+
+  const getClientBills = (clientId: number) => {
+    return bills?.filter(b => b.clientId === clientId) || [];
+  };
+
+  const getClientUnpaidBills = (clientId: number) => {
+    return getClientBills(clientId).filter(b => !b.isPaid);
+  };
 
   const parseOrderItems = (itemsString: string | null) => {
     if (!itemsString) return [];
@@ -349,8 +363,56 @@ export default function Orders() {
                             <TableCell className="font-mono font-bold">{order.orderNumber}</TableCell>
                             {idx === 0 ? (
                               <>
-                                <TableCell rowSpan={orderCount} className="align-top font-semibold border-r">
-                                  {client?.name || 'Unknown'}
+                                <TableCell rowSpan={orderCount} className="align-top border-r p-0">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" className="w-full h-full justify-start px-4 py-2 font-semibold hover-elevate" data-testid={`button-client-${client?.id}`}>
+                                        <User className="w-4 h-4 mr-2" />
+                                        {client?.name || 'Unknown'}
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80" align="start">
+                                      <div className="space-y-3">
+                                        <div className="flex items-center gap-2 border-b pb-2">
+                                          <User className="w-5 h-5 text-primary" />
+                                          <div>
+                                            <p className="font-semibold">{client?.name}</p>
+                                            <p className="text-sm text-muted-foreground">{client?.phone}</p>
+                                          </div>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-sm">Total Due:</span>
+                                          <span className={`font-bold ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}>
+                                            {parseFloat(client?.balance || "0").toFixed(2)} AED
+                                          </span>
+                                        </div>
+                                        {client && getClientUnpaidBills(client.id).length > 0 && (
+                                          <div className="space-y-2">
+                                            <p className="text-sm font-medium flex items-center gap-1">
+                                              <Receipt className="w-4 h-4" /> Unpaid Bills:
+                                            </p>
+                                            <ScrollArea className="h-32">
+                                              <div className="space-y-1">
+                                                {getClientUnpaidBills(client.id).map(bill => (
+                                                  <div key={bill.id} className="flex justify-between items-center text-sm bg-muted/50 rounded px-2 py-1">
+                                                    <span className="text-muted-foreground">
+                                                      {format(new Date(bill.billDate), "dd/MM/yy")}
+                                                    </span>
+                                                    <span className="font-medium text-destructive">
+                                                      {parseFloat(bill.amount).toFixed(2)} AED
+                                                    </span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </ScrollArea>
+                                          </div>
+                                        )}
+                                        {client && getClientUnpaidBills(client.id).length === 0 && (
+                                          <p className="text-sm text-muted-foreground text-center py-2">No unpaid bills</p>
+                                        )}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                 </TableCell>
                                 <TableCell rowSpan={orderCount} className={`align-top font-semibold border-r ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`} data-testid={`text-client-due-${order.id}`}>
                                   {parseFloat(client?.balance || "0").toFixed(2)} AED
