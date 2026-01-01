@@ -264,76 +264,95 @@ export default function Orders() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredOrders?.map((order) => {
-                      const client = clients?.find(c => c.id === order.clientId);
-                      return (
-                        <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
-                          <TableCell className="font-mono font-bold">{order.orderNumber}</TableCell>
-                          <TableCell>{client?.name || 'Unknown'}</TableCell>
-                          <TableCell className={`font-semibold ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`} data-testid={`text-client-due-${order.id}`}>
-                            {parseFloat(client?.balance || "0").toFixed(2)} AED
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate">{order.items}</TableCell>
-                          <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>
-                          <TableCell>
-                            {order.deliveryType === 'delivery' ? (
-                              <Badge variant="outline" className="gap-1">
-                                <Truck className="w-3 h-3" /> Delivery
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary">Take Away</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>{getTimeRemaining(order.expectedDeliveryAt)}</TableCell>
-                          <TableCell>{getStatusBadge(order)}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button 
-                                size="icon" 
-                                variant="ghost"
-                                onClick={() => setPrintOrder(order)}
-                                data-testid={`button-print-${order.id}`}
-                              >
-                                <Printer className="w-4 h-4" />
-                              </Button>
-                              {!order.washingDone && (
+                    {(() => {
+                      const groupedOrders = filteredOrders?.reduce((acc, order) => {
+                        const clientId = order.clientId;
+                        if (!acc[clientId]) {
+                          acc[clientId] = [];
+                        }
+                        acc[clientId].push(order);
+                        return acc;
+                      }, {} as Record<number, typeof filteredOrders>);
+
+                      return Object.entries(groupedOrders || {}).map(([clientId, clientOrders]) => {
+                        const client = clients?.find(c => c.id === parseInt(clientId));
+                        const orderCount = clientOrders?.length || 0;
+                        
+                        return clientOrders?.map((order, idx) => (
+                          <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
+                            <TableCell className="font-mono font-bold">{order.orderNumber}</TableCell>
+                            {idx === 0 ? (
+                              <>
+                                <TableCell rowSpan={orderCount} className="align-top font-semibold border-r">
+                                  {client?.name || 'Unknown'}
+                                </TableCell>
+                                <TableCell rowSpan={orderCount} className={`align-top font-semibold border-r ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`} data-testid={`text-client-due-${order.id}`}>
+                                  {parseFloat(client?.balance || "0").toFixed(2)} AED
+                                </TableCell>
+                              </>
+                            ) : null}
+                            <TableCell className="max-w-xs truncate">{order.items}</TableCell>
+                            <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>
+                            <TableCell>
+                              {order.deliveryType === 'delivery' ? (
+                                <Badge variant="outline" className="gap-1">
+                                  <Truck className="w-3 h-3" /> Delivery
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary">Take Away</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>{getTimeRemaining(order.expectedDeliveryAt)}</TableCell>
+                            <TableCell>{getStatusBadge(order)}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
                                 <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleStatusUpdate(order.id, 'washingDone', true)}
-                                  data-testid={`button-washing-${order.id}`}
+                                  size="icon" 
+                                  variant="ghost"
+                                  onClick={() => setPrintOrder(order)}
+                                  data-testid={`button-print-${order.id}`}
                                 >
-                                  Washing Done
+                                  <Printer className="w-4 h-4" />
                                 </Button>
-                              )}
-                              {order.washingDone && !order.packingDone && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleStatusUpdate(order.id, 'packingDone', true)}
-                                  data-testid={`button-packing-${order.id}`}
-                                >
-                                  Packing Done
-                                </Button>
-                              )}
-                              {order.packingDone && !order.delivered && (
-                                <Button 
-                                  size="sm" 
-                                  variant="default"
-                                  onClick={() => handleStatusUpdate(order.id, 'delivered', true)}
-                                  data-testid={`button-deliver-${order.id}`}
-                                >
-                                  Deliver
-                                </Button>
-                              )}
-                              {order.delivered && (
-                                <Badge variant="outline" className="text-green-600">Completed</Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                                {!order.washingDone && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleStatusUpdate(order.id, 'washingDone', true)}
+                                    data-testid={`button-washing-${order.id}`}
+                                  >
+                                    Washing Done
+                                  </Button>
+                                )}
+                                {order.washingDone && !order.packingDone && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleStatusUpdate(order.id, 'packingDone', true)}
+                                    data-testid={`button-packing-${order.id}`}
+                                  >
+                                    Packing Done
+                                  </Button>
+                                )}
+                                {order.packingDone && !order.delivered && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    onClick={() => handleStatusUpdate(order.id, 'delivered', true)}
+                                    data-testid={`button-deliver-${order.id}`}
+                                  >
+                                    Deliver
+                                  </Button>
+                                )}
+                                {order.delivered && (
+                                  <Badge variant="outline" className="text-green-600">Completed</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ));
+                      });
+                    })()}
                   </TableBody>
                 </Table>
               </Card>
