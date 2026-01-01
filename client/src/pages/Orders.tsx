@@ -254,6 +254,7 @@ export default function Orders() {
                     <TableRow>
                       <TableHead>Order #</TableHead>
                       <TableHead>Client</TableHead>
+                      <TableHead>Client Due</TableHead>
                       <TableHead>Items</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Type</TableHead>
@@ -269,6 +270,9 @@ export default function Orders() {
                         <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
                           <TableCell className="font-mono font-bold">{order.orderNumber}</TableCell>
                           <TableCell>{client?.name || 'Unknown'}</TableCell>
+                          <TableCell className={`font-semibold ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`} data-testid={`text-client-due-${order.id}`}>
+                            {parseFloat(client?.balance || "0").toFixed(2)} AED
+                          </TableCell>
                           <TableCell className="max-w-xs truncate">{order.items}</TableCell>
                           <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>
                           <TableCell>

@@ -203,19 +203,27 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
 
           <div className="totals">
             <div className="total-row">
-              <span>Total Amount:</span>
+              <span>Order Amount:</span>
               <span>{totalAmount.toFixed(2)} AED</span>
             </div>
             <div className="total-row" style={{ color: "#16a34a" }}>
               <span>Paid Amount:</span>
               <span>{paidAmount.toFixed(2)} AED</span>
             </div>
-            <div className="total-row grand-total">
-              <span>Balance Due:</span>
+            <div className="total-row">
+              <span>Order Balance:</span>
               <span style={{ color: balance > 0 ? "#dc2626" : "#16a34a" }}>
                 {balance.toFixed(2)} AED
               </span>
             </div>
+            {client && (
+              <div className="total-row grand-total">
+                <span>Client Total Due:</span>
+                <span style={{ color: parseFloat(client.balance || "0") > 0 ? "#dc2626" : "#16a34a" }}>
+                  {parseFloat(client.balance || "0").toFixed(2)} AED
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="footer">
