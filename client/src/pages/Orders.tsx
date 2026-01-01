@@ -25,6 +25,9 @@ export default function Orders() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
+  const [packingPinDialog, setPackingPinDialog] = useState<{ orderId: number } | null>(null);
+  const [packingPin, setPackingPin] = useState("");
+  const [pinError, setPinError] = useState("");
   const { toast } = useToast();
 
   const { data: orders, isLoading } = useQuery<Order[]>({
@@ -70,6 +73,45 @@ export default function Orders() {
       toast({ title: "Order Created", description: "New order has been created" });
     },
   });
+
+  const verifyPinMutation = useMutation({
+    mutationFn: async (pin: string) => {
+      const res = await apiRequest("POST", "/api/packing/verify-pin", { pin });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && packingPinDialog) {
+        updateOrderMutation.mutate({
+          id: packingPinDialog.orderId,
+          updates: {
+            packingDone: true,
+            packingDate: new Date().toISOString(),
+            packingBy: data.worker.name,
+          },
+        });
+        setPackingPinDialog(null);
+        setPackingPin("");
+        setPinError("");
+      }
+    },
+    onError: () => {
+      setPinError("Invalid PIN. Please try again.");
+    },
+  });
+
+  const handlePackingWithPin = (orderId: number) => {
+    setPackingPinDialog({ orderId });
+    setPackingPin("");
+    setPinError("");
+  };
+
+  const submitPackingPin = () => {
+    if (packingPin.length !== 5) {
+      setPinError("PIN must be 5 digits");
+      return;
+    }
+    verifyPinMutation.mutate(packingPin);
+  };
 
   const filteredOrders = orders?.filter(order => {
     const matchesSearch = !searchTerm || 
@@ -329,7 +371,7 @@ export default function Orders() {
                                   <Button 
                                     size="sm" 
                                     variant="outline"
-                                    onClick={() => handleStatusUpdate(order.id, 'packingDone', true)}
+                                    onClick={() => handlePackingWithPin(order.id)}
                                     data-testid={`button-packing-${order.id}`}
                                   >
                                     Packing Done
@@ -369,6 +411,57 @@ export default function Orders() {
           onClose={() => setPrintOrder(null)}
         />
       )}
+
+      <Dialog open={!!packingPinDialog} onOpenChange={(open) => !open && setPackingPinDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shirt className="w-5 h-5 text-primary" />
+              Enter Packing PIN
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Enter your 5-digit worker PIN to confirm packing completion.
+            </p>
+            <Input
+              type="password"
+              maxLength={5}
+              placeholder="Enter 5-digit PIN"
+              value={packingPin}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                setPackingPin(val);
+                setPinError("");
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && submitPackingPin()}
+              className="text-center text-2xl tracking-widest"
+              data-testid="input-packing-pin"
+            />
+            {pinError && (
+              <p className="text-sm text-destructive text-center">{pinError}</p>
+            )}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setPackingPinDialog(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={submitPackingPin}
+                disabled={packingPin.length !== 5 || verifyPinMutation.isPending}
+                data-testid="button-submit-pin"
+              >
+                {verifyPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
