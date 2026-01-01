@@ -80,6 +80,13 @@ export const users = pgTable("users", {
   active: boolean("active").default(true),
 });
 
+export const packingWorkers = pgTable("packing_workers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  pin: text("pin").notNull(), // 5-digit PIN
+  active: boolean("active").default(true),
+});
+
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
 export const insertClientSchema = createInsertSchema(clients)
   .omit({ id: true })
@@ -106,6 +113,11 @@ export const insertTransactionSchema = createInsertSchema(clientTransactions)
     date: z.union([z.date(), z.string()]),
   });
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export const insertPackingWorkerSchema = createInsertSchema(packingWorkers)
+  .omit({ id: true })
+  .extend({
+    pin: z.string().length(5, "PIN must be exactly 5 digits").regex(/^\d{5}$/, "PIN must be 5 digits"),
+  });
 export const insertOrderSchema = createInsertSchema(orders)
   .omit({ id: true })
   .extend({
@@ -124,11 +136,13 @@ export type Bill = typeof bills.$inferSelect;
 export type ClientTransaction = typeof clientTransactions.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Order = typeof orders.$inferSelect;
+export type PackingWorker = typeof packingWorkers.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertBill = z.infer<typeof insertBillSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertPackingWorker = z.infer<typeof insertPackingWorkerSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 
 // Explicit API types
