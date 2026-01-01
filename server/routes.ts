@@ -354,5 +354,71 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Packing Workers routes
+  app.get("/api/packing-workers", async (req, res) => {
+    const workers = await storage.getPackingWorkers();
+    res.json(workers.map(w => ({ id: w.id, name: w.name, active: w.active })));
+  });
+
+  app.get("/api/packing-workers/:id", async (req, res) => {
+    const worker = await storage.getPackingWorker(Number(req.params.id));
+    if (!worker) {
+      return res.status(404).json({ message: "Worker not found" });
+    }
+    res.json({ id: worker.id, name: worker.name, active: worker.active });
+  });
+
+  app.post("/api/packing-workers", async (req, res) => {
+    const { name, pin } = req.body;
+    if (!name || !pin || !/^\d{5}$/.test(pin)) {
+      return res.status(400).json({ message: "Name and 5-digit PIN are required" });
+    }
+    try {
+      const worker = await storage.createPackingWorker({ name, pin });
+      res.status(201).json({ id: worker.id, name: worker.name, active: worker.active });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.put("/api/packing-workers/:id", async (req, res) => {
+    const { name, pin, active } = req.body;
+    const updates: any = {};
+    if (name !== undefined) updates.name = name;
+    if (pin !== undefined) {
+      if (!/^\d{5}$/.test(pin)) {
+        return res.status(400).json({ message: "PIN must be 5 digits" });
+      }
+      updates.pin = pin;
+    }
+    if (active !== undefined) updates.active = active;
+    
+    try {
+      const worker = await storage.updatePackingWorker(Number(req.params.id), updates);
+      res.json({ id: worker.id, name: worker.name, active: worker.active });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.delete("/api/packing-workers/:id", async (req, res) => {
+    await storage.deletePackingWorker(Number(req.params.id));
+    res.status(204).send();
+  });
+
+  // Verify packing worker PIN
+  app.post("/api/packing/verify-pin", async (req, res) => {
+    const { pin } = req.body;
+    if (!pin || !/^\d{5}$/.test(pin)) {
+      return res.status(400).json({ success: false, message: "Invalid PIN format" });
+    }
+    const worker = await storage.verifyPackingWorkerPin(pin);
+    if (worker) {
+      res.json({ success: true, worker: { id: worker.id, name: worker.name } });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid PIN" });
+    }
+  });
+
   return httpServer;
 }

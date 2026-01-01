@@ -5,16 +5,19 @@ import {
   bills,
   clientTransactions,
   orders,
+  packingWorkers,
   type Product,
   type Client,
   type Bill,
   type ClientTransaction,
   type Order,
+  type PackingWorker,
   type InsertProduct,
   type InsertClient,
   type InsertBill,
   type InsertTransaction,
   type InsertOrder,
+  type InsertPackingWorker,
   type UpdateProductRequest,
   type UpdateClientRequest,
   type UpdateOrderRequest
@@ -47,6 +50,12 @@ export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, updates: UpdateOrderRequest): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
+  getPackingWorkers(): Promise<PackingWorker[]>;
+  getPackingWorker(id: number): Promise<PackingWorker | undefined>;
+  createPackingWorker(worker: InsertPackingWorker): Promise<PackingWorker>;
+  updatePackingWorker(id: number, updates: Partial<InsertPackingWorker>): Promise<PackingWorker>;
+  deletePackingWorker(id: number): Promise<void>;
+  verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -313,6 +322,42 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOrder(id: number): Promise<void> {
     await db.delete(orders).where(eq(orders.id, id));
+  }
+
+  async getPackingWorkers(): Promise<PackingWorker[]> {
+    return await db.select().from(packingWorkers);
+  }
+
+  async getPackingWorker(id: number): Promise<PackingWorker | undefined> {
+    const [worker] = await db.select().from(packingWorkers).where(eq(packingWorkers.id, id));
+    return worker;
+  }
+
+  async createPackingWorker(worker: InsertPackingWorker): Promise<PackingWorker> {
+    const [created] = await db.insert(packingWorkers).values(worker).returning();
+    return created;
+  }
+
+  async updatePackingWorker(id: number, updates: Partial<InsertPackingWorker>): Promise<PackingWorker> {
+    const [updated] = await db.update(packingWorkers)
+      .set(updates)
+      .where(eq(packingWorkers.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePackingWorker(id: number): Promise<void> {
+    await db.delete(packingWorkers).where(eq(packingWorkers.id, id));
+  }
+
+  async verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null> {
+    const [worker] = await db.select().from(packingWorkers).where(
+      and(
+        eq(packingWorkers.pin, pin),
+        eq(packingWorkers.active, true)
+      )
+    );
+    return worker || null;
   }
 }
 
