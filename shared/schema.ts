@@ -24,6 +24,8 @@ export const clients = pgTable("clients", {
   balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
   contact: text("contact"),
   billNumber: text("bill_number"),
+  preferredPaymentMethod: text("preferred_payment_method").default("cash"), // 'cash', 'card', 'bank'
+  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }).default("0"),
 });
 
 export const clientTransactions = pgTable("client_transactions", {
@@ -66,6 +68,10 @@ export const orders = pgTable("orders", {
   items: text("items"),
   totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
   paidAmount: numeric("paid_amount", { precision: 12, scale: 2 }).default("0"),
+  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }).default("0"),
+  discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }).default("0"),
+  finalAmount: numeric("final_amount", { precision: 12, scale: 2 }),
+  paymentMethod: text("payment_method").default("cash"), // 'cash', 'card', 'bank'
   status: text("status").default("entry"),
   deliveryType: text("delivery_type").default("takeaway"),
   expectedDeliveryAt: timestamp("expected_delivery_at"),

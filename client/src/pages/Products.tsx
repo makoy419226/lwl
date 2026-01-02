@@ -184,20 +184,20 @@ export default function Products() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-primary/10">
-                  <TableHead className="font-bold text-foreground text-base py-4 w-16 text-center">
+                  <TableHead className="font-semibold text-foreground text-xs py-1 w-8 text-center">
                     #
                   </TableHead>
-                  <TableHead className="font-bold text-foreground text-base py-4 w-20 text-center">
-                    Image
+                  <TableHead className="font-semibold text-foreground text-xs py-1 w-10 text-center">
+                    Img
                   </TableHead>
-                  <TableHead className="font-bold text-foreground text-base py-4">
-                    ITEM Name
+                  <TableHead className="font-semibold text-foreground text-xs py-1">
+                    Item
                   </TableHead>
-                  <TableHead className="font-bold text-foreground text-base py-4 text-right">
-                    Price (AED)
+                  <TableHead className="font-semibold text-foreground text-xs py-1 text-right">
+                    Price
                   </TableHead>
-                  <TableHead className="font-bold text-foreground text-base py-4 text-center w-40">
-                    Quantity
+                  <TableHead className="font-semibold text-foreground text-xs py-1 text-center w-28">
+                    Qty
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -205,46 +205,46 @@ export default function Products() {
                 {products?.map((product, index) => (
                   <TableRow 
                     key={product.id}
-                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                    className={`${index % 2 === 0 ? "bg-background" : "bg-muted/20"} ${quantities[product.id] ? "bg-primary/10 ring-1 ring-primary/30" : ""}`}
                     data-testid={`row-product-${product.id}`}
                   >
-                    <TableCell className="font-medium py-3 text-center text-muted-foreground">
+                    <TableCell className="font-medium py-1 text-center text-muted-foreground text-xs">
                       {index + 1}
                     </TableCell>
-                    <TableCell className="py-3">
+                    <TableCell className="py-1">
                       <div className="relative group">
                         {editingImageId === product.id ? (
                           <div className="flex items-center gap-1">
                             <Input
                               value={imageUrl}
                               onChange={(e) => setImageUrl(e.target.value)}
-                              placeholder="Image URL..."
-                              className="h-8 text-xs w-32"
+                              placeholder="URL..."
+                              className="h-6 text-xs w-20"
                               data-testid={`input-image-url-${product.id}`}
                             />
                             <Button 
                               size="icon" 
                               variant="ghost" 
-                              className="h-8 w-8"
+                              className="h-6 w-6"
                               onClick={() => handleSaveImage(product.id)}
                               disabled={updateProduct.isPending}
                               data-testid={`button-save-image-${product.id}`}
                             >
-                              <Check className="w-4 h-4 text-green-600" />
+                              <Check className="w-3 h-3 text-green-600" />
                             </Button>
                             <Button 
                               size="icon" 
                               variant="ghost" 
-                              className="h-8 w-8"
+                              className="h-6 w-6"
                               onClick={handleCancelEdit}
                               data-testid={`button-cancel-image-${product.id}`}
                             >
-                              <X className="w-4 h-4 text-destructive" />
+                              <X className="w-3 h-3 text-destructive" />
                             </Button>
                           </div>
                         ) : (
                           <div 
-                            className="w-12 h-12 rounded-sm bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/10 overflow-hidden cursor-pointer"
+                            className="w-7 h-7 rounded-sm bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/10 overflow-hidden cursor-pointer"
                             onClick={() => handleEditImage(product.id, product.imageUrl)}
                             title="Click to edit image"
                           >
@@ -255,42 +255,41 @@ export default function Products() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              getCategoryIcon(product.category)
+                              <Shirt className="w-3 h-3 text-primary" />
                             )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
-                              <Edit2 className="w-3 h-3 text-white" />
-                            </div>
                           </div>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-bold text-base py-3" data-testid={`text-product-name-${product.id}`}>
+                    <TableCell className="font-semibold text-sm py-1" data-testid={`text-product-name-${product.id}`}>
                       {product.name}
                     </TableCell>
-                    <TableCell className="text-right py-3 font-bold text-primary text-lg" data-testid={`text-product-price-${product.id}`}>
-                      {product.price ? `${parseFloat(product.price).toFixed(0)} AED` : "-"}
+                    <TableCell className="text-right py-1 font-bold text-primary text-sm" data-testid={`text-product-price-${product.id}`}>
+                      {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
                     </TableCell>
-                    <TableCell className="py-3">
-                      <div className="flex items-center justify-center gap-2">
+                    <TableCell className="py-1">
+                      <div className="flex items-center justify-center gap-1">
                         <Button
                           size="icon"
                           variant="outline"
+                          className="h-6 w-6"
                           onClick={() => handleQuantityChange(product.id, -1)}
                           disabled={!quantities[product.id]}
                           data-testid={`button-qty-minus-${product.id}`}
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="w-3 h-3" />
                         </Button>
-                        <span className={`w-8 text-center font-bold ${quantities[product.id] ? "text-primary" : "text-muted-foreground"}`} data-testid={`text-qty-${product.id}`}>
+                        <span className={`w-6 text-center font-bold text-sm ${quantities[product.id] ? "text-primary" : "text-muted-foreground"}`} data-testid={`text-qty-${product.id}`}>
                           {quantities[product.id] || 0}
                         </span>
                         <Button
                           size="icon"
                           variant="outline"
+                          className="h-6 w-6"
                           onClick={() => handleQuantityChange(product.id, 1)}
                           data-testid={`button-qty-plus-${product.id}`}
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-3 h-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -305,27 +304,27 @@ export default function Products() {
         )}
       </main>
 
-      {/* Order Summary Bar */}
+      {/* Order Summary Bar - Highlighted */}
       {orderItems.length > 0 && (
-        <Card className="sticky bottom-0 z-40 mx-4 mb-4 p-4 border-t-2 border-primary shadow-lg bg-card">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <ShoppingCart className="w-5 h-5 text-primary" />
+        <div className="sticky bottom-0 z-40 mx-2 mb-2 p-3 border-2 border-primary shadow-2xl bg-primary/5 rounded-lg animate-pulse-slow">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">
-                  {orderItems.length} item(s) selected
+                <p className="text-xs text-muted-foreground">
+                  {orderItems.length} items
                 </p>
-                <p className="text-xl font-bold text-primary" data-testid="text-order-total">
+                <p className="text-lg font-bold text-primary" data-testid="text-order-total">
                   {orderTotal.toFixed(2)} AED
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                <SelectTrigger className="w-48" data-testid="select-order-client">
+                <SelectTrigger className="w-40 h-8 text-sm" data-testid="select-order-client">
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
@@ -338,33 +337,35 @@ export default function Products() {
               </Select>
               
               <Button 
-                variant="outline" 
+                variant="outline"
+                size="sm"
                 onClick={clearOrder}
                 data-testid="button-clear-order"
               >
-                Clear
+                <X className="w-4 h-4" />
               </Button>
               
               <Button 
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 text-white font-bold px-6"
                 onClick={handleCreateOrder}
                 disabled={createOrderMutation.isPending || !selectedClientId}
                 data-testid="button-create-order"
               >
-                {createOrderMutation.isPending ? "Creating..." : "Create Order"}
+                {createOrderMutation.isPending ? "..." : "CREATE ORDER"}
               </Button>
             </div>
           </div>
           
-          <div className="mt-3 pt-3 border-t text-sm text-muted-foreground">
-            <span className="font-medium">Items: </span>
+          <div className="mt-2 pt-2 border-t border-primary/20 text-xs text-muted-foreground">
             {orderItems.map((item, idx) => (
-              <span key={item.product.id}>
+              <span key={item.product.id} className="font-medium">
                 {item.quantity}x {item.product.name}
                 {idx < orderItems.length - 1 ? ", " : ""}
               </span>
             ))}
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );
