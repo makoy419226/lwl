@@ -244,7 +244,7 @@ export default function Products() {
                           </div>
                         ) : (
                           <div 
-                            className="w-8 h-8 rounded-md bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/10 overflow-hidden cursor-pointer"
+                            className="w-12 h-12 rounded-sm bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/10 overflow-hidden cursor-pointer"
                             onClick={() => handleEditImage(product.id, product.imageUrl)}
                             title="Click to edit image"
                           >
@@ -264,7 +264,7 @@ export default function Products() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium py-3" data-testid={`text-product-name-${product.id}`}>
+                    <TableCell className="font-bold text-base py-3" data-testid={`text-product-name-${product.id}`}>
                       {product.name}
                     </TableCell>
                     <TableCell className="text-right py-3 font-bold text-primary text-lg" data-testid={`text-product-price-${product.id}`}>

@@ -240,19 +240,62 @@ export default function SalesReports() {
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
       <div className="sticky top-0 z-30 w-full bg-card border-b border-border shadow-sm">
-        <div className="h-20 px-6 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-primary" />
-            Sales Reports
-          </h1>
-        </div>
-      </div>
-
-      <main className="flex-1 container mx-auto px-4 py-6 overflow-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
+        <div className="px-6 py-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-primary" />
+              Sales Reports
+            </h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              {activeTab === "daily" && (
+                <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <Label htmlFor="header-date" className="text-sm font-medium">Date:</Label>
+                  <Input
+                    id="header-date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-40 h-8"
+                    data-testid="input-header-daily-date"
+                  />
+                </div>
+              )}
+              {activeTab === "monthly" && (
+                <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg">
+                  <CalendarDays className="w-4 h-4 text-primary" />
+                  <Label htmlFor="header-month" className="text-sm font-medium">Month:</Label>
+                  <Input
+                    id="header-month"
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="w-40 h-8"
+                    data-testid="input-header-monthly-date"
+                  />
+                </div>
+              )}
+              {activeTab === "yearly" && (
+                <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg">
+                  <CalendarRange className="w-4 h-4 text-primary" />
+                  <Label htmlFor="header-year" className="text-sm font-medium">Year:</Label>
+                  <Input
+                    id="header-year"
+                    type="number"
+                    min="2020"
+                    max="2030"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="w-24 h-8"
+                    data-testid="input-header-yearly-date"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <TabsList>
             <TabsTrigger value="daily" className="gap-2">
               <Calendar className="w-4 h-4" />
               Daily
@@ -266,7 +309,10 @@ export default function SalesReports() {
               Yearly
             </TabsTrigger>
           </TabsList>
+        </div>
+      </div>
 
+      <main className="flex-1 container mx-auto px-4 py-6 overflow-auto">
           <TabsContent value="daily">
             <div className="mb-4 p-4 bg-primary/5 rounded-lg border flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-2">
@@ -358,8 +404,7 @@ export default function SalesReports() {
               </>
             )}
           </TabsContent>
-        </Tabs>
       </main>
-    </div>
+    </Tabs>
   );
 }

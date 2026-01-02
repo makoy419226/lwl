@@ -31,6 +31,7 @@ export default function Orders() {
   const [packingPinDialog, setPackingPinDialog] = useState<{ orderId: number } | null>(null);
   const [packingPin, setPackingPin] = useState("");
   const [pinError, setPinError] = useState("");
+  const [packingNotes, setPackingNotes] = useState("");
   const [deliveryPinDialog, setDeliveryPinDialog] = useState<{ orderId: number } | null>(null);
   const [deliveryPin, setDeliveryPin] = useState("");
   const [deliveryPinError, setDeliveryPinError] = useState("");
@@ -153,6 +154,10 @@ export default function Orders() {
     },
     onSuccess: (data) => {
       if (data.success && packingPinDialog) {
+        const existingOrder = orders?.find(o => o.id === packingPinDialog.orderId);
+        const combinedNotes = packingNotes 
+          ? (existingOrder?.notes ? `${existingOrder.notes}\n[Packing: ${packingNotes}]` : `[Packing: ${packingNotes}]`)
+          : existingOrder?.notes;
         updateOrderMutation.mutate({
           id: packingPinDialog.orderId,
           updates: {
@@ -160,11 +165,13 @@ export default function Orders() {
             packingDate: new Date().toISOString(),
             packingBy: data.worker.name,
             packingWorkerId: data.worker.id,
+            notes: combinedNotes,
           },
         });
         setPackingPinDialog(null);
         setPackingPin("");
         setPinError("");
+        setPackingNotes("");
       }
     },
     onError: () => {
@@ -176,6 +183,7 @@ export default function Orders() {
     setPackingPinDialog({ orderId });
     setPackingPin("");
     setPinError("");
+    setPackingNotes("");
   };
 
   const submitPackingPin = () => {
@@ -704,6 +712,13 @@ export default function Orders() {
               onKeyDown={(e) => e.key === 'Enter' && submitPackingPin()}
               className="text-center text-2xl tracking-widest"
               data-testid="input-packing-pin"
+            />
+            <Textarea
+              placeholder="Notes (e.g., missing clothes, damage report...)"
+              value={packingNotes}
+              onChange={(e) => setPackingNotes(e.target.value)}
+              className="min-h-[60px]"
+              data-testid="input-packing-notes"
             />
             {pinError && (
               <p className="text-sm text-destructive text-center">{pinError}</p>

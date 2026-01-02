@@ -70,6 +70,7 @@ export interface IStorage {
   deletePackingWorker(id: number): Promise<void>;
   verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null>;
   verifyDeliveryWorkerPin(pin: string): Promise<PackingWorker | null>;
+  getClientOrders(clientId: number): Promise<Order[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -528,6 +529,12 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return null;
+  }
+
+  async getClientOrders(clientId: number): Promise<Order[]> {
+    return await db.select().from(orders)
+      .where(eq(orders.clientId, clientId))
+      .orderBy(desc(orders.entryDate));
   }
 }
 

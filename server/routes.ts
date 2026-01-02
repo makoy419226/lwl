@@ -307,6 +307,11 @@ export async function registerRoutes(
     res.json(bills);
   });
 
+  app.get("/api/clients/:id/orders", async (req, res) => {
+    const clientOrders = await storage.getClientOrders(Number(req.params.id));
+    res.json(clientOrders);
+  });
+
   // Bill payments routes
   app.get("/api/bills/:id/payments", async (req, res) => {
     const payments = await storage.getBillPayments(Number(req.params.id));
