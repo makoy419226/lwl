@@ -87,6 +87,7 @@ export const orders = pgTable("orders", {
   delivered: boolean("delivered").default(false),
   deliveryDate: timestamp("delivery_date"),
   deliveryBy: text("delivery_by"),
+  deliveredByWorkerId: integer("delivered_by_worker_id"),
   notes: text("notes"),
   urgent: boolean("urgent").default(false),
 });

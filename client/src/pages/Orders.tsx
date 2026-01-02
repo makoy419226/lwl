@@ -205,8 +205,9 @@ export default function Orders() {
           id: deliveryPinDialog.orderId,
           updates: {
             delivered: true,
-            deliveredDate: new Date().toISOString(),
-            deliveredBy: data.worker.name,
+            deliveryDate: new Date().toISOString(),
+            deliveryBy: data.worker.name,
+            deliveredByWorkerId: data.worker.id,
           },
         });
         setDeliveryPinDialog(null);
@@ -697,8 +698,15 @@ export default function Orders() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Enter your 5-digit worker PIN to confirm packing completion.
+              Add notes if needed, then enter your PIN to confirm packing.
             </p>
+            <Textarea
+              placeholder="Notes (e.g., missing clothes, damage report...)"
+              value={packingNotes}
+              onChange={(e) => setPackingNotes(e.target.value)}
+              className="min-h-[60px]"
+              data-testid="input-packing-notes"
+            />
             <Input
               type="password"
               maxLength={5}
@@ -712,13 +720,6 @@ export default function Orders() {
               onKeyDown={(e) => e.key === 'Enter' && submitPackingPin()}
               className="text-center text-2xl tracking-widest"
               data-testid="input-packing-pin"
-            />
-            <Textarea
-              placeholder="Notes (e.g., missing clothes, damage report...)"
-              value={packingNotes}
-              onChange={(e) => setPackingNotes(e.target.value)}
-              className="min-h-[60px]"
-              data-testid="input-packing-notes"
             />
             {pinError && (
               <p className="text-sm text-destructive text-center">{pinError}</p>

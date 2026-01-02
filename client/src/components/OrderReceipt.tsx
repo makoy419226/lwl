@@ -262,13 +262,13 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             <div className="status-row">
               <span className="status-label">Packing</span>
               <span className={order.packingDone ? "status-done" : "status-pending"}>
-                {order.packingDone ? `Completed - ${formatDate(order.packingDate)}` : "Pending"}
+                {order.packingDone ? `Completed - ${formatDate(order.packingDate)}${order.packingBy ? ` by ${order.packingBy}` : ''}` : "Pending"}
               </span>
             </div>
             <div className="status-row">
               <span className="status-label">Delivery</span>
               <span className={order.delivered ? "status-done" : "status-pending"}>
-                {order.delivered ? `Completed - ${formatDate(order.deliveryDate)}` : "Pending"}
+                {order.delivered ? `Completed - ${formatDate(order.deliveryDate)}${order.deliveredBy ? ` by ${order.deliveredBy}` : ''}` : "Pending"}
               </span>
             </div>
           </div>
