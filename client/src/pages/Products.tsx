@@ -160,17 +160,17 @@ export default function Products() {
     <div className="flex h-screen">
       {/* Left side - Price List */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="sticky top-0 z-30 w-full bg-white/80 dark:bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
-          <div className="h-14 px-3 flex items-center justify-between gap-2">
-            <h1 className="text-lg font-display font-bold text-foreground">
+        <div className="sticky top-0 z-30 w-full bg-white/80 dark:bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="h-10 px-2 flex items-center justify-between gap-2">
+            <h1 className="text-sm font-display font-bold text-foreground">
               Price List
             </h1>
             <div className="flex-1 max-w-xs relative group">
               <div className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
-                <Search className="w-4 h-4" />
+                <Search className="w-3 h-3" />
               </div>
               <Input
-                className="pl-8 h-8 rounded-full border border-muted bg-muted/30 focus:bg-white dark:focus:bg-background focus:border-primary/50 transition-all text-sm"
+                className="pl-7 h-7 rounded-full border border-muted bg-muted/30 focus:bg-white dark:focus:bg-background focus:border-primary/50 transition-all text-xs"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -191,13 +191,13 @@ export default function Products() {
               <p className="font-semibold text-lg">Failed to load</p>
             </div>
           ) : (
-            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1">
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-0.5">
               {products?.map((product) => (
                 <div
                   key={product.id}
-                  className={`relative aspect-square rounded-md border-2 p-1 flex flex-col items-center justify-between cursor-pointer transition-all ${
+                  className={`relative aspect-square rounded border p-0.5 flex flex-col items-center justify-between cursor-pointer transition-all ${
                     quantities[product.id] 
-                      ? "border-primary bg-primary/10 ring-2 ring-primary/30" 
+                      ? "border-primary bg-primary/10 ring-1 ring-primary/30" 
                       : "border-border bg-card hover:border-primary/50"
                   }`}
                   onClick={() => handleQuantityChange(product.id, 1)}
@@ -238,7 +238,7 @@ export default function Products() {
                   ) : null}
 
                   <div 
-                    className="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center border border-primary/10 overflow-hidden flex-shrink-0"
+                    className="w-5 h-5 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden flex-shrink-0"
                     onClick={(e) => { e.stopPropagation(); handleEditImage(product.id, product.imageUrl); }}
                     title="Click to edit image"
                   >
@@ -249,21 +249,21 @@ export default function Products() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Shirt className="w-3 h-3 text-primary" />
+                      <Shirt className="w-2.5 h-2.5 text-primary" />
                     )}
                   </div>
 
-                  <div className="text-[8px] leading-tight text-center font-medium text-foreground line-clamp-2 flex-1 flex items-center" data-testid={`text-product-name-${product.id}`}>
+                  <div className="text-[7px] leading-tight text-center font-medium text-foreground line-clamp-2 flex-1 flex items-center" data-testid={`text-product-name-${product.id}`}>
                     {product.name}
                   </div>
 
-                  <div className="text-[10px] font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
+                  <div className="text-[9px] font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
                     {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
                   </div>
 
                   {quantities[product.id] ? (
                     <div 
-                      className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[8px] font-bold flex items-center justify-center shadow"
+                      className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary text-white text-[7px] font-bold flex items-center justify-center shadow"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <span data-testid={`text-qty-${product.id}`}>{quantities[product.id]}</span>
@@ -353,15 +353,15 @@ export default function Products() {
       </div>
 
       {/* Right side - Today's Work List */}
-      <div className="w-56 border-l bg-muted/30 flex flex-col">
-        <div className="h-14 px-3 flex items-center border-b bg-white/80 dark:bg-background/80">
-          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary" />
+      <div className="w-48 border-l bg-muted/30 flex flex-col">
+        <div className="h-10 px-2 flex items-center border-b bg-white/80 dark:bg-background/80">
+          <h2 className="text-xs font-bold text-foreground flex items-center gap-1">
+            <Clock className="w-3 h-3 text-primary" />
             Today's Work
           </h2>
         </div>
         
-        <div className="flex-1 overflow-auto p-2 space-y-3">
+        <div className="flex-1 overflow-auto p-1 space-y-2">
           {/* Washing Pending */}
           <div>
             <div className="flex items-center gap-1 mb-1">
