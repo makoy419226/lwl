@@ -1,22 +1,17 @@
 import { useState, useMemo } from "react";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients } from "@/hooks/use-clients";
-import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Edit2, Check, X, Plus, Minus, ShoppingCart } from "lucide-react";
+import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Check, X, Plus, Minus, ShoppingCart, Clock, Package, Truck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { format } from "date-fns";
+import type { Order } from "@shared/schema";
 
 const getCategoryIcon = (category: string | null) => {
   switch (category) {
@@ -51,9 +46,23 @@ export default function Products() {
   const [selectedClientId, setSelectedClientId] = useState("");
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const { data: clients } = useClients();
+  const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
   const updateProduct = useUpdateProduct();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const todaysOrders = useMemo(() => {
+    if (!allOrders) return [];
+    const today = format(new Date(), 'yyyy-MM-dd');
+    return allOrders.filter(order => {
+      const orderDate = order.entryDate ? format(new Date(order.entryDate), 'yyyy-MM-dd') : null;
+      return orderDate === today;
+    });
+  }, [allOrders]);
+
+  const pendingWashing = todaysOrders.filter(o => !o.washingDone);
+  const pendingPacking = todaysOrders.filter(o => o.washingDone && !o.packingDone);
+  const pendingDelivery = todaysOrders.filter(o => o.packingDone && !o.delivered);
 
   const handleEditImage = (productId: number, currentUrl: string | null) => {
     setEditingImageId(productId);
@@ -148,225 +157,279 @@ export default function Products() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="sticky top-0 z-30 w-full bg-white/80 dark:bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="h-20 px-6 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            Price List
-          </h1>
-          <div className="flex-1 max-w-md relative group">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
-              <Search className="w-5 h-5" />
+    <div className="flex h-screen">
+      {/* Left side - Price List */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="sticky top-0 z-30 w-full bg-white/80 dark:bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
+          <div className="h-14 px-3 flex items-center justify-between gap-2">
+            <h1 className="text-lg font-display font-bold text-foreground">
+              Price List
+            </h1>
+            <div className="flex-1 max-w-xs relative group">
+              <div className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+                <Search className="w-4 h-4" />
+              </div>
+              <Input
+                className="pl-8 h-8 rounded-full border border-muted bg-muted/30 focus:bg-white dark:focus:bg-background focus:border-primary/50 transition-all text-sm"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                data-testid="input-search-products"
+              />
             </div>
-            <Input
-              className="pl-10 h-11 rounded-full border-2 border-muted bg-muted/30 focus:bg-white dark:focus:bg-background focus:border-primary/50 transition-all duration-300"
-              placeholder="Search items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              data-testid="input-search-products"
-            />
           </div>
         </div>
-      </div>
 
-      <main className="flex-1 container mx-auto px-4 py-6 overflow-auto">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
-            <p>Loading price list...</p>
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center justify-center py-20 text-destructive">
-            <p className="font-semibold text-lg">Failed to load products</p>
-          </div>
-        ) : (
-          <div className="bg-card rounded-2xl border overflow-hidden shadow-sm">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-primary/10">
-                  <TableHead className="font-semibold text-foreground text-xs py-1 w-8 text-center">
-                    #
-                  </TableHead>
-                  <TableHead className="font-semibold text-foreground text-xs py-1 w-10 text-center">
-                    Img
-                  </TableHead>
-                  <TableHead className="font-semibold text-foreground text-xs py-1">
-                    Item
-                  </TableHead>
-                  <TableHead className="font-semibold text-foreground text-xs py-1 text-right">
-                    Price
-                  </TableHead>
-                  <TableHead className="font-semibold text-foreground text-xs py-1 text-center w-28">
-                    Qty
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products?.map((product, index) => (
-                  <TableRow 
-                    key={product.id}
-                    className={`${index % 2 === 0 ? "bg-background" : "bg-muted/20"} ${quantities[product.id] ? "bg-primary/10 ring-1 ring-primary/30" : ""}`}
-                    data-testid={`row-product-${product.id}`}
-                  >
-                    <TableCell className="font-medium py-1 text-center text-muted-foreground text-xs">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell className="py-1">
-                      <div className="relative group">
-                        {editingImageId === product.id ? (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              value={imageUrl}
-                              onChange={(e) => setImageUrl(e.target.value)}
-                              placeholder="URL..."
-                              className="h-6 text-xs w-20"
-                              data-testid={`input-image-url-${product.id}`}
-                            />
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6"
-                              onClick={() => handleSaveImage(product.id)}
-                              disabled={updateProduct.isPending}
-                              data-testid={`button-save-image-${product.id}`}
-                            >
-                              <Check className="w-3 h-3 text-green-600" />
-                            </Button>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6"
-                              onClick={handleCancelEdit}
-                              data-testid={`button-cancel-image-${product.id}`}
-                            >
-                              <X className="w-3 h-3 text-destructive" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div 
-                            className="w-7 h-7 rounded-sm bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/10 overflow-hidden cursor-pointer"
-                            onClick={() => handleEditImage(product.id, product.imageUrl)}
-                            title="Click to edit image"
-                          >
-                            {product.imageUrl ? (
-                              <img 
-                                src={product.imageUrl} 
-                                alt={product.name} 
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Shirt className="w-3 h-3 text-primary" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-semibold text-sm py-1" data-testid={`text-product-name-${product.id}`}>
-                      {product.name}
-                    </TableCell>
-                    <TableCell className="text-right py-1 font-bold text-primary text-sm" data-testid={`text-product-price-${product.id}`}>
-                      {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
-                    </TableCell>
-                    <TableCell className="py-1">
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="h-6 w-6"
-                          onClick={() => handleQuantityChange(product.id, -1)}
-                          disabled={!quantities[product.id]}
-                          data-testid={`button-qty-minus-${product.id}`}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className={`w-6 text-center font-bold text-sm ${quantities[product.id] ? "text-primary" : "text-muted-foreground"}`} data-testid={`text-qty-${product.id}`}>
-                          {quantities[product.id] || 0}
-                        </span>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="h-6 w-6"
-                          onClick={() => handleQuantityChange(product.id, 1)}
-                          data-testid={`button-qty-plus-${product.id}`}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="p-4 border-t bg-muted/30 text-sm text-muted-foreground">
-              Total Items: <span className="font-semibold text-primary">{products?.length || 0}</span>
+        <main className="flex-1 px-1 py-2 overflow-auto">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
+              <p>Loading...</p>
             </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-20 text-destructive">
+              <p className="font-semibold text-lg">Failed to load</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1">
+              {products?.map((product) => (
+                <div
+                  key={product.id}
+                  className={`relative aspect-square rounded-md border-2 p-1 flex flex-col items-center justify-between cursor-pointer transition-all ${
+                    quantities[product.id] 
+                      ? "border-primary bg-primary/10 ring-2 ring-primary/30" 
+                      : "border-border bg-card hover:border-primary/50"
+                  }`}
+                  onClick={() => handleQuantityChange(product.id, 1)}
+                  data-testid={`box-product-${product.id}`}
+                >
+                  {editingImageId === product.id ? (
+                    <div className="absolute inset-0 bg-card z-10 p-1 flex flex-col gap-1">
+                      <Input
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        placeholder="URL..."
+                        className="h-5 text-[10px] px-1"
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid={`input-image-url-${product.id}`}
+                      />
+                      <div className="flex gap-1">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-5 w-5 flex-1"
+                          onClick={(e) => { e.stopPropagation(); handleSaveImage(product.id); }}
+                          disabled={updateProduct.isPending}
+                          data-testid={`button-save-image-${product.id}`}
+                        >
+                          <Check className="w-3 h-3 text-green-600" />
+                        </Button>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-5 w-5 flex-1"
+                          onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
+                          data-testid={`button-cancel-image-${product.id}`}
+                        >
+                          <X className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div 
+                    className="w-7 h-7 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center border border-primary/10 overflow-hidden flex-shrink-0"
+                    onClick={(e) => { e.stopPropagation(); handleEditImage(product.id, product.imageUrl); }}
+                    title="Click to edit image"
+                  >
+                    {product.imageUrl ? (
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Shirt className="w-3 h-3 text-primary" />
+                    )}
+                  </div>
+
+                  <div className="text-[8px] leading-tight text-center font-medium text-foreground line-clamp-2 flex-1 flex items-center" data-testid={`text-product-name-${product.id}`}>
+                    {product.name}
+                  </div>
+
+                  <div className="text-[10px] font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
+                    {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
+                  </div>
+
+                  {quantities[product.id] ? (
+                    <div 
+                      className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[8px] font-bold flex items-center justify-center shadow"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span data-testid={`text-qty-${product.id}`}>{quantities[product.id]}</span>
+                    </div>
+                  ) : null}
+
+                  {quantities[product.id] ? (
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full"
+                    onClick={(e) => { e.stopPropagation(); handleQuantityChange(product.id, -1); }}
+                    data-testid={`button-qty-minus-${product.id}`}
+                  >
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                ) : null}
+              </div>
+            ))}
           </div>
         )}
-      </main>
+        </main>
 
-      {/* Order Summary Bar - Highlighted */}
-      {orderItems.length > 0 && (
-        <div className="sticky bottom-0 z-40 mx-2 mb-2 p-3 border-2 border-primary shadow-2xl bg-primary/5 rounded-lg animate-pulse-slow">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <ShoppingCart className="w-4 h-4 text-white" />
+        {/* Order Summary Bar - Highlighted */}
+        {orderItems.length > 0 && (
+          <div className="sticky bottom-0 z-40 mx-1 mb-1 p-2 border-2 border-primary shadow-2xl bg-primary/5 rounded-lg">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
+                  <ShoppingCart className="w-3 h-3 text-white" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {orderItems.length} items
+                  </p>
+                  <p className="text-sm font-bold text-primary" data-testid="text-order-total">
+                    {orderTotal.toFixed(2)} AED
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {orderItems.length} items
-                </p>
-                <p className="text-lg font-bold text-primary" data-testid="text-order-total">
-                  {orderTotal.toFixed(2)} AED
-                </p>
+              
+              <div className="flex items-center gap-1 flex-wrap">
+                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                  <SelectTrigger className="w-28 h-7 text-xs" data-testid="select-order-client">
+                    <SelectValue placeholder="Client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients?.map((client) => (
+                      <SelectItem key={client.id} value={client.id.toString()}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={clearOrder}
+                  data-testid="button-clear-order"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+                
+                <Button 
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold px-3 text-xs"
+                  onClick={handleCreateOrder}
+                  disabled={createOrderMutation.isPending || !selectedClientId}
+                  data-testid="button-create-order"
+                >
+                  {createOrderMutation.isPending ? "..." : "CREATE"}
+                </Button>
               </div>
             </div>
             
-            <div className="flex items-center gap-2 flex-wrap">
-              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                <SelectTrigger className="w-40 h-8 text-sm" data-testid="select-order-client">
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients?.map((client) => (
-                    <SelectItem key={client.id} value={client.id.toString()}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={clearOrder}
-                data-testid="button-clear-order"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-              
-              <Button 
-                size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white font-bold px-6"
-                onClick={handleCreateOrder}
-                disabled={createOrderMutation.isPending || !selectedClientId}
-                data-testid="button-create-order"
-              >
-                {createOrderMutation.isPending ? "..." : "CREATE ORDER"}
-              </Button>
+            <div className="mt-1 pt-1 border-t border-primary/20 text-[10px] text-muted-foreground line-clamp-1">
+              {orderItems.map((item, idx) => (
+                <span key={item.product.id} className="font-medium">
+                  {item.quantity}x {item.product.name}
+                  {idx < orderItems.length - 1 ? ", " : ""}
+                </span>
+              ))}
             </div>
           </div>
-          
-          <div className="mt-2 pt-2 border-t border-primary/20 text-xs text-muted-foreground">
-            {orderItems.map((item, idx) => (
-              <span key={item.product.id} className="font-medium">
-                {item.quantity}x {item.product.name}
-                {idx < orderItems.length - 1 ? ", " : ""}
-              </span>
-            ))}
+        )}
+      </div>
+
+      {/* Right side - Today's Work List */}
+      <div className="w-56 border-l bg-muted/30 flex flex-col">
+        <div className="h-14 px-3 flex items-center border-b bg-white/80 dark:bg-background/80">
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Clock className="w-4 h-4 text-primary" />
+            Today's Work
+          </h2>
+        </div>
+        
+        <div className="flex-1 overflow-auto p-2 space-y-3">
+          {/* Washing Pending */}
+          <div>
+            <div className="flex items-center gap-1 mb-1">
+              <Shirt className="w-3 h-3 text-blue-500" />
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase">Washing</span>
+              <Badge variant="secondary" className="ml-auto text-[10px] px-1 h-4">{pendingWashing.length}</Badge>
+            </div>
+            <div className="space-y-1">
+              {pendingWashing.slice(0, 5).map(order => (
+                <div key={order.id} className="bg-blue-50 dark:bg-blue-900/20 rounded p-1 text-[10px]">
+                  <div className="font-semibold text-blue-700 dark:text-blue-300">{order.orderNumber}</div>
+                  <div className="text-muted-foreground line-clamp-1">{order.items}</div>
+                </div>
+              ))}
+              {pendingWashing.length === 0 && (
+                <div className="text-[10px] text-muted-foreground italic">No pending</div>
+              )}
+            </div>
+          </div>
+
+          {/* Packing Pending */}
+          <div>
+            <div className="flex items-center gap-1 mb-1">
+              <Package className="w-3 h-3 text-orange-500" />
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase">Packing</span>
+              <Badge variant="secondary" className="ml-auto text-[10px] px-1 h-4">{pendingPacking.length}</Badge>
+            </div>
+            <div className="space-y-1">
+              {pendingPacking.slice(0, 5).map(order => (
+                <div key={order.id} className="bg-orange-50 dark:bg-orange-900/20 rounded p-1 text-[10px]">
+                  <div className="font-semibold text-orange-700 dark:text-orange-300">{order.orderNumber}</div>
+                  <div className="text-muted-foreground line-clamp-1">{order.items}</div>
+                </div>
+              ))}
+              {pendingPacking.length === 0 && (
+                <div className="text-[10px] text-muted-foreground italic">No pending</div>
+              )}
+            </div>
+          </div>
+
+          {/* Delivery Pending */}
+          <div>
+            <div className="flex items-center gap-1 mb-1">
+              <Truck className="w-3 h-3 text-green-500" />
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase">Delivery</span>
+              <Badge variant="secondary" className="ml-auto text-[10px] px-1 h-4">{pendingDelivery.length}</Badge>
+            </div>
+            <div className="space-y-1">
+              {pendingDelivery.slice(0, 5).map(order => (
+                <div key={order.id} className="bg-green-50 dark:bg-green-900/20 rounded p-1 text-[10px]">
+                  <div className="font-semibold text-green-700 dark:text-green-300">{order.orderNumber}</div>
+                  <div className="text-muted-foreground line-clamp-1">{order.items}</div>
+                </div>
+              ))}
+              {pendingDelivery.length === 0 && (
+                <div className="text-[10px] text-muted-foreground italic">No pending</div>
+              )}
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="pt-2 border-t">
+            <div className="text-[10px] text-muted-foreground">
+              Today's Orders: <span className="font-bold text-foreground">{todaysOrders.length}</span>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
