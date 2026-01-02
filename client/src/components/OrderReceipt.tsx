@@ -127,8 +127,11 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
   };
 
   const totalAmount = parseFloat(order.totalAmount || "0");
+  const discountPercent = parseFloat(order.discountPercent || "0");
+  const discountAmount = parseFloat(order.discountAmount || "0");
+  const finalAmount = parseFloat(order.finalAmount || "0") || (totalAmount - discountAmount);
   const paidAmount = parseFloat(order.paidAmount || "0");
-  const balance = totalAmount - paidAmount;
+  const balance = finalAmount - paidAmount;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -262,9 +265,21 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
 
           <div className="totals">
             <div className="total-row">
-              <span>Order Amount:</span>
+              <span>Subtotal:</span>
               <span>{totalAmount.toFixed(2)} AED</span>
             </div>
+            {(discountPercent > 0 || discountAmount > 0) && (
+              <div className="total-row" style={{ color: "#f59e0b" }}>
+                <span>Discount {discountPercent > 0 ? `(${discountPercent}%)` : ''}:</span>
+                <span>-{discountAmount.toFixed(2)} AED</span>
+              </div>
+            )}
+            {(discountPercent > 0 || discountAmount > 0) && (
+              <div className="total-row" style={{ fontWeight: 600 }}>
+                <span>Total After Discount:</span>
+                <span>{finalAmount.toFixed(2)} AED</span>
+              </div>
+            )}
             <div className="total-row" style={{ color: "#16a34a" }}>
               <span>Paid Amount:</span>
               <span>{paidAmount.toFixed(2)} AED</span>
@@ -275,6 +290,12 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
                 {balance.toFixed(2)} AED
               </span>
             </div>
+            {order.paymentMethod && (
+              <div className="total-row" style={{ fontSize: "12px", color: "#666" }}>
+                <span>Payment Method:</span>
+                <span style={{ textTransform: "capitalize" }}>{order.paymentMethod}</span>
+              </div>
+            )}
             {client && (
               <div className="total-row grand-total">
                 <span>Client Total Due:</span>

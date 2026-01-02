@@ -1,11 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Calendar, TrendingUp, Wallet, Receipt, FileText, CalendarDays, CalendarRange } from "lucide-react";
+import { Loader2, Calendar, TrendingUp, Wallet, Receipt, FileText, CalendarDays, CalendarRange, Download, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import type { ClientTransaction } from "@shared/schema";
 
 export default function SalesReports() {
@@ -89,6 +91,144 @@ export default function SalesReports() {
   const dailyData = useMemo(() => filterTransactions('daily'), [allTransactions, allClients, selectedDate]);
   const monthlyData = useMemo(() => filterTransactions('monthly'), [allTransactions, allClients, selectedMonth]);
   const yearlyData = useMemo(() => filterTransactions('yearly'), [allTransactions, allClients, selectedYear]);
+
+  const getCurrentData = () => {
+    if (activeTab === 'daily') return { data: dailyData, label: formatDate(selectedDate), filename: `sales-${selectedDate}` };
+    if (activeTab === 'monthly') return { data: monthlyData, label: formatMonth(selectedMonth), filename: `sales-${selectedMonth}` };
+    return { data: yearlyData, label: `Year ${selectedYear}`, filename: `sales-${selectedYear}` };
+  };
+
+  const exportToExcel = () => {
+    const { data, label, filename } = getCurrentData();
+    
+    const summaryData = [
+      ['Liquid Washes Laundry - Sales Report'],
+      [`Period: ${label}`],
+      [`Generated: ${new Date().toLocaleString()}`],
+      [],
+      ['Summary'],
+      ['Total Bills', `${data.totalBills.toFixed(2)} AED`],
+      ['Total Deposits', `${data.totalDeposits.toFixed(2)} AED`],
+      ['Net Collection', `${data.totalDeposits.toFixed(2)} AED`],
+      ['Total Transactions', data.bills.length + data.deposits.length],
+    ];
+
+    const transactionsData = [
+      [],
+      ['All Transactions'],
+      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Date'],
+      ...data.bills.map(b => ['Bill', b.clientName, b.clientPhone || '', b.description || '', parseFloat(b.amount).toFixed(2), new Date(b.date).toLocaleDateString()]),
+      ...data.deposits.map(d => ['Deposit', d.clientName, d.clientPhone || '', d.description || '', parseFloat(d.amount).toFixed(2), new Date(d.date).toLocaleDateString()]),
+    ];
+
+    const wsData = [...summaryData, ...transactionsData];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 12 }];
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sales Report');
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+  };
+
+  const exportToPDF = async () => {
+    const { data, label, filename } = getCurrentData();
+    
+    const html2pdf = (await import('html2pdf.js')).default;
+    
+    const content = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+        <div style="text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 20px; margin-bottom: 20px;">
+          <h1 style="color: #1e40af; margin: 0;">Liquid Washes Laundry</h1>
+          <p style="color: #666; margin: 5px 0;">Centra Market D/109, Al Dhanna City, Al Ruwais, Abu Dhabi-UAE</p>
+          <h2 style="margin: 15px 0 5px;">Sales Report</h2>
+          <p style="color: #666;">${label}</p>
+        </div>
+        
+        <div style="display: flex; justify-content: space-around; margin-bottom: 30px; text-align: center;">
+          <div style="padding: 15px; background: #eff6ff; border-radius: 8px; flex: 1; margin: 0 10px;">
+            <p style="color: #666; margin: 0; font-size: 12px;">Total Bills</p>
+            <p style="color: #2563eb; font-size: 24px; font-weight: bold; margin: 5px 0;">${data.totalBills.toFixed(2)} AED</p>
+            <p style="color: #666; font-size: 11px; margin: 0;">${data.bills.length} transactions</p>
+          </div>
+          <div style="padding: 15px; background: #f0fdf4; border-radius: 8px; flex: 1; margin: 0 10px;">
+            <p style="color: #666; margin: 0; font-size: 12px;">Total Deposits</p>
+            <p style="color: #16a34a; font-size: 24px; font-weight: bold; margin: 5px 0;">${data.totalDeposits.toFixed(2)} AED</p>
+            <p style="color: #666; font-size: 11px; margin: 0;">${data.deposits.length} transactions</p>
+          </div>
+          <div style="padding: 15px; background: #faf5ff; border-radius: 8px; flex: 1; margin: 0 10px;">
+            <p style="color: #666; margin: 0; font-size: 12px;">Net Collection</p>
+            <p style="color: #9333ea; font-size: 24px; font-weight: bold; margin: 5px 0;">${data.totalDeposits.toFixed(2)} AED</p>
+            <p style="color: #666; font-size: 11px; margin: 0;">Cash received</p>
+          </div>
+        </div>
+
+        ${data.bills.length > 0 ? `
+        <h3 style="color: #2563eb; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">Bills (${data.bills.length})</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px;">
+          <thead>
+            <tr style="background: #f3f4f6;">
+              <th style="padding: 8px; text-align: left; border: 1px solid #e5e7eb;">Client</th>
+              <th style="padding: 8px; text-align: left; border: 1px solid #e5e7eb;">Description</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #e5e7eb;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.bills.map(b => `
+              <tr>
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">${b.clientName}<br><small style="color: #666;">${b.clientPhone || ''}</small></td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">${b.description || '-'}</td>
+                <td style="padding: 8px; text-align: right; border: 1px solid #e5e7eb; color: #2563eb; font-weight: bold;">${parseFloat(b.amount).toFixed(2)} AED</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ` : ''}
+
+        ${data.deposits.length > 0 ? `
+        <h3 style="color: #16a34a; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">Deposits (${data.deposits.length})</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: #f3f4f6;">
+              <th style="padding: 8px; text-align: left; border: 1px solid #e5e7eb;">Client</th>
+              <th style="padding: 8px; text-align: left; border: 1px solid #e5e7eb;">Description</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #e5e7eb;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.deposits.map(d => `
+              <tr>
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">${d.clientName}<br><small style="color: #666;">${d.clientPhone || ''}</small></td>
+                <td style="padding: 8px; border: 1px solid #e5e7eb;">${d.description || '-'}</td>
+                <td style="padding: 8px; text-align: right; border: 1px solid #e5e7eb; color: #16a34a; font-weight: bold;">${parseFloat(d.amount).toFixed(2)} AED</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ` : ''}
+
+        <div style="margin-top: 30px; text-align: center; color: #666; font-size: 11px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+          Generated on ${new Date().toLocaleString()}
+        </div>
+      </div>
+    `;
+
+    const container = document.createElement('div');
+    container.innerHTML = content;
+    document.body.appendChild(container);
+
+    html2pdf()
+      .set({
+        margin: 10,
+        filename: `${filename}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      })
+      .from(container)
+      .save()
+      .then(() => {
+        document.body.removeChild(container);
+      });
+  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -293,6 +433,30 @@ export default function SalesReports() {
                   />
                 </div>
               )}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={exportToExcel}
+                  disabled={isLoading}
+                  data-testid="button-export-excel"
+                  className="gap-1"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Excel
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={exportToPDF}
+                  disabled={isLoading}
+                  data-testid="button-export-pdf"
+                  className="gap-1"
+                >
+                  <Download className="w-4 h-4" />
+                  PDF
+                </Button>
+              </div>
             </div>
           </div>
           <TabsList>

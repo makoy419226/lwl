@@ -3,7 +3,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, UserCheck } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, AlertCircle, UserCheck, CreditCard, Banknote, Building } from "lucide-react";
 import { insertClientSchema } from "@shared/schema";
 import { useCreateClient, useUpdateClient } from "@/hooks/use-clients";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +38,8 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
       balance: client?.balance || "0",
       contact: client?.contact || "",
       billNumber: client?.billNumber || "",
+      preferredPaymentMethod: client?.preferredPaymentMethod || "cash",
+      discountPercent: client?.discountPercent || "0",
     },
   });
 
@@ -343,6 +346,68 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="preferredPaymentMethod"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Payment Method</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || "cash"}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-payment-method">
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="cash">
+                      <div className="flex items-center gap-2">
+                        <Banknote className="w-4 h-4 text-green-600" />
+                        Cash
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="card">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-blue-600" />
+                        Card
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="bank">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-purple-600" />
+                        Bank Transfer
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="discountPercent"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Discount %</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    max="100" 
+                    placeholder="0" 
+                    {...field} 
+                    data-testid="input-discount-percent" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <Button
           type="submit"
