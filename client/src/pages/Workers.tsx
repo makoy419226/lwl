@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Plus, Users, Pencil, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Order } from "@shared/schema";
 
 interface PackingWorker {
   id: number;
@@ -22,11 +24,42 @@ export default function Workers() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editWorker, setEditWorker] = useState<PackingWorker | null>(null);
   const [formData, setFormData] = useState({ name: "", pin: "" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("summary");
   const { toast } = useToast();
 
   const { data: workers, isLoading } = useQuery<PackingWorker[]>({
     queryKey: ["/api/packing-workers"],
   });
+
+  const { data: orders } = useQuery<Order[]>({
+    queryKey: ["/api/orders"],
+  });
+
+  const workerSummary = useMemo(() => {
+    if (!workers || !orders) return [];
+    
+    return workers.map(worker => {
+      const packedOrders = orders.filter(o => o.packedByWorkerId === worker.id);
+      const deliveredOrders = orders.filter(o => o.deliveredByWorkerId === worker.id);
+      const pendingPacking = orders.filter(o => o.washingDone && !o.packingDone);
+      const pendingDelivery = orders.filter(o => o.packingDone && !o.delivered);
+      
+      return {
+        worker,
+        packedCount: packedOrders.length,
+        deliveredCount: deliveredOrders.length,
+        packedOrders,
+        deliveredOrders,
+        pendingPacking,
+        pendingDelivery
+      };
+    });
+  }, [workers, orders]);
+
+  const filteredSummary = workerSummary.filter(s => 
+    s.worker.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; pin: string }) => {

@@ -75,13 +75,14 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               .items-section { margin: 20px 0; padding: 15px; background: #f9fafb; border-radius: 8px; }
               .items-title { font-weight: 600; margin-bottom: 10px; }
               .items-list { white-space: pre-wrap; font-size: 14px; }
-              .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              .items-table th, .items-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e5e5e5; }
-              .items-table th { background: #f3f4f6; font-weight: 600; font-size: 12px; color: #666; }
-              .items-table td { font-size: 14px; }
-              .items-table .qty-col { text-align: center; width: 60px; }
-              .items-table .price-col { text-align: right; width: 80px; }
-              .items-table .total-col { text-align: right; width: 100px; font-weight: 600; }
+              .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #333; }
+              .items-table th, .items-table td { padding: 6px 8px; text-align: left; border: 1px solid #333; }
+              .items-table th { background: #1e40af; font-weight: 600; font-size: 11px; color: white; text-transform: uppercase; }
+              .items-table td { font-size: 12px; }
+              .items-table tr:nth-child(even) { background: #f9fafb; }
+              .items-table .qty-col { text-align: center; width: 50px; }
+              .items-table .price-col { text-align: right; width: 70px; }
+              .items-table .total-col { text-align: right; width: 80px; font-weight: 600; }
               .status-section { margin: 20px 0; }
               .status-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e5e5; }
               .status-label { font-weight: 500; }
@@ -210,6 +211,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               <table className="items-table">
                 <thead>
                   <tr>
+                    <th style={{ width: "30px", textAlign: "center" }}>#</th>
                     <th>Item</th>
                     <th className="qty-col">Qty</th>
                     <th className="price-col">Price</th>
@@ -219,6 +221,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
                 <tbody>
                   {parsedItems.map((item, idx) => (
                     <tr key={idx}>
+                      <td style={{ textAlign: "center" }}>{idx + 1}</td>
                       <td>{item.name}</td>
                       <td className="qty-col">{item.qty}</td>
                       <td className="price-col">{item.price.toFixed(2)}</td>
