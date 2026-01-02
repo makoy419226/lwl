@@ -41,9 +41,21 @@ export const bills = pgTable("bills", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull(),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paidAmount: numeric("paid_amount", { precision: 12, scale: 2 }).default("0"),
   description: text("description"),
   billDate: timestamp("bill_date").notNull(),
   referenceNumber: text("reference_number"),
+  isPaid: boolean("is_paid").default(false),
+});
+
+export const billPayments = pgTable("bill_payments", {
+  id: serial("id").primaryKey(),
+  billId: integer("bill_id").notNull(),
+  clientId: integer("client_id").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paymentDate: timestamp("payment_date").notNull(),
+  paymentMethod: text("payment_method").default("cash"),
+  notes: text("notes"),
 });
 
 export const orders = pgTable("orders", {
@@ -103,8 +115,17 @@ export const insertBillSchema = createInsertSchema(bills)
   .omit({ id: true })
   .extend({
     amount: z.union([z.string(), z.number()]),
+    paidAmount: z.union([z.string(), z.number()]).optional(),
     clientId: z.number(),
     billDate: z.union([z.date(), z.string()]),
+  });
+export const insertBillPaymentSchema = createInsertSchema(billPayments)
+  .omit({ id: true })
+  .extend({
+    amount: z.union([z.string(), z.number()]),
+    billId: z.number(),
+    clientId: z.number(),
+    paymentDate: z.union([z.date(), z.string()]),
   });
 export const insertTransactionSchema = createInsertSchema(clientTransactions)
   .omit({ id: true })
@@ -135,6 +156,7 @@ export const insertOrderSchema = createInsertSchema(orders)
 export type Product = typeof products.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Bill = typeof bills.$inferSelect;
+export type BillPayment = typeof billPayments.$inferSelect;
 export type ClientTransaction = typeof clientTransactions.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Order = typeof orders.$inferSelect;
@@ -142,6 +164,7 @@ export type PackingWorker = typeof packingWorkers.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertBill = z.infer<typeof insertBillSchema>;
+export type InsertBillPayment = z.infer<typeof insertBillPaymentSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPackingWorker = z.infer<typeof insertPackingWorkerSchema>;

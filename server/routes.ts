@@ -296,6 +296,41 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Client bills routes
+  app.get("/api/clients/:id/bills", async (req, res) => {
+    const bills = await storage.getClientBills(Number(req.params.id));
+    res.json(bills);
+  });
+
+  app.get("/api/clients/:id/unpaid-bills", async (req, res) => {
+    const bills = await storage.getUnpaidBills(Number(req.params.id));
+    res.json(bills);
+  });
+
+  // Bill payments routes
+  app.get("/api/bills/:id/payments", async (req, res) => {
+    const payments = await storage.getBillPayments(Number(req.params.id));
+    res.json(payments);
+  });
+
+  app.get("/api/clients/:id/bill-payments", async (req, res) => {
+    const payments = await storage.getClientBillPayments(Number(req.params.id));
+    res.json(payments);
+  });
+
+  app.post("/api/bills/:id/pay", async (req, res) => {
+    try {
+      const { amount, paymentMethod, notes } = req.body;
+      if (!amount || parseFloat(amount) <= 0) {
+        return res.status(400).json({ message: "Valid payment amount is required" });
+      }
+      const result = await storage.payBill(Number(req.params.id), amount, paymentMethod, notes);
+      res.status(201).json(result);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
   // Transaction routes
   app.get("/api/clients/:id/transactions", async (req, res) => {
     const transactions = await storage.getClientTransactions(Number(req.params.id));

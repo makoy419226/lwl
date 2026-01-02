@@ -4,18 +4,21 @@ import {
   products,
   clients,
   bills,
+  billPayments,
   clientTransactions,
   orders,
   packingWorkers,
   type Product,
   type Client,
   type Bill,
+  type BillPayment,
   type ClientTransaction,
   type Order,
   type PackingWorker,
   type InsertProduct,
   type InsertClient,
   type InsertBill,
+  type InsertBillPayment,
   type InsertTransaction,
   type InsertOrder,
   type InsertPackingWorker,
@@ -42,8 +45,15 @@ export interface IStorage {
   deleteClient(id: number): Promise<void>;
   getBills(): Promise<Bill[]>;
   getBill(id: number): Promise<Bill | undefined>;
+  getClientBills(clientId: number): Promise<Bill[]>;
+  getUnpaidBills(clientId: number): Promise<Bill[]>;
   createBill(bill: InsertBill): Promise<Bill>;
+  updateBill(id: number, updates: Partial<InsertBill> & { isPaid?: boolean }): Promise<Bill>;
   deleteBill(id: number): Promise<void>;
+  getBillPayments(billId: number): Promise<BillPayment[]>;
+  getClientBillPayments(clientId: number): Promise<BillPayment[]>;
+  createBillPayment(payment: InsertBillPayment): Promise<BillPayment>;
+  payBill(billId: number, amount: string, paymentMethod?: string, notes?: string): Promise<{ bill: Bill; payment: BillPayment }>;
   getClientTransactions(clientId: number): Promise<ClientTransaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<ClientTransaction>;
   addClientBill(clientId: number, amount: string, description?: string): Promise<ClientTransaction>;
@@ -203,18 +213,127 @@ export class DatabaseStorage implements IStorage {
     return bill;
   }
 
+  async getClientBills(clientId: number): Promise<Bill[]> {
+    return await db.select().from(bills)
+      .where(eq(bills.clientId, clientId))
+      .orderBy(desc(bills.billDate));
+  }
+
+  async getUnpaidBills(clientId: number): Promise<Bill[]> {
+    return await db.select().from(bills)
+      .where(and(
+        eq(bills.clientId, clientId),
+        eq(bills.isPaid, false)
+      ))
+      .orderBy(desc(bills.billDate));
+  }
+
   async createBill(insertBill: InsertBill): Promise<Bill> {
     const billData = {
       ...insertBill,
       amount: insertBill.amount.toString(),
+      paidAmount: insertBill.paidAmount?.toString() || "0",
       billDate: new Date(insertBill.billDate),
+      isPaid: false,
     };
     const [bill] = await db.insert(bills).values(billData).returning();
     return bill;
   }
 
+  async updateBill(id: number, updates: Partial<InsertBill> & { isPaid?: boolean }): Promise<Bill> {
+    const updateData: any = { ...updates };
+    if (updates.amount !== undefined) updateData.amount = updates.amount.toString();
+    if (updates.paidAmount !== undefined) updateData.paidAmount = updates.paidAmount.toString();
+    if (updates.billDate) updateData.billDate = new Date(updates.billDate);
+    
+    const [updated] = await db.update(bills)
+      .set(updateData)
+      .where(eq(bills.id, id))
+      .returning();
+    return updated;
+  }
+
   async deleteBill(id: number): Promise<void> {
+    await db.delete(billPayments).where(eq(billPayments.billId, id));
     await db.delete(bills).where(eq(bills.id, id));
+  }
+
+  async getBillPayments(billId: number): Promise<BillPayment[]> {
+    return await db.select().from(billPayments)
+      .where(eq(billPayments.billId, billId))
+      .orderBy(desc(billPayments.paymentDate));
+  }
+
+  async getClientBillPayments(clientId: number): Promise<BillPayment[]> {
+    return await db.select().from(billPayments)
+      .where(eq(billPayments.clientId, clientId))
+      .orderBy(desc(billPayments.paymentDate));
+  }
+
+  async createBillPayment(payment: InsertBillPayment): Promise<BillPayment> {
+    const paymentData = {
+      billId: payment.billId,
+      clientId: payment.clientId,
+      amount: payment.amount.toString(),
+      paymentDate: new Date(payment.paymentDate),
+      paymentMethod: payment.paymentMethod || "cash",
+      notes: payment.notes,
+    };
+    const [created] = await db.insert(billPayments).values(paymentData).returning();
+    return created;
+  }
+
+  async payBill(billId: number, amount: string, paymentMethod?: string, notes?: string): Promise<{ bill: Bill; payment: BillPayment }> {
+    const bill = await this.getBill(billId);
+    if (!bill) throw new Error("Bill not found");
+
+    const paymentAmount = parseFloat(amount);
+    const currentPaid = parseFloat(bill.paidAmount || "0");
+    const billAmount = parseFloat(bill.amount);
+    const newPaidAmount = currentPaid + paymentAmount;
+    const isPaid = newPaidAmount >= billAmount;
+
+    const payment = await this.createBillPayment({
+      billId,
+      clientId: bill.clientId,
+      amount,
+      paymentDate: new Date(),
+      paymentMethod: paymentMethod || "cash",
+      notes,
+    });
+
+    const updatedBill = await this.updateBill(billId, {
+      paidAmount: newPaidAmount.toFixed(2),
+      isPaid,
+    });
+
+    // Update client deposit and balance directly without creating a transaction
+    // to avoid double-counting (the bill payment itself is already tracked)
+    const client = await this.getClient(bill.clientId);
+    if (client && paymentAmount > 0) {
+      const currentDeposit = parseFloat(client.deposit || "0");
+      const currentAmount = parseFloat(client.amount || "0");
+      const newDeposit = currentDeposit + paymentAmount;
+      const newBalance = currentAmount - newDeposit;
+      
+      await this.updateClient(bill.clientId, {
+        deposit: newDeposit.toFixed(2),
+        balance: newBalance.toFixed(2),
+      });
+      
+      // Record the transaction for history without triggering balance changes again
+      await this.createTransaction({
+        clientId: bill.clientId,
+        type: "deposit",
+        amount: paymentAmount.toFixed(2),
+        description: `Payment for Bill #${bill.id}: ${bill.description || "N/A"}`,
+        date: new Date(),
+        runningBalance: newBalance.toFixed(2),
+        paymentMethod: paymentMethod || "cash",
+      });
+    }
+
+    return { bill: updatedBill, payment };
   }
 
   async getClientTransactions(clientId: number): Promise<ClientTransaction[]> {

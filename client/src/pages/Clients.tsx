@@ -19,7 +19,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Invoice } from "@/components/Invoice";
-import type { Client, ClientTransaction } from "@shared/schema";
+import type { Client, ClientTransaction, Bill } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Clients() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +35,9 @@ export default function Clients() {
   const [filterToDate, setFilterToDate] = useState("");
   const [filterType, setFilterType] = useState<"all" | "bill" | "deposit">("all");
   const [showDueClientsOnly, setShowDueClientsOnly] = useState(false);
+  const [payingBillId, setPayingBillId] = useState<number | null>(null);
+  const [billPaymentAmount, setBillPaymentAmount] = useState("");
+  const [billPaymentMethod, setBillPaymentMethod] = useState("cash");
   const [invoiceData, setInvoiceData] = useState<{
     invoiceNumber: string;
     date: string;
@@ -51,6 +55,29 @@ export default function Clients() {
   const { data: transactions } = useQuery<ClientTransaction[]>({
     queryKey: ['/api/clients', transactionClient?.id, 'transactions'],
     enabled: !!transactionClient,
+  });
+
+  const { data: unpaidBills } = useQuery<Bill[]>({
+    queryKey: ['/api/clients', transactionClient?.id, 'unpaid-bills'],
+    enabled: !!transactionClient,
+  });
+
+  const payBillMutation = useMutation({
+    mutationFn: async ({ billId, amount, paymentMethod }: { billId: number; amount: string; paymentMethod: string }) => {
+      return apiRequest("POST", `/api/bills/${billId}/pay`, { amount, paymentMethod });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'unpaid-bills'] });
+      setPayingBillId(null);
+      setBillPaymentAmount("");
+      setBillPaymentMethod("cash");
+      toast({ title: "Payment recorded", description: "Bill payment has been recorded successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Payment failed", description: error.message || "Failed to record payment", variant: "destructive" });
+    },
   });
 
   const filteredTransactions = useMemo(() => {
@@ -489,6 +516,100 @@ export default function Clients() {
                   </Button>
                 </div>
               </div>
+
+              {unpaidBills && unpaidBills.length > 0 && (
+                <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-destructive">
+                    <Receipt className="w-4 h-4" /> Unpaid Bills ({unpaidBills.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {unpaidBills.map((bill) => {
+                      const remaining = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
+                      return (
+                        <div key={bill.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">Bill #{bill.id}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(bill.billDate), "dd/MM/yyyy")}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{bill.description || "No description"}</p>
+                            <div className="flex items-center gap-3 mt-1 text-sm">
+                              <span>Total: <strong className="text-blue-600">{parseFloat(bill.amount).toFixed(2)} AED</strong></span>
+                              <span>Paid: <strong className="text-green-600">{parseFloat(bill.paidAmount || "0").toFixed(2)} AED</strong></span>
+                              <span>Due: <strong className="text-destructive">{remaining.toFixed(2)} AED</strong></span>
+                            </div>
+                          </div>
+                          {payingBillId === bill.id ? (
+                            <div className="flex items-center gap-2 ml-4">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="Amount"
+                                value={billPaymentAmount}
+                                onChange={(e) => setBillPaymentAmount(e.target.value)}
+                                className="w-24"
+                                data-testid={`input-pay-amount-${bill.id}`}
+                              />
+                              <Select value={billPaymentMethod} onValueChange={setBillPaymentMethod}>
+                                <SelectTrigger className="w-24" data-testid={`select-pay-method-${bill.id}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="cash">Cash</SelectItem>
+                                  <SelectItem value="card">Card</SelectItem>
+                                  <SelectItem value="bank">Bank</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  if (billPaymentAmount) {
+                                    payBillMutation.mutate({
+                                      billId: bill.id,
+                                      amount: billPaymentAmount,
+                                      paymentMethod: billPaymentMethod,
+                                    });
+                                  }
+                                }}
+                                disabled={!billPaymentAmount || payBillMutation.isPending}
+                                data-testid={`button-confirm-pay-${bill.id}`}
+                              >
+                                {payBillMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pay"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setPayingBillId(null);
+                                  setBillPaymentAmount("");
+                                }}
+                                data-testid={`button-cancel-pay-${bill.id}`}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="ml-4"
+                              onClick={() => {
+                                setPayingBillId(bill.id);
+                                setBillPaymentAmount(remaining.toFixed(2));
+                              }}
+                              data-testid={`button-pay-bill-${bill.id}`}
+                            >
+                              <Wallet className="w-4 h-4 mr-1" /> Pay
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
