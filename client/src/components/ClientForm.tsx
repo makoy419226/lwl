@@ -29,6 +29,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
     resolver: zodResolver(insertClientSchema),
     defaultValues: {
       name: client?.name || "",
+      email: client?.email || "",
       address: client?.address || "",
       phone: client?.phone || "",
       amount: client?.amount || "0",
@@ -184,6 +185,20 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
               <FormLabel>Client Name *</FormLabel>
               <FormControl>
                 <Input placeholder="Enter client name" {...field} data-testid="input-name" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="Enter email address" {...field} data-testid="input-email" />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Loader2, Package, Shirt, CheckCircle2, Truck, Clock, 
-  AlertTriangle, Plus, Minus, Search, Bell, Printer, User, Receipt
+  AlertTriangle, Plus, Minus, Search, Bell, Printer, User, Receipt, Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OrderReceipt } from "@/components/OrderReceipt";
 import type { Order, Client, Product, Bill } from "@shared/schema";
 import { format } from "date-fns";
+import html2pdf from "html2pdf.js";
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,6 +31,8 @@ export default function Orders() {
   const [packingPinDialog, setPackingPinDialog] = useState<{ orderId: number } | null>(null);
   const [packingPin, setPackingPin] = useState("");
   const [pinError, setPinError] = useState("");
+  const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
+  const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const { data: orders, isLoading } = useQuery<Order[]>({
@@ -101,14 +104,44 @@ export default function Orders() {
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      return apiRequest("POST", "/api/orders", orderData);
+      const res = await apiRequest("POST", "/api/orders", orderData);
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (createdOrder: Order) => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       setIsCreateOpen(false);
-      toast({ title: "Order Created", description: "New order has been created" });
+      setNewCreatedOrder(createdOrder);
+      toast({ title: "Order Created", description: "New order has been created. Generating PDF..." });
     },
   });
+
+  const generatePDF = async () => {
+    if (pdfReceiptRef.current && newCreatedOrder) {
+      const opt = {
+        margin: 10,
+        filename: `Order_${newCreatedOrder.orderNumber}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      };
+      
+      try {
+        await html2pdf().set(opt).from(pdfReceiptRef.current).save();
+        toast({ title: "PDF Downloaded", description: `Order ${newCreatedOrder.orderNumber} PDF saved` });
+      } catch (err) {
+        toast({ title: "PDF Error", description: "Failed to generate PDF", variant: "destructive" });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (newCreatedOrder && pdfReceiptRef.current) {
+      const timer = setTimeout(() => {
+        generatePDF();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [newCreatedOrder]);
 
   const verifyPinMutation = useMutation({
     mutationFn: async (pin: string) => {
@@ -512,6 +545,82 @@ export default function Orders() {
           client={clients?.find(c => c.id === printOrder.clientId)}
           onClose={() => setPrintOrder(null)}
         />
+      )}
+
+      {newCreatedOrder && (
+        <Dialog open={!!newCreatedOrder} onOpenChange={(open) => !open && setNewCreatedOrder(null)}>
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-primary" />
+                Order Created - {newCreatedOrder.orderNumber}
+              </DialogTitle>
+              <DialogDescription>
+                Your order has been created. The PDF is being generated automatically.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-2 mb-4">
+              <Button onClick={generatePDF} variant="default" data-testid="button-download-pdf">
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button onClick={() => { setPrintOrder(newCreatedOrder); setNewCreatedOrder(null); }} variant="outline">
+                <Printer className="w-4 h-4 mr-2" />
+                Print
+              </Button>
+              <Button onClick={() => setNewCreatedOrder(null)} variant="ghost">
+                Close
+              </Button>
+            </div>
+            <div ref={pdfReceiptRef} className="bg-white p-6 rounded-lg border">
+              <div style={{ fontFamily: 'Arial, sans-serif', color: '#333' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px', marginBottom: '30px', borderBottom: '2px solid #1e40af', paddingBottom: '20px' }}>
+                  <div style={{ width: '60px', height: '60px', background: '#1e40af', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" style={{ width: '36px', height: '36px' }}>
+                      <circle cx="12" cy="12" r="10" fill="white" fillOpacity="0.2"/>
+                      <circle cx="12" cy="12" r="3" fill="white"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e40af', marginBottom: '6px' }}>Liquid Washes Laundry</div>
+                    <div style={{ fontSize: '11px', color: '#666', lineHeight: 1.5 }}>
+                      Centra Market D/109, Al Dhanna City, Al Ruwais<br />
+                      Abu Dhabi, UAE<br />
+                      +971 50 123 4567
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', textAlign: 'center', margin: '20px 0', color: '#1e40af' }}>ORDER RECEIPT</div>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e40af', textAlign: 'center', margin: '20px 0', padding: '10px', background: '#f3f4f6', borderRadius: '8px' }}>
+                  {newCreatedOrder.orderNumber}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                  <div style={{ width: '48%' }}>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Client</div>
+                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{clients?.find(c => c.id === newCreatedOrder.clientId)?.name || 'N/A'}</div>
+                  </div>
+                  <div style={{ width: '48%' }}>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Date</div>
+                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{format(new Date(newCreatedOrder.entryDate), "dd/MM/yyyy HH:mm")}</div>
+                  </div>
+                </div>
+                <div style={{ margin: '20px 0', padding: '15px', background: '#f9fafb', borderRadius: '8px' }}>
+                  <div style={{ fontWeight: 600, marginBottom: '10px' }}>Items</div>
+                  <div style={{ fontSize: '14px' }}>{newCreatedOrder.items}</div>
+                </div>
+                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e5e5e5' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '18px', fontWeight: 'bold', color: '#1e40af' }}>
+                    <span>Total Amount</span>
+                    <span>{parseFloat(newCreatedOrder.totalAmount).toFixed(2)} AED</span>
+                  </div>
+                </div>
+                <div style={{ marginTop: '40px', textAlign: 'center', paddingTop: '20px', borderTop: '1px solid #e5e5e5' }}>
+                  <p style={{ fontSize: '12px', color: '#666' }}>Thank you for choosing Liquid Washes Laundry!</p>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       <Dialog open={!!packingPinDialog} onOpenChange={(open) => !open && setPackingPinDialog(null)}>
