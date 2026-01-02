@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,6 +14,7 @@ import Workers from "@/pages/Workers";
 import SalesReports from "@/pages/SalesReports";
 import Contact from "@/pages/Contact";
 import Login, { type UserInfo } from "@/pages/Login";
+import PublicOrder from "@/pages/PublicOrder";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -39,6 +40,7 @@ function Router() {
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [location] = useLocation();
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -60,6 +62,19 @@ function App() {
     setIsLoggedIn(false);
     setUser(null);
   };
+
+  if (location.startsWith("/order/")) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Switch>
+            <Route path="/order/:token" component={PublicOrder} />
+          </Switch>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
   if (!isLoggedIn) {
     return (

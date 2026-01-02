@@ -1,10 +1,21 @@
 import { useRef, useMemo, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Printer, X } from "lucide-react";
+import { Printer, X, QrCode, Share2 } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
+import { QRCodeSVG } from "qrcode.react";
 import type { Order, Client, Product } from "@shared/schema";
 import logoImage from "@assets/image_1767220512226.png";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface OrderReceiptProps {
   order: Order;
@@ -22,10 +33,58 @@ const companyInfo = {
 export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [logoBase64, setLogoBase64] = useState<string>("");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [publicToken, setPublicToken] = useState<string>(order.publicViewToken || "");
+  const [whatsappNumber, setWhatsappNumber] = useState(client?.phone || "");
 
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
+
+  const [tokenError, setTokenError] = useState<string>("");
+
+  const generateTokenMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/orders/${order.id}/generate-token`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setPublicToken(data.token);
+      setTokenError("");
+    },
+    onError: () => {
+      setTokenError("Failed to generate sharing link. Please try again.");
+    },
+  });
+
+  const getPublicUrl = () => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/order/${publicToken}`;
+  };
+
+  const handleShareWhatsApp = () => {
+    const phone = whatsappNumber.replace(/\D/g, "");
+    if (!phone || phone.length < 9) {
+      return;
+    }
+    if (!publicToken) {
+      return;
+    }
+    const url = getPublicUrl();
+    const message = encodeURIComponent(
+      `Your Liquid Washes Laundry order #${order.orderNumber} is ready to track!\n\nView your order status here: ${url}`
+    );
+    window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
+  };
+
+  const handleOpenShareDialog = () => {
+    if (!publicToken) {
+      generateTokenMutation.mutate();
+    }
+    setShareDialogOpen(true);
+  };
+
+  const isShareReady = publicToken && whatsappNumber.replace(/\D/g, "").length >= 9;
 
   useEffect(() => {
     const img = new Image();
@@ -158,6 +217,10 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
         <div className="flex items-center justify-between p-4 border-b bg-primary/5">
           <h2 className="text-lg font-semibold text-foreground">Order Receipt</h2>
           <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleOpenShareDialog} data-testid="button-share-order">
+              <QrCode className="w-4 h-4 mr-2" />
+              Share
+            </Button>
             <Button size="sm" variant="outline" onClick={handlePrint} data-testid="button-print-order-receipt">
               <Printer className="w-4 h-4 mr-2" />
               Print
@@ -329,6 +392,74 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
           </div>
         </div>
       </Card>
+
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Order with Customer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {publicToken ? (
+              <>
+                <div className="flex justify-center p-4 bg-white rounded-lg">
+                  <QRCodeSVG 
+                    value={getPublicUrl()} 
+                    size={180}
+                    data-testid="qrcode-order"
+                  />
+                </div>
+                <p className="text-sm text-center text-muted-foreground">
+                  Scan this QR code to view order status
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp-number">WhatsApp Number</Label>
+                  <Input
+                    id="whatsapp-number"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    placeholder="+971 50 123 4567"
+                    data-testid="input-whatsapp-number"
+                  />
+                </div>
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={handleShareWhatsApp}
+                  disabled={!isShareReady}
+                  data-testid="button-share-whatsapp"
+                >
+                  <SiWhatsapp className="w-4 h-4 mr-2" />
+                  {isShareReady ? "Share via WhatsApp" : "Enter valid phone number"}
+                </Button>
+                <div className="text-xs text-muted-foreground text-center break-all">
+                  {getPublicUrl()}
+                </div>
+              </>
+            ) : generateTokenMutation.isPending ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : tokenError ? (
+              <div className="text-center py-4">
+                <p className="text-destructive text-sm">{tokenError}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => generateTokenMutation.mutate()}
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : (
+              <div className="flex justify-center py-4">
+                <Button onClick={() => generateTokenMutation.mutate()}>
+                  Generate Share Link
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

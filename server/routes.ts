@@ -496,5 +496,42 @@ export async function registerRoutes(
     }
   });
 
+  // Public order view by token (no auth required) - limited safe data only
+  app.get("/api/orders/public/:token", async (req, res) => {
+    const { token } = req.params;
+    if (!token || token.length < 10) {
+      return res.status(400).json({ message: "Invalid token" });
+    }
+    const order = await storage.getOrderByPublicToken(token);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    const client = await storage.getClient(order.clientId);
+    // Return only safe, non-sensitive fields for public view
+    res.json({
+      orderNumber: order.orderNumber,
+      items: order.items,
+      finalAmount: order.finalAmount,
+      paidAmount: order.paidAmount,
+      deliveryType: order.deliveryType,
+      washingDone: order.washingDone,
+      packingDone: order.packingDone,
+      delivered: order.delivered,
+      urgent: order.urgent,
+      clientName: client?.name ? client.name.split(' ')[0] : "Customer" // First name only
+    });
+  });
+
+  // Generate public view token for order
+  app.post("/api/orders/:id/generate-token", async (req, res) => {
+    const orderId = Number(req.params.id);
+    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const order = await storage.updateOrder(orderId, { publicViewToken: token });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    res.json({ token: order.publicViewToken });
+  });
+
   return httpServer;
 }

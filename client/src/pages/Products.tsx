@@ -180,7 +180,8 @@ export default function Products() {
           </div>
         </div>
 
-        <main className="flex-1 px-1 py-2 overflow-auto">
+        <main className="flex-1 flex overflow-hidden">
+          <div className={`flex-1 px-2 py-2 overflow-auto ${orderItems.length > 0 ? 'pr-0' : ''}`}>
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
@@ -191,7 +192,7 @@ export default function Products() {
               <p className="font-semibold text-lg">Failed to load</p>
             </div>
           ) : (
-            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-0.5">
+            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-1">
               {products?.map((product) => (
                 <div
                   key={product.id}
@@ -253,12 +254,12 @@ export default function Products() {
                     )}
                   </div>
 
-                  <div className="text-[7px] leading-tight text-center font-medium text-foreground line-clamp-2 flex-1 flex items-center" data-testid={`text-product-name-${product.id}`}>
+                  <div className="text-[9px] leading-tight text-center font-semibold text-foreground line-clamp-2 flex-1 flex items-center px-0.5" data-testid={`text-product-name-${product.id}`}>
                     {product.name}
                   </div>
 
-                  <div className="text-[9px] font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                    {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
+                  <div className="text-[10px] font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
+                    {product.price ? `${parseFloat(product.price).toFixed(0)} AED` : "-"}
                   </div>
 
                   {quantities[product.id] ? (
@@ -285,6 +286,7 @@ export default function Products() {
             ))}
           </div>
         )}
+          </div>
         </main>
 
         {/* Order Summary Bar - Highlighted */}
@@ -352,8 +354,95 @@ export default function Products() {
         )}
       </div>
 
-      {/* Right side - Today's Work List */}
-      <div className="w-48 border-l bg-muted/30 flex flex-col">
+      {/* Right side - Order Slip or Today's Work List */}
+      <div className="w-56 border-l bg-muted/30 flex flex-col">
+        {orderItems.length > 0 ? (
+          <>
+            <div className="h-10 px-2 flex items-center justify-between border-b bg-primary/10">
+              <h2 className="text-xs font-bold text-primary flex items-center gap-1">
+                <ShoppingCart className="w-3 h-3" />
+                Order Slip
+              </h2>
+              <Badge variant="secondary" className="text-[10px]">{orderItems.length} items</Badge>
+            </div>
+            <div className="flex-1 overflow-auto p-2">
+              <div className="border rounded bg-white dark:bg-background p-2 space-y-2">
+                <div className="text-center border-b pb-2">
+                  <div className="text-[10px] font-bold text-primary">LIQUID WASHES LAUNDRY</div>
+                  <div className="text-[8px] text-muted-foreground">Order Preview</div>
+                </div>
+                <div className="max-h-48 overflow-auto">
+                <table className="w-full text-[10px]">
+                  <thead className="sticky top-0 bg-white dark:bg-background">
+                    <tr className="border-b">
+                      <th className="text-left py-1">#</th>
+                      <th className="text-left py-1">Item</th>
+                      <th className="text-center py-1">Qty</th>
+                      <th className="text-right py-1">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orderItems.map((item, idx) => (
+                      <tr key={item.product.id} className="border-b border-dashed">
+                        <td className="py-1">{idx + 1}</td>
+                        <td className="py-1 font-medium truncate max-w-[80px]" title={item.product.name}>{item.product.name}</td>
+                        <td className="py-1 text-center">{item.quantity}</td>
+                        <td className="py-1 text-right">{(parseFloat(item.product.price || "0") * item.quantity).toFixed(0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                </div>
+                <div className="border-t pt-2 space-y-1">
+                  <div className="flex justify-between text-[10px]">
+                    <span>Subtotal</span>
+                    <span>{orderTotal.toFixed(2)} AED</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold text-primary">
+                    <span>TOTAL</span>
+                    <span>{orderTotal.toFixed(2)} AED</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2 space-y-2">
+                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                  <SelectTrigger className="w-full h-8 text-xs" data-testid="select-order-client-panel">
+                    <SelectValue placeholder="Select Client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients?.map((client) => (
+                      <SelectItem key={client.id} value={client.id.toString()}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-1">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={clearOrder}
+                    data-testid="button-clear-order-panel"
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Clear
+                  </Button>
+                  <Button 
+                    size="sm"
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
+                    onClick={handleCreateOrder}
+                    disabled={createOrderMutation.isPending || !selectedClientId}
+                    data-testid="button-create-order-panel"
+                  >
+                    {createOrderMutation.isPending ? "..." : "CREATE"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
         <div className="h-10 px-2 flex items-center border-b bg-white/80 dark:bg-background/80">
           <h2 className="text-xs font-bold text-foreground flex items-center gap-1">
             <Clock className="w-3 h-3 text-primary" />
@@ -429,6 +518,8 @@ export default function Products() {
             </div>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

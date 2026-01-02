@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search, Calendar, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import type { Order } from "@shared/schema";
 
 interface PackingWorker {
@@ -25,7 +27,8 @@ export default function Workers() {
   const [editWorker, setEditWorker] = useState<PackingWorker | null>(null);
   const [formData, setFormData] = useState({ name: "", pin: "" });
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("summary");
+  const [activeTab, setActiveTab] = useState("stats");
+  const [dateFilter, setDateFilter] = useState("today");
   const { toast } = useToast();
 
   const { data: workers, isLoading } = useQuery<PackingWorker[]>({
@@ -36,28 +39,64 @@ export default function Workers() {
     queryKey: ["/api/orders"],
   });
 
-  const workerSummary = useMemo(() => {
+  const getDateRange = () => {
+    const now = new Date();
+    switch (dateFilter) {
+      case "today":
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case "yesterday":
+        const yesterday = subDays(now, 1);
+        return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+      case "week":
+        return { start: startOfWeek(now), end: endOfWeek(now) };
+      case "month":
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "all":
+      default:
+        return { start: new Date(0), end: now };
+    }
+  };
+
+  const workerStats = useMemo(() => {
     if (!workers || !orders) return [];
+    const { start, end } = getDateRange();
     
     return workers.map(worker => {
-      const packedOrders = orders.filter(o => o.packedByWorkerId === worker.id);
-      const deliveredOrders = orders.filter(o => o.deliveredByWorkerId === worker.id);
-      const pendingPacking = orders.filter(o => o.washingDone && !o.packingDone);
-      const pendingDelivery = orders.filter(o => o.packingDone && !o.delivered);
+      const packedOrders = orders.filter(o => {
+        if (o.packingWorkerId !== worker.id) return false;
+        if (!o.packingDate) return false;
+        try {
+          const packDate = new Date(o.packingDate);
+          return packDate >= start && packDate <= end;
+        } catch { return false; }
+      });
+      
+      const deliveredOrders = orders.filter(o => {
+        if (o.deliveredByWorkerId !== worker.id) return false;
+        if (!o.deliveryDate) return false;
+        try {
+          const delDate = new Date(o.deliveryDate);
+          return delDate >= start && delDate <= end;
+        } catch { return false; }
+      });
       
       return {
         worker,
         packedCount: packedOrders.length,
         deliveredCount: deliveredOrders.length,
-        packedOrders,
-        deliveredOrders,
-        pendingPacking,
-        pendingDelivery
+        totalTasks: packedOrders.length + deliveredOrders.length
       };
-    });
-  }, [workers, orders]);
+    }).sort((a, b) => b.totalTasks - a.totalTasks);
+  }, [workers, orders, dateFilter]);
 
-  const filteredSummary = workerSummary.filter(s => 
+  const totals = useMemo(() => {
+    return workerStats.reduce((acc, s) => ({
+      packed: acc.packed + s.packedCount,
+      delivered: acc.delivered + s.deliveredCount
+    }), { packed: 0, delivered: 0 });
+  }, [workerStats]);
+
+  const filteredStats = workerStats.filter(s => 
     s.worker.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -182,6 +221,134 @@ export default function Workers() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="stats" data-testid="tab-stats">
+                <BarChart3 className="w-4 h-4 mr-1" />
+                Worker Stats
+              </TabsTrigger>
+              <TabsTrigger value="manage" data-testid="tab-manage">
+                <Users className="w-4 h-4 mr-1" />
+                Manage Workers
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="stats">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <Select value={dateFilter} onValueChange={setDateFilter}>
+                      <SelectTrigger className="w-36" data-testid="select-date-filter">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="yesterday">Yesterday</SelectItem>
+                        <SelectItem value="week">This Week</SelectItem>
+                        <SelectItem value="month">This Month</SelectItem>
+                        <SelectItem value="all">All Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="relative flex-1 max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search worker..."
+                      className="pl-9"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      data-testid="input-search-worker"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-orange-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{totals.packed}</p>
+                          <p className="text-xs text-muted-foreground">Total Packed</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-5 h-5 text-green-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{totals.delivered}</p>
+                          <p className="text-xs text-muted-foreground">Total Delivered</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Worker Performance</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Worker Name</TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Package className="w-4 h-4 text-orange-500" />
+                              Packed
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Truck className="w-4 h-4 text-green-500" />
+                              Delivered
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">Total Tasks</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredStats.map((s) => (
+                          <TableRow key={s.worker.id} data-testid={`row-stats-${s.worker.id}`}>
+                            <TableCell className="font-medium">
+                              {s.worker.name}
+                              {!s.worker.active && (
+                                <Badge variant="secondary" className="ml-2">Inactive</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
+                                {s.packedCount}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                                {s.deliveredCount}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center font-bold">{s.totalTasks}</TableCell>
+                          </TableRow>
+                        ))}
+                        {filteredStats.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                              No worker stats found for selected period
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="manage">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Workers List</CardTitle>
@@ -251,6 +418,8 @@ export default function Workers() {
               )}
             </CardContent>
           </Card>
+            </TabsContent>
+          </Tabs>
         )}
       </main>
 

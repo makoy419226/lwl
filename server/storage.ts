@@ -60,6 +60,7 @@ export interface IStorage {
   addClientDeposit(clientId: number, amount: string, description?: string): Promise<ClientTransaction>;
   getOrders(search?: string): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
+  getOrderByPublicToken(token: string): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, updates: UpdateOrderRequest): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
@@ -425,6 +426,11 @@ export class DatabaseStorage implements IStorage {
 
   async getOrder(id: number): Promise<Order | undefined> {
     const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+
+  async getOrderByPublicToken(token: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.publicViewToken, token));
     return order;
   }
 

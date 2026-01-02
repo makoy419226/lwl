@@ -90,6 +90,7 @@ export const orders = pgTable("orders", {
   deliveredByWorkerId: integer("delivered_by_worker_id"),
   notes: text("notes"),
   urgent: boolean("urgent").default(false),
+  publicViewToken: text("public_view_token"),
 });
 
 export const users = pgTable("users", {
