@@ -477,5 +477,19 @@ export async function registerRoutes(
     }
   });
 
+  // Verify delivery worker PIN
+  app.post("/api/delivery/verify-pin", async (req, res) => {
+    const { pin } = req.body;
+    if (!pin || !/^\d{5}$/.test(pin)) {
+      return res.status(400).json({ success: false, message: "Invalid PIN format" });
+    }
+    const worker = await storage.verifyDeliveryWorkerPin(pin);
+    if (worker) {
+      res.json({ success: true, worker: { id: worker.id, name: worker.name } });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid PIN" });
+    }
+  });
+
   return httpServer;
 }

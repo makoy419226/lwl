@@ -31,6 +31,9 @@ export default function Orders() {
   const [packingPinDialog, setPackingPinDialog] = useState<{ orderId: number } | null>(null);
   const [packingPin, setPackingPin] = useState("");
   const [pinError, setPinError] = useState("");
+  const [deliveryPinDialog, setDeliveryPinDialog] = useState<{ orderId: number } | null>(null);
+  const [deliveryPin, setDeliveryPin] = useState("");
+  const [deliveryPinError, setDeliveryPinError] = useState("");
   const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -181,6 +184,45 @@ export default function Orders() {
       return;
     }
     verifyPinMutation.mutate(packingPin);
+  };
+
+  const verifyDeliveryPinMutation = useMutation({
+    mutationFn: async (pin: string) => {
+      const res = await apiRequest("POST", "/api/delivery/verify-pin", { pin });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && deliveryPinDialog) {
+        updateOrderMutation.mutate({
+          id: deliveryPinDialog.orderId,
+          updates: {
+            delivered: true,
+            deliveredDate: new Date().toISOString(),
+            deliveredBy: data.worker.name,
+          },
+        });
+        setDeliveryPinDialog(null);
+        setDeliveryPin("");
+        setDeliveryPinError("");
+      }
+    },
+    onError: () => {
+      setDeliveryPinError("Invalid PIN. Please try again.");
+    },
+  });
+
+  const handleDeliveryWithPin = (orderId: number) => {
+    setDeliveryPinDialog({ orderId });
+    setDeliveryPin("");
+    setDeliveryPinError("");
+  };
+
+  const submitDeliveryPin = () => {
+    if (deliveryPin.length !== 5) {
+      setDeliveryPinError("PIN must be 5 digits");
+      return;
+    }
+    verifyDeliveryPinMutation.mutate(deliveryPin);
   };
 
   const filteredOrders = orders?.filter(order => {
@@ -516,14 +558,28 @@ export default function Orders() {
                                   <Button 
                                     size="sm" 
                                     variant="default"
-                                    onClick={() => handleStatusUpdate(order.id, 'delivered', true)}
+                                    onClick={() => handleDeliveryWithPin(order.id)}
                                     data-testid={`button-deliver-${order.id}`}
                                   >
+                                    <Truck className="w-3 h-3 mr-1" />
                                     Deliver
                                   </Button>
                                 )}
                                 {order.delivered && (
-                                  <Badge variant="outline" className="text-green-600">Completed</Badge>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-green-600">Completed</Badge>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => {
+                                        setNewCreatedOrder(order);
+                                      }}
+                                      data-testid={`button-invoice-${order.id}`}
+                                    >
+                                      <Receipt className="w-3 h-3 mr-1" />
+                                      Invoice
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
                             </TableCell>
@@ -668,6 +724,57 @@ export default function Orders() {
               >
                 {verifyPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Confirm
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deliveryPinDialog} onOpenChange={(open) => !open && setDeliveryPinDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="w-5 h-5 text-primary" />
+              Enter Delivery PIN
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Enter your 5-digit worker PIN to confirm delivery completion.
+            </p>
+            <Input
+              type="password"
+              maxLength={5}
+              placeholder="Enter 5-digit PIN"
+              value={deliveryPin}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                setDeliveryPin(val);
+                setDeliveryPinError("");
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && submitDeliveryPin()}
+              className="text-center text-2xl tracking-widest"
+              data-testid="input-delivery-pin"
+            />
+            {deliveryPinError && (
+              <p className="text-sm text-destructive text-center">{deliveryPinError}</p>
+            )}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setDeliveryPinDialog(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={submitDeliveryPin}
+                disabled={deliveryPin.length !== 5 || verifyDeliveryPinMutation.isPending}
+                data-testid="button-submit-delivery-pin"
+              >
+                {verifyDeliveryPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Confirm Delivery
               </Button>
             </div>
           </div>

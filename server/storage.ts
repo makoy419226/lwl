@@ -69,6 +69,7 @@ export interface IStorage {
   updatePackingWorker(id: number, updates: Partial<InsertPackingWorker>): Promise<PackingWorker>;
   deletePackingWorker(id: number): Promise<void>;
   verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null>;
+  verifyDeliveryWorkerPin(pin: string): Promise<PackingWorker | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -504,6 +505,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null> {
+    const activeWorkers = await db.select().from(packingWorkers).where(
+      eq(packingWorkers.active, true)
+    );
+    for (const worker of activeWorkers) {
+      const isMatch = await bcrypt.compare(pin, worker.pin);
+      if (isMatch) {
+        return worker;
+      }
+    }
+    return null;
+  }
+
+  async verifyDeliveryWorkerPin(pin: string): Promise<PackingWorker | null> {
     const activeWorkers = await db.select().from(packingWorkers).where(
       eq(packingWorkers.active, true)
     );

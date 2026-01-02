@@ -27,19 +27,19 @@ const getCategoryIcon = (category: string | null) => {
     case "Outerwear":
     case "Workwear":
     case "Specialty":
-      return <Shirt className="w-8 h-8 text-primary" />;
+      return <Shirt className="w-5 h-5 text-primary" />;
     case "Undergarments":
     case "Accessories":
-      return <Sparkles className="w-8 h-8 text-primary" />;
+      return <Sparkles className="w-5 h-5 text-primary" />;
     case "Bedding":
     case "Home Linens":
     case "Bathroom":
     case "Flooring":
-      return <Home className="w-8 h-8 text-primary" />;
+      return <Home className="w-5 h-5 text-primary" />;
     case "Footwear":
-      return <Footprints className="w-8 h-8 text-primary" />;
+      return <Footprints className="w-5 h-5 text-primary" />;
     default:
-      return <Shirt className="w-8 h-8 text-primary" />;
+      return <Shirt className="w-5 h-5 text-primary" />;
   }
 };
 
@@ -244,7 +244,7 @@ export default function Products() {
                           </div>
                         ) : (
                           <div 
-                            className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/20 overflow-hidden cursor-pointer"
+                            className="w-8 h-8 rounded-md bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto border border-primary/10 overflow-hidden cursor-pointer"
                             onClick={() => handleEditImage(product.id, product.imageUrl)}
                             title="Click to edit image"
                           >
@@ -257,8 +257,8 @@ export default function Products() {
                             ) : (
                               getCategoryIcon(product.category)
                             )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
-                              <Edit2 className="w-4 h-4 text-white" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                              <Edit2 className="w-3 h-3 text-white" />
                             </div>
                           </div>
                         )}
