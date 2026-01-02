@@ -1,7 +1,8 @@
 import { db } from "./db";
-import { products, clients, users } from "@shared/schema";
+import { products, clients, users, packingWorkers } from "@shared/schema";
 import { storage } from "./storage";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 const laundryItems = [
   { name: "Kandoora/Thob", description: "Traditional men's robe", price: "5.00", category: "Traditional Wear", stockQuantity: 100, sku: "KAND-001" },
@@ -139,5 +140,19 @@ export async function seedDatabase() {
       await db.insert(users).values(user);
     }
     console.log("Default users created: admin, manager, cashier");
+  }
+
+  // Seed default packing/delivery workers if none exist
+  const existingWorkers = await db.select().from(packingWorkers);
+  if (existingWorkers.length === 0) {
+    console.log("Seeding default workers...");
+    
+    const hashedPin = await bcrypt.hash("12345", 10);
+    await db.insert(packingWorkers).values({
+      name: "Delivery Driver",
+      pin: hashedPin,
+      active: true
+    });
+    console.log("Default delivery worker created with PIN: 12345");
   }
 }
