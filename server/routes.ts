@@ -506,7 +506,11 @@ export async function registerRoutes(
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-    const client = await storage.getClient(order.clientId);
+    let clientName = order.customerName || "Customer";
+    if (order.clientId) {
+      const client = await storage.getClient(order.clientId);
+      clientName = client?.name ? client.name.split(' ')[0] : clientName;
+    }
     // Return only safe, non-sensitive fields for public view
     res.json({
       orderNumber: order.orderNumber,
@@ -518,7 +522,7 @@ export async function registerRoutes(
       packingDone: order.packingDone,
       delivered: order.delivered,
       urgent: order.urgent,
-      clientName: client?.name ? client.name.split(' ')[0] : "Customer" // First name only
+      clientName
     });
   });
 

@@ -1,12 +1,10 @@
 import { useState, useMemo } from "react";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
-import { useClients } from "@/hooks/use-clients";
 import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Check, X, Plus, Minus, ShoppingCart, Clock, Package, Truck, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -44,10 +42,9 @@ export default function Products() {
   const [editingImageId, setEditingImageId] = useState<number | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [quantities, setQuantities] = useState<Record<number, number>>({});
-  const [selectedClientId, setSelectedClientId] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
   const { data: products, isLoading, isError } = useProducts(searchTerm);
-  const { data: clients } = useClients();
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
   const updateProduct = useUpdateProduct();
   const { toast } = useToast();
@@ -122,7 +119,7 @@ export default function Products() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       setQuantities({});
-      setSelectedClientId("");
+      setCustomerName("");
       toast({ title: "Order created", description: "Order has been created successfully." });
     },
     onError: () => {
@@ -131,8 +128,8 @@ export default function Products() {
   });
 
   const handleCreateOrder = () => {
-    if (!selectedClientId) {
-      toast({ title: "Select client", description: "Please select a client first.", variant: "destructive" });
+    if (!customerName.trim()) {
+      toast({ title: "Enter customer name", description: "Please enter customer name first.", variant: "destructive" });
       return;
     }
     if (orderItems.length === 0) {
@@ -148,7 +145,7 @@ export default function Products() {
     const finalTotal = isUrgent ? orderTotal * 2 : orderTotal;
 
     createOrderMutation.mutate({
-      clientId: parseInt(selectedClientId),
+      customerName: customerName.trim(),
       orderNumber,
       items: itemsText,
       totalAmount: finalTotal.toFixed(2),
@@ -161,7 +158,7 @@ export default function Products() {
 
   const clearOrder = () => {
     setQuantities({});
-    setSelectedClientId("");
+    setCustomerName("");
   };
 
   return (
@@ -316,18 +313,13 @@ export default function Products() {
               </div>
               
               <div className="flex items-center gap-1 flex-wrap">
-                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                  <SelectTrigger className="w-28 h-7 text-xs" data-testid="select-order-client">
-                    <SelectValue placeholder="Client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients?.map((client) => (
-                      <SelectItem key={client.id} value={client.id.toString()}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  className="w-28 h-7 text-xs"
+                  placeholder="Customer name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  data-testid="input-order-customer"
+                />
                 
                 <Button 
                   variant="outline"
@@ -342,7 +334,7 @@ export default function Products() {
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white font-bold px-3 text-xs"
                   onClick={handleCreateOrder}
-                  disabled={createOrderMutation.isPending || !selectedClientId}
+                  disabled={createOrderMutation.isPending || !customerName.trim()}
                   data-testid="button-create-order"
                 >
                   {createOrderMutation.isPending ? "..." : "CREATE"}
@@ -413,18 +405,13 @@ export default function Products() {
                 </div>
               </div>
               <div className="mt-2 space-y-2">
-                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                  <SelectTrigger className="w-full h-8 text-xs" data-testid="select-order-client-panel">
-                    <SelectValue placeholder="Select Client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients?.map((client) => (
-                      <SelectItem key={client.id} value={client.id.toString()}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  className="w-full h-8 text-xs"
+                  placeholder="Enter customer name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  data-testid="input-order-customer-panel"
+                />
                 <div className="flex gap-1">
                   <Button 
                     variant="outline"
@@ -440,7 +427,7 @@ export default function Products() {
                     size="sm"
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
                     onClick={handleCreateOrder}
-                    disabled={createOrderMutation.isPending || !selectedClientId}
+                    disabled={createOrderMutation.isPending || !customerName.trim()}
                     data-testid="button-create-order-panel"
                   >
                     {createOrderMutation.isPending ? "..." : "CREATE"}

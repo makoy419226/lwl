@@ -65,7 +65,8 @@ export const billPayments = pgTable("bill_payments", {
 
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
-  clientId: integer("client_id").notNull(),
+  clientId: integer("client_id"),
+  customerName: text("customer_name"),
   orderNumber: text("order_number").notNull(),
   items: text("items"),
   totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
@@ -158,6 +159,8 @@ export const insertOrderSchema = createInsertSchema(orders)
   .extend({
     totalAmount: z.union([z.string(), z.number()]),
     paidAmount: z.union([z.string(), z.number()]).optional(),
+    clientId: z.number().optional().nullable(),
+    customerName: z.string().optional(),
     entryDate: z.union([z.date(), z.string()]),
     expectedDeliveryAt: z.union([z.date(), z.string()]).optional().nullable(),
     washingDate: z.union([z.date(), z.string()]).optional().nullable(),
