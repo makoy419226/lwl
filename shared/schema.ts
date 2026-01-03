@@ -94,6 +94,7 @@ export const orders = pgTable("orders", {
   notes: text("notes"),
   urgent: boolean("urgent").default(false),
   publicViewToken: text("public_view_token"),
+  tips: numeric("tips", { precision: 12, scale: 2 }).default("0"),
 });
 
 export const users = pgTable("users", {

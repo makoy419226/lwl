@@ -1,11 +1,15 @@
 import { useState, useMemo } from "react";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
-import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Check, X, Plus, Minus, ShoppingCart, Clock, Package, Truck, Zap } from "lucide-react";
+import { useClients, useCreateClient } from "@/hooks/use-clients";
+import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Check, X, Plus, Minus, ShoppingCart, Clock, Package, Truck, Zap, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import type { Client } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -42,10 +46,17 @@ export default function Products() {
   const [editingImageId, setEditingImageId] = useState<number | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [packingTypes, setPackingTypes] = useState<Record<number, "hanging" | "folding">>({});
   const [customerName, setCustomerName] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
+  const [showNewClientDialog, setShowNewClientDialog] = useState(false);
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientPhone, setNewClientPhone] = useState("");
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
+  const { data: clients } = useClients();
+  const { mutate: createClient, isPending: isCreatingClient } = useCreateClient();
   const updateProduct = useUpdateProduct();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -140,11 +151,15 @@ export default function Products() {
   };
 
   const submitOrder = (isUrgent: boolean) => {
-    const itemsText = orderItems.map(item => `${item.quantity}x ${item.product.name}`).join(", ");
+    const itemsText = orderItems.map(item => {
+      const packing = packingTypes[item.product.id] || "folding";
+      return `${item.quantity}x ${item.product.name} (${packing})`;
+    }).join(", ");
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
     const finalTotal = isUrgent ? orderTotal * 2 : orderTotal;
 
     createOrderMutation.mutate({
+      clientId: selectedClientId,
       customerName: customerName.trim(),
       orderNumber,
       items: itemsText,
@@ -158,7 +173,45 @@ export default function Products() {
 
   const clearOrder = () => {
     setQuantities({});
+    setPackingTypes({});
     setCustomerName("");
+    setSelectedClientId(null);
+  };
+
+  const handlePackingTypeChange = (productId: number, type: "hanging" | "folding") => {
+    setPackingTypes(prev => ({ ...prev, [productId]: type }));
+  };
+
+  const handleCreateNewClient = () => {
+    if (!newClientName.trim()) {
+      toast({ title: "Enter name", description: "Please enter client name.", variant: "destructive" });
+      return;
+    }
+    createClient({
+      name: newClientName.trim(),
+      phone: newClientPhone.trim() || "",
+      email: "",
+      address: "",
+      amount: "0",
+      deposit: "0",
+      balance: "0",
+      contact: "",
+      billNumber: "",
+      preferredPaymentMethod: "cash",
+      discountPercent: "0",
+    }, {
+      onSuccess: (client: Client) => {
+        setSelectedClientId(client.id);
+        setCustomerName(client.name);
+        setShowNewClientDialog(false);
+        setNewClientName("");
+        setNewClientPhone("");
+        toast({ title: "Client created", description: `${client.name} has been added.` });
+      },
+      onError: () => {
+        toast({ title: "Error", description: "Failed to create client.", variant: "destructive" });
+      }
+    });
   };
 
   return (
@@ -197,25 +250,25 @@ export default function Products() {
               <p className="font-semibold text-lg">Failed to load</p>
             </div>
           ) : (
-            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-1">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
               {products?.map((product) => (
                 <div
                   key={product.id}
-                  className={`relative aspect-square rounded border p-0.5 flex flex-col items-center justify-between cursor-pointer transition-all ${
+                  className={`relative rounded border p-2 flex flex-col items-center cursor-pointer transition-all ${
                     quantities[product.id] 
-                      ? "border-primary bg-primary/10 ring-1 ring-primary/30" 
+                      ? "border-primary bg-primary/10 ring-2 ring-primary/30" 
                       : "border-border bg-card hover:border-primary/50"
                   }`}
                   onClick={() => handleQuantityChange(product.id, 1)}
                   data-testid={`box-product-${product.id}`}
                 >
                   {editingImageId === product.id ? (
-                    <div className="absolute inset-0 bg-card z-10 p-1 flex flex-col gap-1">
+                    <div className="absolute inset-0 bg-card z-10 p-2 flex flex-col gap-1">
                       <Input
                         value={imageUrl}
                         onChange={(e) => setImageUrl(e.target.value)}
                         placeholder="URL..."
-                        className="h-5 text-[10px] px-1"
+                        className="h-6 text-xs px-2"
                         onClick={(e) => e.stopPropagation()}
                         data-testid={`input-image-url-${product.id}`}
                       />
@@ -223,28 +276,28 @@ export default function Products() {
                         <Button 
                           size="icon" 
                           variant="ghost" 
-                          className="h-5 w-5 flex-1"
+                          className="h-6 w-6 flex-1"
                           onClick={(e) => { e.stopPropagation(); handleSaveImage(product.id); }}
                           disabled={updateProduct.isPending}
                           data-testid={`button-save-image-${product.id}`}
                         >
-                          <Check className="w-3 h-3 text-green-600" />
+                          <Check className="w-4 h-4 text-green-600" />
                         </Button>
                         <Button 
                           size="icon" 
                           variant="ghost" 
-                          className="h-5 w-5 flex-1"
+                          className="h-6 w-6 flex-1"
                           onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
                           data-testid={`button-cancel-image-${product.id}`}
                         >
-                          <X className="w-3 h-3 text-destructive" />
+                          <X className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
                     </div>
                   ) : null}
 
                   <div 
-                    className="w-5 h-5 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden flex-shrink-0"
+                    className="w-8 h-8 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-1"
                     onClick={(e) => { e.stopPropagation(); handleEditImage(product.id, product.imageUrl); }}
                     title="Click to edit image"
                   >
@@ -255,41 +308,60 @@ export default function Products() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Shirt className="w-2.5 h-2.5 text-primary" />
+                      <Shirt className="w-4 h-4 text-primary" />
                     )}
                   </div>
 
-                  <div className="text-[11px] leading-tight text-center font-bold text-foreground line-clamp-2 flex-1 flex items-center justify-center px-0.5" data-testid={`text-product-name-${product.id}`}>
+                  <div className="text-sm leading-tight text-center font-bold text-foreground line-clamp-2 min-h-[2.5rem] flex items-center justify-center px-1" data-testid={`text-product-name-${product.id}`}>
                     {product.name}
                   </div>
 
-                  <div className="text-[10px] font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
+                  <div className="text-sm font-bold text-primary mt-1" data-testid={`text-product-price-${product.id}`}>
                     {product.price ? `${parseFloat(product.price).toFixed(0)} AED` : "-"}
                   </div>
 
                   {quantities[product.id] ? (
-                    <div 
-                      className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary text-white text-[7px] font-bold flex items-center justify-center shadow"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span data-testid={`text-qty-${product.id}`}>{quantities[product.id]}</span>
-                    </div>
+                    <>
+                      <div 
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shadow"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span data-testid={`text-qty-${product.id}`}>{quantities[product.id]}</span>
+                      </div>
+                      <div className="flex gap-1 mt-2 w-full" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant={packingTypes[product.id] === "hanging" ? "default" : "outline"}
+                          className="flex-1 h-6 text-[10px] px-1"
+                          onClick={() => handlePackingTypeChange(product.id, "hanging")}
+                          data-testid={`button-hanging-${product.id}`}
+                        >
+                          Hanging
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={packingTypes[product.id] === "folding" || !packingTypes[product.id] ? "default" : "outline"}
+                          className="flex-1 h-6 text-[10px] px-1"
+                          onClick={() => handlePackingTypeChange(product.id, "folding")}
+                          data-testid={`button-folding-${product.id}`}
+                        >
+                          Folding
+                        </Button>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full"
+                        onClick={(e) => { e.stopPropagation(); handleQuantityChange(product.id, -1); }}
+                        data-testid={`button-qty-minus-${product.id}`}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                    </>
                   ) : null}
-
-                  {quantities[product.id] ? (
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full"
-                    onClick={(e) => { e.stopPropagation(); handleQuantityChange(product.id, -1); }}
-                    data-testid={`button-qty-minus-${product.id}`}
-                  >
-                    <Minus className="w-3 h-3" />
-                  </Button>
-                ) : null}
-              </div>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
         )}
           </div>
         </main>
