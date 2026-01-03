@@ -22,6 +22,7 @@ import { OrderReceipt } from "@/components/OrderReceipt";
 import type { Order, Client, Product, Bill } from "@shared/schema";
 import { format } from "date-fns";
 import html2pdf from "html2pdf.js";
+import * as XLSX from "xlsx";
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,6 +43,7 @@ export default function Orders() {
   const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [viewPhotoOrder, setViewPhotoOrder] = useState<Order | null>(null);
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
+  const reportTableRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const { data: orders, isLoading } = useQuery<Order[]>({
@@ -151,6 +153,53 @@ export default function Orders() {
       return () => clearTimeout(timer);
     }
   }, [newCreatedOrder]);
+
+  const exportReportToExcel = (dateItemMap: Record<string, Record<string, number>>, sortedDates: string[], sortedItems: string[], itemTotals: Record<string, number>) => {
+    const wsData: (string | number)[][] = [];
+    
+    wsData.push(["Item Quantity Report", "", "", `From: ${reportStartDate} To: ${reportEndDate}`]);
+    wsData.push([]);
+    
+    const headerRow: (string | number)[] = ["Item Name", ...sortedDates, "Total"];
+    wsData.push(headerRow);
+    
+    sortedItems.forEach(itemName => {
+      const row: (string | number)[] = [itemName];
+      sortedDates.forEach(date => {
+        row.push(dateItemMap[date][itemName] || 0);
+      });
+      row.push(itemTotals[itemName]);
+      wsData.push(row);
+    });
+    
+    const dailyTotalRow: (string | number)[] = ["Daily Total"];
+    sortedDates.forEach(date => {
+      dailyTotalRow.push(Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0));
+    });
+    dailyTotalRow.push(Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0));
+    wsData.push(dailyTotalRow);
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Item Report");
+    XLSX.writeFile(wb, `Item_Report_${reportStartDate}_to_${reportEndDate}.xlsx`);
+    toast({ title: "Excel Downloaded", description: "Item report exported to Excel" });
+  };
+
+  const exportReportToPDF = () => {
+    if (reportTableRef.current) {
+      const opt = {
+        margin: 10,
+        filename: `Item_Report_${reportStartDate}_to_${reportEndDate}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const }
+      };
+      
+      html2pdf().set(opt).from(reportTableRef.current).save();
+      toast({ title: "PDF Downloaded", description: "Item report exported to PDF" });
+    }
+  };
 
   const verifyPinMutation = useMutation({
     mutationFn: async (pin: string) => {
@@ -731,8 +780,28 @@ export default function Orders() {
                     }
 
                     return (
-                      <div className="border rounded-lg overflow-auto">
-                        <Table>
+                      <>
+                        <div className="flex gap-2 mb-4">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => exportReportToExcel(dateItemMap, sortedDates, sortedItems, itemTotals)}
+                            data-testid="button-export-excel"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download Excel
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={exportReportToPDF}
+                            data-testid="button-export-pdf"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download PDF
+                          </Button>
+                        </div>
+                        <div ref={reportTableRef} className="border rounded-lg overflow-auto bg-white p-4">
+                          <h3 className="text-lg font-bold mb-4">Item Quantity Report ({reportStartDate} to {reportEndDate})</h3>
+                          <Table>
                           <TableHeader>
                             <TableRow className="bg-muted/50">
                               <TableHead className="font-bold sticky left-0 bg-muted/50 z-10">Item Name</TableHead>
@@ -769,7 +838,8 @@ export default function Orders() {
                             </TableRow>
                           </TableBody>
                         </Table>
-                      </div>
+                        </div>
+                      </>
                     );
                   })()}
                 </CardContent>
