@@ -127,7 +127,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
             data-testid="nav-workers"
           >
             <HardHat className="w-5 h-5" />
-            Workers
+            Staff
           </Button>
         </Link>
 

@@ -108,7 +108,7 @@ export default function Workers() {
       queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
       setIsCreateOpen(false);
       setFormData({ name: "", pin: "" });
-      toast({ title: "Worker Created", description: "New packing worker added" });
+      toast({ title: "Staff Created", description: "New staff member added" });
     },
     onError: (err: any) => {
       toast({ title: "Error", description: err.message || "Failed to create worker", variant: "destructive" });
@@ -123,7 +123,7 @@ export default function Workers() {
       queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
       setEditWorker(null);
       setFormData({ name: "", pin: "" });
-      toast({ title: "Worker Updated", description: "Worker details updated" });
+      toast({ title: "Staff Updated", description: "Staff details updated" });
     },
   });
 
@@ -133,7 +133,7 @@ export default function Workers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
-      toast({ title: "Worker Deleted", description: "Worker has been removed" });
+      toast({ title: "Staff Deleted", description: "Staff member has been removed" });
     },
   });
 
@@ -164,7 +164,7 @@ export default function Workers() {
         <div className="h-20 px-6 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
             <Users className="w-6 h-6 text-primary" />
-            Packing Workers
+            Staff Members
           </h1>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
@@ -175,11 +175,11 @@ export default function Workers() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add Packing Worker</DialogTitle>
+                <DialogTitle>Add Staff Member</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Worker Name</Label>
+                  <Label>Staff Name</Label>
                   <Input
                     placeholder="Enter name"
                     value={formData.name}
@@ -198,7 +198,7 @@ export default function Workers() {
                     className="text-center tracking-widest"
                     data-testid="input-worker-pin"
                   />
-                  <p className="text-xs text-muted-foreground">Workers use this PIN to confirm packing completion</p>
+                  <p className="text-xs text-muted-foreground">Staff use this PIN to confirm packing/delivery</p>
                 </div>
                 <Button 
                   className="w-full" 
@@ -207,7 +207,7 @@ export default function Workers() {
                   data-testid="button-submit-worker"
                 >
                   {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Add Worker
+                  Add Staff
                 </Button>
               </div>
             </DialogContent>
@@ -225,11 +225,11 @@ export default function Workers() {
             <TabsList className="mb-4">
               <TabsTrigger value="stats" data-testid="tab-stats">
                 <BarChart3 className="w-4 h-4 mr-1" />
-                Worker Stats
+                Staff Stats
               </TabsTrigger>
               <TabsTrigger value="manage" data-testid="tab-manage">
                 <Users className="w-4 h-4 mr-1" />
-                Manage Workers
+                Manage Staff
               </TabsTrigger>
             </TabsList>
 
@@ -290,13 +290,13 @@ export default function Workers() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Worker Performance</CardTitle>
+                    <CardTitle className="text-lg">Staff Performance</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Worker Name</TableHead>
+                          <TableHead>Staff Name</TableHead>
                           <TableHead className="text-center">
                             <div className="flex items-center justify-center gap-1">
                               <Package className="w-4 h-4 text-orange-500" />
@@ -430,7 +430,7 @@ export default function Workers() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Worker Name</Label>
+              <Label>Staff Name</Label>
               <Input
                 placeholder="Enter name"
                 value={formData.name}

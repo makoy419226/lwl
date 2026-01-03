@@ -49,6 +49,8 @@ export default function Products() {
   const [packingTypes, setPackingTypes] = useState<Record<number, "hanging" | "folding">>({});
   const [customerName, setCustomerName] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [discountPercent, setDiscountPercent] = useState("");
+  const [tips, setTips] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [newClientName, setNewClientName] = useState("");
@@ -156,14 +158,24 @@ export default function Products() {
       return `${item.quantity}x ${item.product.name} (${packing})`;
     }).join(", ");
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
-    const finalTotal = isUrgent ? orderTotal * 2 : orderTotal;
+    
+    // Calculate final total: urgent doubles, then apply discount, then add tips
+    let subtotal = isUrgent ? orderTotal * 2 : orderTotal;
+    const discPct = parseFloat(discountPercent) || 0;
+    const discountAmt = (subtotal * discPct / 100);
+    const tipsAmt = parseFloat(tips) || 0;
+    const finalTotal = subtotal - discountAmt + tipsAmt;
 
     createOrderMutation.mutate({
       clientId: selectedClientId,
       customerName: customerName.trim(),
       orderNumber,
       items: itemsText,
-      totalAmount: finalTotal.toFixed(2),
+      totalAmount: subtotal.toFixed(2),
+      discountPercent: discPct.toFixed(2),
+      discountAmount: discountAmt.toFixed(2),
+      tips: tipsAmt.toFixed(2),
+      finalAmount: finalTotal.toFixed(2),
       entryDate: new Date().toISOString(),
       deliveryType: "takeaway",
       urgent: isUrgent,
@@ -176,6 +188,8 @@ export default function Products() {
     setPackingTypes({});
     setCustomerName("");
     setSelectedClientId(null);
+    setDiscountPercent("");
+    setTips("");
   };
 
   const handlePackingTypeChange = (productId: number, type: "hanging" | "folding") => {
@@ -470,9 +484,21 @@ export default function Products() {
                     <span>Subtotal</span>
                     <span>{orderTotal.toFixed(2)} AED</span>
                   </div>
+                  {parseFloat(discountPercent) > 0 && (
+                    <div className="flex justify-between text-xs text-green-600">
+                      <span>Discount ({discountPercent}%)</span>
+                      <span>-{(orderTotal * parseFloat(discountPercent) / 100).toFixed(2)} AED</span>
+                    </div>
+                  )}
+                  {parseFloat(tips) > 0 && (
+                    <div className="flex justify-between text-xs text-blue-600">
+                      <span>Tips</span>
+                      <span>+{parseFloat(tips).toFixed(2)} AED</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm font-bold text-primary">
                     <span>TOTAL</span>
-                    <span>{orderTotal.toFixed(2)} AED</span>
+                    <span>{(orderTotal - (orderTotal * (parseFloat(discountPercent) || 0) / 100) + (parseFloat(tips) || 0)).toFixed(2)} AED</span>
                   </div>
                 </div>
               </div>
@@ -484,6 +510,27 @@ export default function Products() {
                   onChange={(e) => setCustomerName(e.target.value)}
                   data-testid="input-order-customer-panel"
                 />
+                <div className="flex gap-1">
+                  <Input
+                    className="w-20 h-8 text-xs"
+                    placeholder="Discount %"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={discountPercent}
+                    onChange={(e) => setDiscountPercent(e.target.value)}
+                    data-testid="input-discount-percent"
+                  />
+                  <Input
+                    className="w-20 h-8 text-xs"
+                    placeholder="Tips"
+                    type="number"
+                    min="0"
+                    value={tips}
+                    onChange={(e) => setTips(e.target.value)}
+                    data-testid="input-tips"
+                  />
+                </div>
                 <div className="flex gap-1">
                   <Button 
                     variant="outline"
