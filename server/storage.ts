@@ -8,6 +8,7 @@ import {
   clientTransactions,
   orders,
   packingWorkers,
+  incidents,
   type Product,
   type Client,
   type Bill,
@@ -15,6 +16,7 @@ import {
   type ClientTransaction,
   type Order,
   type PackingWorker,
+  type Incident,
   type InsertProduct,
   type InsertClient,
   type InsertBill,
@@ -22,6 +24,7 @@ import {
   type InsertTransaction,
   type InsertOrder,
   type InsertPackingWorker,
+  type InsertIncident,
   type UpdateProductRequest,
   type UpdateClientRequest,
   type UpdateOrderRequest
@@ -72,6 +75,11 @@ export interface IStorage {
   verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null>;
   verifyDeliveryWorkerPin(pin: string): Promise<PackingWorker | null>;
   getClientOrders(clientId: number): Promise<Order[]>;
+  getIncidents(search?: string): Promise<Incident[]>;
+  getIncident(id: number): Promise<Incident | undefined>;
+  createIncident(incident: InsertIncident): Promise<Incident>;
+  updateIncident(id: number, updates: Partial<InsertIncident>): Promise<Incident>;
+  deleteIncident(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -547,6 +555,67 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(orders)
       .where(eq(orders.clientId, clientId))
       .orderBy(desc(orders.entryDate));
+  }
+
+  async getIncidents(search?: string): Promise<Incident[]> {
+    if (search) {
+      const searchPattern = `%${search}%`;
+      return await db.select().from(incidents).where(
+        or(
+          ilike(incidents.customerName, searchPattern),
+          ilike(incidents.orderNumber || '', searchPattern),
+          ilike(incidents.itemName || '', searchPattern),
+          ilike(incidents.reason, searchPattern)
+        )
+      ).orderBy(desc(incidents.incidentDate));
+    }
+    return await db.select().from(incidents).orderBy(desc(incidents.incidentDate));
+  }
+
+  async getIncident(id: number): Promise<Incident | undefined> {
+    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
+    return incident;
+  }
+
+  async createIncident(insertIncident: InsertIncident): Promise<Incident> {
+    const incidentData = {
+      customerName: insertIncident.customerName,
+      customerPhone: insertIncident.customerPhone,
+      orderId: insertIncident.orderId,
+      orderNumber: insertIncident.orderNumber,
+      itemName: insertIncident.itemName,
+      reason: insertIncident.reason,
+      notes: insertIncident.notes,
+      refundAmount: insertIncident.refundAmount?.toString() || "0",
+      itemValue: insertIncident.itemValue?.toString() || "0",
+      responsibleStaffId: insertIncident.responsibleStaffId,
+      responsibleStaffName: insertIncident.responsibleStaffName,
+      incidentType: insertIncident.incidentType || "refund",
+      status: insertIncident.status || "open",
+      incidentDate: new Date(insertIncident.incidentDate),
+      resolvedDate: insertIncident.resolvedDate ? new Date(insertIncident.resolvedDate) : null,
+      resolution: insertIncident.resolution,
+    };
+    const [incident] = await db.insert(incidents).values(incidentData).returning();
+    return incident;
+  }
+
+  async updateIncident(id: number, updates: Partial<InsertIncident>): Promise<Incident> {
+    const updateData: any = { ...updates };
+    if (updates.refundAmount !== undefined) updateData.refundAmount = updates.refundAmount.toString();
+    if (updates.itemValue !== undefined) updateData.itemValue = updates.itemValue.toString();
+    if (updates.incidentDate) updateData.incidentDate = new Date(updates.incidentDate);
+    if (updates.resolvedDate) updateData.resolvedDate = new Date(updates.resolvedDate);
+    
+    const [updated] = await db.update(incidents)
+      .set(updateData)
+      .where(eq(incidents.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteIncident(id: number): Promise<void> {
+    await db.delete(incidents).where(eq(incidents.id, id));
   }
 }
 

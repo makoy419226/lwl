@@ -114,6 +114,26 @@ export const packingWorkers = pgTable("packing_workers", {
   active: boolean("active").default(true),
 });
 
+export const incidents = pgTable("incidents", {
+  id: serial("id").primaryKey(),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone"),
+  orderId: integer("order_id"),
+  orderNumber: text("order_number"),
+  itemName: text("item_name"),
+  reason: text("reason").notNull(),
+  notes: text("notes"),
+  refundAmount: numeric("refund_amount", { precision: 12, scale: 2 }).default("0"),
+  itemValue: numeric("item_value", { precision: 12, scale: 2 }).default("0"),
+  responsibleStaffId: integer("responsible_staff_id"),
+  responsibleStaffName: text("responsible_staff_name"),
+  incidentType: text("incident_type").default("refund"), // 'refund', 'damage', 'complaint', 'other'
+  status: text("status").default("open"), // 'open', 'resolved', 'pending'
+  incidentDate: timestamp("incident_date").notNull(),
+  resolvedDate: timestamp("resolved_date"),
+  resolution: text("resolution"),
+});
+
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
 export const insertClientSchema = createInsertSchema(clients)
   .omit({ id: true })
@@ -171,6 +191,17 @@ export const insertOrderSchema = createInsertSchema(orders)
     packingWorkerId: z.number().optional().nullable(),
   });
 
+export const insertIncidentSchema = createInsertSchema(incidents)
+  .omit({ id: true })
+  .extend({
+    customerName: z.string().min(1, "Customer name is required"),
+    reason: z.string().min(1, "Reason is required"),
+    refundAmount: z.union([z.string(), z.number()]).optional(),
+    itemValue: z.union([z.string(), z.number()]).optional(),
+    incidentDate: z.union([z.date(), z.string()]),
+    resolvedDate: z.union([z.date(), z.string()]).optional().nullable(),
+  });
+
 export type Product = typeof products.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Bill = typeof bills.$inferSelect;
@@ -179,6 +210,7 @@ export type ClientTransaction = typeof clientTransactions.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type PackingWorker = typeof packingWorkers.$inferSelect;
+export type Incident = typeof incidents.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertBill = z.infer<typeof insertBillSchema>;
@@ -187,6 +219,7 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPackingWorker = z.infer<typeof insertPackingWorkerSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 
 // Explicit API types
 export type ProductResponse = Product;
