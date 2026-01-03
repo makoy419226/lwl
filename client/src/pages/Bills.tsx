@@ -27,7 +27,9 @@ export default function Bills() {
   const [selectedItems, setSelectedItems] = useState<Record<number, number>>({});
   const [billDescription, setBillDescription] = useState("");
   const [createdBill, setCreatedBill] = useState<{ bill: Bill; items: { name: string; qty: number; price: number }[] } | null>(null);
+  const [viewBillPDF, setViewBillPDF] = useState<Bill | null>(null);
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const billPdfRef = useRef<HTMLDivElement>(null);
   
   const { data: bills, isLoading, isError } = useBills();
   const { data: clients = [] } = useClients();
@@ -178,6 +180,24 @@ export default function Bills() {
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
   };
 
+  const downloadBillPDF = async (bill: Bill) => {
+    setViewBillPDF(bill);
+    setTimeout(async () => {
+      if (billPdfRef.current) {
+        const opt = {
+          margin: 5,
+          filename: `Bill-${bill.referenceNumber || bill.id}.pdf`,
+          image: { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'mm', format: [80, 150] as [number, number], orientation: 'portrait' as const }
+        };
+        await html2pdf().set(opt).from(billPdfRef.current).save();
+        setViewBillPDF(null);
+        toast({ title: "PDF Downloaded", description: `Bill ${bill.referenceNumber || bill.id} saved` });
+      }
+    }, 300);
+  };
+
   const sortedProducts = products?.sort((a, b) => a.name.localeCompare(b.name)) || [];
 
   return (
@@ -232,15 +252,26 @@ export default function Bills() {
                             <p className="text-xs text-muted-foreground mt-1">{bill.referenceNumber}</p>
                           )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(bill.id)}
-                          data-testid="button-delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => downloadBillPDF(bill)}
+                            data-testid={`button-download-pdf-${bill.id}`}
+                            title="Download PDF"
+                          >
+                            <Download className="w-4 h-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDelete(bill.id)}
+                            data-testid="button-delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -486,6 +517,33 @@ export default function Bills() {
           </Button>
         </DialogContent>
       </Dialog>
+
+      {viewBillPDF && (
+        <div className="fixed left-[-9999px]">
+          <div ref={billPdfRef} className="bg-white p-4 rounded-lg border text-black" style={{ fontFamily: 'Courier New, monospace', fontSize: '11px', width: '70mm' }}>
+            <div className="text-center border-b pb-2 mb-2">
+              <div className="font-bold text-sm">LIQUID WASHES LAUNDRY</div>
+              <div className="text-xs">Centra Market D/109, Al Dhanna City</div>
+              <div className="text-xs">Al Ruwais, Abu Dhabi-UAE</div>
+            </div>
+            <div className="text-center font-bold mb-2">INVOICE</div>
+            <div className="text-xs mb-2">
+              <div>Ref: {viewBillPDF.referenceNumber || viewBillPDF.id}</div>
+              <div>Date: {viewBillPDF.billDate ? format(new Date(viewBillPDF.billDate), "dd/MM/yyyy HH:mm") : ""}</div>
+              <div>Customer: {viewBillPDF.customerName || getClientName(viewBillPDF.clientId!)}</div>
+              {viewBillPDF.customerPhone && <div>Phone: {viewBillPDF.customerPhone}</div>}
+            </div>
+            <div className="border-t border-b py-1 mb-2">
+              <div className="text-xs">{viewBillPDF.description}</div>
+            </div>
+            <div className="flex justify-between font-bold">
+              <span>TOTAL:</span>
+              <span>AED {parseFloat(viewBillPDF.amount || "0").toFixed(2)}</span>
+            </div>
+            <div className="text-center mt-3 text-xs">Thank you for your business!</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
