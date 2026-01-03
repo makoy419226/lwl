@@ -158,9 +158,9 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               .order-number { font-size: 14px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#000"}; text-align: center; margin: 8px 0; padding: 5px; border: 1px dashed #000; }
               .items-section { margin: 8px 0; }
               .items-title { font-weight: bold; margin-bottom: 5px; font-size: 10px; }
-              .items-table { width: 100%; border-collapse: collapse; font-size: 9px; }
-              .items-table th, .items-table td { padding: 3px 2px; text-align: left; border-bottom: 1px dotted #ccc; }
-              .items-table th { font-weight: bold; font-size: 8px; text-transform: uppercase; border-bottom: 1px solid #000; }
+              .items-table { width: 100%; border-collapse: collapse; font-size: 9px; border: 1px solid #000; }
+              .items-table th, .items-table td { padding: 4px 3px; text-align: left; border: 1px solid #000; }
+              .items-table th { font-weight: bold; font-size: 8px; text-transform: uppercase; background: #f0f0f0; }
               .items-table .qty-col { text-align: center; width: 25px; }
               .items-table .price-col { text-align: right; width: 45px; }
               .items-table .total-col { text-align: right; width: 50px; font-weight: bold; }
@@ -305,24 +305,24 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
           {parsedItems.length > 0 && (
             <div className="items-section">
               <div className="items-title">Items / Services</div>
-              <table className="items-table">
+              <table className="items-table" style={{ border: "1px solid #000", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th style={{ width: "30px", textAlign: "center" }}>#</th>
-                    <th>Item</th>
-                    <th className="qty-col">Qty</th>
-                    <th className="price-col">Price</th>
-                    <th className="total-col">Total</th>
+                    <th style={{ width: "30px", textAlign: "center", border: "1px solid #000", padding: "6px 4px", background: "#f0f0f0" }}>#</th>
+                    <th style={{ border: "1px solid #000", padding: "6px 4px", background: "#f0f0f0" }}>Item</th>
+                    <th className="qty-col" style={{ border: "1px solid #000", padding: "6px 4px", background: "#f0f0f0" }}>Qty</th>
+                    <th className="price-col" style={{ border: "1px solid #000", padding: "6px 4px", background: "#f0f0f0" }}>Price</th>
+                    <th className="total-col" style={{ border: "1px solid #000", padding: "6px 4px", background: "#f0f0f0" }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {parsedItems.map((item, idx) => (
                     <tr key={idx}>
-                      <td style={{ textAlign: "center" }}>{idx + 1}</td>
-                      <td>{item.name}</td>
-                      <td className="qty-col">{item.qty}</td>
-                      <td className="price-col">{item.price.toFixed(2)}</td>
-                      <td className="total-col">{item.total.toFixed(2)}</td>
+                      <td style={{ textAlign: "center", border: "1px solid #000", padding: "6px 4px" }}>{idx + 1}</td>
+                      <td style={{ border: "1px solid #000", padding: "6px 4px" }}>{item.name}</td>
+                      <td className="qty-col" style={{ border: "1px solid #000", padding: "6px 4px" }}>{item.qty}</td>
+                      <td className="price-col" style={{ border: "1px solid #000", padding: "6px 4px" }}>{item.price.toFixed(2)}</td>
+                      <td className="total-col" style={{ border: "1px solid #000", padding: "6px 4px" }}>{item.total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
