@@ -152,7 +152,29 @@ export default function Bills() {
   const shareWhatsApp = () => {
     if (!createdBill) return;
     const client = createdBill.client;
-    const message = `Invoice from Liquid Washes Laundry%0A%0ARef: ${createdBill.bill.referenceNumber}%0AClient: ${client?.name}%0AAmount: AED ${parseFloat(createdBill.bill.amount).toFixed(2)}%0A%0AThank you for your business!`;
+    const billDate = createdBill.bill.billDate ? format(new Date(createdBill.bill.billDate), "dd/MM/yyyy HH:mm") : "";
+    
+    let itemsList = createdBill.items.map(item => 
+      `${item.name} x${item.qty} = ${(item.price * item.qty).toFixed(2)} AED`
+    ).join('%0A');
+    
+    const message = `*LIQUID WASHES LAUNDRY*%0A` +
+      `Centra Market D/109, Al Dhanna City%0A` +
+      `Al Ruwais, Abu Dhabi-UAE%0A` +
+      `--------------------------------%0A` +
+      `*INVOICE*%0A` +
+      `--------------------------------%0A` +
+      `Ref: ${createdBill.bill.referenceNumber}%0A` +
+      `Date: ${billDate}%0A` +
+      `Client: ${client?.name}%0A` +
+      `--------------------------------%0A` +
+      `*Items:*%0A` +
+      `${itemsList}%0A` +
+      `--------------------------------%0A` +
+      `*TOTAL: AED ${parseFloat(createdBill.bill.amount).toFixed(2)}*%0A` +
+      `--------------------------------%0A` +
+      `Thank you for your business!`;
+    
     const phone = client?.phone?.replace(/\D/g, '') || '';
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
   };
