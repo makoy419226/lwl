@@ -36,8 +36,8 @@ export default function Orders() {
   const [deliveryPinDialog, setDeliveryPinDialog] = useState<{ orderId: number } | null>(null);
   const [deliveryPin, setDeliveryPin] = useState("");
   const [deliveryPinError, setDeliveryPinError] = useState("");
-  const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
-  const [deliveryPhotoPreview, setDeliveryPhotoPreview] = useState<string | null>(null);
+  const [deliveryPhotos, setDeliveryPhotos] = useState<string[]>([]);
+  const [deliveryPhotoPreviews, setDeliveryPhotoPreviews] = useState<string[]>([]);
   const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
   const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
@@ -262,14 +262,15 @@ export default function Orders() {
             deliveryDate: new Date().toISOString(),
             deliveryBy: data.worker.name,
             deliveredByWorkerId: data.worker.id,
-            deliveryPhoto: deliveryPhoto,
+            deliveryPhoto: deliveryPhotos[0] || null,
+            deliveryPhotos: deliveryPhotos.length > 0 ? deliveryPhotos : null,
           },
         });
         setDeliveryPinDialog(null);
         setDeliveryPin("");
         setDeliveryPinError("");
-        setDeliveryPhoto(null);
-        setDeliveryPhotoPreview(null);
+        setDeliveryPhotos([]);
+        setDeliveryPhotoPreviews([]);
       }
     },
     onError: () => {
@@ -280,6 +281,10 @@ export default function Orders() {
   const handleDeliveryPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (deliveryPhotos.length >= 3) {
+        toast({ title: "Maximum Photos", description: "You can only upload up to 3 photos", variant: "destructive" });
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) {
         toast({ title: "Error", description: "Photo must be less than 5MB", variant: "destructive" });
         return;
@@ -287,16 +292,22 @@ export default function Orders() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result as string;
-        setDeliveryPhoto(base64);
-        setDeliveryPhotoPreview(base64);
+        setDeliveryPhotos(prev => [...prev, base64]);
+        setDeliveryPhotoPreviews(prev => [...prev, base64]);
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = '';
   };
 
-  const clearDeliveryPhoto = () => {
-    setDeliveryPhoto(null);
-    setDeliveryPhotoPreview(null);
+  const removeDeliveryPhoto = (index: number) => {
+    setDeliveryPhotos(prev => prev.filter((_, i) => i !== index));
+    setDeliveryPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearDeliveryPhotos = () => {
+    setDeliveryPhotos([]);
+    setDeliveryPhotoPreviews([]);
   };
 
   const handleDeliveryWithPin = (orderId: number) => {
@@ -668,7 +679,7 @@ export default function Orders() {
                                       data-testid={`button-view-photo-${order.id}`}
                                       title={order.deliveryPhoto ? "View Delivery Photo" : "No photo available"}
                                     >
-                                      <Camera className={`w-4 h-4 ${order.deliveryPhoto ? "text-blue-600" : "text-muted-foreground"}`} />
+                                      <Camera className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-900 dark:text-blue-400" : "text-red-500"}`} />
                                     </Button>
                                     <Button 
                                       size="sm" 
@@ -994,7 +1005,7 @@ export default function Orders() {
       <Dialog open={!!deliveryPinDialog} onOpenChange={(open) => { 
         if (!open) { 
           setDeliveryPinDialog(null); 
-          clearDeliveryPhoto(); 
+          clearDeliveryPhotos(); 
         } 
       }}>
         <DialogContent className="sm:max-w-md">
@@ -1008,29 +1019,38 @@ export default function Orders() {
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Camera className="w-4 h-4" />
-                Delivery Photo (Proof)
+                Delivery Photos (Optional - Up to 3)
               </Label>
-              {deliveryPhotoPreview ? (
-                <div className="relative">
-                  <img 
-                    src={deliveryPhotoPreview} 
-                    alt="Delivery proof" 
-                    className="w-full h-48 object-cover rounded-lg border"
-                  />
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    className="absolute top-2 right-2"
-                    onClick={clearDeliveryPhoto}
-                    data-testid="button-clear-delivery-photo"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+              
+              {deliveryPhotoPreviews.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {deliveryPhotoPreviews.map((preview, index) => (
+                    <div key={index} className="relative">
+                      <img 
+                        src={preview} 
+                        alt={`Delivery proof ${index + 1}`} 
+                        className="w-full h-24 object-cover rounded-lg border"
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={() => removeDeliveryPhoto(index)}
+                        data-testid={`button-remove-photo-${index}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                  <Camera className="w-8 h-8 text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">Click to upload photo</span>
+              )}
+              
+              {deliveryPhotoPreviews.length < 3 && (
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                  <Camera className="w-6 h-6 text-muted-foreground mb-1" />
+                  <span className="text-xs text-muted-foreground">
+                    {deliveryPhotoPreviews.length === 0 ? "Click to add photo" : `Add more (${3 - deliveryPhotoPreviews.length} left)`}
+                  </span>
                   <input
                     type="file"
                     accept="image/*"
@@ -1067,23 +1087,20 @@ export default function Orders() {
               <Button 
                 variant="outline" 
                 className="flex-1"
-                onClick={() => { setDeliveryPinDialog(null); clearDeliveryPhoto(); }}
+                onClick={() => { setDeliveryPinDialog(null); clearDeliveryPhotos(); }}
               >
                 Cancel
               </Button>
               <Button 
                 className="flex-1"
                 onClick={submitDeliveryPin}
-                disabled={deliveryPin.length !== 5 || !deliveryPhoto || verifyDeliveryPinMutation.isPending}
+                disabled={deliveryPin.length !== 5 || verifyDeliveryPinMutation.isPending}
                 data-testid="button-submit-delivery-pin"
               >
                 {verifyDeliveryPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Confirm Delivery
               </Button>
             </div>
-            {!deliveryPhoto && (
-              <p className="text-xs text-muted-foreground text-center">Photo is required for delivery confirmation</p>
-            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -1093,25 +1110,41 @@ export default function Orders() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Camera className="w-5 h-5" />
-              Delivery Photo - Order #{viewPhotoOrder?.orderNumber}
+              Delivery Photos - Order #{viewPhotoOrder?.orderNumber}
             </DialogTitle>
             <DialogDescription>
-              Photo captured at delivery confirmation
+              Photos captured at delivery confirmation
             </DialogDescription>
           </DialogHeader>
-          {viewPhotoOrder?.deliveryPhoto ? (
-            <div className="flex justify-center">
-              <img 
-                src={viewPhotoOrder.deliveryPhoto} 
-                alt="Delivery proof" 
-                className="max-w-full max-h-[400px] rounded-lg object-contain"
-                data-testid="img-delivery-photo"
-              />
+          {(viewPhotoOrder?.deliveryPhotos && viewPhotoOrder.deliveryPhotos.length > 0) || viewPhotoOrder?.deliveryPhoto ? (
+            <div className="space-y-3">
+              {viewPhotoOrder?.deliveryPhotos && viewPhotoOrder.deliveryPhotos.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3">
+                  {viewPhotoOrder.deliveryPhotos.map((photo, index) => (
+                    <img 
+                      key={index}
+                      src={photo} 
+                      alt={`Delivery proof ${index + 1}`} 
+                      className="w-full max-h-[300px] rounded-lg object-contain border"
+                      data-testid={`img-delivery-photo-${index}`}
+                    />
+                  ))}
+                </div>
+              ) : viewPhotoOrder?.deliveryPhoto ? (
+                <div className="flex justify-center">
+                  <img 
+                    src={viewPhotoOrder.deliveryPhoto} 
+                    alt="Delivery proof" 
+                    className="max-w-full max-h-[400px] rounded-lg object-contain"
+                    data-testid="img-delivery-photo"
+                  />
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Camera className="w-12 h-12 mb-2 opacity-50" />
-              <p>No delivery photo available</p>
+              <p>No delivery photos available</p>
             </div>
           )}
           <Button 
