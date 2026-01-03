@@ -1053,8 +1053,7 @@ export default function Orders() {
                   </span>
                   <input
                     type="file"
-                    accept="image/*"
-                    capture="environment"
+                    accept="image/*,.heic,.heif,.webp,.bmp,.gif,.png,.jpg,.jpeg"
                     className="hidden"
                     onChange={handleDeliveryPhotoChange}
                     data-testid="input-delivery-photo"
