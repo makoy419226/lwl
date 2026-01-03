@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 import { TopBar } from "@/components/TopBar";
 import { useBills, useDeleteBill } from "@/hooks/use-bills";
 import { useClients } from "@/hooks/use-clients";
+import { useCreateProduct } from "@/hooks/use-products";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, FileText, Trash2, Plus, Minus, Receipt, Download, Printer, Package } from "lucide-react";
+import { Loader2, FileText, Trash2, Plus, Minus, Receipt, Download, Printer, Package, User, PlusCircle } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -22,18 +24,24 @@ import html2pdf from "html2pdf.js";
 export default function Bills() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("bills");
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [selectedItems, setSelectedItems] = useState<Record<number, number>>({});
   const [billDescription, setBillDescription] = useState("");
   const [createdBill, setCreatedBill] = useState<{ bill: Bill; items: { name: string; qty: number; price: number }[] } | null>(null);
   const [viewBillPDF, setViewBillPDF] = useState<Bill | null>(null);
+  const [showNewItemDialog, setShowNewItemDialog] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
+  const [newItemCategory, setNewItemCategory] = useState("");
   const invoiceRef = useRef<HTMLDivElement>(null);
   const billPdfRef = useRef<HTMLDivElement>(null);
   
   const { data: bills, isLoading, isError } = useBills();
   const { data: clients = [] } = useClients();
   const { mutate: deleteBill } = useDeleteBill();
+  const { mutate: createProduct, isPending: isCreatingProduct } = useCreateProduct();
   const { toast } = useToast();
 
   const { data: products } = useQuery<Product[]>({
@@ -62,6 +70,7 @@ export default function Bills() {
       setCreatedBill({ bill, items });
       setIsCreateOpen(false);
       setSelectedItems({});
+      setSelectedClientId("");
       setCustomerName("");
       setCustomerPhone("");
       setBillDescription("");
@@ -88,6 +97,32 @@ export default function Bills() {
         },
       });
     }
+  };
+
+  const handleCreateNewItem = () => {
+    if (!newItemName.trim()) {
+      toast({ title: "Error", description: "Please enter item name", variant: "destructive" });
+      return;
+    }
+    if (!newItemPrice.trim() || isNaN(parseFloat(newItemPrice))) {
+      toast({ title: "Error", description: "Please enter valid price", variant: "destructive" });
+      return;
+    }
+    
+    createProduct({
+      name: newItemName.trim(),
+      price: newItemPrice.trim(),
+      category: newItemCategory.trim() || "General",
+      stockQuantity: 0,
+    }, {
+      onSuccess: () => {
+        setShowNewItemDialog(false);
+        setNewItemName("");
+        setNewItemPrice("");
+        setNewItemCategory("");
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      }
+    });
   };
 
   const updateItemQty = (productId: number, delta: number) => {
@@ -344,37 +379,68 @@ export default function Bills() {
             <div className="flex-1 overflow-hidden flex flex-col">
               <div className="grid grid-cols-2 gap-2 mb-4">
                 <div>
-                  <Label>Customer Name</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="Enter customer name"
-                      data-testid="input-customer-name"
-                      className="flex-1"
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setCustomerName("Walk-in Customer")}
-                      data-testid="button-walkin"
-                    >
-                      Walk-in
-                    </Button>
-                  </div>
+                  <Label>Select Client</Label>
+                  <Select
+                    value={selectedClientId}
+                    onValueChange={(value) => {
+                      setSelectedClientId(value);
+                      if (value === "walkin") {
+                        setCustomerName("Walk-in Customer");
+                        setCustomerPhone("");
+                      } else if (value) {
+                        const client = clients.find(c => c.id === parseInt(value));
+                        if (client) {
+                          setCustomerName(client.name);
+                          setCustomerPhone(client.phone || "");
+                        }
+                      }
+                    }}
+                  >
+                    <SelectTrigger data-testid="select-client">
+                      <SelectValue placeholder="Choose a client..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="walkin">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          Walk-in Customer
+                        </div>
+                      </SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            {client.name} - {client.phone}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <Label>Phone (Optional)</Label>
+                  <Label>Phone</Label>
                   <Input
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="Customer phone"
                     data-testid="input-customer-phone"
+                    disabled={selectedClientId !== "" && selectedClientId !== "walkin"}
                   />
                 </div>
               </div>
 
-              <Label className="mb-2">Select Items</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Select Items</Label>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowNewItemDialog(true)}
+                  data-testid="button-new-item"
+                >
+                  <PlusCircle className="w-4 h-4 mr-1" />
+                  New Item
+                </Button>
+              </div>
               <ScrollArea className="flex-1 border rounded-lg p-2">
                 <div className="grid grid-cols-3 gap-2">
                   {sortedProducts.map(product => {
@@ -544,6 +610,69 @@ export default function Bills() {
           </div>
         </div>
       )}
+
+      <Dialog open={showNewItemDialog} onOpenChange={setShowNewItemDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PlusCircle className="w-5 h-5 text-primary" />
+              Add New Item
+            </DialogTitle>
+            <DialogDescription>
+              Create a new item for the price list
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Item Name</Label>
+              <Input
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder="Enter item name"
+                data-testid="input-new-item-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Price (AED)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={newItemPrice}
+                onChange={(e) => setNewItemPrice(e.target.value)}
+                placeholder="Enter price"
+                data-testid="input-new-item-price"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Category (Optional)</Label>
+              <Input
+                value={newItemCategory}
+                onChange={(e) => setNewItemCategory(e.target.value)}
+                placeholder="e.g. Traditional Wear, Formal Wear"
+                data-testid="input-new-item-category"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowNewItemDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={handleCreateNewItem}
+                disabled={isCreatingProduct}
+                data-testid="button-save-new-item"
+              >
+                {isCreatingProduct && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Add Item
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
