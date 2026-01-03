@@ -444,9 +444,19 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
                 </span>
               </div>
               <div style={{
-                fontSize: "14px",
+                fontSize: "16px",
+                fontWeight: "bold",
                 color: "#16a34a",
-                marginTop: "8px",
+                marginTop: "10px",
+                textTransform: "uppercase",
+              }}>
+                {order.paymentMethod === "bank" ? "Bank Transfer" : 
+                 order.paymentMethod === "card" ? "Card" : "Cash"}
+              </div>
+              <div style={{
+                fontSize: "12px",
+                color: "#16a34a",
+                marginTop: "4px",
               }}>
                 Payment Received - Thank You!
               </div>
