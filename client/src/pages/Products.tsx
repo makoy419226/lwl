@@ -1,12 +1,13 @@
 import { useState, useMemo } from "react";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients } from "@/hooks/use-clients";
-import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Check, X, Plus, Minus, ShoppingCart, Clock, Package, Truck } from "lucide-react";
+import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Check, X, Plus, Minus, ShoppingCart, Clock, Package, Truck, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -44,6 +45,7 @@ export default function Products() {
   const [imageUrl, setImageUrl] = useState("");
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [showUrgentDialog, setShowUrgentDialog] = useState(false);
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const { data: clients } = useClients();
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
@@ -137,18 +139,24 @@ export default function Products() {
       toast({ title: "No items", description: "Please add items to the order.", variant: "destructive" });
       return;
     }
+    setShowUrgentDialog(true);
+  };
 
+  const submitOrder = (isUrgent: boolean) => {
     const itemsText = orderItems.map(item => `${item.quantity}x ${item.product.name}`).join(", ");
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+    const finalTotal = isUrgent ? orderTotal * 2 : orderTotal;
 
     createOrderMutation.mutate({
       clientId: parseInt(selectedClientId),
       orderNumber,
       items: itemsText,
-      totalAmount: orderTotal.toFixed(2),
+      totalAmount: finalTotal.toFixed(2),
       entryDate: new Date().toISOString(),
       deliveryType: "takeaway",
+      urgent: isUrgent,
     });
+    setShowUrgentDialog(false);
   };
 
   const clearOrder = () => {
@@ -521,6 +529,49 @@ export default function Products() {
           </>
         )}
       </div>
+
+      {/* Urgent/Normal Service Dialog */}
+      <Dialog open={showUrgentDialog} onOpenChange={setShowUrgentDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Select Service Type</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center text-sm text-muted-foreground mb-4">
+              <div className="font-semibold text-foreground text-lg mb-1">
+                Order Total: {orderTotal.toFixed(2)} AED
+              </div>
+              <div className="text-xs">
+                Urgent service = Double price ({(orderTotal * 2).toFixed(2)} AED)
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col gap-2"
+                onClick={() => submitOrder(false)}
+                disabled={createOrderMutation.isPending}
+                data-testid="button-normal-service"
+              >
+                <Clock className="w-8 h-8 text-blue-500" />
+                <div className="font-semibold">Normal</div>
+                <div className="text-xs text-muted-foreground">{orderTotal.toFixed(2)} AED</div>
+              </Button>
+              <Button
+                className="h-24 flex flex-col gap-2 bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => submitOrder(true)}
+                disabled={createOrderMutation.isPending}
+                data-testid="button-urgent-service"
+              >
+                <Zap className="w-8 h-8" />
+                <div className="font-semibold">Urgent</div>
+                <div className="text-xs">{(orderTotal * 2).toFixed(2)} AED</div>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
