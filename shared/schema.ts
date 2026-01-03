@@ -42,7 +42,9 @@ export const clientTransactions = pgTable("client_transactions", {
 
 export const bills = pgTable("bills", {
   id: serial("id").primaryKey(),
-  clientId: integer("client_id").notNull(),
+  clientId: integer("client_id"),
+  customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   paidAmount: numeric("paid_amount", { precision: 12, scale: 2 }).default("0"),
   description: text("description"),
@@ -125,7 +127,9 @@ export const insertBillSchema = createInsertSchema(bills)
   .extend({
     amount: z.union([z.string(), z.number()]),
     paidAmount: z.union([z.string(), z.number()]).optional(),
-    clientId: z.number(),
+    clientId: z.number().optional().nullable(),
+    customerName: z.string().optional(),
+    customerPhone: z.string().optional(),
     billDate: z.union([z.date(), z.string()]),
   });
 export const insertBillPaymentSchema = createInsertSchema(billPayments)

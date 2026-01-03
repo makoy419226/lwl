@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,10 +22,11 @@ import html2pdf from "html2pdf.js";
 export default function Bills() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("bills");
-  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [selectedItems, setSelectedItems] = useState<Record<number, number>>({});
   const [billDescription, setBillDescription] = useState("");
-  const [createdBill, setCreatedBill] = useState<{ bill: Bill; client: Client; items: { name: string; qty: number; price: number }[] } | null>(null);
+  const [createdBill, setCreatedBill] = useState<{ bill: Bill; items: { name: string; qty: number; price: number }[] } | null>(null);
   const invoiceRef = useRef<HTMLDivElement>(null);
   
   const { data: bills, isLoading, isError } = useBills();
@@ -39,15 +39,13 @@ export default function Bills() {
   });
 
   const createBillMutation = useMutation({
-    mutationFn: async (billData: { clientId: number; amount: string; description: string; billDate: string; referenceNumber: string }) => {
+    mutationFn: async (billData: { customerName: string; customerPhone?: string; amount: string; description: string; billDate: string; referenceNumber: string }) => {
       const res = await apiRequest("POST", "/api/bills", billData);
       return res.json();
     },
     onSuccess: (bill: Bill) => {
       queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       
-      const client = clients.find(c => c.id === bill.clientId);
       const items = Object.entries(selectedItems)
         .filter(([_, qty]) => qty > 0)
         .map(([productId, qty]) => {
@@ -59,15 +57,16 @@ export default function Bills() {
           };
         });
 
-      setCreatedBill({ bill, client: client!, items });
+      setCreatedBill({ bill, items });
       setIsCreateOpen(false);
       setSelectedItems({});
-      setSelectedClient("");
+      setCustomerName("");
+      setCustomerPhone("");
       setBillDescription("");
       
       toast({
         title: "Bill Created",
-        description: "Bill has been added and client balance updated.",
+        description: "Invoice generated successfully.",
       });
     },
   });
@@ -109,8 +108,8 @@ export default function Bills() {
   };
 
   const handleCreateBill = () => {
-    if (!selectedClient) {
-      toast({ title: "Error", description: "Please select a client", variant: "destructive" });
+    if (!customerName.trim()) {
+      toast({ title: "Error", description: "Please enter customer name", variant: "destructive" });
       return;
     }
     const total = calculateTotal();
@@ -128,7 +127,8 @@ export default function Bills() {
       .join(", ");
 
     createBillMutation.mutate({
-      clientId: parseInt(selectedClient),
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim() || undefined,
       amount: total.toFixed(2),
       description: billDescription || itemsList,
       billDate: new Date().toISOString(),
@@ -151,7 +151,6 @@ export default function Bills() {
 
   const shareWhatsApp = () => {
     if (!createdBill) return;
-    const client = createdBill.client;
     const billDate = createdBill.bill.billDate ? format(new Date(createdBill.bill.billDate), "dd/MM/yyyy HH:mm") : "";
     
     let itemsList = createdBill.items.map(item => 
@@ -166,7 +165,7 @@ export default function Bills() {
       `--------------------------------%0A` +
       `Ref: ${createdBill.bill.referenceNumber}%0A` +
       `Date: ${billDate}%0A` +
-      `Client: ${client?.name}%0A` +
+      `Customer: ${createdBill.bill.customerName}%0A` +
       `--------------------------------%0A` +
       `*Items:*%0A` +
       `${itemsList}%0A` +
@@ -175,7 +174,7 @@ export default function Bills() {
       `--------------------------------%0A` +
       `Thank you for your business!`;
     
-    const phone = client?.phone?.replace(/\D/g, '') || '';
+    const phone = createdBill.bill.customerPhone?.replace(/\D/g, '') || '';
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
   };
 
@@ -228,7 +227,7 @@ export default function Bills() {
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <CardTitle className="text-lg">{getClientName(bill.clientId)}</CardTitle>
+                          <CardTitle className="text-lg">{bill.customerName || getClientName(bill.clientId!)}</CardTitle>
                           {bill.referenceNumber && (
                             <p className="text-xs text-muted-foreground mt-1">{bill.referenceNumber}</p>
                           )}
@@ -312,20 +311,25 @@ export default function Bills() {
           
           <div className="flex gap-4 flex-1 overflow-hidden">
             <div className="flex-1 overflow-hidden flex flex-col">
-              <div className="mb-4">
-                <Label>Select Client</Label>
-                <Select value={selectedClient} onValueChange={setSelectedClient}>
-                  <SelectTrigger data-testid="select-bill-client">
-                    <SelectValue placeholder="Choose a client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map(client => (
-                      <SelectItem key={client.id} value={String(client.id)}>
-                        {client.name} - {client.phone}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <div>
+                  <Label>Customer Name</Label>
+                  <Input
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Enter customer name"
+                    data-testid="input-customer-name"
+                  />
+                </div>
+                <div>
+                  <Label>Phone (Optional)</Label>
+                  <Input
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="Customer phone"
+                    data-testid="input-customer-phone"
+                  />
+                </div>
               </div>
 
               <Label className="mb-2">Select Items</Label>
@@ -439,7 +443,7 @@ export default function Bills() {
             <div className="text-xs mb-2">
               <div>Ref: {createdBill?.bill.referenceNumber}</div>
               <div>Date: {createdBill?.bill.billDate ? format(new Date(createdBill.bill.billDate), "dd/MM/yyyy HH:mm") : ""}</div>
-              <div>Client: {createdBill?.client?.name}</div>
+              <div>Customer: {createdBill?.bill.customerName}</div>
             </div>
             <div className="border-t border-b py-1 mb-2">
               {createdBill?.items.map((item, idx) => (
