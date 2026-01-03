@@ -434,17 +434,20 @@ export default function Orders() {
                   <TableBody>
                     {(() => {
                       const groupedOrders = filteredOrders?.reduce((acc, order) => {
-                        const clientId = order.clientId;
-                        if (!acc[clientId]) {
-                          acc[clientId] = [];
+                        const groupKey = order.clientId ? `client-${order.clientId}` : `walkin-${order.customerName || 'unknown'}`;
+                        if (!acc[groupKey]) {
+                          acc[groupKey] = [];
                         }
-                        acc[clientId].push(order);
+                        acc[groupKey].push(order);
                         return acc;
-                      }, {} as Record<number, typeof filteredOrders>);
+                      }, {} as Record<string, typeof filteredOrders>);
 
-                      return Object.entries(groupedOrders || {}).map(([clientId, clientOrders]) => {
-                        const client = clients?.find(c => c.id === parseInt(clientId));
+                      return Object.entries(groupedOrders || {}).map(([groupKey, clientOrders]) => {
+                        const isWalkIn = groupKey.startsWith('walkin-');
+                        const clientId = isWalkIn ? null : parseInt(groupKey.replace('client-', ''));
+                        const client = clientId ? clients?.find(c => c.id === clientId) : null;
                         const orderCount = clientOrders?.length || 0;
+                        const displayName = client?.name || clientOrders?.[0]?.customerName || 'Walk-in Customer';
                         
                         return clientOrders?.map((order, idx) => (
                           <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
@@ -454,9 +457,9 @@ export default function Orders() {
                                 <TableCell rowSpan={orderCount} className="align-top border-r p-0">
                                   <Popover>
                                     <PopoverTrigger asChild>
-                                      <Button variant="ghost" className="w-full h-full justify-start px-4 py-2 font-semibold hover-elevate" data-testid={`button-client-${client?.id}`}>
+                                      <Button variant="ghost" className="w-full h-full justify-start px-4 py-2 font-semibold hover-elevate" data-testid={`button-client-${client?.id || 'walkin'}`}>
                                         <User className="w-4 h-4 mr-2" />
-                                        {client?.name || 'Unknown'}
+                                        {displayName}
                                       </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-80" align="start">

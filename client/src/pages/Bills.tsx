@@ -314,12 +314,23 @@ export default function Bills() {
               <div className="grid grid-cols-2 gap-2 mb-4">
                 <div>
                   <Label>Customer Name</Label>
-                  <Input
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter customer name"
-                    data-testid="input-customer-name"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Enter customer name"
+                      data-testid="input-customer-name"
+                      className="flex-1"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setCustomerName("Walk-in Customer")}
+                      data-testid="button-walkin"
+                    >
+                      Walk-in
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <Label>Phone (Optional)</Label>

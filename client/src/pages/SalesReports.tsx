@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Calendar, TrendingUp, Wallet, Receipt, FileText, CalendarDays, CalendarRange, Download, FileSpreadsheet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Calendar, TrendingUp, Wallet, Receipt, FileText, CalendarDays, CalendarRange, Download, FileSpreadsheet, Truck, ShoppingBag } from "lucide-react";
 import * as XLSX from "xlsx";
-import type { ClientTransaction } from "@shared/schema";
+import type { ClientTransaction, Order } from "@shared/schema";
 
 export default function SalesReports() {
   const today = new Date().toISOString().split('T')[0];
@@ -22,6 +23,10 @@ export default function SalesReports() {
 
   const { data: allClients } = useQuery<any[]>({
     queryKey: ["/api/clients"],
+  });
+
+  const { data: allOrders } = useQuery<Order[]>({
+    queryKey: ["/api/orders"],
   });
 
   const { data: allTransactions, isLoading } = useQuery<{ clientId: number; transactions: ClientTransaction[] }[]>({
@@ -39,6 +44,45 @@ export default function SalesReports() {
     },
     enabled: !!allClients && allClients.length > 0,
   });
+
+  const filterOrders = (period: 'daily' | 'monthly' | 'yearly') => {
+    if (!allOrders) return { deliveryOrders: [], takeawayOrders: [], totalDelivery: 0, totalTakeaway: 0 };
+    
+    const deliveryOrders: Order[] = [];
+    const takeawayOrders: Order[] = [];
+    
+    allOrders.forEach((order) => {
+      if (!order.entryDate) return;
+      const orderDate = new Date(order.entryDate);
+      let matches = false;
+      
+      if (period === 'daily') {
+        const selectedDateObj = new Date(selectedDate);
+        selectedDateObj.setHours(0, 0, 0, 0);
+        const orderDateNorm = new Date(orderDate);
+        orderDateNorm.setHours(0, 0, 0, 0);
+        matches = orderDateNorm.getTime() === selectedDateObj.getTime();
+      } else if (period === 'monthly') {
+        const orderMonth = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
+        matches = orderMonth === selectedMonth;
+      } else {
+        matches = orderDate.getFullYear().toString() === selectedYear;
+      }
+      
+      if (matches) {
+        if (order.deliveryType === 'delivery') {
+          deliveryOrders.push(order);
+        } else {
+          takeawayOrders.push(order);
+        }
+      }
+    });
+    
+    const totalDelivery = deliveryOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || "0"), 0);
+    const totalTakeaway = takeawayOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || "0"), 0);
+    
+    return { deliveryOrders, takeawayOrders, totalDelivery, totalTakeaway };
+  };
 
   const filterTransactions = (period: 'daily' | 'monthly' | 'yearly') => {
     if (!allTransactions || !allClients) return { bills: [], deposits: [], totalBills: 0, totalDeposits: 0 };
@@ -91,6 +135,16 @@ export default function SalesReports() {
   const dailyData = useMemo(() => filterTransactions('daily'), [allTransactions, allClients, selectedDate]);
   const monthlyData = useMemo(() => filterTransactions('monthly'), [allTransactions, allClients, selectedMonth]);
   const yearlyData = useMemo(() => filterTransactions('yearly'), [allTransactions, allClients, selectedYear]);
+
+  const dailyOrderData = useMemo(() => filterOrders('daily'), [allOrders, selectedDate]);
+  const monthlyOrderData = useMemo(() => filterOrders('monthly'), [allOrders, selectedMonth]);
+  const yearlyOrderData = useMemo(() => filterOrders('yearly'), [allOrders, selectedYear]);
+
+  const getCurrentOrderData = () => {
+    if (activeTab === 'daily') return dailyOrderData;
+    if (activeTab === 'monthly') return monthlyOrderData;
+    return yearlyOrderData;
+  };
 
   const getCurrentData = () => {
     if (activeTab === 'daily') return { data: dailyData, label: formatDate(selectedDate), filename: `sales-${selectedDate}` };
@@ -245,6 +299,114 @@ export default function SalesReports() {
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
     return date.toLocaleDateString('en-AE', { year: 'numeric', month: 'long' });
   };
+
+  const renderOrderSummaryCards = (orderData: { deliveryOrders: Order[]; takeawayOrders: Order[]; totalDelivery: number; totalTakeaway: number }) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+              <Truck className="w-6 h-6 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Delivery Orders</p>
+              <p className="text-2xl font-bold text-orange-600">{orderData.totalDelivery.toFixed(2)} AED</p>
+              <p className="text-xs text-muted-foreground">{orderData.deliveryOrders.length} orders</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center">
+              <ShoppingBag className="w-6 h-6 text-cyan-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Take-away Orders</p>
+              <p className="text-2xl font-bold text-cyan-600">{orderData.totalTakeaway.toFixed(2)} AED</p>
+              <p className="text-xs text-muted-foreground">{orderData.takeawayOrders.length} orders</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderOrderTables = (orderData: { deliveryOrders: Order[]; takeawayOrders: Order[] }) => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-orange-600">
+            <Truck className="w-5 h-5" />
+            Delivery Orders ({orderData.deliveryOrders.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {orderData.deliveryOrders.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No delivery orders for this period</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orderData.deliveryOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-mono">{order.orderNumber}</TableCell>
+                    <TableCell>{order.customerName || 'Walk-in'}</TableCell>
+                    <TableCell className="text-right font-semibold text-orange-600">
+                      {parseFloat(order.totalAmount || "0").toFixed(2)} AED
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-cyan-600">
+            <ShoppingBag className="w-5 h-5" />
+            Take-away Orders ({orderData.takeawayOrders.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {orderData.takeawayOrders.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No take-away orders for this period</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orderData.takeawayOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-mono">{order.orderNumber}</TableCell>
+                    <TableCell>{order.customerName || 'Walk-in'}</TableCell>
+                    <TableCell className="text-right font-semibold text-cyan-600">
+                      {parseFloat(order.totalAmount || "0").toFixed(2)} AED
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   const renderSummaryCards = (data: { totalBills: number; totalDeposits: number; bills: any[]; deposits: any[] }) => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -501,6 +663,8 @@ export default function SalesReports() {
               </div>
             ) : (
               <>
+                {renderOrderSummaryCards(dailyOrderData)}
+                {renderOrderTables(dailyOrderData)}
                 {renderSummaryCards(dailyData)}
                 {renderTransactionTables(dailyData)}
               </>
@@ -531,6 +695,8 @@ export default function SalesReports() {
               </div>
             ) : (
               <>
+                {renderOrderSummaryCards(monthlyOrderData)}
+                {renderOrderTables(monthlyOrderData)}
                 {renderSummaryCards(monthlyData)}
                 {renderTransactionTables(monthlyData)}
               </>
@@ -563,6 +729,8 @@ export default function SalesReports() {
               </div>
             ) : (
               <>
+                {renderOrderSummaryCards(yearlyOrderData)}
+                {renderOrderTables(yearlyOrderData)}
                 {renderSummaryCards(yearlyData)}
                 {renderTransactionTables(yearlyData)}
               </>
