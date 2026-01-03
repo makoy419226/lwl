@@ -130,51 +130,56 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             <title>Order Receipt ${order.orderNumber}</title>
             <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
-              body { 
-                font-family: Arial, sans-serif; 
-                padding: 20px; 
-                background: white; 
-                color: #333;
+              @page { 
+                size: 80mm auto; 
+                margin: 0; 
               }
-              .receipt-container { max-width: 600px; margin: 0 auto; }
-              .header { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 30px; border-bottom: 2px solid ${order.urgent ? "#dc2626" : "#1e40af"}; padding-bottom: 20px; }
-              .logo { width: 70px; height: 70px; flex-shrink: 0; }
+              body { 
+                font-family: 'Courier New', monospace; 
+                padding: 5mm; 
+                background: white; 
+                color: #000;
+                width: 80mm;
+                font-size: 10px;
+              }
+              .receipt-container { width: 100%; }
+              .header { text-align: center; margin-bottom: 8px; border-bottom: 1px dashed ${order.urgent ? "#dc2626" : "#000"}; padding-bottom: 8px; }
+              .logo { width: 50px; height: 50px; margin: 0 auto 5px; }
               .logo img { width: 100%; height: 100%; object-fit: contain; }
-              .company-info { flex: 1; }
-              .company-name { font-size: 22px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#1e40af"}; margin-bottom: 6px; }
-              .company-address { font-size: 11px; color: #666; line-height: 1.5; }
-              .receipt-title { font-size: 20px; font-weight: bold; text-align: center; margin: 20px 0; color: ${order.urgent ? "#dc2626" : "#1e40af"}; }
-              .info-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
-              .info-section { width: 48%; }
-              .info-label { font-size: 12px; color: #666; margin-bottom: 4px; }
-              .info-value { font-size: 14px; font-weight: 500; }
-              .order-number { font-size: 18px; font-weight: bold; color: #1e40af; text-align: center; margin: 20px 0; padding: 10px; background: #f3f4f6; border-radius: 8px; }
-              .items-section { margin: 20px 0; padding: 15px; background: #f9fafb; border-radius: 8px; }
-              .items-title { font-weight: 600; margin-bottom: 10px; }
-              .items-list { white-space: pre-wrap; font-size: 14px; }
-              .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #333; }
-              .items-table th, .items-table td { padding: 6px 8px; text-align: left; border: 1px solid #333; }
-              .items-table th { background: ${order.urgent ? "#dc2626" : "#1e40af"}; font-weight: 600; font-size: 11px; color: white; text-transform: uppercase; }
-              .items-table td { font-size: 12px; }
-              .items-table tr:nth-child(even) { background: #f9fafb; }
-              .items-table .qty-col { text-align: center; width: 50px; }
-              .items-table .price-col { text-align: right; width: 70px; }
-              .items-table .total-col { text-align: right; width: 80px; font-weight: 600; }
-              .status-section { margin: 20px 0; }
-              .status-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e5e5; }
-              .status-label { font-weight: 500; }
-              .status-value { color: #666; }
-              .status-done { color: #16a34a; font-weight: 600; }
+              .company-info { text-align: center; }
+              .company-name { font-size: 14px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#000"}; margin-bottom: 3px; }
+              .company-address { font-size: 9px; color: #333; line-height: 1.3; }
+              .receipt-title { font-size: 12px; font-weight: bold; text-align: center; margin: 8px 0; color: ${order.urgent ? "#dc2626" : "#000"}; }
+              .service-type-banner { text-align: center; padding: 5px; margin: 5px 0; font-weight: bold; font-size: 11px; border: 1px solid ${order.urgent ? "#dc2626" : "#000"}; }
+              .info-row { margin-bottom: 5px; font-size: 9px; }
+              .info-section { margin-bottom: 3px; }
+              .info-label { font-size: 8px; color: #666; }
+              .info-value { font-size: 10px; font-weight: bold; }
+              .order-number { font-size: 14px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#000"}; text-align: center; margin: 8px 0; padding: 5px; border: 1px dashed #000; }
+              .items-section { margin: 8px 0; }
+              .items-title { font-weight: bold; margin-bottom: 5px; font-size: 10px; }
+              .items-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+              .items-table th, .items-table td { padding: 3px 2px; text-align: left; border-bottom: 1px dotted #ccc; }
+              .items-table th { font-weight: bold; font-size: 8px; text-transform: uppercase; border-bottom: 1px solid #000; }
+              .items-table .qty-col { text-align: center; width: 25px; }
+              .items-table .price-col { text-align: right; width: 45px; }
+              .items-table .total-col { text-align: right; width: 50px; font-weight: bold; }
+              .status-section { margin: 8px 0; font-size: 9px; }
+              .status-row { display: flex; justify-content: space-between; padding: 2px 0; }
+              .status-done { font-weight: bold; }
               .status-pending { color: #dc2626; }
-              .totals { margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5; }
-              .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-              .total-row.grand-total { font-size: 18px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#1e40af"}; border-top: 2px solid ${order.urgent ? "#dc2626" : "#1e40af"}; margin-top: 10px; padding-top: 15px; }
-              .footer { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #e5e5e5; }
-              .footer p { font-size: 12px; color: #666; }
-              .delivery-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
-              .delivery-type { background: #3b82f6; color: white; }
-              .urgent-badge { background: #dc2626; color: white; margin-left: 8px; }
-              @media print { body { padding: 0; } .no-print { display: none; } }
+              .totals { margin-top: 8px; padding-top: 5px; border-top: 1px dashed #000; font-size: 10px; }
+              .total-row { display: flex; justify-content: space-between; padding: 2px 0; }
+              .total-row.grand-total { font-size: 14px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#000"}; border-top: 2px solid ${order.urgent ? "#dc2626" : "#000"}; margin-top: 5px; padding-top: 5px; }
+              .footer { margin-top: 10px; text-align: center; padding-top: 8px; border-top: 1px dashed #000; }
+              .footer p { font-size: 8px; color: #666; }
+              .delivery-badge { display: inline-block; padding: 2px 6px; font-size: 9px; margin-top: 5px; border: 1px solid #000; }
+              .delivery-type { background: #eee; }
+              .urgent-badge { background: #dc2626; color: white; border-color: #dc2626; margin-left: 4px; }
+              @media print { 
+                body { padding: 2mm; width: 80mm; } 
+                .no-print { display: none; } 
+              }
             </style>
           </head>
           <body>

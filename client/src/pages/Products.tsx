@@ -363,50 +363,50 @@ export default function Products() {
       </div>
 
       {/* Right side - Order Slip or Today's Work List */}
-      <div className="w-56 border-l bg-muted/30 flex flex-col">
+      <div className="w-72 border-l bg-muted/30 flex flex-col">
         {orderItems.length > 0 ? (
           <>
-            <div className="h-10 px-2 flex items-center justify-between border-b bg-primary/10">
-              <h2 className="text-xs font-bold text-primary flex items-center gap-1">
-                <ShoppingCart className="w-3 h-3" />
+            <div className="h-12 px-3 flex items-center justify-between border-b bg-primary/10">
+              <h2 className="text-sm font-bold text-primary flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
                 Order Slip
               </h2>
-              <Badge variant="secondary" className="text-[10px]">{orderItems.length} items</Badge>
+              <Badge variant="secondary" className="text-xs font-bold">{orderItems.length} items</Badge>
             </div>
-            <div className="flex-1 overflow-auto p-2">
-              <div className="border rounded bg-white dark:bg-background p-2 space-y-2">
+            <div className="flex-1 overflow-auto p-3">
+              <div className="border rounded bg-white dark:bg-background p-3 space-y-3">
                 <div className="text-center border-b pb-2">
-                  <div className="text-[10px] font-bold text-primary">LIQUID WASHES LAUNDRY</div>
-                  <div className="text-[8px] text-muted-foreground">Order Preview</div>
+                  <div className="text-sm font-bold text-primary">LIQUID WASHES LAUNDRY</div>
+                  <div className="text-xs text-muted-foreground font-semibold">Order Preview</div>
                 </div>
-                <div className="max-h-48 overflow-auto">
-                <table className="w-full text-[10px]">
+                <div className="max-h-56 overflow-auto">
+                <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-white dark:bg-background">
                     <tr className="border-b">
-                      <th className="text-left py-1">#</th>
-                      <th className="text-left py-1">Item</th>
-                      <th className="text-center py-1">Qty</th>
-                      <th className="text-right py-1">Price</th>
+                      <th className="text-left py-1 font-bold">#</th>
+                      <th className="text-left py-1 font-bold">Item</th>
+                      <th className="text-center py-1 font-bold">Qty</th>
+                      <th className="text-right py-1 font-bold">Price</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orderItems.map((item, idx) => (
                       <tr key={item.product.id} className="border-b border-dashed">
-                        <td className="py-1">{idx + 1}</td>
-                        <td className="py-1 font-medium truncate max-w-[80px]" title={item.product.name}>{item.product.name}</td>
-                        <td className="py-1 text-center">{item.quantity}</td>
-                        <td className="py-1 text-right">{(parseFloat(item.product.price || "0") * item.quantity).toFixed(0)}</td>
+                        <td className="py-1 font-bold">{idx + 1}</td>
+                        <td className="py-1 font-bold truncate max-w-[100px]" title={item.product.name}>{item.product.name}</td>
+                        <td className="py-1 text-center font-bold">{item.quantity}</td>
+                        <td className="py-1 text-right font-bold">{(parseFloat(item.product.price || "0") * item.quantity).toFixed(0)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 </div>
                 <div className="border-t pt-2 space-y-1">
-                  <div className="flex justify-between text-[10px]">
+                  <div className="flex justify-between text-xs font-semibold">
                     <span>Subtotal</span>
                     <span>{orderTotal.toFixed(2)} AED</span>
                   </div>
-                  <div className="flex justify-between text-xs font-bold text-primary">
+                  <div className="flex justify-between text-sm font-bold text-primary">
                     <span>TOTAL</span>
                     <span>{orderTotal.toFixed(2)} AED</span>
                   </div>
@@ -451,77 +451,77 @@ export default function Products() {
           </>
         ) : (
           <>
-        <div className="h-10 px-2 flex items-center border-b bg-white/80 dark:bg-background/80">
-          <h2 className="text-xs font-bold text-foreground flex items-center gap-1">
-            <Clock className="w-3 h-3 text-primary" />
+        <div className="h-12 px-3 flex items-center border-b bg-white/80 dark:bg-background/80">
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Clock className="w-4 h-4 text-primary" />
             Today's Work
           </h2>
         </div>
         
-        <div className="flex-1 overflow-auto p-1 space-y-2">
+        <div className="flex-1 overflow-auto p-2 space-y-3">
           {/* Washing Pending */}
           <div>
-            <div className="flex items-center gap-1 mb-1">
-              <Shirt className="w-3 h-3 text-blue-500" />
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase">Washing</span>
-              <Badge variant="secondary" className="ml-auto text-[10px] px-1 h-4">{pendingWashing.length}</Badge>
+            <div className="flex items-center gap-2 mb-2">
+              <Shirt className="w-4 h-4 text-blue-500" />
+              <span className="text-xs font-bold text-muted-foreground uppercase">Washing</span>
+              <Badge variant="secondary" className="ml-auto text-xs font-bold">{pendingWashing.length}</Badge>
             </div>
             <div className="space-y-1">
               {pendingWashing.slice(0, 5).map(order => (
-                <div key={order.id} className="bg-blue-50 dark:bg-blue-900/20 rounded p-1 text-[10px]">
-                  <div className="font-semibold text-blue-700 dark:text-blue-300">{order.orderNumber}</div>
-                  <div className="text-muted-foreground line-clamp-1">{order.items}</div>
+                <div key={order.id} className="bg-blue-50 dark:bg-blue-900/20 rounded p-2 text-xs">
+                  <div className="font-bold text-blue-700 dark:text-blue-300">{order.orderNumber}</div>
+                  <div className="text-muted-foreground font-semibold line-clamp-1">{order.items}</div>
                 </div>
               ))}
               {pendingWashing.length === 0 && (
-                <div className="text-[10px] text-muted-foreground italic">No pending</div>
+                <div className="text-xs text-muted-foreground italic font-semibold">No pending</div>
               )}
             </div>
           </div>
 
           {/* Packing Pending */}
           <div>
-            <div className="flex items-center gap-1 mb-1">
-              <Package className="w-3 h-3 text-orange-500" />
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase">Packing</span>
-              <Badge variant="secondary" className="ml-auto text-[10px] px-1 h-4">{pendingPacking.length}</Badge>
+            <div className="flex items-center gap-2 mb-2">
+              <Package className="w-4 h-4 text-orange-500" />
+              <span className="text-xs font-bold text-muted-foreground uppercase">Packing</span>
+              <Badge variant="secondary" className="ml-auto text-xs font-bold">{pendingPacking.length}</Badge>
             </div>
             <div className="space-y-1">
               {pendingPacking.slice(0, 5).map(order => (
-                <div key={order.id} className="bg-orange-50 dark:bg-orange-900/20 rounded p-1 text-[10px]">
-                  <div className="font-semibold text-orange-700 dark:text-orange-300">{order.orderNumber}</div>
-                  <div className="text-muted-foreground line-clamp-1">{order.items}</div>
+                <div key={order.id} className="bg-orange-50 dark:bg-orange-900/20 rounded p-2 text-xs">
+                  <div className="font-bold text-orange-700 dark:text-orange-300">{order.orderNumber}</div>
+                  <div className="text-muted-foreground font-semibold line-clamp-1">{order.items}</div>
                 </div>
               ))}
               {pendingPacking.length === 0 && (
-                <div className="text-[10px] text-muted-foreground italic">No pending</div>
+                <div className="text-xs text-muted-foreground italic font-semibold">No pending</div>
               )}
             </div>
           </div>
 
           {/* Delivery Pending */}
           <div>
-            <div className="flex items-center gap-1 mb-1">
-              <Truck className="w-3 h-3 text-green-500" />
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase">Delivery</span>
-              <Badge variant="secondary" className="ml-auto text-[10px] px-1 h-4">{pendingDelivery.length}</Badge>
+            <div className="flex items-center gap-2 mb-2">
+              <Truck className="w-4 h-4 text-green-500" />
+              <span className="text-xs font-bold text-muted-foreground uppercase">Delivery</span>
+              <Badge variant="secondary" className="ml-auto text-xs font-bold">{pendingDelivery.length}</Badge>
             </div>
             <div className="space-y-1">
               {pendingDelivery.slice(0, 5).map(order => (
-                <div key={order.id} className="bg-green-50 dark:bg-green-900/20 rounded p-1 text-[10px]">
-                  <div className="font-semibold text-green-700 dark:text-green-300">{order.orderNumber}</div>
-                  <div className="text-muted-foreground line-clamp-1">{order.items}</div>
+                <div key={order.id} className="bg-green-50 dark:bg-green-900/20 rounded p-2 text-xs">
+                  <div className="font-bold text-green-700 dark:text-green-300">{order.orderNumber}</div>
+                  <div className="text-muted-foreground font-semibold line-clamp-1">{order.items}</div>
                 </div>
               ))}
               {pendingDelivery.length === 0 && (
-                <div className="text-[10px] text-muted-foreground italic">No pending</div>
+                <div className="text-xs text-muted-foreground italic font-semibold">No pending</div>
               )}
             </div>
           </div>
 
           {/* Summary */}
           <div className="pt-2 border-t">
-            <div className="text-[10px] text-muted-foreground">
+            <div className="text-xs text-muted-foreground font-semibold">
               Today's Orders: <span className="font-bold text-foreground">{todaysOrders.length}</span>
             </div>
           </div>
