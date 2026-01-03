@@ -36,6 +36,8 @@ export default function Orders() {
   const [deliveryPin, setDeliveryPin] = useState("");
   const [deliveryPinError, setDeliveryPinError] = useState("");
   const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
+  const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -399,8 +401,10 @@ export default function Orders() {
             <TabsTrigger value="washing">Washing</TabsTrigger>
             <TabsTrigger value="packing">Ready</TabsTrigger>
             <TabsTrigger value="delivered">Delivered</TabsTrigger>
+            <TabsTrigger value="item-report">Item Report</TabsTrigger>
           </TabsList>
 
+          {activeTab !== "item-report" && (
           <TabsContent value={activeTab}>
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
@@ -601,6 +605,137 @@ export default function Orders() {
               </Card>
             )}
           </TabsContent>
+          )}
+
+          {activeTab === "item-report" && (
+            <TabsContent value="item-report" forceMount>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    Item Quantity Report (Date-wise)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="report-start">From:</Label>
+                      <Input
+                        id="report-start"
+                        type="date"
+                        value={reportStartDate}
+                        onChange={(e) => setReportStartDate(e.target.value)}
+                        className="w-40"
+                        data-testid="input-report-start-date"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="report-end">To:</Label>
+                      <Input
+                        id="report-end"
+                        type="date"
+                        value={reportEndDate}
+                        onChange={(e) => setReportEndDate(e.target.value)}
+                        className="w-40"
+                        data-testid="input-report-end-date"
+                      />
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const startDate = new Date(reportStartDate);
+                    startDate.setHours(0, 0, 0, 0);
+                    const endDate = new Date(reportEndDate);
+                    endDate.setHours(23, 59, 59, 999);
+
+                    const filteredOrdersForReport = orders?.filter(order => {
+                      const orderDate = new Date(order.entryDate);
+                      return orderDate >= startDate && orderDate <= endDate;
+                    }) || [];
+
+                    const dateItemMap: Record<string, Record<string, number>> = {};
+                    const allItems: Set<string> = new Set();
+
+                    filteredOrdersForReport.forEach(order => {
+                      const dateKey = format(new Date(order.entryDate), "dd/MM/yyyy");
+                      if (!dateItemMap[dateKey]) {
+                        dateItemMap[dateKey] = {};
+                      }
+                      const items = parseOrderItems(order.items);
+                      items.forEach(item => {
+                        allItems.add(item.name);
+                        dateItemMap[dateKey][item.name] = (dateItemMap[dateKey][item.name] || 0) + item.quantity;
+                      });
+                    });
+
+                    const sortedDates = Object.keys(dateItemMap).sort((a, b) => {
+                      const [dayA, monthA, yearA] = a.split('/').map(Number);
+                      const [dayB, monthB, yearB] = b.split('/').map(Number);
+                      return new Date(yearA, monthA - 1, dayA).getTime() - new Date(yearB, monthB - 1, dayB).getTime();
+                    });
+
+                    const sortedItems = Array.from(allItems).sort();
+
+                    const itemTotals: Record<string, number> = {};
+                    sortedItems.forEach(item => {
+                      itemTotals[item] = Object.values(dateItemMap).reduce((sum, dateData) => sum + (dateData[item] || 0), 0);
+                    });
+
+                    if (filteredOrdersForReport.length === 0) {
+                      return (
+                        <div className="text-center py-10 text-muted-foreground">
+                          <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                          <p>No orders found in the selected date range</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="border rounded-lg overflow-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/50">
+                              <TableHead className="font-bold sticky left-0 bg-muted/50 z-10">Item Name</TableHead>
+                              {sortedDates.map(date => (
+                                <TableHead key={date} className="text-center font-bold min-w-[100px]">{date}</TableHead>
+                              ))}
+                              <TableHead className="text-center font-bold bg-primary/10 min-w-[100px]">Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {sortedItems.map(itemName => (
+                              <TableRow key={itemName} data-testid={`row-item-${itemName}`}>
+                                <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">{itemName}</TableCell>
+                                {sortedDates.map(date => (
+                                  <TableCell key={date} className="text-center">
+                                    {dateItemMap[date][itemName] || "-"}
+                                  </TableCell>
+                                ))}
+                                <TableCell className="text-center font-bold bg-primary/10">
+                                  {itemTotals[itemName]}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow className="bg-muted/30 font-bold">
+                              <TableCell className="sticky left-0 bg-muted/30 z-10 border-r">Daily Total</TableCell>
+                              {sortedDates.map(date => (
+                                <TableCell key={date} className="text-center">
+                                  {Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0)}
+                                </TableCell>
+                              ))}
+                              <TableCell className="text-center bg-primary/20">
+                                {Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0)}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
 

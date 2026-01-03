@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { TopBar } from "@/components/TopBar";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
-import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet, Calendar, Search, Printer } from "lucide-react";
+import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet, Calendar, Search, Printer, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/ClientForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -19,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Invoice } from "@/components/Invoice";
-import type { Client, ClientTransaction, Bill } from "@shared/schema";
+import type { Client, ClientTransaction, Bill, Worker } from "@shared/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Clients() {
@@ -38,6 +39,10 @@ export default function Clients() {
   const [payingBillId, setPayingBillId] = useState<number | null>(null);
   const [billPaymentAmount, setBillPaymentAmount] = useState("");
   const [billPaymentMethod, setBillPaymentMethod] = useState("cash");
+  const [showCashierPinDialog, setShowCashierPinDialog] = useState(false);
+  const [cashierPin, setCashierPin] = useState("");
+  const [cashierPinError, setCashierPinError] = useState("");
+  const [pendingCashPayment, setPendingCashPayment] = useState<{ billId: number; amount: string } | null>(null);
   const [invoiceData, setInvoiceData] = useState<{
     invoiceNumber: string;
     date: string;
@@ -73,12 +78,54 @@ export default function Clients() {
       setPayingBillId(null);
       setBillPaymentAmount("");
       setBillPaymentMethod("cash");
+      setPendingCashPayment(null);
       toast({ title: "Payment recorded", description: "Bill payment has been recorded successfully." });
     },
     onError: (error: any) => {
       toast({ title: "Payment failed", description: error.message || "Failed to record payment", variant: "destructive" });
     },
   });
+
+  const verifyCashierPinMutation = useMutation({
+    mutationFn: async (pin: string) => {
+      const res = await apiRequest("POST", "/api/workers/verify-pin", { pin });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && pendingCashPayment) {
+        payBillMutation.mutate({
+          billId: pendingCashPayment.billId,
+          amount: pendingCashPayment.amount,
+          paymentMethod: "cash",
+        });
+        setShowCashierPinDialog(false);
+        setCashierPin("");
+        setCashierPinError("");
+      }
+    },
+    onError: () => {
+      setCashierPinError("Invalid PIN. Please try again.");
+    },
+  });
+
+  const handlePayBill = (billId: number, amount: string, method: string) => {
+    if (method === "cash") {
+      setPendingCashPayment({ billId, amount });
+      setShowCashierPinDialog(true);
+      setCashierPin("");
+      setCashierPinError("");
+    } else {
+      payBillMutation.mutate({ billId, amount, paymentMethod: method });
+    }
+  };
+
+  const handleCashierPinSubmit = () => {
+    if (cashierPin.length !== 5) {
+      setCashierPinError("PIN must be 5 digits");
+      return;
+    }
+    verifyCashierPinMutation.mutate(cashierPin);
+  };
 
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
@@ -566,11 +613,7 @@ export default function Clients() {
                                 size="sm"
                                 onClick={() => {
                                   if (billPaymentAmount) {
-                                    payBillMutation.mutate({
-                                      billId: bill.id,
-                                      amount: billPaymentAmount,
-                                      paymentMethod: billPaymentMethod,
-                                    });
+                                    handlePayBill(bill.id, billPaymentAmount, billPaymentMethod);
                                   }
                                 }}
                                 disabled={!billPaymentAmount || payBillMutation.isPending}
@@ -674,6 +717,75 @@ export default function Clients() {
           onClose={() => setInvoiceData(null)}
         />
       )}
+
+      {/* Cashier PIN Dialog for Cash Payments */}
+      <Dialog open={showCashierPinDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowCashierPinDialog(false);
+          setCashierPin("");
+          setCashierPinError("");
+          setPendingCashPayment(null);
+        }
+      }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-center flex items-center justify-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              Cashier PIN Required
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-center text-muted-foreground">
+              Enter your 5-digit cashier PIN to accept this cash payment.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="cashier-pin">PIN</Label>
+              <Input
+                id="cashier-pin"
+                type="password"
+                maxLength={5}
+                placeholder="Enter 5-digit PIN"
+                value={cashierPin}
+                onChange={(e) => {
+                  setCashierPin(e.target.value.replace(/\D/g, '').slice(0, 5));
+                  setCashierPinError("");
+                }}
+                className="text-center text-2xl tracking-widest"
+                data-testid="input-cashier-pin"
+              />
+              {cashierPinError && (
+                <p className="text-sm text-destructive text-center">{cashierPinError}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowCashierPinDialog(false);
+                  setCashierPin("");
+                  setCashierPinError("");
+                  setPendingCashPayment(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleCashierPinSubmit}
+                disabled={cashierPin.length !== 5 || verifyCashierPinMutation.isPending}
+                data-testid="button-verify-cashier-pin"
+              >
+                {verifyCashierPinMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Verify"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
