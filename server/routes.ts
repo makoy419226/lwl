@@ -123,34 +123,23 @@ export async function registerRoutes(
     try {
       const input = api.clients.create.input.parse(req.body);
       
-      // Check for duplicate name
-      if (input.name) {
-        const existingClient = await storage.findClientByName(input.name);
+      // Check for duplicate name + phone combination
+      if (input.name && input.phone) {
+        const existingClient = await storage.findClientByNameAndPhone(input.name, input.phone);
         if (existingClient) {
           return res.status(409).json({
-            message: `A client with name "${input.name}" already exists`,
-            field: 'name',
-          });
-        }
-      }
-      
-      // Check for duplicate phone number
-      if (input.phone) {
-        const existingClient = await storage.findClientByPhone(input.phone);
-        if (existingClient) {
-          return res.status(409).json({
-            message: `A client with phone number "${input.phone}" already exists`,
+            message: `A client with name "${input.name}" and phone "${input.phone}" already exists`,
             field: 'phone',
           });
         }
       }
       
-      // Check for duplicate address
-      if (input.address) {
-        const existingClient = await storage.findClientByAddress(input.address);
+      // Check for duplicate name + address combination
+      if (input.name && input.address) {
+        const existingClient = await storage.findClientByNameAndAddress(input.name, input.address);
         if (existingClient) {
           return res.status(409).json({
-            message: `A client with address "${input.address}" already exists`,
+            message: `A client with name "${input.name}" and address "${input.address}" already exists`,
             field: 'address',
           });
         }
@@ -174,13 +163,34 @@ export async function registerRoutes(
       const input = api.clients.update.input.parse(req.body);
       const clientId = Number(req.params.id);
       
-      // Check for duplicate phone number (excluding current client)
-      if (input.phone) {
-        const existingClient = await storage.findClientByPhone(input.phone, clientId);
+      // Get current client data for comparison
+      const currentClient = await storage.getClient(clientId);
+      if (!currentClient) {
+        return res.status(404).json({ message: 'Client not found' });
+      }
+      
+      const newName = input.name || currentClient.name;
+      const newPhone = input.phone || currentClient.phone;
+      const newAddress = input.address || currentClient.address;
+      
+      // Check for duplicate name + phone combination (excluding current client)
+      if (newPhone) {
+        const existingClient = await storage.findClientByNameAndPhone(newName, newPhone, clientId);
         if (existingClient) {
           return res.status(409).json({
-            message: `A client with phone number "${input.phone}" already exists`,
+            message: `A client with name "${newName}" and phone "${newPhone}" already exists`,
             field: 'phone',
+          });
+        }
+      }
+      
+      // Check for duplicate name + address combination (excluding current client)
+      if (newAddress) {
+        const existingClient = await storage.findClientByNameAndAddress(newName, newAddress, clientId);
+        if (existingClient) {
+          return res.status(409).json({
+            message: `A client with name "${newName}" and address "${newAddress}" already exists`,
+            field: 'address',
           });
         }
       }

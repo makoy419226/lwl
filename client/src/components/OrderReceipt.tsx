@@ -351,7 +351,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             <div className="status-row">
               <span className="status-label">Delivery</span>
               <span className={order.delivered ? "status-done" : "status-pending"}>
-                {order.delivered ? `Completed - ${formatDate(order.deliveryDate)}${order.deliveredBy ? ` by ${order.deliveredBy}` : ''}` : "Pending"}
+                {order.delivered ? `Completed - ${formatDate(order.deliveryDate)}${order.deliveryBy ? ` by ${order.deliveryBy}` : ''}` : "Pending"}
               </span>
             </div>
           </div>
@@ -405,6 +405,53 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               </div>
             )}
           </div>
+
+          {balance <= 0 && paidAmount > 0 && (
+            <div style={{
+              textAlign: "center",
+              padding: "20px",
+              marginTop: "15px",
+              marginBottom: "10px",
+              border: "3px solid #16a34a",
+              borderRadius: "12px",
+              background: "#f0fdf4",
+            }}>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "12px",
+              }}>
+                <svg 
+                  width="40" 
+                  height="40" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="#16a34a" 
+                  strokeWidth="3" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span style={{
+                  fontSize: "32px",
+                  fontWeight: "bold",
+                  color: "#16a34a",
+                  letterSpacing: "2px",
+                }}>
+                  PAID
+                </span>
+              </div>
+              <div style={{
+                fontSize: "14px",
+                color: "#16a34a",
+                marginTop: "8px",
+              }}>
+                Payment Received - Thank You!
+              </div>
+            </div>
+          )}
 
           <div className="footer">
             <p>Thank you for choosing {companyInfo.name}!</p>
