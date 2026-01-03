@@ -57,6 +57,15 @@ export default function Products() {
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientAddress, setNewClientAddress] = useState("");
+  const [newClientEmail, setNewClientEmail] = useState("");
+  const [newClientContact, setNewClientContact] = useState("");
+  const [newClientPaymentMethod, setNewClientPaymentMethod] = useState("cash");
+  const [newClientDiscount, setNewClientDiscount] = useState("");
+  const [customItems, setCustomItems] = useState<{ name: string; price: number; quantity: number }[]>([]);
+  const [showOtherItemDialog, setShowOtherItemDialog] = useState(false);
+  const [otherItemName, setOtherItemName] = useState("");
+  const [otherItemPrice, setOtherItemPrice] = useState("");
+  const [otherItemQty, setOtherItemQty] = useState("1");
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
   const { data: clients } = useClients();
@@ -121,10 +130,14 @@ export default function Products() {
   }, [quantities, products]);
 
   const orderTotal = useMemo(() => {
-    return orderItems.reduce((sum, item) => {
+    const productTotal = orderItems.reduce((sum, item) => {
       return sum + (parseFloat(item.product.price || "0") * item.quantity);
     }, 0);
-  }, [orderItems]);
+    const customTotal = customItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return productTotal + customTotal;
+  }, [orderItems, customItems]);
+
+  const hasOrderItems = orderItems.length > 0 || customItems.length > 0;
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
@@ -147,7 +160,11 @@ export default function Products() {
       toast({ title: "Enter customer name", description: "Please enter customer name first.", variant: "destructive" });
       return;
     }
-    if (orderItems.length === 0) {
+    if (!customerPhone.trim()) {
+      toast({ title: "Enter phone number", description: "Phone number is required to create order.", variant: "destructive" });
+      return;
+    }
+    if (!hasOrderItems) {
       toast({ title: "No items", description: "Please add items to the order.", variant: "destructive" });
       return;
     }
@@ -155,10 +172,12 @@ export default function Products() {
   };
 
   const submitOrder = (isUrgent: boolean) => {
-    const itemsText = orderItems.map(item => {
+    const productItemsText = orderItems.map(item => {
       const packing = packingTypes[item.product.id] || "folding";
       return `${item.quantity}x ${item.product.name} (${packing})`;
-    }).join(", ");
+    });
+    const customItemsText = customItems.map(item => `${item.quantity}x ${item.name} @ ${item.price} AED`);
+    const itemsText = [...productItemsText, ...customItemsText].join(", ");
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
     
     // Calculate final total: urgent doubles, then apply discount, then add tips
@@ -171,6 +190,7 @@ export default function Products() {
     createOrderMutation.mutate({
       clientId: selectedClientId,
       customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
       orderNumber,
       items: itemsText,
       totalAmount: subtotal.toFixed(2),
@@ -188,10 +208,38 @@ export default function Products() {
   const clearOrder = () => {
     setQuantities({});
     setPackingTypes({});
+    setCustomItems([]);
     setCustomerName("");
+    setCustomerPhone("");
     setSelectedClientId(null);
     setDiscountPercent("");
     setTips("");
+  };
+
+  const handleAddOtherItem = () => {
+    if (!otherItemName.trim()) {
+      toast({ title: "Enter item name", description: "Please enter item name.", variant: "destructive" });
+      return;
+    }
+    if (!otherItemPrice || parseFloat(otherItemPrice) <= 0) {
+      toast({ title: "Enter price", description: "Please enter a valid price.", variant: "destructive" });
+      return;
+    }
+    const qty = parseInt(otherItemQty) || 1;
+    setCustomItems(prev => [...prev, { 
+      name: otherItemName.trim(), 
+      price: parseFloat(otherItemPrice), 
+      quantity: qty 
+    }]);
+    setOtherItemName("");
+    setOtherItemPrice("");
+    setOtherItemQty("1");
+    setShowOtherItemDialog(false);
+    toast({ title: "Item added", description: `${otherItemName} added to order.` });
+  };
+
+  const removeCustomItem = (index: number) => {
+    setCustomItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const handlePackingTypeChange = (productId: number, type: "hanging" | "folding") => {
@@ -209,24 +257,32 @@ export default function Products() {
     }
     createClient({
       name: newClientName.trim(),
-      phone: newClientPhone.trim() || "",
-      email: "",
+      phone: newClientPhone.trim(),
+      email: newClientEmail.trim() || "",
       address: newClientAddress.trim() || "",
       amount: "0",
       deposit: "0",
       balance: "0",
-      contact: "",
+      contact: newClientContact.trim() || "",
       billNumber: "",
-      preferredPaymentMethod: "cash",
-      discountPercent: "0",
+      preferredPaymentMethod: newClientPaymentMethod || "cash",
+      discountPercent: newClientDiscount || "0",
     }, {
       onSuccess: (client: Client) => {
         setSelectedClientId(client.id);
         setCustomerName(client.name);
+        setCustomerPhone(client.phone || "");
+        if (client.discountPercent) {
+          setDiscountPercent(client.discountPercent);
+        }
         setShowNewClientDialog(false);
         setNewClientName("");
         setNewClientPhone("");
         setNewClientAddress("");
+        setNewClientEmail("");
+        setNewClientContact("");
+        setNewClientPaymentMethod("cash");
+        setNewClientDiscount("");
         toast({ title: "Client created", description: `${client.name} has been added.` });
       },
       onError: () => {
@@ -388,7 +444,7 @@ export default function Products() {
         </main>
 
         {/* Order Summary Bar - Highlighted */}
-        {orderItems.length > 0 && (
+        {hasOrderItems && (
           <div className="sticky bottom-0 z-40 mx-1 mb-1 p-2 border-2 border-primary shadow-2xl bg-primary/5 rounded-lg">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -397,7 +453,7 @@ export default function Products() {
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground">
-                    {orderItems.length} items
+                    {orderItems.length + customItems.length} items
                   </p>
                   <p className="text-sm font-bold text-primary" data-testid="text-order-total">
                     {orderTotal.toFixed(2)} AED
@@ -439,7 +495,13 @@ export default function Products() {
               {orderItems.map((item, idx) => (
                 <span key={item.product.id} className="font-medium">
                   {item.quantity}x {item.product.name}
-                  {idx < orderItems.length - 1 ? ", " : ""}
+                  {idx < orderItems.length + customItems.length - 1 ? ", " : ""}
+                </span>
+              ))}
+              {customItems.map((item, idx) => (
+                <span key={`custom-${idx}`} className="font-medium text-amber-600">
+                  {item.quantity}x {item.name}
+                  {idx < customItems.length - 1 ? ", " : ""}
                 </span>
               ))}
             </div>
@@ -449,14 +511,14 @@ export default function Products() {
 
       {/* Right side - Order Slip or Today's Work List */}
       <div className="w-72 border-l bg-muted/30 flex flex-col">
-        {orderItems.length > 0 ? (
+        {hasOrderItems ? (
           <>
             <div className="h-12 px-3 flex items-center justify-between border-b bg-primary/10">
               <h2 className="text-sm font-bold text-primary flex items-center gap-2">
                 <ShoppingCart className="w-4 h-4" />
                 Order Slip
               </h2>
-              <Badge variant="secondary" className="text-xs font-bold">{orderItems.length} items</Badge>
+              <Badge variant="secondary" className="text-xs font-bold">{orderItems.length + customItems.length} items</Badge>
             </div>
             <div className="flex-1 overflow-auto p-3">
               <div className="border rounded bg-white dark:bg-background p-3 space-y-3">
@@ -481,6 +543,19 @@ export default function Products() {
                         <td className="py-1 font-bold truncate max-w-[100px]" title={item.product.name}>{item.product.name}</td>
                         <td className="py-1 text-center font-bold">{item.quantity}</td>
                         <td className="py-1 text-right font-bold">{(parseFloat(item.product.price || "0") * item.quantity).toFixed(0)}</td>
+                      </tr>
+                    ))}
+                    {customItems.map((item, idx) => (
+                      <tr key={`custom-${idx}`} className="border-b border-dashed bg-amber-50 dark:bg-amber-900/20">
+                        <td className="py-1 font-bold">{orderItems.length + idx + 1}</td>
+                        <td className="py-1 font-bold truncate max-w-[100px] flex items-center gap-1" title={item.name}>
+                          {item.name}
+                          <button onClick={() => removeCustomItem(idx)} className="text-red-500 hover:text-red-700">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </td>
+                        <td className="py-1 text-center font-bold">{item.quantity}</td>
+                        <td className="py-1 text-right font-bold">{(item.price * item.quantity).toFixed(0)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -518,6 +593,7 @@ export default function Products() {
                       if (value === "walkin") {
                         setSelectedClientId(null);
                         setCustomerName("Walk-in Customer");
+                        setCustomerPhone("");
                       } else if (value === "new") {
                         setShowNewClientDialog(true);
                       } else {
@@ -525,6 +601,7 @@ export default function Products() {
                         if (client) {
                           setSelectedClientId(client.id);
                           setCustomerName(client.name);
+                          setCustomerPhone(client.phone || "");
                           if (client.discountPercent) {
                             setDiscountPercent(client.discountPercent);
                           }
@@ -559,11 +636,28 @@ export default function Products() {
                 </div>
                 <Input
                   className="w-full h-8 text-xs"
-                  placeholder="Customer name"
+                  placeholder="Customer name *"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   data-testid="input-order-customer-panel"
                 />
+                <Input
+                  className="w-full h-8 text-xs"
+                  placeholder="Phone number *"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  data-testid="input-order-phone-panel"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => setShowOtherItemDialog(true)}
+                  data-testid="button-add-other-item"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Other Item
+                </Button>
                 <div className="flex gap-1">
                   <Input
                     className="flex-1 h-8 text-xs"
@@ -727,6 +821,184 @@ export default function Products() {
                 <Zap className="w-8 h-8" />
                 <div className="font-semibold">Urgent</div>
                 <div className="text-xs">{(orderTotal * 2).toFixed(2)} AED</div>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Other Item Dialog */}
+      <Dialog open={showOtherItemDialog} onOpenChange={setShowOtherItemDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add Other Item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Item Name *</Label>
+              <Input
+                placeholder="Enter item name"
+                value={otherItemName}
+                onChange={(e) => setOtherItemName(e.target.value)}
+                data-testid="input-other-item-name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Price (AED) *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={otherItemPrice}
+                  onChange={(e) => setOtherItemPrice(e.target.value)}
+                  data-testid="input-other-item-price"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Quantity</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="1"
+                  value={otherItemQty}
+                  onChange={(e) => setOtherItemQty(e.target.value)}
+                  data-testid="input-other-item-qty"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowOtherItemDialog(false);
+                  setOtherItemName("");
+                  setOtherItemPrice("");
+                  setOtherItemQty("1");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleAddOtherItem}
+                data-testid="button-add-other-item-confirm"
+              >
+                Add Item
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full New Client Dialog */}
+      <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Client</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[70vh] overflow-auto">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Name *</Label>
+                <Input
+                  placeholder="Client name"
+                  value={newClientName}
+                  onChange={(e) => setNewClientName(e.target.value)}
+                  data-testid="input-new-client-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Phone *</Label>
+                <Input
+                  placeholder="Phone number"
+                  value={newClientPhone}
+                  onChange={(e) => setNewClientPhone(e.target.value)}
+                  data-testid="input-new-client-phone"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Email</Label>
+              <Input
+                type="email"
+                placeholder="Email address"
+                value={newClientEmail}
+                onChange={(e) => setNewClientEmail(e.target.value)}
+                data-testid="input-new-client-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Address</Label>
+              <Input
+                placeholder="Full address"
+                value={newClientAddress}
+                onChange={(e) => setNewClientAddress(e.target.value)}
+                data-testid="input-new-client-address"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Contact Person</Label>
+              <Input
+                placeholder="Contact person name"
+                value={newClientContact}
+                onChange={(e) => setNewClientContact(e.target.value)}
+                data-testid="input-new-client-contact"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Payment Method</Label>
+                <Select value={newClientPaymentMethod} onValueChange={setNewClientPaymentMethod}>
+                  <SelectTrigger data-testid="select-new-client-payment">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Discount %</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="0"
+                  value={newClientDiscount}
+                  onChange={(e) => setNewClientDiscount(e.target.value)}
+                  data-testid="input-new-client-discount"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowNewClientDialog(false);
+                  setNewClientName("");
+                  setNewClientPhone("");
+                  setNewClientAddress("");
+                  setNewClientEmail("");
+                  setNewClientContact("");
+                  setNewClientPaymentMethod("cash");
+                  setNewClientDiscount("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleCreateNewClient}
+                disabled={isCreatingClient}
+                data-testid="button-create-new-client"
+              >
+                {isCreatingClient ? "Creating..." : "Create Client"}
               </Button>
             </div>
           </div>
