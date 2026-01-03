@@ -537,5 +537,43 @@ export async function registerRoutes(
     res.json({ token: order.publicViewToken });
   });
 
+  // Incident Routes
+  app.get("/api/incidents", async (req, res) => {
+    const search = req.query.search as string | undefined;
+    const incidents = await storage.getIncidents(search);
+    res.json(incidents);
+  });
+
+  app.get("/api/incidents/:id", async (req, res) => {
+    const incident = await storage.getIncident(Number(req.params.id));
+    if (!incident) {
+      return res.status(404).json({ message: "Incident not found" });
+    }
+    res.json(incident);
+  });
+
+  app.post("/api/incidents", async (req, res) => {
+    try {
+      const incident = await storage.createIncident(req.body);
+      res.status(201).json(incident);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.put("/api/incidents/:id", async (req, res) => {
+    try {
+      const incident = await storage.updateIncident(Number(req.params.id), req.body);
+      res.json(incident);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.delete("/api/incidents/:id", async (req, res) => {
+    await storage.deleteIncident(Number(req.params.id));
+    res.status(204).send();
+  });
+
   return httpServer;
 }
