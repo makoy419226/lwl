@@ -262,7 +262,7 @@ export default function Products() {
                     )}
                   </div>
 
-                  <div className="text-[9px] leading-tight text-center font-semibold text-foreground line-clamp-2 flex-1 flex items-center px-0.5" data-testid={`text-product-name-${product.id}`}>
+                  <div className="text-[11px] leading-tight text-center font-bold text-foreground line-clamp-2 flex-1 flex items-center justify-center px-0.5" data-testid={`text-product-name-${product.id}`}>
                     {product.name}
                   </div>
 
