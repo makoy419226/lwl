@@ -137,13 +137,13 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
                 color: #333;
               }
               .receipt-container { max-width: 600px; margin: 0 auto; }
-              .header { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 30px; border-bottom: 2px solid #1e40af; padding-bottom: 20px; }
+              .header { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 30px; border-bottom: 2px solid ${order.urgent ? "#dc2626" : "#1e40af"}; padding-bottom: 20px; }
               .logo { width: 70px; height: 70px; flex-shrink: 0; }
               .logo img { width: 100%; height: 100%; object-fit: contain; }
               .company-info { flex: 1; }
-              .company-name { font-size: 22px; font-weight: bold; color: #1e40af; margin-bottom: 6px; }
+              .company-name { font-size: 22px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#1e40af"}; margin-bottom: 6px; }
               .company-address { font-size: 11px; color: #666; line-height: 1.5; }
-              .receipt-title { font-size: 20px; font-weight: bold; text-align: center; margin: 20px 0; color: #1e40af; }
+              .receipt-title { font-size: 20px; font-weight: bold; text-align: center; margin: 20px 0; color: ${order.urgent ? "#dc2626" : "#1e40af"}; }
               .info-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
               .info-section { width: 48%; }
               .info-label { font-size: 12px; color: #666; margin-bottom: 4px; }
@@ -154,7 +154,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               .items-list { white-space: pre-wrap; font-size: 14px; }
               .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #333; }
               .items-table th, .items-table td { padding: 6px 8px; text-align: left; border: 1px solid #333; }
-              .items-table th { background: #1e40af; font-weight: 600; font-size: 11px; color: white; text-transform: uppercase; }
+              .items-table th { background: ${order.urgent ? "#dc2626" : "#1e40af"}; font-weight: 600; font-size: 11px; color: white; text-transform: uppercase; }
               .items-table td { font-size: 12px; }
               .items-table tr:nth-child(even) { background: #f9fafb; }
               .items-table .qty-col { text-align: center; width: 50px; }
@@ -168,7 +168,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               .status-pending { color: #dc2626; }
               .totals { margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5; }
               .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-              .total-row.grand-total { font-size: 18px; font-weight: bold; color: #1e40af; border-top: 2px solid #1e40af; margin-top: 10px; padding-top: 15px; }
+              .total-row.grand-total { font-size: 18px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#1e40af"}; border-top: 2px solid ${order.urgent ? "#dc2626" : "#1e40af"}; margin-top: 10px; padding-top: 15px; }
               .footer { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #e5e5e5; }
               .footer p { font-size: 12px; color: #666; }
               .delivery-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
@@ -239,7 +239,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               <img src={logoBase64 || logoImage} alt="Company Logo" />
             </div>
             <div className="company-info">
-              <div className="company-name">{companyInfo.name}</div>
+              <div className="company-name" style={order.urgent ? { color: "#dc2626" } : {}}>{companyInfo.name}</div>
               <div className="company-address">
                 {companyInfo.address}<br />
                 {companyInfo.city}<br />
@@ -248,9 +248,24 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             </div>
           </div>
 
-          <div className="receipt-title">ORDER RECEIPT</div>
+          <div className="receipt-title" style={order.urgent ? { color: "#dc2626" } : {}}>ORDER RECEIPT</div>
 
-          <div className="order-number">
+          {/* Service Type Banner */}
+          <div style={{
+            textAlign: "center",
+            padding: "12px",
+            marginBottom: "15px",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            fontSize: "16px",
+            background: order.urgent ? "#fef2f2" : "#f0f9ff",
+            color: order.urgent ? "#dc2626" : "#1e40af",
+            border: order.urgent ? "2px solid #dc2626" : "2px solid #1e40af"
+          }}>
+            {order.urgent ? "URGENT SERVICE" : "NORMAL SERVICE"}
+          </div>
+
+          <div className="order-number" style={order.urgent ? { color: "#dc2626", background: "#fef2f2" } : {}}>
             Order # {order.orderNumber}
             <div style={{ marginTop: "8px" }}>
               <span className="delivery-badge delivery-type">
