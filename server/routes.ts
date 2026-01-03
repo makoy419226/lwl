@@ -392,7 +392,40 @@ export async function registerRoutes(
 
   app.post("/api/orders", async (req, res) => {
     try {
-      const order = await storage.createOrder(req.body);
+      const { customerName, customerPhone } = req.body;
+      
+      // Validate required fields
+      if (!customerName || !customerName.trim()) {
+        return res.status(400).json({ message: "Customer name is required" });
+      }
+      if (!customerPhone || !customerPhone.trim()) {
+        return res.status(400).json({ message: "Customer phone is required" });
+      }
+      
+      // Check if customer already exists and auto-add to clients list if new
+      let clientId = req.body.clientId;
+      if (!clientId) {
+        const existingClient = await storage.findClientByNameAndPhone(customerName.trim(), customerPhone.trim());
+        if (existingClient) {
+          clientId = existingClient.id;
+        } else {
+          // Auto-create new client
+          const newClient = await storage.createClient({
+            name: customerName.trim(),
+            phone: customerPhone.trim(),
+            email: "",
+            address: "",
+          });
+          clientId = newClient.id;
+        }
+      }
+      
+      const order = await storage.createOrder({
+        ...req.body,
+        clientId,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+      });
       res.status(201).json(order);
     } catch (err: any) {
       res.status(400).json({ message: err.message });

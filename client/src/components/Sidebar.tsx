@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle } from "lucide-react";
+import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logoImage from "@assets/image_1767220512226.png";
 
@@ -26,6 +26,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isWorkers = location === "/workers";
   const isSalesReports = location === "/sales-reports";
   const isIncidents = location === "/incidents";
+  const isDueCustomers = location === "/due-customers";
   const isContact = location === "/contact";
 
   return (
@@ -159,6 +160,21 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
           >
             <AlertTriangle className="w-5 h-5" />
             Incidents
+          </Button>
+        </Link>
+
+        <Link href="/due-customers">
+          <Button
+            variant={isDueCustomers ? "default" : "ghost"}
+            className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
+              isDueCustomers
+                ? "bg-primary text-white shadow-md"
+                : "text-foreground hover:bg-muted/50"
+            }`}
+            data-testid="nav-due-customers"
+          >
+            <CircleDollarSign className="w-5 h-5" />
+            Due Customers
           </Button>
         </Link>
 
