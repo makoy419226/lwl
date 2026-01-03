@@ -296,14 +296,18 @@ export class DatabaseStorage implements IStorage {
     const newPaidAmount = currentPaid + paymentAmount;
     const isPaid = newPaidAmount >= billAmount;
 
-    const payment = await this.createBillPayment({
-      billId,
-      clientId: bill.clientId,
-      amount,
-      paymentDate: new Date(),
-      paymentMethod: paymentMethod || "cash",
-      notes,
-    });
+    // Only create payment record if there's a clientId
+    let payment: BillPayment | null = null;
+    if (bill.clientId) {
+      payment = await this.createBillPayment({
+        billId,
+        clientId: bill.clientId,
+        amount,
+        paymentDate: new Date(),
+        paymentMethod: paymentMethod || "cash",
+        notes,
+      });
+    }
 
     const updatedBill = await this.updateBill(billId, {
       paidAmount: newPaidAmount.toFixed(2),
@@ -312,31 +316,33 @@ export class DatabaseStorage implements IStorage {
 
     // Update client deposit and balance directly without creating a transaction
     // to avoid double-counting (the bill payment itself is already tracked)
-    const client = await this.getClient(bill.clientId);
-    if (client && paymentAmount > 0) {
-      const currentDeposit = parseFloat(client.deposit || "0");
-      const currentAmount = parseFloat(client.amount || "0");
-      const newDeposit = currentDeposit + paymentAmount;
-      const newBalance = currentAmount - newDeposit;
-      
-      await this.updateClient(bill.clientId, {
-        deposit: newDeposit.toFixed(2),
-        balance: newBalance.toFixed(2),
-      });
-      
-      // Record the transaction for history without triggering balance changes again
-      await this.createTransaction({
-        clientId: bill.clientId,
-        type: "deposit",
-        amount: paymentAmount.toFixed(2),
-        description: `Payment for Bill #${bill.id}: ${bill.description || "N/A"}`,
-        date: new Date(),
-        runningBalance: newBalance.toFixed(2),
-        paymentMethod: paymentMethod || "cash",
-      });
+    if (bill.clientId) {
+      const client = await this.getClient(bill.clientId);
+      if (client && paymentAmount > 0) {
+        const currentDeposit = parseFloat(client.deposit || "0");
+        const currentAmount = parseFloat(client.amount || "0");
+        const newDeposit = currentDeposit + paymentAmount;
+        const newBalance = currentAmount - newDeposit;
+        
+        await this.updateClient(bill.clientId, {
+          deposit: newDeposit.toFixed(2),
+          balance: newBalance.toFixed(2),
+        });
+        
+        // Record the transaction for history without triggering balance changes again
+        await this.createTransaction({
+          clientId: bill.clientId,
+          type: "deposit",
+          amount: paymentAmount.toFixed(2),
+          description: `Payment for Bill #${bill.id}: ${bill.description || "N/A"}`,
+          date: new Date(),
+          runningBalance: newBalance.toFixed(2),
+          paymentMethod: paymentMethod || "cash",
+        });
+      }
     }
 
-    return { bill: updatedBill, payment };
+    return { bill: updatedBill, payment: payment! };
   }
 
   async getClientTransactions(clientId: number): Promise<ClientTransaction[]> {
