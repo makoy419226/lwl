@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat } from "lucide-react";
+import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logoImage from "@assets/image_1767220512226.png";
 
@@ -25,6 +25,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isOrders = location === "/orders";
   const isWorkers = location === "/workers";
   const isSalesReports = location === "/sales-reports";
+  const isIncidents = location === "/incidents";
   const isContact = location === "/contact";
 
   return (
@@ -143,6 +144,21 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
           >
             <TrendingUp className="w-5 h-5" />
             Sales Reports
+          </Button>
+        </Link>
+
+        <Link href="/incidents">
+          <Button
+            variant={isIncidents ? "default" : "ghost"}
+            className={`w-full justify-start rounded-lg font-semibold gap-3 h-11 ${
+              isIncidents
+                ? "bg-primary text-white shadow-md"
+                : "text-foreground hover:bg-muted/50"
+            }`}
+            data-testid="nav-incidents"
+          >
+            <AlertTriangle className="w-5 h-5" />
+            Incidents
           </Button>
         </Link>
 
