@@ -48,6 +48,7 @@ export default function Products() {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [packingTypes, setPackingTypes] = useState<Record<number, "hanging" | "folding">>({});
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [discountPercent, setDiscountPercent] = useState("");
   const [tips, setTips] = useState("");
@@ -55,6 +56,7 @@ export default function Products() {
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
+  const [newClientAddress, setNewClientAddress] = useState("");
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
   const { data: clients } = useClients();
@@ -201,11 +203,15 @@ export default function Products() {
       toast({ title: "Enter name", description: "Please enter client name.", variant: "destructive" });
       return;
     }
+    if (!newClientPhone.trim()) {
+      toast({ title: "Enter phone", description: "Phone number is required.", variant: "destructive" });
+      return;
+    }
     createClient({
       name: newClientName.trim(),
       phone: newClientPhone.trim() || "",
       email: "",
-      address: "",
+      address: newClientAddress.trim() || "",
       amount: "0",
       deposit: "0",
       balance: "0",
@@ -220,6 +226,7 @@ export default function Products() {
         setShowNewClientDialog(false);
         setNewClientName("");
         setNewClientPhone("");
+        setNewClientAddress("");
         toast({ title: "Client created", description: `${client.name} has been added.` });
       },
       onError: () => {
@@ -326,11 +333,11 @@ export default function Products() {
                     )}
                   </div>
 
-                  <div className="text-sm leading-tight text-center font-bold text-foreground line-clamp-2 min-h-[2.5rem] flex items-center justify-center px-1" data-testid={`text-product-name-${product.id}`}>
+                  <div className="text-base leading-tight text-center font-extrabold text-foreground line-clamp-2 min-h-[3rem] flex items-center justify-center px-1" data-testid={`text-product-name-${product.id}`}>
                     {product.name}
                   </div>
 
-                  <div className="text-sm font-bold text-primary mt-1" data-testid={`text-product-price-${product.id}`}>
+                  <div className="text-base font-extrabold text-primary mt-1" data-testid={`text-product-price-${product.id}`}>
                     {product.price ? `${parseFloat(product.price).toFixed(0)} AED` : "-"}
                   </div>
 

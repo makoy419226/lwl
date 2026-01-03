@@ -19,6 +19,7 @@ export const clients = pgTable("clients", {
   email: text("email"),
   address: text("address"),
   phone: text("phone"),
+  phoneModified: boolean("phone_modified").default(false),
   amount: numeric("amount", { precision: 12, scale: 2 }).default("0"),
   deposit: numeric("deposit", { precision: 12, scale: 2 }).default("0"),
   balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),

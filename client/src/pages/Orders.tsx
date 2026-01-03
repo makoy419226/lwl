@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Loader2, Package, Shirt, CheckCircle2, Truck, Clock, 
-  AlertTriangle, Plus, Minus, Search, Bell, Printer, User, Receipt, Download
+  AlertTriangle, Plus, Minus, Search, Bell, Printer, User, Receipt, Download, Camera, Image, X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -35,6 +35,8 @@ export default function Orders() {
   const [deliveryPinDialog, setDeliveryPinDialog] = useState<{ orderId: number } | null>(null);
   const [deliveryPin, setDeliveryPin] = useState("");
   const [deliveryPinError, setDeliveryPinError] = useState("");
+  const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
+  const [deliveryPhotoPreview, setDeliveryPhotoPreview] = useState<string | null>(null);
   const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
   const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
@@ -210,17 +212,42 @@ export default function Orders() {
             deliveryDate: new Date().toISOString(),
             deliveryBy: data.worker.name,
             deliveredByWorkerId: data.worker.id,
+            deliveryPhoto: deliveryPhoto,
           },
         });
         setDeliveryPinDialog(null);
         setDeliveryPin("");
         setDeliveryPinError("");
+        setDeliveryPhoto(null);
+        setDeliveryPhotoPreview(null);
       }
     },
     onError: () => {
       setDeliveryPinError("Invalid PIN. Please try again.");
     },
   });
+
+  const handleDeliveryPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: "Error", description: "Photo must be less than 5MB", variant: "destructive" });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setDeliveryPhoto(base64);
+        setDeliveryPhotoPreview(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearDeliveryPhoto = () => {
+    setDeliveryPhoto(null);
+    setDeliveryPhotoPreview(null);
+  };
 
   const handleDeliveryWithPin = (orderId: number) => {
     setDeliveryPinDialog({ orderId });
@@ -884,32 +911,75 @@ export default function Orders() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deliveryPinDialog} onOpenChange={(open) => !open && setDeliveryPinDialog(null)}>
+      <Dialog open={!!deliveryPinDialog} onOpenChange={(open) => { 
+        if (!open) { 
+          setDeliveryPinDialog(null); 
+          clearDeliveryPhoto(); 
+        } 
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="w-5 h-5 text-primary" />
-              Enter Delivery PIN
+              Confirm Delivery
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Enter your 5-digit worker PIN to confirm delivery completion.
-            </p>
-            <Input
-              type="password"
-              maxLength={5}
-              placeholder="Enter 5-digit PIN"
-              value={deliveryPin}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '').slice(0, 5);
-                setDeliveryPin(val);
-                setDeliveryPinError("");
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && submitDeliveryPin()}
-              className="text-center text-2xl tracking-widest"
-              data-testid="input-delivery-pin"
-            />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                Delivery Photo (Proof)
+              </Label>
+              {deliveryPhotoPreview ? (
+                <div className="relative">
+                  <img 
+                    src={deliveryPhotoPreview} 
+                    alt="Delivery proof" 
+                    className="w-full h-48 object-cover rounded-lg border"
+                  />
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-2 right-2"
+                    onClick={clearDeliveryPhoto}
+                    data-testid="button-clear-delivery-photo"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                  <Camera className="w-8 h-8 text-muted-foreground mb-2" />
+                  <span className="text-sm text-muted-foreground">Click to upload photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleDeliveryPhotoChange}
+                    data-testid="input-delivery-photo"
+                  />
+                </label>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Enter Staff PIN</Label>
+              <Input
+                type="password"
+                maxLength={5}
+                placeholder="Enter 5-digit PIN"
+                value={deliveryPin}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                  setDeliveryPin(val);
+                  setDeliveryPinError("");
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && submitDeliveryPin()}
+                className="text-center text-2xl tracking-widest"
+                data-testid="input-delivery-pin"
+              />
+            </div>
             {deliveryPinError && (
               <p className="text-sm text-destructive text-center">{deliveryPinError}</p>
             )}
@@ -917,20 +987,23 @@ export default function Orders() {
               <Button 
                 variant="outline" 
                 className="flex-1"
-                onClick={() => setDeliveryPinDialog(null)}
+                onClick={() => { setDeliveryPinDialog(null); clearDeliveryPhoto(); }}
               >
                 Cancel
               </Button>
               <Button 
                 className="flex-1"
                 onClick={submitDeliveryPin}
-                disabled={deliveryPin.length !== 5 || verifyDeliveryPinMutation.isPending}
+                disabled={deliveryPin.length !== 5 || !deliveryPhoto || verifyDeliveryPinMutation.isPending}
                 data-testid="button-submit-delivery-pin"
               >
                 {verifyDeliveryPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Confirm Delivery
               </Button>
             </div>
+            {!deliveryPhoto && (
+              <p className="text-xs text-muted-foreground text-center">Photo is required for delivery confirmation</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
