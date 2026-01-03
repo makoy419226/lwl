@@ -612,17 +612,15 @@ export default function Orders() {
                                 {order.delivered && (
                                   <div className="flex items-center gap-2">
                                     <Badge variant="outline" className="text-green-600">Completed</Badge>
-                                    {order.deliveryPhoto && (
-                                      <Button 
-                                        size="icon" 
-                                        variant="ghost"
-                                        onClick={() => setViewPhotoOrder(order)}
-                                        data-testid={`button-view-photo-${order.id}`}
-                                        title="View Delivery Photo"
-                                      >
-                                        <Camera className="w-4 h-4 text-blue-600" />
-                                      </Button>
-                                    )}
+                                    <Button 
+                                      size="icon" 
+                                      variant="ghost"
+                                      onClick={() => setViewPhotoOrder(order)}
+                                      data-testid={`button-view-photo-${order.id}`}
+                                      title={order.deliveryPhoto ? "View Delivery Photo" : "No photo available"}
+                                    >
+                                      <Camera className={`w-4 h-4 ${order.deliveryPhoto ? "text-blue-600" : "text-muted-foreground"}`} />
+                                    </Button>
                                     <Button 
                                       size="sm" 
                                       variant="outline"
@@ -1031,7 +1029,7 @@ export default function Orders() {
               Photo captured at delivery confirmation
             </DialogDescription>
           </DialogHeader>
-          {viewPhotoOrder?.deliveryPhoto && (
+          {viewPhotoOrder?.deliveryPhoto ? (
             <div className="flex justify-center">
               <img 
                 src={viewPhotoOrder.deliveryPhoto} 
@@ -1039,6 +1037,11 @@ export default function Orders() {
                 className="max-w-full max-h-[400px] rounded-lg object-contain"
                 data-testid="img-delivery-photo"
               />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Camera className="w-12 h-12 mb-2 opacity-50" />
+              <p>No delivery photo available</p>
             </div>
           )}
           <Button 
