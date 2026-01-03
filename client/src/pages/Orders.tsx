@@ -40,6 +40,7 @@ export default function Orders() {
   const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
   const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [viewPhotoOrder, setViewPhotoOrder] = useState<Order | null>(null);
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -611,6 +612,17 @@ export default function Orders() {
                                 {order.delivered && (
                                   <div className="flex items-center gap-2">
                                     <Badge variant="outline" className="text-green-600">Completed</Badge>
+                                    {order.deliveryPhoto && (
+                                      <Button 
+                                        size="icon" 
+                                        variant="ghost"
+                                        onClick={() => setViewPhotoOrder(order)}
+                                        data-testid={`button-view-photo-${order.id}`}
+                                        title="View Delivery Photo"
+                                      >
+                                        <Camera className="w-4 h-4 text-blue-600" />
+                                      </Button>
+                                    )}
                                     <Button 
                                       size="sm" 
                                       variant="outline"
@@ -1005,6 +1017,37 @@ export default function Orders() {
               <p className="text-xs text-muted-foreground text-center">Photo is required for delivery confirmation</p>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewPhotoOrder} onOpenChange={(open) => !open && setViewPhotoOrder(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-5 h-5" />
+              Delivery Photo - Order #{viewPhotoOrder?.orderNumber}
+            </DialogTitle>
+            <DialogDescription>
+              Photo captured at delivery confirmation
+            </DialogDescription>
+          </DialogHeader>
+          {viewPhotoOrder?.deliveryPhoto && (
+            <div className="flex justify-center">
+              <img 
+                src={viewPhotoOrder.deliveryPhoto} 
+                alt="Delivery proof" 
+                className="max-w-full max-h-[400px] rounded-lg object-contain"
+                data-testid="img-delivery-photo"
+              />
+            </div>
+          )}
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => setViewPhotoOrder(null)}
+          >
+            Close
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
