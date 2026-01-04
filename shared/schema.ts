@@ -52,6 +52,7 @@ export const bills = pgTable("bills", {
   billDate: timestamp("bill_date").notNull(),
   referenceNumber: text("reference_number"),
   isPaid: boolean("is_paid").default(false),
+  createdByWorkerId: integer("created_by_worker_id"),
 });
 
 export const billPayments = pgTable("bill_payments", {

@@ -10,11 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search, Calendar, BarChart3, Tag, ClipboardList } from "lucide-react";
+import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search, Calendar, BarChart3, Tag, ClipboardList, FileSpreadsheet, FileText, Receipt } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
-import type { Order } from "@shared/schema";
+import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import type { Order, Bill } from "@shared/schema";
+import * as XLSX from "xlsx";
+import html2pdf from "html2pdf.js";
 
 interface PackingWorker {
   id: number;
@@ -29,6 +31,8 @@ export default function Workers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("stats");
   const [dateFilter, setDateFilter] = useState("today");
+  const [customFromDate, setCustomFromDate] = useState("");
+  const [customToDate, setCustomToDate] = useState("");
   const { toast } = useToast();
 
   const { data: workers, isLoading } = useQuery<PackingWorker[]>({
@@ -37,6 +41,10 @@ export default function Workers() {
 
   const { data: orders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
+  });
+
+  const { data: bills } = useQuery<Bill[]>({
+    queryKey: ["/api/bills"],
   });
 
   const getDateRange = () => {
@@ -51,6 +59,11 @@ export default function Workers() {
         return { start: startOfWeek(now), end: endOfWeek(now) };
       case "month":
         return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "custom":
+        if (customFromDate && customToDate) {
+          return { start: startOfDay(parseISO(customFromDate)), end: endOfDay(parseISO(customToDate)) };
+        }
+        return { start: startOfDay(now), end: endOfDay(now) };
       case "all":
       default:
         return { start: new Date(0), end: now };
@@ -88,24 +101,136 @@ export default function Workers() {
           return delDate >= start && delDate <= end;
         } catch { return false; }
       });
+
+      const createdBills = bills?.filter(b => {
+        if (b.createdByWorkerId !== worker.id) return false;
+        if (!b.billDate) return false;
+        try {
+          const billDate = new Date(b.billDate);
+          return billDate >= start && billDate <= end;
+        } catch { return false; }
+      }) || [];
+
+      const billsTotal = createdBills.reduce((sum, b) => sum + parseFloat(b.amount || "0"), 0);
       
       return {
         worker,
         taggedCount: taggedOrders.length,
         packedCount: packedOrders.length,
         deliveredCount: deliveredOrders.length,
-        totalTasks: taggedOrders.length + packedOrders.length + deliveredOrders.length
+        billsCreated: createdBills.length,
+        billsTotal,
+        totalTasks: taggedOrders.length + packedOrders.length + deliveredOrders.length + createdBills.length
       };
     }).sort((a, b) => b.totalTasks - a.totalTasks);
-  }, [workers, orders, dateFilter]);
+  }, [workers, orders, bills, dateFilter, customFromDate, customToDate]);
 
   const totals = useMemo(() => {
     return workerStats.reduce((acc, s) => ({
       tagged: acc.tagged + s.taggedCount,
       packed: acc.packed + s.packedCount,
-      delivered: acc.delivered + s.deliveredCount
-    }), { tagged: 0, packed: 0, delivered: 0 });
+      delivered: acc.delivered + s.deliveredCount,
+      billsCreated: acc.billsCreated + s.billsCreated,
+      billsTotal: acc.billsTotal + s.billsTotal
+    }), { tagged: 0, packed: 0, delivered: 0, billsCreated: 0, billsTotal: 0 });
   }, [workerStats]);
+
+  const getDateRangeLabel = () => {
+    const { start, end } = getDateRange();
+    return `${format(start, "dd/MM/yyyy")} - ${format(end, "dd/MM/yyyy")}`;
+  };
+
+  const exportToExcel = () => {
+    const data = filteredStats.map(s => ({
+      "Staff Name": s.worker.name,
+      "Status": s.worker.active ? "Active" : "Inactive",
+      "Tags Done": s.taggedCount,
+      "Packing Done": s.packedCount,
+      "Deliveries": s.deliveredCount,
+      "Bills Created": s.billsCreated,
+      "Bills Total (AED)": s.billsTotal.toFixed(2),
+      "Total Tasks": s.totalTasks
+    }));
+
+    data.push({
+      "Staff Name": "TOTAL",
+      "Status": "",
+      "Tags Done": totals.tagged,
+      "Packing Done": totals.packed,
+      "Deliveries": totals.delivered,
+      "Bills Created": totals.billsCreated,
+      "Bills Total (AED)": totals.billsTotal.toFixed(2),
+      "Total Tasks": totals.tagged + totals.packed + totals.delivered + totals.billsCreated
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Staff Report");
+    XLSX.writeFile(wb, `Staff_Report_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+    toast({ title: "Excel Downloaded", description: "Staff report saved" });
+  };
+
+  const exportToPDF = () => {
+    const { start, end } = getDateRange();
+    const content = document.createElement("div");
+    content.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 148mm; color: #000; background: #fff;">
+        <div style="text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 15px; margin-bottom: 20px;">
+          <div style="font-size: 20px; font-weight: bold; color: #1e40af;">LIQUID WASHES LAUNDRY</div>
+          <div style="font-size: 14px; margin-top: 5px; font-weight: bold;">Staff Performance Report</div>
+          <div style="font-size: 11px; margin-top: 5px; color: #666;">${format(start, "dd/MM/yyyy")} - ${format(end, "dd/MM/yyyy")}</div>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 15px;">
+          <thead>
+            <tr style="background: #f3f4f6;">
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: left;">Staff</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Tags</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Packing</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Delivery</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Bills</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right;">Bills AED</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredStats.map(s => `
+              <tr>
+                <td style="padding: 6px 4px; border: 1px solid #ddd;">${s.worker.name}</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.taggedCount}</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.packedCount}</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.deliveredCount}</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.billsCreated}</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right;">${s.billsTotal.toFixed(2)}</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center; font-weight: bold;">${s.totalTasks}</td>
+              </tr>
+            `).join('')}
+            <tr style="background: #e5e7eb; font-weight: bold;">
+              <td style="padding: 8px 4px; border: 1px solid #ddd;">TOTAL</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.tagged}</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.packed}</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.delivered}</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.billsCreated}</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: right;">${totals.billsTotal.toFixed(2)}</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.tagged + totals.packed + totals.delivered + totals.billsCreated}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 9px; color: #888;">
+          Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")} | Contact: +971 50 123 4567
+        </div>
+      </div>
+    `;
+    
+    html2pdf().set({
+      margin: 5,
+      filename: `Staff_Report_${format(new Date(), "yyyy-MM-dd")}.pdf`,
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "a5", orientation: "portrait" }
+    }).from(content).save();
+    toast({ title: "PDF Downloaded", description: "Staff report saved" });
+  };
 
   const filteredStats = workerStats.filter(s => 
     s.worker.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -258,10 +383,30 @@ export default function Workers() {
                         <SelectItem value="yesterday">Yesterday</SelectItem>
                         <SelectItem value="week">This Week</SelectItem>
                         <SelectItem value="month">This Month</SelectItem>
+                        <SelectItem value="custom">Custom Range</SelectItem>
                         <SelectItem value="all">All Time</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  {dateFilter === "custom" && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={customFromDate}
+                        onChange={(e) => setCustomFromDate(e.target.value)}
+                        className="w-36"
+                        data-testid="input-from-date"
+                      />
+                      <span className="text-muted-foreground">to</span>
+                      <Input
+                        type="date"
+                        value={customToDate}
+                        onChange={(e) => setCustomToDate(e.target.value)}
+                        className="w-36"
+                        data-testid="input-to-date"
+                      />
+                    </div>
+                  )}
                   <div className="relative flex-1 max-w-xs">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -272,9 +417,19 @@ export default function Workers() {
                       data-testid="input-search-worker"
                     />
                   </div>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Button variant="outline" size="sm" onClick={exportToExcel} data-testid="button-export-excel">
+                      <FileSpreadsheet className="w-4 h-4 mr-1" />
+                      Excel
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={exportToPDF} data-testid="button-export-pdf">
+                      <FileText className="w-4 h-4 mr-1" />
+                      PDF
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <Card>
                     <CardContent className="pt-4">
                       <div className="flex items-center gap-2">
@@ -311,9 +466,20 @@ export default function Workers() {
                   <Card>
                     <CardContent className="pt-4">
                       <div className="flex items-center gap-2">
+                        <Receipt className="w-5 h-5 text-cyan-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{totals.billsCreated}</p>
+                          <p className="text-xs text-muted-foreground">Bills ({totals.billsTotal.toFixed(0)} AED)</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-blue-500" />
                         <div>
-                          <p className="text-2xl font-bold">{totals.tagged + totals.packed + totals.delivered}</p>
+                          <p className="text-2xl font-bold">{totals.tagged + totals.packed + totals.delivered + totals.billsCreated}</p>
                           <p className="text-xs text-muted-foreground">Total Tasks</p>
                         </div>
                       </div>
@@ -348,6 +514,12 @@ export default function Workers() {
                               Delivered
                             </div>
                           </TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Receipt className="w-4 h-4 text-cyan-500" />
+                              Bills
+                            </div>
+                          </TableHead>
                           <TableHead className="text-center">Total</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -375,12 +547,17 @@ export default function Workers() {
                                 {s.deliveredCount}
                               </Badge>
                             </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300">
+                                {s.billsCreated} ({s.billsTotal.toFixed(0)})
+                              </Badge>
+                            </TableCell>
                             <TableCell className="text-center font-bold">{s.totalTasks}</TableCell>
                           </TableRow>
                         ))}
                         {filteredStats.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                               No worker stats found for selected period
                             </TableCell>
                           </TableRow>
