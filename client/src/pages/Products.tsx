@@ -99,6 +99,18 @@ export default function Products() {
       productName.toLowerCase().includes(key.toLowerCase())
     );
   };
+
+  const [showGutraDialog, setShowGutraDialog] = useState(false);
+  const [gutraDialogProduct, setGutraDialogProduct] = useState<{ id: number; name: string; price: number } | null>(null);
+  const [gutraNisha, setGutraNisha] = useState<"nisha" | "without-nisha" | "">("");
+  const [gutraStyle, setGutraStyle] = useState<"line" | "straight" | "">("");
+
+  const isGutraProduct = (productName: string) => {
+    return productName.toLowerCase().includes("gutra") && 
+      !productName.includes("Nisha") && 
+      !productName.includes("Line") && 
+      !productName.includes("Straight");
+  };
   
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
@@ -161,13 +173,47 @@ export default function Products() {
     });
   };
 
-  const handleProductClick = (product: { id: number; name: string }) => {
+  const handleProductClick = (product: { id: number; name: string; price?: string | null }) => {
     if (hasSizeOption(product.name)) {
       setSizeDialogProduct(product);
       setShowSizeDialog(true);
+    } else if (isGutraProduct(product.name)) {
+      setGutraDialogProduct({ id: product.id, name: product.name, price: parseFloat(product.price || "0") });
+      setGutraNisha("");
+      setGutraStyle("");
+      setShowGutraDialog(true);
     } else {
       handleQuantityChange(product.id, 1);
     }
+  };
+
+  const handleAddGutraItem = () => {
+    if (!gutraDialogProduct || !gutraNisha || !gutraStyle) {
+      toast({ title: "Select options", description: "Please select both Nisha and Line/Straight options.", variant: "destructive" });
+      return;
+    }
+    
+    const nishaLabel = gutraNisha === "nisha" ? "Nisha" : "Without Nisha";
+    const styleLabel = gutraStyle === "line" ? "Line" : "Straight";
+    const itemName = `${gutraDialogProduct.name} (${nishaLabel}, ${styleLabel})`;
+    
+    setCustomItems(prev => {
+      const existing = prev.find(item => item.name === itemName);
+      if (existing) {
+        return prev.map(item => 
+          item.name === itemName 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { name: itemName, price: gutraDialogProduct.price, quantity: 1 }];
+    });
+    
+    setShowGutraDialog(false);
+    setGutraDialogProduct(null);
+    setGutraNisha("");
+    setGutraStyle("");
+    toast({ title: "Added", description: `${itemName} added to order.` });
   };
 
   const handleAddSizedItem = (size: "small" | "large") => {
@@ -1209,6 +1255,74 @@ export default function Products() {
                 </Button>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Gutra Options Dialog */}
+      <Dialog open={showGutraDialog} onOpenChange={setShowGutraDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Gutra Options</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="text-center text-sm text-muted-foreground mb-2">
+              <div className="font-bold text-foreground text-lg">{gutraDialogProduct?.name}</div>
+              <div className="text-primary font-bold">{gutraDialogProduct?.price?.toFixed(2)} AED</div>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Nisha Option</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className={`h-16 flex flex-col gap-1 border-2 ${gutraNisha === "nisha" ? "border-primary bg-primary/10" : ""}`}
+                  onClick={() => setGutraNisha("nisha")}
+                  data-testid="button-gutra-nisha"
+                >
+                  <div className="font-bold">Nisha</div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className={`h-16 flex flex-col gap-1 border-2 ${gutraNisha === "without-nisha" ? "border-primary bg-primary/10" : ""}`}
+                  onClick={() => setGutraNisha("without-nisha")}
+                  data-testid="button-gutra-without-nisha"
+                >
+                  <div className="font-bold">Without Nisha</div>
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Style</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className={`h-16 flex flex-col gap-1 border-2 ${gutraStyle === "line" ? "border-primary bg-primary/10" : ""}`}
+                  onClick={() => setGutraStyle("line")}
+                  data-testid="button-gutra-line"
+                >
+                  <div className="font-bold">Line</div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className={`h-16 flex flex-col gap-1 border-2 ${gutraStyle === "straight" ? "border-primary bg-primary/10" : ""}`}
+                  onClick={() => setGutraStyle("straight")}
+                  data-testid="button-gutra-straight"
+                >
+                  <div className="font-bold">Straight</div>
+                </Button>
+              </div>
+            </div>
+
+            <Button 
+              className="w-full" 
+              onClick={handleAddGutraItem}
+              disabled={!gutraNisha || !gutraStyle}
+              data-testid="button-add-gutra"
+            >
+              Add to Order
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
