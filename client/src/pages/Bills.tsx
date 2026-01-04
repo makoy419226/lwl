@@ -675,6 +675,7 @@ export default function Bills() {
               <span>AED {parseFloat(createdBill?.bill.amount || "0").toFixed(2)}</span>
             </div>
             <div className="text-center mt-3 text-xs">Thank you for your business!</div>
+            <div className="text-center mt-2 text-xs font-bold">For Orders/Delivery: +971 50 123 4567</div>
           </div>
 
           <div className="flex gap-2 mt-4">
@@ -716,6 +717,7 @@ export default function Bills() {
               <span>AED {parseFloat(viewBillPDF.amount || "0").toFixed(2)}</span>
             </div>
             <div className="text-center mt-3 text-xs">Thank you for your business!</div>
+            <div className="text-center mt-2 text-xs font-bold">For Orders/Delivery: +971 50 123 4567</div>
           </div>
         </div>
       )}

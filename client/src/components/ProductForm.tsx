@@ -31,19 +31,68 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
   const [imagePreview, setImagePreview] = useState<string>(defaultValues?.imageUrl || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const processImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = document.createElement('img');
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Canvas not supported'));
+            return;
+          }
+          
+          const targetSize = 400;
+          canvas.width = targetSize;
+          canvas.height = targetSize;
+          
+          ctx.fillStyle = '#f5f5f5';
+          ctx.fillRect(0, 0, targetSize, targetSize);
+          
+          const scale = Math.min(targetSize / img.width, targetSize / img.height);
+          const scaledWidth = img.width * scale;
+          const scaledHeight = img.height * scale;
+          const x = (targetSize - scaledWidth) / 2;
+          const y = (targetSize - scaledHeight) / 2;
+          
+          ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+          
+          const processedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          resolve(processedBase64);
+        };
+        
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+      if (!file.type.match(/^image\/(jpeg|jpg|png|webp|gif)$/)) {
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setImagePreview(base64);
-        form.setValue("imageUrl", base64);
-      };
-      reader.readAsDataURL(file);
+      
+      try {
+        const processedBase64 = await processImage(file);
+        setImagePreview(processedBase64);
+        form.setValue("imageUrl", processedBase64);
+      } catch (error) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          setImagePreview(base64);
+          form.setValue("imageUrl", base64);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -238,7 +287,7 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
                     onChange={handleImageUpload}
                     className="hidden"
                   />

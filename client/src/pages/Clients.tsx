@@ -309,6 +309,9 @@ export default function Clients() {
           <p style="font-size: 11px; color: #666; margin: 0;">
             Generated on ${format(new Date(), "dd/MM/yyyy 'at' HH:mm")} | Thank you for your business!
           </p>
+          <p style="font-size: 13px; font-weight: bold; color: #000; margin: 8px 0 0 0;">
+            For Orders/Delivery: +971 50 123 4567
+          </p>
         </div>
       </div>
     `;

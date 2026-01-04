@@ -176,7 +176,7 @@ export default function Orders() {
         <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
           <div style="font-size: 28px; font-weight: bold; letter-spacing: 2px;">LIQUID WASHES LAUNDRY</div>
           <div style="font-size: 14px; margin-top: 8px; color: #666;">Professional Laundry Services - UAE</div>
-          <div style="font-size: 12px; margin-top: 4px; color: #888;">Tel: +971 XX XXX XXXX</div>
+          <div style="font-size: 12px; margin-top: 4px; color: #888;">For Orders/Delivery: +971 50 123 4567</div>
         </div>
         
         ${isUrgent ? `<div style="text-align: center; padding: 15px; margin: 20px 0; background: #fef2f2; border: 3px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 20px; border-radius: 8px;">*** URGENT ORDER ***</div>` : ''}
@@ -293,6 +293,7 @@ export default function Orders() {
         
         <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #000; color: #888; font-size: 11px;">
           <div>Thank you for choosing Liquid Washes Laundry</div>
+          <div style="margin-top: 8px; font-weight: bold; color: #000; font-size: 13px;">For Orders/Delivery: +971 50 123 4567</div>
           <div style="margin-top: 5px;">Generated on ${format(new Date(), "dd MMM yyyy 'at' hh:mm a")}</div>
         </div>
       </div>
@@ -353,7 +354,8 @@ export default function Orders() {
         ` : ''}
         
         <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 2px dashed #000; font-size: 9px; color: #666;">
-          Printed: ${format(new Date(), "dd/MM/yyyy HH:mm")}
+          <div>Printed: ${format(new Date(), "dd/MM/yyyy HH:mm")}</div>
+          <div style="font-weight: bold; color: #000; font-size: 10px; margin-top: 5px;">Orders/Delivery: +971 50 123 4567</div>
         </div>
       </div>
     `;
@@ -1260,6 +1262,7 @@ export default function Orders() {
                 </div>
                 <div style={{ marginTop: '40px', textAlign: 'center', paddingTop: '20px', borderTop: '1px solid #e5e5e5' }}>
                   <p style={{ fontSize: '12px', color: '#666' }}>Thank you for choosing Liquid Washes Laundry!</p>
+                  <p style={{ fontSize: '13px', fontWeight: 'bold', color: '#000', marginTop: '8px' }}>For Orders/Delivery: +971 50 123 4567</p>
                 </div>
               </div>
             </div>
