@@ -508,7 +508,7 @@ export default function Bills() {
                     <SelectTrigger data-testid="select-client">
                       <SelectValue placeholder="Choose a client..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[100] max-h-[300px]">
                       <SelectItem value="walkin">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4" />
