@@ -48,33 +48,40 @@ export function BillInvoice({
           <head>
             <title>Bill Invoice ${invoiceNumber}</title>
             <style>
+              @page { size: A5; margin: 10mm; }
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { 
                 font-family: Arial, sans-serif; 
                 padding: 20px; 
                 background: white; 
                 color: #333;
+                max-width: 148mm;
+                margin: 0 auto;
               }
-              .invoice-container { max-width: 600px; margin: 0 auto; }
-              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1e40af; padding-bottom: 20px; }
-              .company-name { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 8px; }
-              .company-address { font-size: 12px; color: #666; line-height: 1.5; }
-              .invoice-title { font-size: 20px; font-weight: bold; text-align: center; margin: 20px 0; color: #1e40af; }
-              .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
+              .invoice-container { width: 100%; }
+              .header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #1e40af; padding-bottom: 12px; }
+              .company-name { font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 6px; }
+              .company-address { font-size: 10px; color: #666; line-height: 1.4; }
+              .invoice-title { font-size: 16px; font-weight: bold; text-align: center; margin: 12px 0; color: #1e40af; background: #fef2f2; padding: 8px; border-radius: 4px; }
+              .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; }
               .info-section { width: 48%; }
-              .info-label { font-size: 12px; color: #666; margin-bottom: 4px; }
-              .info-value { font-size: 14px; font-weight: 500; }
-              .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-              .items-table th, .items-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e5e5; }
-              .items-table th { background: #f3f4f6; font-weight: 600; }
+              .info-label { font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; }
+              .info-value { font-size: 11px; font-weight: 500; }
+              .items-table { width: 100%; border-collapse: collapse; margin: 12px 0; border: 1px solid #ddd; }
+              .items-table th, .items-table td { padding: 8px 6px; text-align: left; border-bottom: 1px solid #e5e5e5; }
+              .items-table th { background: #1e40af; color: white; font-weight: 600; font-size: 10px; }
+              .items-table td { font-size: 10px; }
               .items-table .amount { text-align: right; }
-              .totals { margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5; }
-              .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-              .total-row.grand-total { font-size: 18px; font-weight: bold; color: #dc2626; border-top: 2px solid #1e40af; margin-top: 10px; padding-top: 15px; }
-              .footer { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #e5e5e5; }
-              .footer p { font-size: 12px; color: #666; }
-              .status-badge { display: inline-block; background: #dc2626; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
-              @media print { body { padding: 0; } .no-print { display: none; } }
+              .totals { margin-top: 12px; padding: 10px; background: #f8f9fa; border-radius: 6px; }
+              .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 11px; }
+              .total-row.grand-total { font-size: 14px; font-weight: bold; color: #dc2626; border-top: 2px solid #1e40af; margin-top: 8px; padding-top: 10px; }
+              .footer { margin-top: 20px; text-align: center; padding-top: 12px; border-top: 1px solid #e5e5e5; }
+              .footer p { font-size: 9px; color: #666; margin-bottom: 4px; }
+              .status-badge { display: inline-block; background: #dc2626; color: white; padding: 5px 12px; border-radius: 15px; font-size: 10px; margin-top: 8px; font-weight: bold; }
+              @media print { 
+                body { padding: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+                .no-print { display: none; } 
+              }
             </style>
           </head>
           <body>
