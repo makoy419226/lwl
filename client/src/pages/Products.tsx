@@ -36,6 +36,8 @@ const getCategoryIcon = (category: string | null) => {
       return <Home className="w-5 h-5 text-primary" />;
     case "Footwear":
       return <Footprints className="w-5 h-5 text-primary" />;
+    case "Baby Wear":
+      return <Sparkles className="w-5 h-5 text-pink-500" />;
     default:
       return <Shirt className="w-5 h-5 text-primary" />;
   }
@@ -66,6 +68,33 @@ export default function Products() {
   const [otherItemName, setOtherItemName] = useState("");
   const [otherItemPrice, setOtherItemPrice] = useState("");
   const [otherItemQty, setOtherItemQty] = useState("1");
+  const [showSizeDialog, setShowSizeDialog] = useState(false);
+  const [sizeDialogProduct, setSizeDialogProduct] = useState<{ id: number; name: string } | null>(null);
+  
+  const sizeOptions: Record<string, { small: number; large: number }> = {
+    "Towel": { small: 5, large: 8 },
+    "Comfort": { small: 25, large: 35 },
+    "Blanket": { small: 15, large: 25 },
+    "Duvet Cover": { small: 10, large: 15 },
+    "Bed Sheet": { small: 5, large: 8 },
+    "Jacket": { small: 5, large: 8 },
+    "Curtain/Window Screen": { small: 15, large: 25 },
+  };
+
+  const hasSizeOption = (productName: string) => {
+    return Object.keys(sizeOptions).some(key => 
+      productName.toLowerCase().includes(key.toLowerCase()) && 
+      !productName.includes("(Small)") && 
+      !productName.includes("(Large)")
+    );
+  };
+
+  const getSizeOptionKey = (productName: string) => {
+    return Object.keys(sizeOptions).find(key => 
+      productName.toLowerCase().includes(key.toLowerCase())
+    );
+  };
+  
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
   const { data: clients } = useClients();
@@ -116,6 +145,40 @@ export default function Products() {
       }
       return { ...prev, [productId]: newQty };
     });
+  };
+
+  const handleProductClick = (product: { id: number; name: string }) => {
+    if (hasSizeOption(product.name)) {
+      setSizeDialogProduct(product);
+      setShowSizeDialog(true);
+    } else {
+      handleQuantityChange(product.id, 1);
+    }
+  };
+
+  const handleAddSizedItem = (size: "small" | "large") => {
+    if (!sizeDialogProduct) return;
+    const sizeKey = getSizeOptionKey(sizeDialogProduct.name);
+    if (!sizeKey) return;
+    
+    const price = sizeOptions[sizeKey][size];
+    const itemName = `${sizeDialogProduct.name} (${size === "small" ? "Small" : "Large"})`;
+    
+    setCustomItems(prev => {
+      const existing = prev.find(item => item.name === itemName);
+      if (existing) {
+        return prev.map(item => 
+          item.name === itemName 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { name: itemName, price, quantity: 1 }];
+    });
+    
+    setShowSizeDialog(false);
+    setSizeDialogProduct(null);
+    toast({ title: "Added", description: `${itemName} added to order.` });
   };
 
   const orderItems = useMemo(() => {
@@ -335,7 +398,7 @@ export default function Products() {
                       ? "border-primary bg-gradient-to-br from-primary/20 to-primary/5 ring-2 ring-primary/40 shadow-md" 
                       : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60 hover:from-primary/5 hover:to-card"
                   }`}
-                  onClick={() => handleQuantityChange(product.id, 1)}
+                  onClick={() => handleProductClick(product)}
                   data-testid={`box-product-${product.id}`}
                 >
                   {editingImageId === product.id ? (
@@ -982,6 +1045,49 @@ export default function Products() {
                 {isCreatingClient ? "Creating..." : "Create Client"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Size Selection Dialog */}
+      <Dialog open={showSizeDialog} onOpenChange={setShowSizeDialog}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-center">Select Size</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center text-sm text-muted-foreground mb-2">
+              <div className="font-bold text-foreground text-lg">{sizeDialogProduct?.name}</div>
+            </div>
+            
+            {sizeDialogProduct && getSizeOptionKey(sizeDialogProduct.name) && (
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
+                  onClick={() => handleAddSizedItem("small")}
+                  data-testid="button-size-small"
+                >
+                  <div className="text-2xl font-black text-primary">S</div>
+                  <div className="font-bold">Small</div>
+                  <div className="text-sm font-bold text-primary">
+                    {sizeOptions[getSizeOptionKey(sizeDialogProduct.name)!]?.small} AED
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
+                  onClick={() => handleAddSizedItem("large")}
+                  data-testid="button-size-large"
+                >
+                  <div className="text-2xl font-black text-primary">L</div>
+                  <div className="font-bold">Large</div>
+                  <div className="text-sm font-bold text-primary">
+                    {sizeOptions[getSizeOptionKey(sizeDialogProduct.name)!]?.large} AED
+                  </div>
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

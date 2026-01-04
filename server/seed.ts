@@ -47,7 +47,11 @@ const laundryItems = [
   { name: "Comfort (Large)", description: "Large comforter/duvet", price: "35.00", category: "Bedding", stockQuantity: 100, sku: "COMF-002" },
   { name: "Curtain/Window Screen", description: "Window curtains", price: "20.00", category: "Home Linens", stockQuantity: 100, sku: "CURT-001" },
   { name: "Carpet (per SQ MTR)", description: "Carpet cleaning per square meter", price: "12.00", category: "Flooring", stockQuantity: 100, sku: "CARP-001" },
-  { name: "Shoes", description: "Shoe cleaning", price: "10.00", category: "Footwear", stockQuantity: 100, sku: "SHOE-001" }
+  { name: "Shoes", description: "Shoe cleaning", price: "10.00", category: "Footwear", stockQuantity: 100, sku: "SHOE-001" },
+  { name: "Baby T-Shirt", description: "Baby t-shirt wash", price: "0.00", category: "Baby Wear", stockQuantity: 100, sku: "BABY-001" },
+  { name: "Baby Pant", description: "Baby pant wash", price: "0.00", category: "Baby Wear", stockQuantity: 100, sku: "BABY-002" },
+  { name: "Baby Cloth", description: "Baby cloth wash", price: "0.00", category: "Baby Wear", stockQuantity: 100, sku: "BABY-003" },
+  { name: "Baby Dress", description: "Baby dress wash", price: "0.00", category: "Baby Wear", stockQuantity: 100, sku: "BABY-004" }
 ];
 
 export async function seedDatabase() {
@@ -59,7 +63,7 @@ export async function seedDatabase() {
   // Check if we have the correct products (by checking for a known item)
   const hasCorrectProducts = existingProducts.some(p => p.name === "Kandoora/Thob");
   
-  if (!hasCorrectProducts || existingProducts.length < 43) {
+  if (!hasCorrectProducts || existingProducts.length < 47) {
     console.log("Reseeding products with 43 laundry items...");
     
     // Delete all existing products
