@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search, Calendar, BarChart3 } from "lucide-react";
+import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search, Calendar, BarChart3, Tag, ClipboardList } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
@@ -62,6 +62,15 @@ export default function Workers() {
     const { start, end } = getDateRange();
     
     return workers.map(worker => {
+      const taggedOrders = orders.filter(o => {
+        if (o.tagWorkerId !== worker.id) return false;
+        if (!o.tagDate) return false;
+        try {
+          const tagDate = new Date(o.tagDate);
+          return tagDate >= start && tagDate <= end;
+        } catch { return false; }
+      });
+      
       const packedOrders = orders.filter(o => {
         if (o.packingWorkerId !== worker.id) return false;
         if (!o.packingDate) return false;
@@ -82,18 +91,20 @@ export default function Workers() {
       
       return {
         worker,
+        taggedCount: taggedOrders.length,
         packedCount: packedOrders.length,
         deliveredCount: deliveredOrders.length,
-        totalTasks: packedOrders.length + deliveredOrders.length
+        totalTasks: taggedOrders.length + packedOrders.length + deliveredOrders.length
       };
     }).sort((a, b) => b.totalTasks - a.totalTasks);
   }, [workers, orders, dateFilter]);
 
   const totals = useMemo(() => {
     return workerStats.reduce((acc, s) => ({
+      tagged: acc.tagged + s.taggedCount,
       packed: acc.packed + s.packedCount,
       delivered: acc.delivered + s.deliveredCount
-    }), { packed: 0, delivered: 0 });
+    }), { tagged: 0, packed: 0, delivered: 0 });
   }, [workerStats]);
 
   const filteredStats = workerStats.filter(s => 
@@ -267,10 +278,10 @@ export default function Workers() {
                   <Card>
                     <CardContent className="pt-4">
                       <div className="flex items-center gap-2">
-                        <Package className="w-5 h-5 text-orange-500" />
+                        <Tag className="w-5 h-5 text-orange-500" />
                         <div>
-                          <p className="text-2xl font-bold">{totals.packed}</p>
-                          <p className="text-xs text-muted-foreground">Total Packed</p>
+                          <p className="text-2xl font-bold">{totals.tagged}</p>
+                          <p className="text-xs text-muted-foreground">Tags Done</p>
                         </div>
                       </div>
                     </CardContent>
@@ -278,10 +289,32 @@ export default function Workers() {
                   <Card>
                     <CardContent className="pt-4">
                       <div className="flex items-center gap-2">
-                        <Truck className="w-5 h-5 text-green-500" />
+                        <Package className="w-5 h-5 text-green-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{totals.packed}</p>
+                          <p className="text-xs text-muted-foreground">Packing Done</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-5 h-5 text-purple-500" />
                         <div>
                           <p className="text-2xl font-bold">{totals.delivered}</p>
-                          <p className="text-xs text-muted-foreground">Total Delivered</p>
+                          <p className="text-xs text-muted-foreground">Deliveries</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-blue-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{totals.tagged + totals.packed + totals.delivered}</p>
+                          <p className="text-xs text-muted-foreground">Total Tasks</p>
                         </div>
                       </div>
                     </CardContent>
@@ -299,17 +332,23 @@ export default function Workers() {
                           <TableHead>Staff Name</TableHead>
                           <TableHead className="text-center">
                             <div className="flex items-center justify-center gap-1">
-                              <Package className="w-4 h-4 text-orange-500" />
+                              <Tag className="w-4 h-4 text-orange-500" />
+                              Tagged
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Package className="w-4 h-4 text-green-500" />
                               Packed
                             </div>
                           </TableHead>
                           <TableHead className="text-center">
                             <div className="flex items-center justify-center gap-1">
-                              <Truck className="w-4 h-4 text-green-500" />
+                              <Truck className="w-4 h-4 text-purple-500" />
                               Delivered
                             </div>
                           </TableHead>
-                          <TableHead className="text-center">Total Tasks</TableHead>
+                          <TableHead className="text-center">Total</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -323,11 +362,16 @@ export default function Workers() {
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
-                                {s.packedCount}
+                                {s.taggedCount}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                                {s.packedCount}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
                                 {s.deliveredCount}
                               </Badge>
                             </TableCell>
@@ -336,7 +380,7 @@ export default function Workers() {
                         ))}
                         {filteredStats.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                               No worker stats found for selected period
                             </TableCell>
                           </TableRow>

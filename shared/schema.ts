@@ -84,6 +84,7 @@ export const orders = pgTable("orders", {
   tagDone: boolean("tag_done").default(false),
   tagDate: timestamp("tag_date"),
   tagBy: text("tag_by"),
+  tagWorkerId: integer("tag_worker_id"),
   washingDone: boolean("washing_done").default(false),
   washingDate: timestamp("washing_date"),
   washingBy: text("washing_by"),
