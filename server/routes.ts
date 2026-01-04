@@ -110,6 +110,24 @@ export async function registerRoutes(
     res.json(client);
   });
 
+  app.get("/api/clients/:id/unpaid-balance", async (req, res) => {
+    const clientId = Number(req.params.id);
+    const unpaidBills = await storage.getUnpaidBills(clientId);
+    
+    let totalDue = 0;
+    for (const bill of unpaidBills) {
+      const amount = parseFloat(bill.amount?.toString() || "0");
+      const paid = parseFloat(bill.paidAmount?.toString() || "0");
+      totalDue += (amount - paid);
+    }
+    
+    res.json({
+      totalDue: totalDue.toFixed(2),
+      billCount: unpaidBills.length,
+      latestBillDate: unpaidBills[0]?.billDate || null,
+    });
+  });
+
   app.post("/api/clients/check-duplicate", async (req, res) => {
     const { name, phone } = req.body;
     if (!name || !phone) {
@@ -436,6 +454,39 @@ export async function registerRoutes(
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
       });
+      
+      // Auto-add order to client's bill (existing unpaid or create new)
+      if (clientId && order.finalAmount) {
+        const orderAmount = parseFloat(order.finalAmount.toString());
+        const unpaidBills = await storage.getUnpaidBills(clientId);
+        
+        if (unpaidBills.length > 0) {
+          // Add to existing unpaid bill
+          const existingBill = unpaidBills[0];
+          const newAmount = parseFloat(existingBill.amount.toString()) + orderAmount;
+          const existingDesc = existingBill.description || "";
+          const newDesc = existingDesc 
+            ? `${existingDesc}\nOrder #${order.orderNumber}: ${order.items || 'Items'}`
+            : `Order #${order.orderNumber}: ${order.items || 'Items'}`;
+          
+          await storage.updateBill(existingBill.id, {
+            amount: newAmount.toFixed(2),
+            description: newDesc,
+          });
+        } else {
+          // Create new bill for this client
+          await storage.createBill({
+            clientId,
+            customerName: customerName.trim(),
+            customerPhone: customerPhone.trim(),
+            amount: orderAmount.toFixed(2),
+            description: `Order #${order.orderNumber}: ${order.items || 'Items'}`,
+            billDate: new Date(),
+            referenceNumber: `BILL-${order.orderNumber}`,
+          });
+        }
+      }
+      
       res.status(201).json(order);
     } catch (err: any) {
       res.status(400).json({ message: err.message });

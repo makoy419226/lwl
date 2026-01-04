@@ -103,6 +103,15 @@ export default function Products() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: clientBalance } = useQuery<{ totalDue: string; billCount: number; latestBillDate: string | null }>({
+    queryKey: ["/api/clients", selectedClientId, "unpaid-balance"],
+    queryFn: async () => {
+      const res = await fetch(`/api/clients/${selectedClientId}/unpaid-balance`);
+      return res.json();
+    },
+    enabled: !!selectedClientId,
+  });
+
   const todaysOrders = useMemo(() => {
     if (!allOrders) return [];
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -644,6 +653,20 @@ export default function Products() {
                     <span>TOTAL</span>
                     <span>{(orderTotal - (orderTotal * (parseFloat(discountPercent) || 0) / 100) + (parseFloat(tips) || 0)).toFixed(2)} AED</span>
                   </div>
+                  {clientBalance && parseFloat(clientBalance.totalDue) > 0 && (
+                    <>
+                      <div className="border-t border-dashed mt-2 pt-2">
+                        <div className="flex justify-between text-xs text-orange-600 font-semibold">
+                          <span>Previous Balance</span>
+                          <span data-testid="text-previous-balance">{parseFloat(clientBalance.totalDue).toFixed(2)} AED</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-bold text-orange-700 dark:text-orange-400 mt-1">
+                          <span>NEW TOTAL</span>
+                          <span data-testid="text-new-total">{(parseFloat(clientBalance.totalDue) + orderTotal - (orderTotal * (parseFloat(discountPercent) || 0) / 100) + (parseFloat(tips) || 0)).toFixed(2)} AED</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="mt-2 space-y-2">
