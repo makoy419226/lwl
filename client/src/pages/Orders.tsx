@@ -594,11 +594,10 @@ export default function Orders() {
       order.items?.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (activeTab === "all") return matchesSearch;
-    if (activeTab === "entry") return matchesSearch && !order.tagDone;
-    if (activeTab === "tags") return matchesSearch && !order.tagDone;
-    if (activeTab === "washing") return matchesSearch && order.tagDone && !order.packingDone;
-    if (activeTab === "packing") return matchesSearch && order.packingDone && !order.delivered;
-    if (activeTab === "delivered") return matchesSearch && order.delivered;
+    if (activeTab === "create") return matchesSearch && !order.tagDone;
+    if (activeTab === "tag-complete") return matchesSearch && order.tagDone && !order.packingDone;
+    if (activeTab === "packing-done") return matchesSearch && order.packingDone && !order.delivered;
+    if (activeTab === "delivery") return matchesSearch && order.delivered;
     return matchesSearch;
   });
 
@@ -750,14 +749,22 @@ export default function Orders() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger value="entry">Entry</TabsTrigger>
-            <TabsTrigger value="tags" className="bg-orange-100 dark:bg-orange-900/30 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-              <Tag className="w-4 h-4 mr-1" />
-              Tags
+            <TabsTrigger value="create" className="bg-blue-100 dark:bg-blue-900/30 data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+              <Plus className="w-4 h-4 mr-1" />
+              1. Create Order
             </TabsTrigger>
-            <TabsTrigger value="washing">Washing</TabsTrigger>
-            <TabsTrigger value="packing">Ready</TabsTrigger>
-            <TabsTrigger value="delivered">Delivered</TabsTrigger>
+            <TabsTrigger value="tag-complete" className="bg-orange-100 dark:bg-orange-900/30 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+              <Tag className="w-4 h-4 mr-1" />
+              2. Tag Complete
+            </TabsTrigger>
+            <TabsTrigger value="packing-done" className="bg-green-100 dark:bg-green-900/30 data-[state=active]:bg-green-500 data-[state=active]:text-white">
+              <Package className="w-4 h-4 mr-1" />
+              3. Packing Done
+            </TabsTrigger>
+            <TabsTrigger value="delivery" className="bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+              <Truck className="w-4 h-4 mr-1" />
+              4. Delivery
+            </TabsTrigger>
             <TabsTrigger value="item-report">Item Report</TabsTrigger>
           </TabsList>
 
@@ -781,7 +788,7 @@ export default function Orders() {
                       <TableHead>Client</TableHead>
                       <TableHead>Client Due</TableHead>
                       <TableHead>Items</TableHead>
-                      {activeTab !== "tags" && <TableHead>Amount</TableHead>}
+                      {activeTab !== "create" && <TableHead>Amount</TableHead>}
                       <TableHead>Type</TableHead>
                       <TableHead>Time Left</TableHead>
                       <TableHead>Status</TableHead>
@@ -867,8 +874,8 @@ export default function Orders() {
                                 </TableCell>
                               </>
                             ) : null}
-                            <TableCell className={activeTab === "tags" ? "max-w-md" : "max-w-xs"}>
-                              {activeTab === "tags" ? (
+                            <TableCell className={activeTab === "create" ? "max-w-md" : "max-w-xs"}>
+                              {activeTab === "create" ? (
                                 <div className="space-y-1">
                                   {parseOrderItems(order.items).map((item, i) => {
                                     const imageUrl = getProductImage(item.name);
@@ -904,7 +911,7 @@ export default function Orders() {
                                 </div>
                               )}
                             </TableCell>
-                            {activeTab !== "tags" && <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>}
+                            {activeTab !== "create" && <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>}
                             <TableCell>
                               {order.deliveryType === 'delivery' ? (
                                 <Badge variant="outline" className="gap-1">
