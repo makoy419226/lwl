@@ -659,7 +659,7 @@ export default function Orders() {
                   New Order
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[650px]">
                 <DialogHeader>
                   <DialogTitle>Create New Order</DialogTitle>
                 </DialogHeader>
@@ -1608,7 +1608,7 @@ function OrderForm({ clients, onSubmit, isLoading }: {
           <SelectTrigger data-testid="select-client">
             <SelectValue placeholder="Select client" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[100] max-h-[300px]">
             {clients.map((client) => (
               <SelectItem key={client.id} value={client.id.toString()}>
                 {client.name} - {client.phone}
