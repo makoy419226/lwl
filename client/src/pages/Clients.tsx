@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { TopBar } from "@/components/TopBar";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
-import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet, Calendar, Search, Printer, Lock } from "lucide-react";
+import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet, Calendar, Search, Printer, Lock, Download, FileSpreadsheet } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/ClientForm";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Invoice } from "@/components/Invoice";
-import type { Client, ClientTransaction, Bill, Worker } from "@shared/schema";
+import type { Client, ClientTransaction, Bill } from "@shared/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import * as XLSX from "xlsx";
+import html2pdf from "html2pdf.js";
 
 export default function Clients() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -213,6 +215,81 @@ export default function Clients() {
     }
   };
 
+  const downloadClientPDF = (client: Client) => {
+    const totalBill = parseFloat(client.amount || "0");
+    const totalDeposit = parseFloat(client.deposit || "0");
+    const balance = parseFloat(client.balance || "0");
+    
+    const content = document.createElement('div');
+    content.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="color: #1e88e5; margin: 0;">LIQUID WASHES LAUNDRY</h2>
+          <p style="margin: 5px 0; font-size: 12px;">Centra Market D/109, Al Dhanna City</p>
+          <p style="margin: 5px 0; font-size: 12px;">Al Ruwais, Abu Dhabi-UAE</p>
+        </div>
+        <hr style="border: 1px solid #ddd;"/>
+        <h3 style="text-align: center; margin: 15px 0;">CLIENT SUMMARY</h3>
+        <hr style="border: 1px solid #ddd;"/>
+        <table style="width: 100%; margin: 15px 0; font-size: 14px;">
+          <tr><td style="padding: 8px 0;"><strong>Client Name:</strong></td><td style="text-align: right;">${client.name}</td></tr>
+          ${client.phone ? `<tr><td style="padding: 8px 0;"><strong>Phone:</strong></td><td style="text-align: right;">${client.phone}</td></tr>` : ''}
+          ${client.address ? `<tr><td style="padding: 8px 0;"><strong>Address:</strong></td><td style="text-align: right;">${client.address}</td></tr>` : ''}
+          ${client.billNumber ? `<tr><td style="padding: 8px 0;"><strong>Bill Number:</strong></td><td style="text-align: right;">${client.billNumber}</td></tr>` : ''}
+        </table>
+        <hr style="border: 1px solid #ddd;"/>
+        <table style="width: 100%; margin: 15px 0; font-size: 14px;">
+          <tr><td style="padding: 8px 0;"><strong>Total Bills:</strong></td><td style="text-align: right; color: #2196f3;">${totalBill.toFixed(2)} AED</td></tr>
+          <tr><td style="padding: 8px 0;"><strong>Total Deposits:</strong></td><td style="text-align: right; color: #4caf50;">${totalDeposit.toFixed(2)} AED</td></tr>
+          <tr style="font-size: 16px;"><td style="padding: 12px 0; border-top: 2px solid #333;"><strong>BALANCE DUE:</strong></td><td style="text-align: right; border-top: 2px solid #333; color: ${balance > 0 ? '#f44336' : '#4caf50'}; font-weight: bold;">${balance.toFixed(2)} AED</td></tr>
+        </table>
+        <hr style="border: 1px solid #ddd;"/>
+        <p style="text-align: center; font-size: 11px; color: #666; margin-top: 20px;">
+          Generated on ${format(new Date(), "dd/MM/yyyy HH:mm")}
+        </p>
+      </div>
+    `;
+    
+    const opt = {
+      margin: 5,
+      filename: `${client.name.replace(/\s+/g, '_')}_Summary.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: [80, 150] as [number, number], orientation: 'portrait' as const }
+    };
+    
+    html2pdf().set(opt).from(content).save();
+    toast({ title: "PDF Downloaded", description: `Summary for ${client.name} saved` });
+  };
+
+  const downloadClientExcel = (client: Client) => {
+    const totalBill = parseFloat(client.amount || "0");
+    const totalDeposit = parseFloat(client.deposit || "0");
+    const balance = parseFloat(client.balance || "0");
+    
+    const data = [
+      ["LIQUID WASHES LAUNDRY - CLIENT SUMMARY"],
+      [],
+      ["Client Name", client.name],
+      ["Phone", client.phone || "-"],
+      ["Address", client.address || "-"],
+      ["Bill Number", client.billNumber || "-"],
+      [],
+      ["Financial Summary"],
+      ["Total Bills", `${totalBill.toFixed(2)} AED`],
+      ["Total Deposits", `${totalDeposit.toFixed(2)} AED`],
+      ["Balance Due", `${balance.toFixed(2)} AED`],
+      [],
+      ["Generated", format(new Date(), "dd/MM/yyyy HH:mm")],
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Client Summary");
+    XLSX.writeFile(wb, `${client.name.replace(/\s+/g, '_')}_Summary.xlsx`);
+    toast({ title: "Excel Downloaded", description: `Summary for ${client.name} saved` });
+  };
+
   const totalAmount = clients?.reduce((sum, c) => sum + parseFloat(c.amount || "0"), 0) || 0;
   const totalDeposit = clients?.reduce((sum, c) => sum + parseFloat(c.deposit || "0"), 0) || 0;
   const totalBalance = clients?.reduce((sum, c) => sum + parseFloat(c.balance || "0"), 0) || 0;
@@ -396,6 +473,26 @@ export default function Clients() {
                           title="Add Bill/Deposit"
                         >
                           <History className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-500"
+                          onClick={() => downloadClientPDF(client)}
+                          data-testid={`button-pdf-${client.id}`}
+                          title="Download PDF Summary"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-green-600"
+                          onClick={() => downloadClientExcel(client)}
+                          data-testid={`button-excel-${client.id}`}
+                          title="Download Excel Summary"
+                        >
+                          <FileSpreadsheet className="w-4 h-4" />
                         </Button>
                         {client.contact && (
                           <Button

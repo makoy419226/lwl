@@ -16,19 +16,19 @@ const getCategoryIcon = (category: string | null) => {
     case "Outerwear":
     case "Workwear":
     case "Specialty":
-      return <Shirt size={64} strokeWidth={1.5} />;
+      return <Shirt size={40} strokeWidth={1.5} />;
     case "Undergarments":
     case "Accessories":
-      return <Sparkles size={64} strokeWidth={1.5} />;
+      return <Sparkles size={40} strokeWidth={1.5} />;
     case "Bedding":
     case "Home Linens":
     case "Bathroom":
     case "Flooring":
-      return <Home size={64} strokeWidth={1.5} />;
+      return <Home size={40} strokeWidth={1.5} />;
     case "Footwear":
-      return <Footprints size={64} strokeWidth={1.5} />;
+      return <Footprints size={40} strokeWidth={1.5} />;
     default:
-      return <Shirt size={64} strokeWidth={1.5} />;
+      return <Shirt size={40} strokeWidth={1.5} />;
   }
 };
 
@@ -75,7 +75,7 @@ export function ProductCard({ product }: ProductCardProps) {
       data-testid={`card-product-${product.id}`}
     >
       {/* Image / Icon Area */}
-      <div className={`h-48 w-full ${placeholderGradient} flex items-center justify-center overflow-hidden relative`}>
+      <div className={`h-28 w-full ${placeholderGradient} flex items-center justify-center overflow-hidden relative`}>
         {product.imageUrl ? (
           <img 
             src={product.imageUrl} 
@@ -138,7 +138,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* Content Area */}
-      <div className="p-5 flex flex-col flex-grow">
+      <div className="p-3 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-2">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
             {product.category || "General"}
