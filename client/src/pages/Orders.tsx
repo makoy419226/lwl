@@ -281,8 +281,8 @@ export default function Orders() {
   const handleDeliveryPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (deliveryPhotos.length >= 3) {
-        toast({ title: "Maximum Photos", description: "You can only upload up to 3 photos", variant: "destructive" });
+      if (deliveryPhotos.length >= 1) {
+        toast({ title: "Maximum Photos", description: "You can only upload 1 photo", variant: "destructive" });
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
@@ -1019,38 +1019,30 @@ export default function Orders() {
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Camera className="w-4 h-4" />
-                Delivery Photos (Optional - Up to 3)
+                Delivery Photo (Optional)
               </Label>
               
-              {deliveryPhotoPreviews.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {deliveryPhotoPreviews.map((preview, index) => (
-                    <div key={index} className="relative">
-                      <img 
-                        src={preview} 
-                        alt={`Delivery proof ${index + 1}`} 
-                        className="w-full h-24 object-cover rounded-lg border"
-                      />
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="absolute top-1 right-1 h-6 w-6"
-                        onClick={() => removeDeliveryPhoto(index)}
-                        data-testid={`button-remove-photo-${index}`}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
+              {deliveryPhotoPreviews.length > 0 ? (
+                <div className="relative w-full">
+                  <img 
+                    src={deliveryPhotoPreviews[0]} 
+                    alt="Delivery proof" 
+                    className="w-full h-32 object-cover rounded-lg border"
+                  />
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-2 right-2 h-7 w-7"
+                    onClick={() => removeDeliveryPhoto(0)}
+                    data-testid="button-remove-photo-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-              )}
-              
-              {deliveryPhotoPreviews.length < 3 && (
+              ) : (
                 <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                   <Camera className="w-6 h-6 text-muted-foreground mb-1" />
-                  <span className="text-xs text-muted-foreground">
-                    {deliveryPhotoPreviews.length === 0 ? "Click to add photo" : `Add more (${3 - deliveryPhotoPreviews.length} left)`}
-                  </span>
+                  <span className="text-xs text-muted-foreground">Click to add photo</span>
                   <input
                     type="file"
                     accept="image/*,.heic,.heif,.webp,.bmp,.gif,.png,.jpg,.jpeg"
