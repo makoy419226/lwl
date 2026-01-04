@@ -161,80 +161,149 @@ export default function Orders() {
       return sum + (billTotal - billPaid);
     }, 0);
     
-    const itemsHtml = parsedItems.map(item => 
-      `<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dotted #ccc;">
-        <span style="font-size: 11px;">${item.name}</span>
-        <span style="font-size: 11px; font-weight: bold;">${item.quantity} pcs</span>
-      </div>`
+    const itemsHtml = parsedItems.map((item, idx) => 
+      `<tr style="border-bottom: 1px solid #e5e5e5;">
+        <td style="padding: 10px 8px; font-size: 14px;">${idx + 1}</td>
+        <td style="padding: 10px 8px; font-size: 14px;">${item.name}</td>
+        <td style="padding: 10px 8px; font-size: 14px; text-align: center; font-weight: bold;">${item.quantity}</td>
+        <td style="padding: 10px 8px; font-size: 14px; text-align: right;">${item.quantity} pcs</td>
+      </tr>`
     ).join('');
     
     const content = document.createElement('div');
     content.innerHTML = `
-      <div style="font-family: 'Courier New', monospace; padding: 10px; width: 70mm; font-size: 10px; color: #000;">
-        <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
-          <div style="font-size: 14px; font-weight: bold;">LIQUID WASHES</div>
-          <div style="font-size: 9px; margin-top: 2px;">ORDER TAG</div>
+      <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 210mm; color: #000; background: #fff;">
+        <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
+          <div style="font-size: 28px; font-weight: bold; letter-spacing: 2px;">LIQUID WASHES LAUNDRY</div>
+          <div style="font-size: 14px; margin-top: 8px; color: #666;">Professional Laundry Services - UAE</div>
+          <div style="font-size: 12px; margin-top: 4px; color: #888;">Tel: +971 XX XXX XXXX</div>
         </div>
         
-        ${isUrgent ? `<div style="text-align: center; padding: 6px; margin: 6px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px;">*** URGENT ***</div>` : ''}
+        ${isUrgent ? `<div style="text-align: center; padding: 15px; margin: 20px 0; background: #fef2f2; border: 3px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 20px; border-radius: 8px;">*** URGENT ORDER ***</div>` : ''}
         
-        <div style="text-align: center; font-size: 18px; font-weight: bold; padding: 10px; border: 2px dashed #000; margin: 8px 0;">
-          ${order.orderNumber}
-        </div>
-        
-        <div style="margin: 8px 0; padding: 8px; background: #f5f5f5; border-radius: 4px;">
-          <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">${client?.name || order.customerName || 'Walk-in'}</div>
-          <div style="font-size: 10px;">${client?.phone || ''}</div>
-          ${client?.address ? `<div style="font-size: 9px; color: #666; margin-top: 2px;">${client.address}</div>` : ''}
-        </div>
-        
-        <div style="margin: 8px 0;">
-          <div style="font-size: 10px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 4px;">ITEMS LIST:</div>
-          ${itemsHtml}
-          <div style="text-align: right; font-size: 11px; font-weight: bold; margin-top: 8px; padding-top: 4px; border-top: 1px solid #000;">
-            Total Items: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} pcs
+        <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+          <div style="flex: 1;">
+            <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Order Number</div>
+            <div style="font-size: 32px; font-weight: bold; color: #000; border: 3px dashed #000; padding: 15px 25px; display: inline-block;">${order.orderNumber}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 12px; color: #666;">Entry Date</div>
+            <div style="font-size: 16px; font-weight: bold;">${format(new Date(order.entryDate), "dd MMM yyyy")}</div>
+            <div style="font-size: 14px; color: #666;">${format(new Date(order.entryDate), "hh:mm a")}</div>
+            ${order.expectedDeliveryAt ? `
+            <div style="font-size: 12px; color: #666; margin-top: 10px;">Expected Delivery</div>
+            <div style="font-size: 16px; font-weight: bold; color: #2563eb;">${format(new Date(order.expectedDeliveryAt), "dd MMM yyyy")}</div>
+            <div style="font-size: 14px; color: #2563eb;">${format(new Date(order.expectedDeliveryAt), "hh:mm a")}</div>
+            ` : ''}
           </div>
         </div>
         
-        <div style="margin: 8px 0; padding: 8px; background: #e8f5e9; border-radius: 4px;">
-          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold;">
-            <span>Order Total:</span>
-            <span>AED ${parseFloat(order.totalAmount).toFixed(2)}</span>
+        <div style="background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+          <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">Client Information</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+              <div style="font-size: 12px; color: #888;">Name</div>
+              <div style="font-size: 18px; font-weight: bold;">${client?.name || order.customerName || 'Walk-in Customer'}</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #888;">Phone</div>
+              <div style="font-size: 18px; font-weight: bold;">${client?.phone || '-'}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div style="font-size: 12px; color: #888;">Address</div>
+              <div style="font-size: 16px;">${client?.address || '-'}</div>
+            </div>
+            ${client?.email ? `
+            <div>
+              <div style="font-size: 12px; color: #888;">Email</div>
+              <div style="font-size: 14px;">${client.email}</div>
+            </div>
+            ` : ''}
           </div>
         </div>
+        
+        <div style="margin-bottom: 30px;">
+          <div style="font-size: 16px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 8px;">ITEMS DETAIL</div>
+          <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+            <thead>
+              <tr style="background: #f0f0f0;">
+                <th style="padding: 12px 8px; text-align: left; font-size: 12px; border-bottom: 2px solid #000; width: 50px;">#</th>
+                <th style="padding: 12px 8px; text-align: left; font-size: 12px; border-bottom: 2px solid #000;">Item Description</th>
+                <th style="padding: 12px 8px; text-align: center; font-size: 12px; border-bottom: 2px solid #000; width: 80px;">Qty</th>
+                <th style="padding: 12px 8px; text-align: right; font-size: 12px; border-bottom: 2px solid #000; width: 120px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+            <tfoot>
+              <tr style="background: #f8f9fa; border-top: 2px solid #000;">
+                <td colspan="2" style="padding: 12px 8px; font-size: 14px; font-weight: bold;">Total Items: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} pcs</td>
+                <td colspan="2" style="padding: 12px 8px; font-size: 18px; font-weight: bold; text-align: right;">AED ${parseFloat(order.totalAmount).toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        
+        ${order.discountPercent && parseFloat(order.discountPercent) > 0 ? `
+        <div style="text-align: right; margin-bottom: 10px;">
+          <span style="font-size: 14px; color: #666;">Discount: </span>
+          <span style="font-size: 16px; font-weight: bold; color: #16a34a;">${order.discountPercent}%</span>
+        </div>
+        ` : ''}
+        
+        ${order.tips && parseFloat(order.tips) > 0 ? `
+        <div style="text-align: right; margin-bottom: 10px;">
+          <span style="font-size: 14px; color: #666;">Tips: </span>
+          <span style="font-size: 16px; font-weight: bold;">AED ${parseFloat(order.tips).toFixed(2)}</span>
+        </div>
+        ` : ''}
         
         ${totalPreviousDue > 0 ? `
-        <div style="margin: 8px 0; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
-          <div style="font-size: 10px; font-weight: bold; color: #856404; margin-bottom: 4px;">PREVIOUS DUES:</div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #dc3545;">
-            <span>${unpaidBills.length} unpaid bill(s)</span>
-            <span>AED ${totalPreviousDue.toFixed(2)}</span>
+        <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="font-size: 14px; font-weight: bold; color: #856404; margin-bottom: 8px;">PREVIOUS OUTSTANDING DUES</div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: #856404;">${unpaidBills.length} unpaid bill(s)</span>
+            <span style="font-size: 20px; font-weight: bold; color: #dc3545;">AED ${totalPreviousDue.toFixed(2)}</span>
           </div>
         </div>
         ` : ''}
         
-        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000;">
-          <div style="display: flex; justify-content: space-between; font-size: 9px;">
-            <span>Entry:</span>
-            <span>${format(new Date(order.entryDate), "dd/MM/yyyy HH:mm")}</span>
+        ${order.notes ? `
+        <div style="background: #e8f4fd; border: 1px solid #90cdf4; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="font-size: 12px; font-weight: bold; color: #2b6cb0; margin-bottom: 5px;">ORDER NOTES</div>
+          <div style="font-size: 14px;">${order.notes}</div>
+        </div>
+        ` : ''}
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px dashed #ccc;">
+          <div>
+            <div style="font-size: 12px; color: #888;">Packing Status</div>
+            <div style="font-size: 14px; font-weight: bold;">${order.packingDone ? 'Done' : 'Pending'}</div>
           </div>
-          ${order.expectedDeliveryAt ? `
-          <div style="display: flex; justify-content: space-between; font-size: 9px; margin-top: 2px;">
-            <span>Expected:</span>
-            <span>${format(new Date(order.expectedDeliveryAt), "dd/MM/yyyy HH:mm")}</span>
+          <div>
+            <div style="font-size: 12px; color: #888;">Status</div>
+            <div style="font-size: 14px; font-weight: bold; text-transform: uppercase;">${order.status}</div>
           </div>
-          ` : ''}
+          <div>
+            <div style="font-size: 12px; color: #888;">Tag Status</div>
+            <div style="font-size: 14px; font-weight: bold; color: ${order.tagDone ? '#16a34a' : '#dc2626'};">${order.tagDone ? 'Completed' : 'Pending'}</div>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #000; color: #888; font-size: 11px;">
+          <div>Thank you for choosing Liquid Washes Laundry</div>
+          <div style="margin-top: 5px;">Generated on ${format(new Date(), "dd MMM yyyy 'at' hh:mm a")}</div>
         </div>
       </div>
     `;
     
-    const contentHeight = 120 + (parsedItems.length * 8) + (totalPreviousDue > 0 ? 25 : 0);
     const opt = {
-      margin: 1,
+      margin: 10,
       filename: `Tag_${order.orderNumber}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: [80, contentHeight] as [number, number], orientation: 'portrait' as const }
+      jsPDF: { unit: 'mm', format: 'a4' as const, orientation: 'portrait' as const }
     };
     
     html2pdf().set(opt).from(content).save();
