@@ -739,11 +739,14 @@ export default function Products() {
                   <SelectTrigger className="h-8 text-xs" data-testid="select-order-client">
                     <SelectValue placeholder="Choose client..." />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="walkin">Walk-in Customer</SelectItem>
+                  <SelectContent className="z-[100] bg-background border shadow-lg max-h-[300px]">
+                    <SelectItem value="walkin" className="font-medium text-primary">
+                      Walk-in Customer
+                    </SelectItem>
                     {clients?.map(client => (
-                      <SelectItem key={client.id} value={client.id.toString()}>
-                        {client.name} {client.phone ? `(${client.phone})` : ""}
+                      <SelectItem key={client.id} value={client.id.toString()} className="py-2">
+                        <span className="font-medium">{client.name}</span>
+                        {client.phone && <span className="text-muted-foreground ml-2">({client.phone})</span>}
                       </SelectItem>
                     ))}
                   </SelectContent>
