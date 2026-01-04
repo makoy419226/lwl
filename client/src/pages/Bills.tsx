@@ -4,7 +4,7 @@ import { useBills, useDeleteBill } from "@/hooks/use-bills";
 import { useClients } from "@/hooks/use-clients";
 import { useCreateProduct } from "@/hooks/use-products";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, FileText, Trash2, Plus, Minus, Receipt, Download, Printer, Package, User, PlusCircle } from "lucide-react";
+import { Loader2, FileText, Trash2, Plus, Minus, Receipt, Download, Printer, Package, User, PlusCircle, AlertCircle } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -249,6 +249,7 @@ export default function Bills() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="bills">Bills List</TabsTrigger>
+            <TabsTrigger value="due">Due Customers</TabsTrigger>
             <TabsTrigger value="pricelist">Price List</TabsTrigger>
           </TabsList>
 
@@ -331,6 +332,114 @@ export default function Bills() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="due">
+            <div className="mb-4">
+              <p className="text-muted-foreground">Clients with outstanding balances.</p>
+            </div>
+            {(() => {
+              const unpaidBills = bills?.filter(b => !b.isPaid) || [];
+              const clientDueMap = new Map<number, { client: Client; bills: Bill[]; totalDue: number }>();
+              
+              unpaidBills.forEach(bill => {
+                if (bill.clientId) {
+                  const client = clients.find(c => c.id === bill.clientId);
+                  if (client) {
+                    const existing = clientDueMap.get(bill.clientId);
+                    const billAmount = parseFloat(bill.amount || "0");
+                    const paidAmount = parseFloat(bill.paidAmount || "0");
+                    const dueAmount = billAmount - paidAmount;
+                    
+                    if (existing) {
+                      existing.bills.push(bill);
+                      existing.totalDue += dueAmount;
+                    } else {
+                      clientDueMap.set(bill.clientId, { client, bills: [bill], totalDue: dueAmount });
+                    }
+                  }
+                }
+              });
+              
+              const dueCustomers = Array.from(clientDueMap.values()).filter(d => d.totalDue > 0);
+              const totalOutstanding = dueCustomers.reduce((sum, d) => sum + d.totalDue, 0);
+              
+              if (dueCustomers.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed border-border rounded-3xl bg-card/50">
+                    <AlertCircle className="w-16 h-16 mb-4 opacity-50" />
+                    <h3 className="text-xl font-bold text-foreground mb-2">No due balances</h3>
+                    <p className="max-w-md text-center">All clients are up to date with their payments.</p>
+                  </div>
+                );
+              }
+              
+              return (
+                <div className="space-y-4">
+                  <div className="bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        <span className="font-semibold text-orange-800 dark:text-orange-200">Total Outstanding</span>
+                      </div>
+                      <span className="text-xl font-bold text-orange-600 dark:text-orange-400">AED {totalOutstanding.toFixed(2)}</span>
+                    </div>
+                    <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">{dueCustomers.length} customer{dueCustomers.length > 1 ? 's' : ''} with unpaid balance</p>
+                  </div>
+                  
+                  {dueCustomers.map(({ client, bills, totalDue }) => (
+                    <Card key={client.id} className="border-orange-200 dark:border-orange-800" data-testid={`card-due-client-${client.id}`}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                              <User className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">{client.name}</CardTitle>
+                              {client.phone && <p className="text-xs text-muted-foreground">{client.phone}</p>}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Balance Due</p>
+                            <p className="text-xl font-bold text-orange-600 dark:text-orange-400">AED {totalDue.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-muted-foreground">Unpaid Bills ({bills.length})</p>
+                          {bills.map(bill => {
+                            const billAmt = parseFloat(bill.amount || "0");
+                            const paidAmt = parseFloat(bill.paidAmount || "0");
+                            return (
+                              <div key={bill.id} className="flex items-center justify-between text-sm bg-muted/50 rounded px-3 py-2">
+                                <div>
+                                  <span className="font-medium">{bill.referenceNumber || `Bill #${bill.id}`}</span>
+                                  <span className="text-muted-foreground ml-2">
+                                    {format(new Date(bill.billDate), "MMM dd, yyyy")}
+                                  </span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-semibold text-orange-600 dark:text-orange-400">
+                                    {(billAmt - paidAmt).toFixed(2)} AED
+                                  </span>
+                                  {paidAmt > 0 && (
+                                    <span className="text-xs text-muted-foreground ml-1">
+                                      (paid: {paidAmt.toFixed(2)})
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="pricelist">
