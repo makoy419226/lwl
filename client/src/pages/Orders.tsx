@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Loader2, Package, Shirt, CheckCircle2, Truck, Clock, 
-  AlertTriangle, Plus, Minus, Search, Bell, Printer, User, Receipt, Download, Camera, Image, X
+  AlertTriangle, Plus, Minus, Search, Bell, Printer, User, Receipt, Download, Camera, Image, X, Tag
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -143,6 +143,48 @@ export default function Orders() {
         toast({ title: "PDF Error", description: "Failed to generate PDF", variant: "destructive" });
       }
     }
+  };
+
+  const generateTagReceipt = (order: Order) => {
+    const client = clients?.find(c => c.id === order.clientId);
+    const isUrgent = order.urgent;
+    const items = order.items?.split(',').map(item => item.trim()) || [];
+    
+    const content = document.createElement('div');
+    content.innerHTML = `
+      <div style="font-family: 'Courier New', monospace; padding: 8px; width: 70mm; font-size: 10px; color: #000;">
+        <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 6px; margin-bottom: 6px;">
+          <div style="font-size: 12px; font-weight: bold;">LIQUID WASHES</div>
+          <div style="font-size: 8px; margin-top: 2px;">ITEM TAG</div>
+        </div>
+        
+        ${isUrgent ? `<div style="text-align: center; padding: 4px; margin: 4px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px;">URGENT</div>` : ''}
+        
+        <div style="text-align: center; font-size: 16px; font-weight: bold; padding: 8px; border: 2px dashed #000; margin: 6px 0;">
+          ${order.orderNumber}
+        </div>
+        
+        <div style="margin: 6px 0; padding: 6px; background: #f5f5f5;">
+          <div style="font-size: 11px; font-weight: bold;">${client?.name || 'Walk-in'}</div>
+          <div style="font-size: 9px;">${client?.phone || ''}</div>
+        </div>
+        
+        <div style="font-size: 9px; text-align: center; margin-top: 6px;">
+          ${format(new Date(order.entryDate), "dd/MM/yyyy HH:mm")}
+        </div>
+      </div>
+    `;
+    
+    const opt = {
+      margin: 1,
+      filename: `Tag_${order.orderNumber}.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: [80, 60] as [number, number], orientation: 'portrait' as const }
+    };
+    
+    html2pdf().set(opt).from(content).save();
+    toast({ title: "Tag Downloaded", description: `Tag for ${order.orderNumber} saved` });
   };
 
   const generateWashingReceipt = (order: Order) => {
@@ -390,8 +432,9 @@ export default function Orders() {
       order.items?.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (activeTab === "all") return matchesSearch;
-    if (activeTab === "entry") return matchesSearch && !order.washingDone;
-    if (activeTab === "washing") return matchesSearch && order.washingDone && !order.packingDone;
+    if (activeTab === "entry") return matchesSearch && !order.tagDone;
+    if (activeTab === "tags") return matchesSearch && !order.tagDone;
+    if (activeTab === "washing") return matchesSearch && order.tagDone && !order.packingDone;
     if (activeTab === "packing") return matchesSearch && order.packingDone && !order.delivered;
     if (activeTab === "delivered") return matchesSearch && order.delivered;
     return matchesSearch;
@@ -400,8 +443,8 @@ export default function Orders() {
   const getStatusBadge = (order: Order) => {
     if (order.delivered) return <Badge className="bg-green-500">Delivered</Badge>;
     if (order.packingDone) return <Badge className="bg-purple-500">Ready</Badge>;
-    if (order.washingDone) return <Badge className="bg-blue-500">Packing</Badge>;
-    return <Badge className="bg-orange-500">Entry</Badge>;
+    if (order.tagDone) return <Badge className="bg-blue-500">Washing</Badge>;
+    return <Badge className="bg-orange-500">Tag Pending</Badge>;
   };
 
   const getTimeRemaining = (expectedDeliveryAt: Date | null) => {
@@ -543,9 +586,13 @@ export default function Orders() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="all">All Orders</TabsTrigger>
             <TabsTrigger value="entry">Entry</TabsTrigger>
+            <TabsTrigger value="tags" className="bg-orange-100 dark:bg-orange-900/30 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+              <Tag className="w-4 h-4 mr-1" />
+              Tags
+            </TabsTrigger>
             <TabsTrigger value="washing">Washing</TabsTrigger>
             <TabsTrigger value="packing">Ready</TabsTrigger>
             <TabsTrigger value="delivered">Delivered</TabsTrigger>
@@ -689,7 +736,7 @@ export default function Orders() {
                             <TableCell>{getTimeRemaining(order.expectedDeliveryAt)}</TableCell>
                             <TableCell>{getStatusBadge(order)}</TableCell>
                             <TableCell>
-                              <div className="flex gap-1">
+                              <div className="flex gap-1 flex-wrap">
                                 <Button 
                                   size="icon" 
                                   variant="ghost"
@@ -698,25 +745,49 @@ export default function Orders() {
                                 >
                                   <Printer className="w-4 h-4" />
                                 </Button>
-                                {!order.washingDone && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => handleStatusUpdate(order.id, 'washingDone', true)}
-                                    data-testid={`button-washing-${order.id}`}
-                                  >
-                                    Washing Done
-                                  </Button>
+                                {!order.tagDone && (
+                                  <>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      className="bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300"
+                                      onClick={() => generateTagReceipt(order)}
+                                      data-testid={`button-print-tag-${order.id}`}
+                                    >
+                                      <Tag className="w-3 h-3 mr-1" />
+                                      Print Tag
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => handleStatusUpdate(order.id, 'tagDone', true)}
+                                      data-testid={`button-tag-done-${order.id}`}
+                                    >
+                                      Tag Done
+                                    </Button>
+                                  </>
                                 )}
-                                {order.washingDone && !order.packingDone && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => handlePackingWithPin(order.id)}
-                                    data-testid={`button-packing-${order.id}`}
-                                  >
-                                    Packing Done
-                                  </Button>
+                                {order.tagDone && !order.packingDone && (
+                                  <>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      className="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300"
+                                      onClick={() => generateWashingReceipt(order)}
+                                      data-testid={`button-washing-receipt-${order.id}`}
+                                    >
+                                      <Printer className="w-3 h-3 mr-1" />
+                                      Washing
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => handlePackingWithPin(order.id)}
+                                      data-testid={`button-packing-${order.id}`}
+                                    >
+                                      Packing Done
+                                    </Button>
+                                  </>
                                 )}
                                 {order.packingDone && !order.delivered && (
                                   <Button 
