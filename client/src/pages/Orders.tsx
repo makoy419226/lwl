@@ -145,6 +145,66 @@ export default function Orders() {
     }
   };
 
+  const generateWashingReceipt = (order: Order) => {
+    const client = clients?.find(c => c.id === order.clientId);
+    const isUrgent = order.urgent;
+    
+    const content = document.createElement('div');
+    content.innerHTML = `
+      <div style="font-family: 'Courier New', monospace; padding: 10px; width: 70mm; font-size: 11px; color: #000;">
+        <div style="text-align: center; border-bottom: 2px dashed ${isUrgent ? '#dc2626' : '#000'}; padding-bottom: 8px; margin-bottom: 8px;">
+          <div style="font-size: 14px; font-weight: bold; color: ${isUrgent ? '#dc2626' : '#000'};">LIQUID WASHES LAUNDRY</div>
+          <div style="font-size: 9px; margin-top: 3px;">WASHING SECTION</div>
+        </div>
+        
+        ${isUrgent ? `
+        <div style="text-align: center; padding: 8px; margin: 8px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 14px;">
+          *** URGENT ORDER ***
+        </div>
+        ` : ''}
+        
+        <div style="text-align: center; font-size: 18px; font-weight: bold; padding: 10px; border: 2px dashed #000; margin: 10px 0; color: ${isUrgent ? '#dc2626' : '#000'};">
+          ${order.orderNumber}
+        </div>
+        
+        <div style="margin: 10px 0; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+          <div style="margin-bottom: 5px;"><strong>Client:</strong> ${client?.name || 'Walk-in'}</div>
+          <div style="margin-bottom: 5px;"><strong>Phone:</strong> ${client?.phone || order.customerName || '-'}</div>
+          <div><strong>Date:</strong> ${format(new Date(order.entryDate), "dd/MM/yyyy HH:mm")}</div>
+        </div>
+        
+        <div style="margin: 10px 0; border-top: 1px dashed #000; padding-top: 10px;">
+          <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">ITEMS FOR WASHING:</div>
+          <div style="line-height: 1.8; font-size: 12px;">
+            ${order.items?.split(',').map(item => `<div style="padding: 3px 0; border-bottom: 1px dotted #ccc;">${item.trim()}</div>`).join('') || 'No items'}
+          </div>
+        </div>
+        
+        ${order.notes ? `
+        <div style="margin: 10px 0; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+          <div style="font-weight: bold; font-size: 10px;">NOTES:</div>
+          <div style="font-size: 11px;">${order.notes}</div>
+        </div>
+        ` : ''}
+        
+        <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 2px dashed #000; font-size: 9px; color: #666;">
+          Printed: ${format(new Date(), "dd/MM/yyyy HH:mm")}
+        </div>
+      </div>
+    `;
+    
+    const opt = {
+      margin: 2,
+      filename: `Washing_${order.orderNumber}.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: [80, 150] as [number, number], orientation: 'portrait' as const }
+    };
+    
+    html2pdf().set(opt).from(content).save();
+    toast({ title: "Washing Receipt Downloaded", description: `Thermal receipt for ${order.orderNumber} saved` });
+  };
+
   useEffect(() => {
     if (newCreatedOrder && pdfReceiptRef.current) {
       const timer = setTimeout(() => {
@@ -880,14 +940,18 @@ export default function Orders() {
                 Your order has been created. The PDF is being generated automatically.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               <Button onClick={generatePDF} variant="default" data-testid="button-download-pdf">
                 <Download className="w-4 h-4 mr-2" />
                 Download PDF
               </Button>
+              <Button onClick={() => generateWashingReceipt(newCreatedOrder)} variant="secondary" className="bg-orange-500 hover:bg-orange-600 text-white" data-testid="button-washing-receipt">
+                <Printer className="w-4 h-4 mr-2" />
+                Washing Receipt
+              </Button>
               <Button onClick={() => { setPrintOrder(newCreatedOrder); setNewCreatedOrder(null); }} variant="outline">
                 <Printer className="w-4 h-4 mr-2" />
-                Print
+                Print Full
               </Button>
               <Button onClick={() => setNewCreatedOrder(null)} variant="ghost">
                 Close
