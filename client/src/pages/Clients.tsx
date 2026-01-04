@@ -215,60 +215,149 @@ export default function Clients() {
     }
   };
 
-  const downloadClientPDF = (client: Client) => {
+  const downloadClientPDF = async (client: Client) => {
     const totalBill = parseFloat(client.amount || "0");
     const totalDeposit = parseFloat(client.deposit || "0");
     const balance = parseFloat(client.balance || "0");
     
+    // Fetch all transactions for this client
+    let transactionRows = '';
+    try {
+      const res = await fetch(`/api/clients/${client.id}/transactions`);
+      if (res.ok) {
+        const clientTransactions: ClientTransaction[] = await res.json();
+        if (clientTransactions && clientTransactions.length > 0) {
+          // Sort by date (oldest first)
+          const sortedTransactions = [...clientTransactions].sort((a, b) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+          transactionRows = sortedTransactions.map((t, idx) => `
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 10px 8px; text-align: center;">${idx + 1}</td>
+              <td style="padding: 10px 8px;">${format(new Date(t.date), "dd/MM/yyyy")}</td>
+              <td style="padding: 10px 8px;">${format(new Date(t.date), "HH:mm")}</td>
+              <td style="padding: 10px 8px; text-transform: capitalize; font-weight: 500; color: ${t.type === 'bill' ? '#2196f3' : '#4caf50'};">${t.type}</td>
+              <td style="padding: 10px 8px;">${t.description || '-'}</td>
+              <td style="padding: 10px 8px; text-align: right; color: ${t.type === 'bill' ? '#2196f3' : '#4caf50'};">${parseFloat(t.amount).toFixed(2)} AED</td>
+              <td style="padding: 10px 8px; text-align: right; font-weight: 500;">${parseFloat(t.runningBalance).toFixed(2)} AED</td>
+            </tr>
+          `).join('');
+        }
+      }
+    } catch (e) {
+      console.log('Could not fetch transactions');
+    }
+    
     const content = document.createElement('div');
     content.innerHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <h2 style="color: #1e88e5; margin: 0;">LIQUID WASHES LAUNDRY</h2>
-          <p style="margin: 5px 0; font-size: 12px;">Centra Market D/109, Al Dhanna City</p>
-          <p style="margin: 5px 0; font-size: 12px;">Al Ruwais, Abu Dhabi-UAE</p>
+      <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e88e5; padding-bottom: 20px;">
+          <h1 style="color: #1e88e5; margin: 0; font-size: 28px;">LIQUID WASHES LAUNDRY</h1>
+          <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">Centra Market D/109, Al Dhanna City, Al Ruwais, Abu Dhabi-UAE</p>
         </div>
-        <hr style="border: 1px solid #ddd;"/>
-        <h3 style="text-align: center; margin: 15px 0;">CLIENT SUMMARY</h3>
-        <hr style="border: 1px solid #ddd;"/>
-        <table style="width: 100%; margin: 15px 0; font-size: 14px;">
-          <tr><td style="padding: 8px 0;"><strong>Client Name:</strong></td><td style="text-align: right;">${client.name}</td></tr>
-          ${client.phone ? `<tr><td style="padding: 8px 0;"><strong>Phone:</strong></td><td style="text-align: right;">${client.phone}</td></tr>` : ''}
-          ${client.address ? `<tr><td style="padding: 8px 0;"><strong>Address:</strong></td><td style="text-align: right;">${client.address}</td></tr>` : ''}
-          ${client.billNumber ? `<tr><td style="padding: 8px 0;"><strong>Bill Number:</strong></td><td style="text-align: right;">${client.billNumber}</td></tr>` : ''}
+        
+        <h2 style="text-align: center; margin: 20px 0; color: #333; font-size: 22px;">CLIENT ACCOUNT SUMMARY</h2>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+          <table style="width: 100%; font-size: 14px;">
+            <tr>
+              <td style="padding: 8px 0; width: 50%;"><strong>Client Name:</strong> ${client.name}</td>
+              <td style="padding: 8px 0;"><strong>Phone:</strong> ${client.phone || '-'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0;"><strong>Address:</strong> ${client.address || '-'}</td>
+              <td style="padding: 8px 0;"><strong>Bill Number:</strong> ${client.billNumber || '-'}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <div style="display: flex; gap: 20px; margin-bottom: 25px;">
+          <div style="flex: 1; background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: #1565c0;">Total Bills</p>
+            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #1e88e5;">${totalBill.toFixed(2)} AED</p>
+          </div>
+          <div style="flex: 1; background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: #2e7d32;">Total Deposits</p>
+            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #4caf50;">${totalDeposit.toFixed(2)} AED</p>
+          </div>
+          <div style="flex: 1; background: ${balance > 0 ? '#ffebee' : '#e8f5e9'}; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: ${balance > 0 ? '#c62828' : '#2e7d32'};">Balance Due</p>
+            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: ${balance > 0 ? '#f44336' : '#4caf50'};">${balance.toFixed(2)} AED</p>
+          </div>
+        </div>
+        
+        <h3 style="margin: 25px 0 15px 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Transaction History</h3>
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: #1e88e5; color: white;">
+              <th style="padding: 12px 8px; text-align: center; width: 40px;">#</th>
+              <th style="padding: 12px 8px; text-align: left;">Date</th>
+              <th style="padding: 12px 8px; text-align: left;">Time</th>
+              <th style="padding: 12px 8px; text-align: left;">Type</th>
+              <th style="padding: 12px 8px; text-align: left;">Description</th>
+              <th style="padding: 12px 8px; text-align: right;">Amount</th>
+              <th style="padding: 12px 8px; text-align: right;">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${transactionRows || '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No transaction history found</td></tr>'}
+          </tbody>
         </table>
-        <hr style="border: 1px solid #ddd;"/>
-        <table style="width: 100%; margin: 15px 0; font-size: 14px;">
-          <tr><td style="padding: 8px 0;"><strong>Total Bills:</strong></td><td style="text-align: right; color: #2196f3;">${totalBill.toFixed(2)} AED</td></tr>
-          <tr><td style="padding: 8px 0;"><strong>Total Deposits:</strong></td><td style="text-align: right; color: #4caf50;">${totalDeposit.toFixed(2)} AED</td></tr>
-          <tr style="font-size: 16px;"><td style="padding: 12px 0; border-top: 2px solid #333;"><strong>BALANCE DUE:</strong></td><td style="text-align: right; border-top: 2px solid #333; color: ${balance > 0 ? '#f44336' : '#4caf50'}; font-weight: bold;">${balance.toFixed(2)} AED</td></tr>
-        </table>
-        <hr style="border: 1px solid #ddd;"/>
-        <p style="text-align: center; font-size: 11px; color: #666; margin-top: 20px;">
-          Generated on ${format(new Date(), "dd/MM/yyyy HH:mm")}
-        </p>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; text-align: center;">
+          <p style="font-size: 11px; color: #666; margin: 0;">
+            Generated on ${format(new Date(), "dd/MM/yyyy 'at' HH:mm")} | Thank you for your business!
+          </p>
+        </div>
       </div>
     `;
     
     const opt = {
-      margin: 5,
+      margin: 10,
       filename: `${client.name.replace(/\s+/g, '_')}_Summary.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: [80, 150] as [number, number], orientation: 'portrait' as const }
+      jsPDF: { unit: 'mm', format: 'a4' as const, orientation: 'portrait' as const }
     };
     
     html2pdf().set(opt).from(content).save();
-    toast({ title: "PDF Downloaded", description: `Summary for ${client.name} saved` });
+    toast({ title: "PDF Downloaded", description: `Full summary for ${client.name} saved` });
   };
 
-  const downloadClientExcel = (client: Client) => {
+  const downloadClientExcel = async (client: Client) => {
     const totalBill = parseFloat(client.amount || "0");
     const totalDeposit = parseFloat(client.deposit || "0");
     const balance = parseFloat(client.balance || "0");
     
+    // Fetch all transactions for this client
+    let transactionData: any[][] = [];
+    try {
+      const res = await fetch(`/api/clients/${client.id}/transactions`);
+      if (res.ok) {
+        const clientTransactions: ClientTransaction[] = await res.json();
+        if (clientTransactions && clientTransactions.length > 0) {
+          // Sort by date (oldest first)
+          const sortedTransactions = [...clientTransactions].sort((a, b) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+          transactionData = sortedTransactions.map((t, idx) => [
+            idx + 1,
+            format(new Date(t.date), "dd/MM/yyyy"),
+            format(new Date(t.date), "HH:mm"),
+            t.type.toUpperCase(),
+            t.description || '-',
+            `${parseFloat(t.amount).toFixed(2)} AED`,
+            `${parseFloat(t.runningBalance).toFixed(2)} AED`
+          ]);
+        }
+      }
+    } catch (e) {
+      console.log('Could not fetch transactions');
+    }
+    
     const data = [
-      ["LIQUID WASHES LAUNDRY - CLIENT SUMMARY"],
+      ["LIQUID WASHES LAUNDRY - CLIENT ACCOUNT SUMMARY"],
       [],
       ["Client Name", client.name],
       ["Phone", client.phone || "-"],
@@ -280,14 +369,27 @@ export default function Clients() {
       ["Total Deposits", `${totalDeposit.toFixed(2)} AED`],
       ["Balance Due", `${balance.toFixed(2)} AED`],
       [],
+      ["TRANSACTION HISTORY"],
+      ["#", "Date", "Time", "Type", "Description", "Amount", "Balance"],
+      ...transactionData,
+      [],
       ["Generated", format(new Date(), "dd/MM/yyyy HH:mm")],
     ];
     
     const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 5 },   // #
+      { wch: 12 },  // Date
+      { wch: 8 },   // Time
+      { wch: 10 },  // Type
+      { wch: 30 },  // Description
+      { wch: 15 },  // Amount
+      { wch: 15 },  // Balance
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Client Summary");
     XLSX.writeFile(wb, `${client.name.replace(/\s+/g, '_')}_Summary.xlsx`);
-    toast({ title: "Excel Downloaded", description: `Summary for ${client.name} saved` });
+    toast({ title: "Excel Downloaded", description: `Full summary for ${client.name} saved` });
   };
 
   const totalAmount = clients?.reduce((sum, c) => sum + parseFloat(c.amount || "0"), 0) || 0;
