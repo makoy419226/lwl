@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
+import { useLocation } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { useBills, useDeleteBill } from "@/hooks/use-bills";
 import { useClients } from "@/hooks/use-clients";
 import { useCreateProduct } from "@/hooks/use-products";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, FileText, Trash2, Plus, Minus, Receipt, Download, Printer, Package, User, PlusCircle, AlertCircle } from "lucide-react";
+import { Loader2, FileText, Trash2, Plus, Minus, Receipt, Download, Printer, Package, User, PlusCircle, AlertCircle, ShoppingCart } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,7 @@ export default function Bills() {
   const invoiceRef = useRef<HTMLDivElement>(null);
   const billPdfRef = useRef<HTMLDivElement>(null);
   
+  const [, setLocation] = useLocation();
   const { data: bills, isLoading, isError } = useBills();
   const { data: clients = [] } = useClients();
   const { mutate: deleteBill } = useDeleteBill();
@@ -289,6 +291,17 @@ export default function Bills() {
                           )}
                         </div>
                         <div className="flex gap-1">
+                          {!bill.isPaid && bill.clientId && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setLocation(`/orders?billId=${bill.id}&clientId=${bill.clientId}`)}
+                              data-testid={`button-add-order-${bill.id}`}
+                              title="Add Order to this Bill"
+                            >
+                              <ShoppingCart className="w-4 h-4 text-green-600" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"

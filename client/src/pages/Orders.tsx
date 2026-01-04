@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useSearch, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,15 @@ export default function Orders() {
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const reportTableRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  const searchString = useSearch();
+  const [, setLocation] = useLocation();
+  const urlParams = new URLSearchParams(searchString);
+  const urlBillId = urlParams.get("billId");
+  const urlClientId = urlParams.get("clientId");
+  
+  const [prefilledClientId, setPrefilledClientId] = useState<string | undefined>();
+  const [prefilledBillId, setPrefilledBillId] = useState<string | undefined>();
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -69,6 +79,33 @@ export default function Orders() {
   const { data: bills } = useQuery<Bill[]>({
     queryKey: ["/api/bills"],
   });
+  
+  useEffect(() => {
+    if (urlBillId && urlClientId && bills) {
+      const bill = bills.find(b => b.id === parseInt(urlBillId));
+      if (bill && bill.clientId === parseInt(urlClientId) && !bill.isPaid) {
+        setPrefilledClientId(urlClientId);
+        setPrefilledBillId(urlBillId);
+        setIsCreateOpen(true);
+        setLocation("/orders", { replace: true });
+      } else {
+        setLocation("/orders", { replace: true });
+        toast({
+          title: "Invalid Bill",
+          description: "The selected bill is no longer available or has been paid.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [urlBillId, urlClientId, bills]);
+  
+  const handleDialogClose = (open: boolean) => {
+    setIsCreateOpen(open);
+    if (!open) {
+      setPrefilledClientId(undefined);
+      setPrefilledBillId(undefined);
+    }
+  };
 
   const getClientBills = (clientId: number) => {
     return bills?.filter(b => b.clientId === clientId) || [];
@@ -126,6 +163,8 @@ export default function Orders() {
       queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       setIsCreateOpen(false);
+      setPrefilledClientId(undefined);
+      setPrefilledBillId(undefined);
       setNewCreatedOrder(createdOrder);
       toast({ title: "Order Created", description: "New order has been created. Generating PDF..." });
     },
@@ -654,7 +693,7 @@ export default function Orders() {
                 data-testid="input-search-orders"
               />
             </div>
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <Dialog open={isCreateOpen} onOpenChange={handleDialogClose}>
               <DialogTrigger asChild>
                 <Button data-testid="button-new-order">
                   <Plus className="w-4 h-4 mr-2" />
@@ -666,9 +705,13 @@ export default function Orders() {
                   <DialogTitle>Create New Order</DialogTitle>
                 </DialogHeader>
                 <OrderForm 
+                  key={`${prefilledClientId || ''}-${prefilledBillId || ''}`}
                   clients={clients || []} 
+                  bills={bills || []}
                   onSubmit={(data) => createOrderMutation.mutate(data)}
                   isLoading={createOrderMutation.isPending}
+                  initialClientId={prefilledClientId}
+                  initialBillId={prefilledBillId}
                 />
               </DialogContent>
             </Dialog>
@@ -1523,28 +1566,27 @@ export default function Orders() {
   );
 }
 
-function OrderForm({ clients, onSubmit, isLoading }: { 
+function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initialBillId }: { 
   clients: Client[]; 
+  bills: Bill[];
   onSubmit: (data: any) => void; 
   isLoading: boolean;
+  initialClientId?: string;
+  initialBillId?: string;
 }) {
   const [formData, setFormData] = useState({
-    clientId: "",
+    clientId: initialClientId || "",
     deliveryType: "takeaway",
     expectedDeliveryAt: "",
     notes: "",
-    billOption: "new" as "new" | "existing",
-    selectedBillId: "",
+    billOption: (initialBillId ? "existing" : "new") as "new" | "existing",
+    selectedBillId: initialBillId || "",
   });
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [productSearch, setProductSearch] = useState("");
 
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products"],
-  });
-
-  const { data: bills } = useQuery<Bill[]>({
-    queryKey: ["/api/bills"],
   });
 
   const selectedClient = clients.find(c => c.id === parseInt(formData.clientId));
