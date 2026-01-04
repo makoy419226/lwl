@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useRef } from "react";
+import { Upload, X, Image } from "lucide-react";
 
 // Extend schema to coerce numbers from string inputs
 const formSchema = insertProductSchema.extend({
@@ -26,6 +28,32 @@ interface ProductFormProps {
 export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps) {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const [imagePreview, setImagePreview] = useState<string>(defaultValues?.imageUrl || "");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setImagePreview(base64);
+        form.setValue("imageUrl", base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearImage = () => {
+    setImagePreview("");
+    form.setValue("imageUrl", "");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -177,9 +205,56 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
           name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Image URL (Optional)</FormLabel>
+              <FormLabel>Product Image (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="https://..." {...field} value={field.value || ""} className="rounded-lg" />
+                <div className="space-y-3">
+                  {imagePreview ? (
+                    <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-full object-contain"
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={clearImage}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="w-full h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Image className="w-8 h-8 text-muted-foreground mb-2" />
+                      <span className="text-sm text-muted-foreground">Click to upload image</span>
+                      <span className="text-xs text-muted-foreground">(JPG, PNG, WebP)</span>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  {!imagePreview && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Image
+                    </Button>
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -619,7 +619,7 @@ export default function Orders() {
                       <TableHead>Client</TableHead>
                       <TableHead>Client Due</TableHead>
                       <TableHead>Items</TableHead>
-                      <TableHead>Amount</TableHead>
+                      {activeTab !== "tags" && <TableHead>Amount</TableHead>}
                       <TableHead>Type</TableHead>
                       <TableHead>Time Left</TableHead>
                       <TableHead>Status</TableHead>
@@ -705,25 +705,44 @@ export default function Orders() {
                                 </TableCell>
                               </>
                             ) : null}
-                            <TableCell className="max-w-xs">
-                              <div className="flex flex-wrap gap-1">
-                                {parseOrderItems(order.items).map((item, i) => {
-                                  const imageUrl = getProductImage(item.name);
-                                  return (
-                                    <div key={i} className="flex items-center gap-1 bg-muted/50 rounded px-1.5 py-0.5">
-                                      {imageUrl ? (
-                                        <img src={imageUrl} alt={item.name} className="w-4 h-4 object-contain" />
-                                      ) : (
-                                        <Shirt className="w-4 h-4 text-muted-foreground" />
-                                      )}
-                                      <span className="text-xs">{item.name}</span>
-                                      <Badge variant="secondary" className="text-xs px-1 py-0 h-4">{item.quantity}</Badge>
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                            <TableCell className={activeTab === "tags" ? "max-w-md" : "max-w-xs"}>
+                              {activeTab === "tags" ? (
+                                <div className="space-y-1">
+                                  {parseOrderItems(order.items).map((item, i) => {
+                                    const imageUrl = getProductImage(item.name);
+                                    return (
+                                      <div key={i} className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md px-2 py-1">
+                                        {imageUrl ? (
+                                          <img src={imageUrl} alt={item.name} className="w-6 h-6 object-contain" />
+                                        ) : (
+                                          <Shirt className="w-6 h-6 text-orange-500" />
+                                        )}
+                                        <span className="text-sm font-medium flex-1">{item.name}</span>
+                                        <Badge className="bg-orange-500 text-white">{item.quantity} pcs</Badge>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="flex flex-wrap gap-1">
+                                  {parseOrderItems(order.items).map((item, i) => {
+                                    const imageUrl = getProductImage(item.name);
+                                    return (
+                                      <div key={i} className="flex items-center gap-1 bg-muted/50 rounded px-1.5 py-0.5">
+                                        {imageUrl ? (
+                                          <img src={imageUrl} alt={item.name} className="w-4 h-4 object-contain" />
+                                        ) : (
+                                          <Shirt className="w-4 h-4 text-muted-foreground" />
+                                        )}
+                                        <span className="text-xs">{item.name}</span>
+                                        <Badge variant="secondary" className="text-xs px-1 py-0 h-4">{item.quantity}</Badge>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </TableCell>
-                            <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>
+                            {activeTab !== "tags" && <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>}
                             <TableCell>
                               {order.deliveryType === 'delivery' ? (
                                 <Badge variant="outline" className="gap-1">
