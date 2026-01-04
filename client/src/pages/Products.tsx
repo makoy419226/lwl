@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients, useCreateClient } from "@/hooks/use-clients";
-import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Check, X, Plus, Minus, ShoppingCart, Clock, Package, Truck, Zap, UserPlus } from "lucide-react";
+import { Loader2, Search, Shirt, Footprints, Home, Sparkles, Check, X, Plus, Minus, ShoppingCart, Clock, Package, Truck, Zap, UserPlus, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -70,6 +70,11 @@ export default function Products() {
   const [otherItemQty, setOtherItemQty] = useState("1");
   const [showSizeDialog, setShowSizeDialog] = useState(false);
   const [sizeDialogProduct, setSizeDialogProduct] = useState<{ id: number; name: string } | null>(null);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [staffPin, setStaffPin] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [pendingUrgent, setPendingUrgent] = useState(false);
+  const [isVerifyingPin, setIsVerifyingPin] = useState(false);
   
   const sizeOptions: Record<string, { small: number; large: number }> = {
     "Towel": { small: 5, large: 8 },
@@ -240,37 +245,75 @@ export default function Products() {
   };
 
   const submitOrder = (isUrgent: boolean) => {
-    const productItemsText = orderItems.map(item => {
-      const packing = packingTypes[item.product.id] || "folding";
-      return `${item.quantity}x ${item.product.name} (${packing})`;
-    });
-    const customItemsText = customItems.map(item => `${item.quantity}x ${item.name} @ ${item.price} AED`);
-    const itemsText = [...productItemsText, ...customItemsText].join(", ");
-    const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
-    
-    // Calculate final total: urgent doubles, then apply discount, then add tips
-    let subtotal = isUrgent ? orderTotal * 2 : orderTotal;
-    const discPct = parseFloat(discountPercent) || 0;
-    const discountAmt = (subtotal * discPct / 100);
-    const tipsAmt = parseFloat(tips) || 0;
-    const finalTotal = subtotal - discountAmt + tipsAmt;
-
-    createOrderMutation.mutate({
-      clientId: selectedClientId,
-      customerName: customerName.trim(),
-      customerPhone: customerPhone.trim(),
-      orderNumber,
-      items: itemsText,
-      totalAmount: subtotal.toFixed(2),
-      discountPercent: discPct.toFixed(2),
-      discountAmount: discountAmt.toFixed(2),
-      tips: tipsAmt.toFixed(2),
-      finalAmount: finalTotal.toFixed(2),
-      entryDate: new Date().toISOString(),
-      deliveryType: "takeaway",
-      urgent: isUrgent,
-    });
+    setPendingUrgent(isUrgent);
     setShowUrgentDialog(false);
+    setShowPinDialog(true);
+    setStaffPin("");
+    setPinError("");
+  };
+
+  const verifyPinAndCreateOrder = async () => {
+    if (staffPin.length !== 5) {
+      setPinError("PIN must be 5 digits");
+      return;
+    }
+    
+    setIsVerifyingPin(true);
+    setPinError("");
+    
+    try {
+      const res = await fetch("/api/packing/verify-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: staffPin }),
+      });
+      
+      if (!res.ok) {
+        setPinError("Invalid PIN");
+        setIsVerifyingPin(false);
+        return;
+      }
+      
+      const data = await res.json();
+      
+      const productItemsText = orderItems.map(item => {
+        const packing = packingTypes[item.product.id] || "folding";
+        return `${item.quantity}x ${item.product.name} (${packing})`;
+      });
+      const customItemsText = customItems.map(item => `${item.quantity}x ${item.name} @ ${item.price} AED`);
+      const itemsText = [...productItemsText, ...customItemsText].join(", ");
+      const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+      
+      let subtotal = pendingUrgent ? orderTotal * 2 : orderTotal;
+      const discPct = parseFloat(discountPercent) || 0;
+      const discountAmt = (subtotal * discPct / 100);
+      const tipsAmt = parseFloat(tips) || 0;
+      const finalTotal = subtotal - discountAmt + tipsAmt;
+
+      createOrderMutation.mutate({
+        clientId: selectedClientId,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        orderNumber,
+        items: itemsText,
+        totalAmount: subtotal.toFixed(2),
+        discountPercent: discPct.toFixed(2),
+        discountAmount: discountAmt.toFixed(2),
+        tips: tipsAmt.toFixed(2),
+        finalAmount: finalTotal.toFixed(2),
+        entryDate: new Date().toISOString(),
+        deliveryType: "takeaway",
+        urgent: pendingUrgent,
+        entryBy: data.worker?.name || "Staff",
+      });
+      
+      setShowPinDialog(false);
+      setStaffPin("");
+    } catch (err) {
+      setPinError("Failed to verify PIN");
+    } finally {
+      setIsVerifyingPin(false);
+    }
   };
 
   const clearOrder = () => {
@@ -888,6 +931,58 @@ export default function Products() {
                 <Zap className="w-8 h-8" />
                 <div className="font-semibold">Urgent</div>
                 <div className="text-xs">{(orderTotal * 2).toFixed(2)} AED</div>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Staff PIN Dialog */}
+      <Dialog open={showPinDialog} onOpenChange={(open) => { if (!open) { setShowPinDialog(false); setStaffPin(""); setPinError(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center flex items-center justify-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              Enter Staff PIN
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center text-sm text-muted-foreground mb-2">
+              Enter your 5-digit PIN to create order
+            </div>
+            <Input
+              type="password"
+              maxLength={5}
+              placeholder="Enter 5-digit PIN"
+              value={staffPin}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                setStaffPin(val);
+                setPinError("");
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && verifyPinAndCreateOrder()}
+              className="text-center text-2xl tracking-widest"
+              data-testid="input-staff-pin"
+            />
+            {pinError && (
+              <p className="text-sm text-destructive text-center">{pinError}</p>
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => { setShowPinDialog(false); setStaffPin(""); setPinError(""); }}
+                data-testid="button-cancel-pin"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={verifyPinAndCreateOrder}
+                disabled={staffPin.length !== 5 || isVerifyingPin}
+                data-testid="button-confirm-pin"
+              >
+                {isVerifyingPin ? "..." : "Confirm"}
               </Button>
             </div>
           </div>
