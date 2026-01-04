@@ -7,6 +7,7 @@ import { SiWhatsapp } from "react-icons/si";
 import { QRCodeSVG } from "qrcode.react";
 import type { Order, Client, Product } from "@shared/schema";
 import logoImage from "@assets/image_1767220512226.png";
+import paidStampImage from "@assets/image_1767486604951.png";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Dialog,
@@ -33,6 +34,7 @@ const companyInfo = {
 export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [logoBase64, setLogoBase64] = useState<string>("");
+  const [paidStampBase64, setPaidStampBase64] = useState<string>("");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [publicToken, setPublicToken] = useState<string>(order.publicViewToken || "");
   const [whatsappNumber, setWhatsappNumber] = useState(client?.phone || "");
@@ -100,6 +102,20 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
       }
     };
     img.src = logoImage;
+
+    const stampImg = new Image();
+    stampImg.crossOrigin = "anonymous";
+    stampImg.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = stampImg.width;
+      canvas.height = stampImg.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(stampImg, 0, 0);
+        setPaidStampBase64(canvas.toDataURL("image/png"));
+      }
+    };
+    stampImg.src = paidStampImage;
   }, []);
 
   const parsedItems = useMemo(() => {
@@ -409,56 +425,29 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
           {balance <= 0 && paidAmount > 0 && (
             <div style={{
               textAlign: "center",
-              padding: "20px",
+              padding: "15px",
               marginTop: "15px",
               marginBottom: "10px",
-              border: "3px solid #16a34a",
-              borderRadius: "12px",
-              background: "#f0fdf4",
             }}>
+              <img 
+                src={paidStampBase64 || paidStampImage} 
+                alt="PAID" 
+                style={{
+                  width: "120px",
+                  height: "120px",
+                  margin: "0 auto",
+                  display: "block",
+                }}
+              />
               <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "12px",
-              }}>
-                <svg 
-                  width="40" 
-                  height="40" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="#16a34a" 
-                  strokeWidth="3" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span style={{
-                  fontSize: "32px",
-                  fontWeight: "bold",
-                  color: "#16a34a",
-                  letterSpacing: "2px",
-                }}>
-                  PAID
-                </span>
-              </div>
-              <div style={{
-                fontSize: "16px",
+                fontSize: "14px",
                 fontWeight: "bold",
-                color: "#16a34a",
-                marginTop: "10px",
+                color: "#dc2626",
+                marginTop: "8px",
                 textTransform: "uppercase",
               }}>
                 {order.paymentMethod === "bank" ? "Bank Transfer" : 
                  order.paymentMethod === "card" ? "Card" : "Cash"}
-              </div>
-              <div style={{
-                fontSize: "12px",
-                color: "#16a34a",
-                marginTop: "4px",
-              }}>
-                Payment Received - Thank You!
               </div>
             </div>
           )}
