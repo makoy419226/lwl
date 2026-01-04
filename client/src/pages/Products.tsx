@@ -586,54 +586,50 @@ export default function Products() {
               </div>
               <div className="mt-2 space-y-2">
                 <Label className="text-xs font-semibold">Select Client</Label>
-                <div className="flex gap-1">
-                  <Select
-                    value={selectedClientId?.toString() || ""}
-                    onValueChange={(value) => {
-                      if (value === "walkin") {
-                        setSelectedClientId(null);
-                        setCustomerName("Walk-in Customer");
-                        setCustomerPhone("");
-                      } else if (value === "new") {
-                        setShowNewClientDialog(true);
-                      } else {
-                        const client = clients?.find(c => c.id.toString() === value);
-                        if (client) {
-                          setSelectedClientId(client.id);
-                          setCustomerName(client.name);
-                          setCustomerPhone(client.phone || "");
-                          if (client.discountPercent) {
-                            setDiscountPercent(client.discountPercent);
-                          }
+                <Select
+                  value={selectedClientId?.toString() || ""}
+                  onValueChange={(value) => {
+                    if (value === "walkin") {
+                      setSelectedClientId(null);
+                      setCustomerName("Walk-in Customer");
+                      setCustomerPhone("");
+                    } else if (value === "new") {
+                      setShowNewClientDialog(true);
+                    } else {
+                      const client = clients?.find(c => c.id.toString() === value);
+                      if (client) {
+                        setSelectedClientId(client.id);
+                        setCustomerName(client.name);
+                        setCustomerPhone(client.phone || "");
+                        if (client.discountPercent) {
+                          setDiscountPercent(client.discountPercent);
                         }
                       }
-                    }}
-                  >
-                    <SelectTrigger className="h-8 text-xs" data-testid="select-order-client">
-                      <SelectValue placeholder="Choose client..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="walkin">Walk-in Customer</SelectItem>
-                      {clients?.map(client => (
-                        <SelectItem key={client.id} value={client.id.toString()}>
-                          {client.name} {client.phone ? `(${client.phone})` : ""}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="new" className="text-primary font-semibold">
-                        + Add New Client
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-xs" data-testid="select-order-client">
+                    <SelectValue placeholder="Choose client..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="walkin">Walk-in Customer</SelectItem>
+                    {clients?.map(client => (
+                      <SelectItem key={client.id} value={client.id.toString()}>
+                        {client.name} {client.phone ? `(${client.phone})` : ""}
                       </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    size="icon"
-                    variant="outline"
-                    className="h-8 w-8"
-                    onClick={() => setShowNewClientDialog(true)}
-                    data-testid="button-add-client-quick"
-                  >
-                    <UserPlus className="w-3 h-3" />
-                  </Button>
-                </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => setShowNewClientDialog(true)}
+                  data-testid="button-add-client-quick"
+                >
+                  <UserPlus className="w-3 h-3 mr-1" />
+                  Add New Client
+                </Button>
                 <Input
                   className="w-full h-8 text-xs"
                   placeholder="Customer name *"
