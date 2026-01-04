@@ -153,6 +153,14 @@ export default function Orders() {
     const isUrgent = order.urgent;
     const parsedItems = parseOrderItems(order.items);
     
+    const previousBills = bills?.filter(b => b.clientId === order.clientId) || [];
+    const unpaidBills = previousBills.filter(b => !b.isPaid);
+    const totalPreviousDue = unpaidBills.reduce((sum, b) => {
+      const billTotal = parseFloat(b.amount) || 0;
+      const billPaid = parseFloat(b.paidAmount || '0') || 0;
+      return sum + (billTotal - billPaid);
+    }, 0);
+    
     const itemsHtml = parsedItems.map(item => 
       `<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dotted #ccc;">
         <span style="font-size: 11px;">${item.name}</span>
@@ -188,6 +196,23 @@ export default function Orders() {
           </div>
         </div>
         
+        <div style="margin: 8px 0; padding: 8px; background: #e8f5e9; border-radius: 4px;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold;">
+            <span>Order Total:</span>
+            <span>AED ${parseFloat(order.totalAmount).toFixed(2)}</span>
+          </div>
+        </div>
+        
+        ${totalPreviousDue > 0 ? `
+        <div style="margin: 8px 0; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+          <div style="font-size: 10px; font-weight: bold; color: #856404; margin-bottom: 4px;">PREVIOUS DUES:</div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #dc3545;">
+            <span>${unpaidBills.length} unpaid bill(s)</span>
+            <span>AED ${totalPreviousDue.toFixed(2)}</span>
+          </div>
+        </div>
+        ` : ''}
+        
         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000;">
           <div style="display: flex; justify-content: space-between; font-size: 9px;">
             <span>Entry:</span>
@@ -203,7 +228,7 @@ export default function Orders() {
       </div>
     `;
     
-    const contentHeight = 100 + (parsedItems.length * 8);
+    const contentHeight = 120 + (parsedItems.length * 8) + (totalPreviousDue > 0 ? 25 : 0);
     const opt = {
       margin: 1,
       filename: `Tag_${order.orderNumber}.pdf`,
