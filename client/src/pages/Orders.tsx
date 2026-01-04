@@ -123,6 +123,8 @@ export default function Orders() {
     },
     onSuccess: (createdOrder: Order) => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       setIsCreateOpen(false);
       setNewCreatedOrder(createdOrder);
       toast({ title: "Order Created", description: "New order has been created. Generating PDF..." });
@@ -1531,6 +1533,8 @@ function OrderForm({ clients, onSubmit, isLoading }: {
     deliveryType: "takeaway",
     expectedDeliveryAt: "",
     notes: "",
+    billOption: "new" as "new" | "existing",
+    selectedBillId: "",
   });
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [productSearch, setProductSearch] = useState("");
@@ -1538,6 +1542,26 @@ function OrderForm({ clients, onSubmit, isLoading }: {
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
+
+  const { data: bills } = useQuery<Bill[]>({
+    queryKey: ["/api/bills"],
+  });
+
+  const selectedClient = clients.find(c => c.id === parseInt(formData.clientId));
+  
+  const clientUnpaidBills = useMemo(() => {
+    if (!formData.clientId || !bills) return [];
+    const clientId = parseInt(formData.clientId);
+    return bills.filter(b => b.clientId === clientId && !b.isPaid);
+  }, [formData.clientId, bills]);
+
+  const clientTotalDue = useMemo(() => {
+    return clientUnpaidBills.reduce((sum, b) => {
+      const billAmount = parseFloat(b.amount) || 0;
+      const paidAmount = parseFloat(b.paidAmount || "0") || 0;
+      return sum + (billAmount - paidAmount);
+    }, 0);
+  }, [clientUnpaidBills]);
 
   const filteredProducts = products?.filter(p => 
     p.name.toLowerCase().includes(productSearch.toLowerCase())
@@ -1589,14 +1613,21 @@ function OrderForm({ clients, onSubmit, isLoading }: {
     
     const itemsText = orderItems.map(item => `${item.quantity}x ${item.product.name}`).join(", ");
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+    
+    const billId = formData.billOption === "existing" && formData.selectedBillId 
+      ? parseInt(formData.selectedBillId) 
+      : null;
+    
     onSubmit({
       ...formData,
       clientId: parseInt(formData.clientId),
+      billId,
       orderNumber,
       items: itemsText,
       totalAmount: orderTotal.toFixed(2),
       entryDate: new Date().toISOString(),
       expectedDeliveryAt: formData.expectedDeliveryAt || null,
+      createNewBill: formData.billOption === "new",
     });
   };
 
@@ -1604,7 +1635,7 @@ function OrderForm({ clients, onSubmit, isLoading }: {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label>Client</Label>
-        <Select value={formData.clientId} onValueChange={(v) => setFormData({ ...formData, clientId: v })}>
+        <Select value={formData.clientId} onValueChange={(v) => setFormData({ ...formData, clientId: v, selectedBillId: "", billOption: "new" })}>
           <SelectTrigger data-testid="select-client">
             <SelectValue placeholder="Select client" />
           </SelectTrigger>
@@ -1617,6 +1648,73 @@ function OrderForm({ clients, onSubmit, isLoading }: {
           </SelectContent>
         </Select>
       </div>
+
+      {selectedClient && clientTotalDue > 0 && (
+        <div className="p-3 border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-orange-600" />
+            <span className="font-medium text-orange-700 dark:text-orange-400">Client has due bills</span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-muted-foreground">{clientUnpaidBills.length} unpaid bill(s)</span>
+            <span className="font-bold text-orange-600">{clientTotalDue.toFixed(2)} AED</span>
+          </div>
+          <div className="space-y-2 max-h-24 overflow-auto">
+            {clientUnpaidBills.map(bill => (
+              <div key={bill.id} className="flex justify-between items-center text-sm bg-white/50 dark:bg-black/20 rounded px-2 py-1">
+                <span className="text-muted-foreground">
+                  Bill #{bill.referenceNumber || bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")}
+                </span>
+                <span className="font-medium text-orange-600">
+                  {(parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0")).toFixed(2)} AED
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedClient && clientUnpaidBills.length > 0 && (
+        <div className="space-y-2">
+          <Label>Billing Option</Label>
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              variant={formData.billOption === "new" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFormData({ ...formData, billOption: "new", selectedBillId: "" })}
+              data-testid="button-new-bill"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Create New Bill
+            </Button>
+            <Button
+              type="button"
+              variant={formData.billOption === "existing" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFormData({ ...formData, billOption: "existing" })}
+              data-testid="button-existing-bill"
+            >
+              <Receipt className="w-4 h-4 mr-1" />
+              Add to Existing Bill
+            </Button>
+          </div>
+          {formData.billOption === "existing" && (
+            <Select value={formData.selectedBillId} onValueChange={(v) => setFormData({ ...formData, selectedBillId: v })}>
+              <SelectTrigger data-testid="select-existing-bill">
+                <SelectValue placeholder="Select unpaid bill" />
+              </SelectTrigger>
+              <SelectContent className="z-[100]">
+                {clientUnpaidBills.map(bill => (
+                  <SelectItem key={bill.id} value={bill.id.toString()}>
+                    Bill #{bill.referenceNumber || bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")} ({(parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0")).toFixed(2)} AED due)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Select Items</Label>
@@ -1734,12 +1832,15 @@ function OrderForm({ clients, onSubmit, isLoading }: {
       <Button 
         type="submit" 
         className="w-full" 
-        disabled={isLoading || !formData.clientId || orderItems.length === 0} 
+        disabled={isLoading || !formData.clientId || orderItems.length === 0 || (formData.billOption === "existing" && !formData.selectedBillId)} 
         data-testid="button-submit-order"
       >
         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Create Order ({orderTotal.toFixed(2)} AED)
       </Button>
+      {formData.billOption === "existing" && !formData.selectedBillId && (
+        <p className="text-sm text-orange-600 text-center">Please select an existing bill to attach this order to</p>
+      )}
     </form>
   );
 }

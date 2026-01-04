@@ -420,7 +420,7 @@ export async function registerRoutes(
 
   app.post("/api/orders", async (req, res) => {
     try {
-      const { customerName, customerPhone } = req.body;
+      const { customerName, customerPhone, createNewBill, billId: requestBillId } = req.body;
       
       // Validate required fields
       if (!customerName || !customerName.trim()) {
@@ -448,21 +448,40 @@ export async function registerRoutes(
         }
       }
       
+      let assignedBillId = requestBillId || null;
+      
       const order = await storage.createOrder({
         ...req.body,
         clientId,
+        billId: assignedBillId,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
       });
       
-      // Auto-add order to client's bill (existing unpaid or create new)
+      // Handle bill creation/attachment
       if (clientId && order.finalAmount) {
         const orderAmount = parseFloat(order.finalAmount.toString());
-        const unpaidBills = await storage.getUnpaidBills(clientId);
         
-        if (unpaidBills.length > 0) {
-          // Add to existing unpaid bill
-          const existingBill = unpaidBills[0];
+        if (requestBillId) {
+          // User selected to attach to an existing bill - validate it
+          const billIdNum = parseInt(requestBillId);
+          if (isNaN(billIdNum)) {
+            return res.status(400).json({ message: "Invalid bill ID" });
+          }
+          
+          const existingBill = await storage.getBill(billIdNum);
+          if (!existingBill) {
+            return res.status(400).json({ message: "Bill not found" });
+          }
+          
+          // Validate bill belongs to same client and is unpaid
+          if (existingBill.clientId !== clientId) {
+            return res.status(400).json({ message: "Bill does not belong to this client" });
+          }
+          if (existingBill.isPaid) {
+            return res.status(400).json({ message: "Cannot add to a paid bill" });
+          }
+          
           const newAmount = parseFloat(existingBill.amount.toString()) + orderAmount;
           const existingDesc = existingBill.description || "";
           const newDesc = existingDesc 
@@ -473,9 +492,10 @@ export async function registerRoutes(
             amount: newAmount.toFixed(2),
             description: newDesc,
           });
-        } else {
-          // Create new bill for this client
-          await storage.createBill({
+          assignedBillId = existingBill.id;
+        } else if (createNewBill === true) {
+          // User explicitly requested a new bill
+          const newBill = await storage.createBill({
             clientId,
             customerName: customerName.trim(),
             customerPhone: customerPhone.trim(),
@@ -484,10 +504,49 @@ export async function registerRoutes(
             billDate: new Date(),
             referenceNumber: `BILL-${order.orderNumber}`,
           });
+          assignedBillId = newBill.id;
+        } else {
+          // Default behavior: add to existing unpaid bill or create new
+          const unpaidBills = await storage.getUnpaidBills(clientId);
+          
+          if (unpaidBills.length > 0) {
+            // Add to existing unpaid bill
+            const existingBill = unpaidBills[0];
+            const newAmount = parseFloat(existingBill.amount.toString()) + orderAmount;
+            const existingDesc = existingBill.description || "";
+            const newDesc = existingDesc 
+              ? `${existingDesc}\nOrder #${order.orderNumber}: ${order.items || 'Items'}`
+              : `Order #${order.orderNumber}: ${order.items || 'Items'}`;
+            
+            await storage.updateBill(existingBill.id, {
+              amount: newAmount.toFixed(2),
+              description: newDesc,
+            });
+            assignedBillId = existingBill.id;
+          } else {
+            // Create new bill for this client
+            const newBill = await storage.createBill({
+              clientId,
+              customerName: customerName.trim(),
+              customerPhone: customerPhone.trim(),
+              amount: orderAmount.toFixed(2),
+              description: `Order #${order.orderNumber}: ${order.items || 'Items'}`,
+              billDate: new Date(),
+              referenceNumber: `BILL-${order.orderNumber}`,
+            });
+            assignedBillId = newBill.id;
+          }
+        }
+        
+        // Update order with billId if we assigned one
+        if (assignedBillId && assignedBillId !== order.billId) {
+          await storage.updateOrder(order.id, { billId: assignedBillId });
         }
       }
       
-      res.status(201).json(order);
+      // Return order with updated billId
+      const updatedOrder = await storage.getOrder(order.id);
+      res.status(201).json(updatedOrder || order);
     } catch (err: any) {
       res.status(400).json({ message: err.message });
     }
