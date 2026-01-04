@@ -156,12 +156,8 @@ export default function Products() {
   });
 
   const handleCreateOrder = () => {
-    if (!customerName.trim()) {
-      toast({ title: "Enter customer name", description: "Please enter customer name first.", variant: "destructive" });
-      return;
-    }
-    if (!customerPhone.trim()) {
-      toast({ title: "Enter phone number", description: "Phone number is required to create order.", variant: "destructive" });
+    if (!selectedClientId && customerName !== "Walk-in Customer") {
+      toast({ title: "Select a client", description: "Please select a client from the dropdown.", variant: "destructive" });
       return;
     }
     if (!hasOrderItems) {
@@ -295,18 +291,21 @@ export default function Products() {
     <div className="flex h-screen">
       {/* Left side - Price List */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="sticky top-0 z-30 w-full bg-white/80 dark:bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="h-10 px-2 flex items-center justify-between gap-2">
-            <h1 className="text-sm font-display font-bold text-foreground">
+        <div className="sticky top-0 z-30 w-full bg-gradient-to-r from-primary/10 via-white to-primary/5 dark:from-primary/20 dark:via-background dark:to-primary/10 backdrop-blur-md border-b border-primary/20 shadow-sm">
+          <div className="h-12 px-3 flex items-center justify-between gap-3">
+            <h1 className="text-lg font-display font-black text-primary flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow">
+                <ShoppingCart className="w-4 h-4 text-white" />
+              </div>
               Price List
             </h1>
-            <div className="flex-1 max-w-xs relative group">
-              <div className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
-                <Search className="w-3 h-3" />
+            <div className="flex-1 max-w-sm relative group">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+                <Search className="w-4 h-4" />
               </div>
               <Input
-                className="pl-7 h-7 rounded-full border border-muted bg-muted/30 focus:bg-white dark:focus:bg-background focus:border-primary/50 transition-all text-xs"
-                placeholder="Search..."
+                className="pl-9 h-9 rounded-full border-2 border-primary/20 bg-white dark:bg-background focus:bg-white dark:focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm shadow-sm"
+                placeholder="Search items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 data-testid="input-search-products"
@@ -327,14 +326,14 @@ export default function Products() {
               <p className="font-semibold text-lg">Failed to load</p>
             </div>
           ) : (
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
               {products?.map((product) => (
                 <div
                   key={product.id}
-                  className={`relative rounded border p-2 flex flex-col items-center cursor-pointer transition-all ${
+                  className={`relative rounded-xl border-2 p-3 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
                     quantities[product.id] 
-                      ? "border-primary bg-primary/10 ring-2 ring-primary/30" 
-                      : "border-border bg-card hover:border-primary/50"
+                      ? "border-primary bg-gradient-to-br from-primary/20 to-primary/5 ring-2 ring-primary/40 shadow-md" 
+                      : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60 hover:from-primary/5 hover:to-card"
                   }`}
                   onClick={() => handleQuantityChange(product.id, 1)}
                   data-testid={`box-product-${product.id}`}
@@ -374,7 +373,7 @@ export default function Products() {
                   ) : null}
 
                   <div 
-                    className="w-8 h-8 rounded bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-1"
+                    className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm"
                     onClick={(e) => { e.stopPropagation(); handleEditImage(product.id, product.imageUrl); }}
                     title="Click to edit image"
                   >
@@ -385,22 +384,22 @@ export default function Products() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Shirt className="w-4 h-4 text-primary" />
+                      <Shirt className="w-5 h-5 text-primary" />
                     )}
                   </div>
 
-                  <div className="text-base leading-tight text-center font-extrabold text-foreground line-clamp-2 min-h-[3rem] flex items-center justify-center px-1" data-testid={`text-product-name-${product.id}`}>
+                  <div className="text-sm leading-tight text-center font-bold text-foreground line-clamp-2 min-h-[2.5rem] flex items-center justify-center px-1" data-testid={`text-product-name-${product.id}`}>
                     {product.name}
                   </div>
 
-                  <div className="text-base font-extrabold text-primary mt-1" data-testid={`text-product-price-${product.id}`}>
-                    {product.price ? `${parseFloat(product.price).toFixed(0)} AED` : "-"}
+                  <div className="text-lg font-black text-primary mt-1 bg-primary/10 px-2 py-0.5 rounded-full" data-testid={`text-product-price-${product.id}`}>
+                    {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
                   </div>
 
                   {quantities[product.id] ? (
                     <>
                       <div 
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shadow"
+                        className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span data-testid={`text-qty-${product.id}`}>{quantities[product.id]}</span>
@@ -445,30 +444,28 @@ export default function Products() {
 
         {/* Order Summary Bar - Highlighted */}
         {hasOrderItems && (
-          <div className="sticky bottom-0 z-40 mx-1 mb-1 p-2 border-2 border-primary shadow-2xl bg-primary/5 rounded-lg">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
-                  <ShoppingCart className="w-3 h-3 text-white" />
+          <div className="sticky bottom-0 z-40 mx-2 mb-2 p-3 border-2 border-primary shadow-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl backdrop-blur-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                  <ShoppingCart className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground">
-                    {orderItems.length + customItems.length} items
+                  <p className="text-xs text-muted-foreground font-medium">
+                    {orderItems.length + customItems.length} items selected
                   </p>
-                  <p className="text-sm font-bold text-primary" data-testid="text-order-total">
+                  <p className="text-xl font-black text-primary" data-testid="text-order-total">
                     {orderTotal.toFixed(2)} AED
                   </p>
                 </div>
               </div>
               
               <div className="flex items-center gap-1 flex-wrap">
-                <Input
-                  className="w-28 h-7 text-xs"
-                  placeholder="Customer name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  data-testid="input-order-customer"
-                />
+                {customerName && (
+                  <span className="text-xs font-semibold text-muted-foreground px-2">
+                    {customerName}
+                  </span>
+                )}
                 
                 <Button 
                   variant="outline"
@@ -483,7 +480,7 @@ export default function Products() {
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white font-bold px-3 text-xs"
                   onClick={handleCreateOrder}
-                  disabled={createOrderMutation.isPending || !customerName.trim()}
+                  disabled={createOrderMutation.isPending || (!selectedClientId && customerName !== "Walk-in Customer")}
                   data-testid="button-create-order"
                 >
                   {createOrderMutation.isPending ? "..." : "CREATE"}
@@ -510,20 +507,22 @@ export default function Products() {
       </div>
 
       {/* Right side - Order Slip or Today's Work List */}
-      <div className="w-72 border-l bg-muted/30 flex flex-col">
+      <div className="w-80 border-l-2 border-primary/20 bg-gradient-to-b from-muted/50 to-background flex flex-col shadow-xl">
         {hasOrderItems ? (
           <>
-            <div className="h-12 px-3 flex items-center justify-between border-b bg-primary/10">
-              <h2 className="text-sm font-bold text-primary flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4" />
+            <div className="h-14 px-4 flex items-center justify-between border-b border-primary/20 bg-gradient-to-r from-primary/15 to-primary/5">
+              <h2 className="text-base font-black text-primary flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow">
+                  <ShoppingCart className="w-4 h-4 text-white" />
+                </div>
                 Order Slip
               </h2>
-              <Badge variant="secondary" className="text-xs font-bold">{orderItems.length + customItems.length} items</Badge>
+              <Badge className="text-xs font-bold bg-primary text-white shadow">{orderItems.length + customItems.length}</Badge>
             </div>
-            <div className="flex-1 overflow-auto p-3">
-              <div className="border rounded bg-white dark:bg-background p-3 space-y-3">
-                <div className="text-center border-b pb-2">
-                  <div className="text-sm font-bold text-primary">LIQUID WASHES LAUNDRY</div>
+            <div className="flex-1 overflow-auto p-4">
+              <div className="border-2 border-primary/20 rounded-xl bg-white dark:bg-background p-4 space-y-4 shadow-sm">
+                <div className="text-center border-b border-primary/20 pb-3">
+                  <div className="text-base font-black text-primary">LIQUID WASHES LAUNDRY</div>
                   <div className="text-xs text-muted-foreground font-semibold">Order Preview</div>
                 </div>
                 <div className="max-h-56 overflow-auto">
@@ -630,20 +629,6 @@ export default function Products() {
                   <UserPlus className="w-3 h-3 mr-1" />
                   Add New Client
                 </Button>
-                <Input
-                  className="w-full h-8 text-xs"
-                  placeholder="Customer name *"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  data-testid="input-order-customer-panel"
-                />
-                <Input
-                  className="w-full h-8 text-xs"
-                  placeholder="Phone number *"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  data-testid="input-order-phone-panel"
-                />
                 <Button
                   variant="outline"
                   size="sm"
@@ -690,7 +675,7 @@ export default function Products() {
                     size="sm"
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
                     onClick={handleCreateOrder}
-                    disabled={createOrderMutation.isPending || !customerName.trim()}
+                    disabled={createOrderMutation.isPending || (!selectedClientId && customerName !== "Walk-in Customer")}
                     data-testid="button-create-order-panel"
                   >
                     {createOrderMutation.isPending ? "..." : "CREATE"}
