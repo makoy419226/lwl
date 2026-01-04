@@ -38,6 +38,9 @@ export default function Orders() {
   const [deliveryPinError, setDeliveryPinError] = useState("");
   const [deliveryPhotos, setDeliveryPhotos] = useState<string[]>([]);
   const [deliveryPhotoPreviews, setDeliveryPhotoPreviews] = useState<string[]>([]);
+  const [tagPinDialog, setTagPinDialog] = useState<{ orderId: number } | null>(null);
+  const [tagPin, setTagPin] = useState("");
+  const [tagPinError, setTagPinError] = useState("");
   const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
   const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
@@ -148,39 +151,65 @@ export default function Orders() {
   const generateTagReceipt = (order: Order) => {
     const client = clients?.find(c => c.id === order.clientId);
     const isUrgent = order.urgent;
-    const items = order.items?.split(',').map(item => item.trim()) || [];
+    const parsedItems = parseOrderItems(order.items);
+    
+    const itemsHtml = parsedItems.map(item => 
+      `<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dotted #ccc;">
+        <span style="font-size: 11px;">${item.name}</span>
+        <span style="font-size: 11px; font-weight: bold;">${item.quantity} pcs</span>
+      </div>`
+    ).join('');
     
     const content = document.createElement('div');
     content.innerHTML = `
-      <div style="font-family: 'Courier New', monospace; padding: 8px; width: 70mm; font-size: 10px; color: #000;">
-        <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 6px; margin-bottom: 6px;">
-          <div style="font-size: 12px; font-weight: bold;">LIQUID WASHES</div>
-          <div style="font-size: 8px; margin-top: 2px;">ITEM TAG</div>
+      <div style="font-family: 'Courier New', monospace; padding: 10px; width: 70mm; font-size: 10px; color: #000;">
+        <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
+          <div style="font-size: 14px; font-weight: bold;">LIQUID WASHES</div>
+          <div style="font-size: 9px; margin-top: 2px;">ORDER TAG</div>
         </div>
         
-        ${isUrgent ? `<div style="text-align: center; padding: 4px; margin: 4px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px;">URGENT</div>` : ''}
+        ${isUrgent ? `<div style="text-align: center; padding: 6px; margin: 6px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px;">*** URGENT ***</div>` : ''}
         
-        <div style="text-align: center; font-size: 16px; font-weight: bold; padding: 8px; border: 2px dashed #000; margin: 6px 0;">
+        <div style="text-align: center; font-size: 18px; font-weight: bold; padding: 10px; border: 2px dashed #000; margin: 8px 0;">
           ${order.orderNumber}
         </div>
         
-        <div style="margin: 6px 0; padding: 6px; background: #f5f5f5;">
-          <div style="font-size: 11px; font-weight: bold;">${client?.name || 'Walk-in'}</div>
-          <div style="font-size: 9px;">${client?.phone || ''}</div>
+        <div style="margin: 8px 0; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+          <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">${client?.name || order.customerName || 'Walk-in'}</div>
+          <div style="font-size: 10px;">${client?.phone || ''}</div>
+          ${client?.address ? `<div style="font-size: 9px; color: #666; margin-top: 2px;">${client.address}</div>` : ''}
         </div>
         
-        <div style="font-size: 9px; text-align: center; margin-top: 6px;">
-          ${format(new Date(order.entryDate), "dd/MM/yyyy HH:mm")}
+        <div style="margin: 8px 0;">
+          <div style="font-size: 10px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 4px;">ITEMS LIST:</div>
+          ${itemsHtml}
+          <div style="text-align: right; font-size: 11px; font-weight: bold; margin-top: 8px; padding-top: 4px; border-top: 1px solid #000;">
+            Total Items: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} pcs
+          </div>
+        </div>
+        
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000;">
+          <div style="display: flex; justify-content: space-between; font-size: 9px;">
+            <span>Entry:</span>
+            <span>${format(new Date(order.entryDate), "dd/MM/yyyy HH:mm")}</span>
+          </div>
+          ${order.expectedDeliveryAt ? `
+          <div style="display: flex; justify-content: space-between; font-size: 9px; margin-top: 2px;">
+            <span>Expected:</span>
+            <span>${format(new Date(order.expectedDeliveryAt), "dd/MM/yyyy HH:mm")}</span>
+          </div>
+          ` : ''}
         </div>
       </div>
     `;
     
+    const contentHeight = 100 + (parsedItems.length * 8);
     const opt = {
       margin: 1,
       filename: `Tag_${order.orderNumber}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: [80, 60] as [number, number], orientation: 'portrait' as const }
+      jsPDF: { unit: 'mm', format: [80, contentHeight] as [number, number], orientation: 'portrait' as const }
     };
     
     html2pdf().set(opt).from(content).save();
@@ -424,6 +453,45 @@ export default function Orders() {
       return;
     }
     verifyDeliveryPinMutation.mutate(deliveryPin);
+  };
+
+  const verifyTagPinMutation = useMutation({
+    mutationFn: async (pin: string) => {
+      const res = await apiRequest("POST", "/api/delivery/verify-pin", { pin });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && tagPinDialog) {
+        updateOrderMutation.mutate({
+          id: tagPinDialog.orderId,
+          updates: {
+            tagDone: true,
+            tagDate: new Date().toISOString(),
+            tagBy: data.worker.name,
+          },
+        });
+        setTagPinDialog(null);
+        setTagPin("");
+        setTagPinError("");
+      }
+    },
+    onError: () => {
+      setTagPinError("Invalid PIN. Please try again.");
+    },
+  });
+
+  const handleTagWithPin = (orderId: number) => {
+    setTagPinDialog({ orderId });
+    setTagPin("");
+    setTagPinError("");
+  };
+
+  const submitTagPin = () => {
+    if (tagPin.length !== 5) {
+      setTagPinError("PIN must be 5 digits");
+      return;
+    }
+    verifyTagPinMutation.mutate(tagPin);
   };
 
   const filteredOrders = orders?.filter(order => {
@@ -779,7 +847,7 @@ export default function Orders() {
                                     <Button 
                                       size="sm" 
                                       variant="outline"
-                                      onClick={() => handleStatusUpdate(order.id, 'tagDone', true)}
+                                      onClick={() => handleTagWithPin(order.id)}
                                       data-testid={`button-tag-done-${order.id}`}
                                     >
                                       Tag Done
@@ -1150,6 +1218,57 @@ export default function Orders() {
               >
                 {verifyPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Confirm
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!tagPinDialog} onOpenChange={(open) => !open && setTagPinDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="w-5 h-5 text-orange-500" />
+              Enter Tag PIN
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Enter your PIN to confirm all tags are done for this order.
+            </p>
+            <Input
+              type="password"
+              maxLength={5}
+              placeholder="Enter 5-digit PIN"
+              value={tagPin}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                setTagPin(val);
+                setTagPinError("");
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && submitTagPin()}
+              className="text-center text-2xl tracking-widest"
+              data-testid="input-tag-pin"
+            />
+            {tagPinError && (
+              <p className="text-sm text-destructive text-center">{tagPinError}</p>
+            )}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setTagPinDialog(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                onClick={submitTagPin}
+                disabled={tagPin.length !== 5 || verifyTagPinMutation.isPending}
+                data-testid="button-submit-tag-pin"
+              >
+                {verifyTagPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Confirm Tag
               </Button>
             </div>
           </div>
