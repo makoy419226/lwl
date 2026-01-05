@@ -88,38 +88,34 @@ export async function seedDatabase() {
       {
         name: "Abdullah",
         address: "",
+        phone: "+971543956492",
         amount: "11.00",
         deposit: "11.00",
         balance: "0.00",
-        contact: "http://wa.me/+971543956492",
-        billNumber: ""
       },
       {
         name: "Ahmed Al-Mansouri",
         address: "Dubai, UAE",
+        phone: "+971501234567",
         amount: "150.00",
         deposit: "50.00",
         balance: "100.00",
-        contact: "http://wa.me/+971501234567",
-        billNumber: "BL-2024-001"
       },
       {
         name: "Fatima Al-Ketbi",
         address: "Abu Dhabi, UAE",
+        phone: "+971507654321",
         amount: "275.50",
         deposit: "100.00",
         balance: "175.50",
-        contact: "http://wa.me/+971507654321",
-        billNumber: "BL-2024-002"
       },
       {
         name: "Mohammed Al-Falahi",
         address: "Sharjah, UAE",
+        phone: "+971509876543",
         amount: "89.75",
         deposit: "25.00",
         balance: "64.75",
-        contact: "http://wa.me/+971509876543",
-        billNumber: "BL-2024-003"
       }
     ];
 
