@@ -5,7 +5,7 @@ import { useBills, useDeleteBill } from "@/hooks/use-bills";
 import { useClients } from "@/hooks/use-clients";
 import { useCreateProduct } from "@/hooks/use-products";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, FileText, Trash2, Plus, Minus, Receipt, Download, Printer, Package, User, PlusCircle, AlertCircle, ShoppingCart } from "lucide-react";
+import { Loader2, FileText, Trash2, Plus, Minus, Receipt, Download, Printer, Package, User, PlusCircle, AlertCircle, ShoppingCart, Key } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +39,11 @@ export default function Bills() {
   const invoiceRef = useRef<HTMLDivElement>(null);
   const billPdfRef = useRef<HTMLDivElement>(null);
   
+  const [showCreatorPinDialog, setShowCreatorPinDialog] = useState(false);
+  const [creatorPin, setCreatorPin] = useState("");
+  const [creatorPinError, setCreatorPinError] = useState("");
+  const [pendingBillData, setPendingBillData] = useState<{ customerName: string; customerPhone?: string; amount: string; description: string; billDate: string; referenceNumber: string } | null>(null);
+  
   const [, setLocation] = useLocation();
   const { data: bills, isLoading, isError } = useBills();
   const { data: clients = [] } = useClients();
@@ -50,8 +55,32 @@ export default function Bills() {
     queryKey: ["/api/products"],
   });
 
+  const verifyCreatorPinMutation = useMutation({
+    mutationFn: async (pin: string) => {
+      const res = await apiRequest("POST", "/api/workers/verify-pin", { pin });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && pendingBillData) {
+        createBillMutation.mutate({
+          ...pendingBillData,
+          createdByWorkerId: data.worker.id,
+        });
+        setShowCreatorPinDialog(false);
+        setCreatorPin("");
+        setCreatorPinError("");
+        setPendingBillData(null);
+      } else {
+        setCreatorPinError("Invalid PIN. Please try again.");
+      }
+    },
+    onError: () => {
+      setCreatorPinError("Invalid PIN. Please try again.");
+    },
+  });
+
   const createBillMutation = useMutation({
-    mutationFn: async (billData: { customerName: string; customerPhone?: string; amount: string; description: string; billDate: string; referenceNumber: string }) => {
+    mutationFn: async (billData: { customerName: string; customerPhone?: string; amount: string; description: string; billDate: string; referenceNumber: string; createdByWorkerId?: number }) => {
       const res = await apiRequest("POST", "/api/bills", billData);
       return res.json();
     },
@@ -165,7 +194,7 @@ export default function Bills() {
       })
       .join(", ");
 
-    createBillMutation.mutate({
+    setPendingBillData({
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim() || undefined,
       amount: total.toFixed(2),
@@ -173,6 +202,15 @@ export default function Bills() {
       billDate: new Date().toISOString(),
       referenceNumber: `BILL-${Date.now()}`,
     });
+    setShowCreatorPinDialog(true);
+  };
+
+  const handleVerifyCreatorPin = () => {
+    if (!creatorPin.trim()) {
+      setCreatorPinError("Please enter your PIN");
+      return;
+    }
+    verifyCreatorPinMutation.mutate(creatorPin);
   };
 
   const generatePDF = async () => {
@@ -792,6 +830,68 @@ export default function Bills() {
               >
                 {isCreatingProduct && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Add Item
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreatorPinDialog} onOpenChange={(open) => {
+        setShowCreatorPinDialog(open);
+        if (!open) {
+          setCreatorPin("");
+          setCreatorPinError("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-primary" />
+              Staff PIN Required
+            </DialogTitle>
+            <DialogDescription>
+              Enter your staff PIN to create this bill
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Staff PIN</Label>
+              <Input
+                type="password"
+                value={creatorPin}
+                onChange={(e) => {
+                  setCreatorPin(e.target.value);
+                  setCreatorPinError("");
+                }}
+                placeholder="Enter your PIN"
+                onKeyDown={(e) => e.key === "Enter" && handleVerifyCreatorPin()}
+                data-testid="input-creator-pin"
+              />
+              {creatorPinError && (
+                <p className="text-sm text-destructive">{creatorPinError}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  setShowCreatorPinDialog(false);
+                  setCreatorPin("");
+                  setCreatorPinError("");
+                  setPendingBillData(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={handleVerifyCreatorPin}
+                disabled={verifyCreatorPinMutation.isPending}
+                data-testid="button-verify-creator-pin"
+              >
+                {verifyCreatorPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Create Bill
               </Button>
             </div>
           </div>
