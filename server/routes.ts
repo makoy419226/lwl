@@ -4,8 +4,9 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
-import { users } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { users, passwordResetTokens } from "@shared/schema";
+import { eq, and, gt } from "drizzle-orm";
+import { sendPasswordResetEmail } from "./resend";
 
 import { seedDatabase } from "./seed";
 
@@ -44,6 +45,100 @@ export async function registerRoutes(
     }
   });
 
+  // Request password reset
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: "No user found with this email" });
+    }
+
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await db.insert(passwordResetTokens).values({
+      userId: user.id,
+      token: resetCode,
+      expiresAt,
+      used: false
+    });
+
+    try {
+      await sendPasswordResetEmail(email, resetCode, user.name || user.username);
+      res.json({ success: true, message: "Password reset code sent to your email" });
+    } catch (err: any) {
+      console.error("Failed to send email:", err);
+      res.status(500).json({ success: false, message: "Failed to send email. Please try again." });
+    }
+  });
+
+  // Verify reset code
+  app.post("/api/auth/verify-reset-code", async (req, res) => {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      return res.status(400).json({ success: false, message: "Email and code are required" });
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const [token] = await db.select().from(passwordResetTokens).where(
+      and(
+        eq(passwordResetTokens.userId, user.id),
+        eq(passwordResetTokens.token, code),
+        eq(passwordResetTokens.used, false),
+        gt(passwordResetTokens.expiresAt, new Date())
+      )
+    );
+
+    if (!token) {
+      return res.status(400).json({ success: false, message: "Invalid or expired code" });
+    }
+
+    res.json({ success: true, message: "Code verified successfully" });
+  });
+
+  // Reset password
+  app.post("/api/auth/reset-password", async (req, res) => {
+    const { email, code, newPassword } = req.body;
+    
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ success: false, message: "Email, code, and new password are required" });
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const [token] = await db.select().from(passwordResetTokens).where(
+      and(
+        eq(passwordResetTokens.userId, user.id),
+        eq(passwordResetTokens.token, code),
+        eq(passwordResetTokens.used, false),
+        gt(passwordResetTokens.expiresAt, new Date())
+      )
+    );
+
+    if (!token) {
+      return res.status(400).json({ success: false, message: "Invalid or expired code" });
+    }
+
+    await db.update(users).set({ password: newPassword }).where(eq(users.id, user.id));
+    await db.update(passwordResetTokens).set({ used: true }).where(eq(passwordResetTokens.id, token.id));
+
+    res.json({ success: true, message: "Password reset successfully" });
+  });
+
   // Get all users (admin only)
   app.get("/api/users", async (req, res) => {
     const userList = await db.select({
@@ -51,6 +146,7 @@ export async function registerRoutes(
       username: users.username,
       role: users.role,
       name: users.name,
+      email: users.email,
       active: users.active
     }).from(users);
     res.json(userList);
@@ -58,16 +154,17 @@ export async function registerRoutes(
 
   // Create user
   app.post("/api/users", async (req, res) => {
-    const { username, password, role, name } = req.body;
+    const { username, password, role, name, email } = req.body;
     try {
       const [newUser] = await db.insert(users).values({
         username,
         password,
         role: role || "cashier",
         name,
+        email: email || null,
         active: true
       }).returning();
-      res.status(201).json({ id: newUser.id, username: newUser.username, role: newUser.role, name: newUser.name });
+      res.status(201).json({ id: newUser.id, username: newUser.username, role: newUser.role, name: newUser.name, email: newUser.email });
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Failed to create user" });
     }
@@ -75,18 +172,19 @@ export async function registerRoutes(
 
   // Update user
   app.put("/api/users/:id", async (req, res) => {
-    const { password, role, name, active } = req.body;
+    const { password, role, name, email, active } = req.body;
     const updates: any = {};
     if (password) updates.password = password;
     if (role) updates.role = role;
     if (name !== undefined) updates.name = name;
+    if (email !== undefined) updates.email = email || null;
     if (active !== undefined) updates.active = active;
     
     const [updated] = await db.update(users).set(updates).where(eq(users.id, Number(req.params.id))).returning();
     if (!updated) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json({ id: updated.id, username: updated.username, role: updated.role, name: updated.name, active: updated.active });
+    res.json({ id: updated.id, username: updated.username, role: updated.role, name: updated.name, email: updated.email, active: updated.active });
   });
 
   // Delete user

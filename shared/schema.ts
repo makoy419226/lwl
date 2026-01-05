@@ -113,7 +113,16 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default("cashier"), // 'admin', 'manager', 'cashier'
   name: text("name"),
+  email: text("email"),
   active: boolean("active").default(true),
+});
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  token: text("token").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false),
 });
 
 export const packingWorkers = pgTable("packing_workers", {

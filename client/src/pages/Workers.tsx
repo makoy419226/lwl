@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search, Calendar, BarChart3, Tag, ClipboardList, FileSpreadsheet, FileText, Receipt } from "lucide-react";
+import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search, Calendar, BarChart3, Tag, ClipboardList, FileSpreadsheet, FileText, Receipt, UserCog, Mail, Lock, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
@@ -21,6 +21,15 @@ import html2pdf from "html2pdf.js";
 interface PackingWorker {
   id: number;
   name: string;
+  active: boolean;
+}
+
+interface SystemUser {
+  id: number;
+  username: string;
+  role: string;
+  name: string | null;
+  email: string | null;
   active: boolean;
 }
 
@@ -35,6 +44,10 @@ export default function Workers() {
   const [customToDate, setCustomToDate] = useState("");
   const { toast } = useToast();
 
+  const [isUserCreateOpen, setIsUserCreateOpen] = useState(false);
+  const [editUser, setEditUser] = useState<SystemUser | null>(null);
+  const [userFormData, setUserFormData] = useState({ username: "", password: "", name: "", email: "", role: "cashier" });
+
   const { data: workers, isLoading } = useQuery<PackingWorker[]>({
     queryKey: ["/api/packing-workers"],
   });
@@ -45,6 +58,10 @@ export default function Workers() {
 
   const { data: bills } = useQuery<Bill[]>({
     queryKey: ["/api/bills"],
+  });
+
+  const { data: systemUsers, isLoading: isLoadingUsers } = useQuery<SystemUser[]>({
+    queryKey: ["/api/users"],
   });
 
   const getDateRange = () => {
@@ -294,6 +311,65 @@ export default function Workers() {
     updateMutation.mutate({ id: worker.id, updates: { active: !worker.active } });
   };
 
+  const createUserMutation = useMutation({
+    mutationFn: async (data: { username: string; password: string; name: string; email: string; role: string }) => {
+      return apiRequest("POST", "/api/users", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsUserCreateOpen(false);
+      setUserFormData({ username: "", password: "", name: "", email: "", role: "cashier" });
+      toast({ title: "User Created", description: "New user account added" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to create user", variant: "destructive" });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
+      return apiRequest("PUT", `/api/users/${id}`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setEditUser(null);
+      setUserFormData({ username: "", password: "", name: "", email: "", role: "cashier" });
+      toast({ title: "User Updated", description: "User details updated" });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("DELETE", `/api/users/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "User Deleted", description: "User account has been removed" });
+    },
+  });
+
+  const handleCreateUser = () => {
+    if (!userFormData.username || !userFormData.password) {
+      toast({ title: "Error", description: "Username and password are required", variant: "destructive" });
+      return;
+    }
+    createUserMutation.mutate(userFormData);
+  };
+
+  const handleUpdateUser = () => {
+    if (!editUser) return;
+    const updates: any = {};
+    if (userFormData.name) updates.name = userFormData.name;
+    if (userFormData.email) updates.email = userFormData.email;
+    if (userFormData.password) updates.password = userFormData.password;
+    if (userFormData.role) updates.role = userFormData.role;
+    updateUserMutation.mutate({ id: editUser.id, updates });
+  };
+
+  const toggleUserActive = (user: SystemUser) => {
+    updateUserMutation.mutate({ id: user.id, updates: { active: !user.active } });
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="sticky top-0 z-30 w-full bg-card border-b border-border shadow-sm">
@@ -366,6 +442,10 @@ export default function Workers() {
               <TabsTrigger value="manage" data-testid="tab-manage">
                 <Users className="w-4 h-4 mr-1" />
                 Manage Staff
+              </TabsTrigger>
+              <TabsTrigger value="users" data-testid="tab-users">
+                <UserCog className="w-4 h-4 mr-1" />
+                User Accounts
               </TabsTrigger>
             </TabsList>
 
@@ -640,6 +720,115 @@ export default function Workers() {
             </CardContent>
           </Card>
             </TabsContent>
+
+            <TabsContent value="users">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <UserCog className="w-5 h-5" />
+                    System User Accounts
+                  </CardTitle>
+                  <Button onClick={() => setIsUserCreateOpen(true)} data-testid="button-add-user">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add User
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Manage login accounts for staff. Users with email addresses can use the "Forgot Password" feature.
+                  </p>
+                  {isLoadingUsers ? (
+                    <div className="flex items-center justify-center h-32">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    </div>
+                  ) : !systemUsers || systemUsers.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No user accounts found
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Username</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead className="text-center">Active</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {systemUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.username}</TableCell>
+                            <TableCell>{user.name || "-"}</TableCell>
+                            <TableCell>
+                              {user.email ? (
+                                <span className="flex items-center gap-1">
+                                  <Mail className="w-3 h-3 text-muted-foreground" />
+                                  {user.email}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">Not set</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{user.role}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <Switch
+                                  checked={user.active}
+                                  onCheckedChange={() => toggleUserActive(user)}
+                                  data-testid={`switch-user-active-${user.id}`}
+                                />
+                                <Badge variant={user.active ? "default" : "secondary"}>
+                                  {user.active ? "Active" : "Inactive"}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setEditUser(user);
+                                    setUserFormData({ 
+                                      username: user.username, 
+                                      password: "", 
+                                      name: user.name || "", 
+                                      email: user.email || "", 
+                                      role: user.role 
+                                    });
+                                  }}
+                                  data-testid={`button-edit-user-${user.id}`}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="text-destructive"
+                                  onClick={() => {
+                                    if (confirm(`Delete user "${user.username}"?`)) {
+                                      deleteUserMutation.mutate(user.id);
+                                    }
+                                  }}
+                                  data-testid={`button-delete-user-${user.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         )}
       </main>
@@ -679,6 +868,152 @@ export default function Workers() {
             >
               {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Update Worker
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isUserCreateOpen} onOpenChange={setIsUserCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="w-5 h-5" />
+              Add User Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Username</Label>
+              <Input
+                placeholder="Enter username"
+                value={userFormData.username}
+                onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })}
+                data-testid="input-new-username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input
+                type="password"
+                placeholder="Enter password"
+                value={userFormData.password}
+                onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                data-testid="input-new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Display Name</Label>
+              <Input
+                placeholder="Enter display name"
+                value={userFormData.name}
+                onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                data-testid="input-new-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Mail className="w-3 h-3" />
+                Email (for password reset)
+              </Label>
+              <Input
+                type="email"
+                placeholder="email@example.com"
+                value={userFormData.email}
+                onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                data-testid="input-new-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={userFormData.role} onValueChange={(value) => setUserFormData({ ...userFormData, role: value })}>
+                <SelectTrigger data-testid="select-new-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="cashier">Cashier</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={handleCreateUser}
+              disabled={createUserMutation.isPending || !userFormData.username || !userFormData.password}
+              data-testid="button-submit-user"
+            >
+              {createUserMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Create User
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5" />
+              Edit User: {editUser?.username}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Display Name</Label>
+              <Input
+                placeholder="Enter display name"
+                value={userFormData.name}
+                onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                data-testid="input-edit-user-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Mail className="w-3 h-3" />
+                Email (for password reset)
+              </Label>
+              <Input
+                type="email"
+                placeholder="email@example.com"
+                value={userFormData.email}
+                onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                data-testid="input-edit-user-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                New Password (leave empty to keep current)
+              </Label>
+              <Input
+                type="password"
+                placeholder="Enter new password"
+                value={userFormData.password}
+                onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                data-testid="input-edit-user-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={userFormData.role} onValueChange={(value) => setUserFormData({ ...userFormData, role: value })}>
+                <SelectTrigger data-testid="select-edit-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="cashier">Cashier</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={handleUpdateUser}
+              disabled={updateUserMutation.isPending}
+              data-testid="button-update-user"
+            >
+              {updateUserMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Update User
             </Button>
           </div>
         </DialogContent>

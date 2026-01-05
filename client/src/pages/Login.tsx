@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, Lock, User, HelpCircle } from "lucide-react";
+import { Loader2, Lock, User, Mail, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -32,8 +32,14 @@ export default function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetUsername, setResetUsername] = useState("");
+  const [resetStep, setResetStep] = useState<"email" | "code" | "newPassword">("email");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +79,106 @@ export default function Login({ onLogin }: LoginProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRequestReset = async () => {
+    if (!resetEmail) {
+      toast({ title: "Error", description: "Please enter your email", variant: "destructive" });
+      return;
+    }
+    setIsResetting(true);
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast({ title: "Success", description: "Reset code sent to your email" });
+        setResetStep("code");
+      } else {
+        toast({ title: "Error", description: data.message, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to send reset code", variant: "destructive" });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!resetCode) {
+      toast({ title: "Error", description: "Please enter the code", variant: "destructive" });
+      return;
+    }
+    setIsResetting(true);
+    try {
+      const response = await fetch("/api/auth/verify-reset-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail, code: resetCode }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast({ title: "Success", description: "Code verified" });
+        setResetStep("newPassword");
+      } else {
+        toast({ title: "Error", description: data.message, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to verify code", variant: "destructive" });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 4) {
+      toast({ title: "Error", description: "Password must be at least 4 characters", variant: "destructive" });
+      return;
+    }
+    setIsResetting(true);
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail, code: resetCode, newPassword }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast({ title: "Success", description: "Password reset successfully. Please login with your new password." });
+        setShowForgotPassword(false);
+        setResetStep("email");
+        setResetEmail("");
+        setResetCode("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast({ title: "Error", description: data.message, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to reset password", variant: "destructive" });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const closeForgotPassword = () => {
+    setShowForgotPassword(false);
+    setResetStep("email");
+    setResetEmail("");
+    setResetCode("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   const services = [
@@ -158,12 +264,11 @@ export default function Login({ onLogin }: LoginProps) {
                 <div className="text-center">
                   <Button
                     type="button"
-                    variant="link"
+                    variant="ghost"
                     className="text-sm text-muted-foreground"
                     onClick={() => setShowForgotPassword(true)}
                     data-testid="button-forgot-password"
                   >
-                    <HelpCircle className="w-4 h-4 mr-1" />
                     Forgot Password?
                   </Button>
                 </div>
@@ -197,6 +302,132 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
         </div>
       </div>
+
+      <Dialog open={showForgotPassword} onOpenChange={closeForgotPassword}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              {resetStep === "email" && "Enter your email address to receive a reset code."}
+              {resetStep === "code" && "Enter the 6-digit code sent to your email."}
+              {resetStep === "newPassword" && "Create a new password for your account."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {resetStep === "email" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-reset-email"
+                    />
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={handleRequestReset}
+                  disabled={isResetting}
+                  data-testid="button-send-code"
+                >
+                  {isResetting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Send Reset Code
+                </Button>
+              </>
+            )}
+
+            {resetStep === "code" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="reset-code">Verification Code</Label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="reset-code"
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      value={resetCode}
+                      onChange={(e) => setResetCode(e.target.value)}
+                      className="pl-10 text-center text-lg tracking-widest"
+                      maxLength={6}
+                      data-testid="input-reset-code"
+                    />
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={handleVerifyCode}
+                  disabled={isResetting}
+                  data-testid="button-verify-code"
+                >
+                  {isResetting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Verify Code
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setResetStep("email")}
+                  data-testid="button-back-to-email"
+                >
+                  Back
+                </Button>
+              </>
+            )}
+
+            {resetStep === "newPassword" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="new-password"
+                      type="password"
+                      placeholder="Enter new password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-new-password"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder="Confirm new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-confirm-password"
+                    />
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={handleResetPassword}
+                  disabled={isResetting}
+                  data-testid="button-reset-password"
+                >
+                  {isResetting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Reset Password
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
