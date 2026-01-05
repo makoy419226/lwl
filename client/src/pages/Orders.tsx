@@ -58,6 +58,8 @@ export default function Orders() {
   
   const [prefilledClientId, setPrefilledClientId] = useState<string | undefined>();
   const [prefilledBillId, setPrefilledBillId] = useState<string | undefined>();
+  const [showBillDialog, setShowBillDialog] = useState(false);
+  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -825,6 +827,7 @@ export default function Orders() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Order #</TableHead>
+                      <TableHead>Bill #</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Client Due</TableHead>
                       <TableHead>Items</TableHead>
@@ -856,6 +859,28 @@ export default function Orders() {
                         return clientOrders?.map((order, idx) => (
                           <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
                             <TableCell className="font-mono font-bold">{order.orderNumber}</TableCell>
+                            <TableCell>
+                              {order.billId ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="font-mono text-primary h-auto py-1 px-2"
+                                  onClick={() => {
+                                    const bill = bills?.find(b => b.id === order.billId);
+                                    if (bill) {
+                                      setSelectedBill(bill);
+                                      setShowBillDialog(true);
+                                    }
+                                  }}
+                                  data-testid={`button-bill-${order.billId}`}
+                                >
+                                  <Receipt className="w-3 h-3 mr-1" />
+                                  #{order.billId}
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </TableCell>
                             {idx === 0 ? (
                               <>
                                 <TableCell rowSpan={orderCount} className="align-top border-r p-0">
@@ -1560,6 +1585,78 @@ export default function Orders() {
           >
             Close
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bill Preview Dialog */}
+      <Dialog open={showBillDialog} onOpenChange={setShowBillDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5" />
+              Bill #{selectedBill?.id}
+            </DialogTitle>
+            <DialogDescription>
+              Bill details and payment status
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBill && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="text-muted-foreground">Client:</div>
+                <div className="font-medium">{clients?.find(c => c.id === selectedBill.clientId)?.name}</div>
+                
+                <div className="text-muted-foreground">Bill Date:</div>
+                <div className="font-medium">{format(new Date(selectedBill.billDate), "dd/MM/yyyy")}</div>
+                
+                <div className="text-muted-foreground">Total Amount:</div>
+                <div className="font-semibold">{parseFloat(selectedBill.amount).toFixed(2)} AED</div>
+                
+                <div className="text-muted-foreground">Paid Amount:</div>
+                <div className="font-medium text-green-600">{parseFloat(selectedBill.paidAmount || "0").toFixed(2)} AED</div>
+                
+                <div className="text-muted-foreground">Balance:</div>
+                <div className={`font-semibold ${(parseFloat(selectedBill.amount) - parseFloat(selectedBill.paidAmount || "0")) > 0 ? "text-destructive" : "text-green-600"}`}>
+                  {(parseFloat(selectedBill.amount) - parseFloat(selectedBill.paidAmount || "0")).toFixed(2)} AED
+                </div>
+                
+                <div className="text-muted-foreground">Status:</div>
+                <div>
+                  {selectedBill.isPaid ? (
+                    <Badge className="bg-green-500">Paid</Badge>
+                  ) : (
+                    <Badge variant="destructive">Unpaid</Badge>
+                  )}
+                </div>
+              </div>
+              
+              {selectedBill.description && (
+                <div className="border-t pt-3">
+                  <div className="text-sm text-muted-foreground mb-1">Description:</div>
+                  <div className="text-sm">{selectedBill.description}</div>
+                </div>
+              )}
+              
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setShowBillDialog(false)}
+                >
+                  Close
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    setShowBillDialog(false);
+                    setLocation("/bills");
+                  }}
+                >
+                  Go to Bills
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
