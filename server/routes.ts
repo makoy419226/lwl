@@ -554,6 +554,9 @@ export async function registerRoutes(
         }
       }
       
+      // Deduct stock immediately on order creation
+      await storage.deductStockForOrder(order.id);
+      
       // Return order with updated billId
       const updatedOrder = await storage.getOrder(order.id);
       res.status(201).json(updatedOrder || order);
@@ -565,17 +568,10 @@ export async function registerRoutes(
   app.put("/api/orders/:id", async (req, res) => {
     try {
       const orderId = Number(req.params.id);
-      const existingOrder = await storage.getOrder(orderId);
       const order = await storage.updateOrder(orderId, req.body);
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
-      
-      // Deduct stock when order is marked as delivered for the first time
-      if (order.delivered && (!existingOrder || !existingOrder.delivered)) {
-        await storage.deductStockForOrder(orderId);
-      }
-      
       res.json(order);
     } catch (err: any) {
       res.status(400).json({ message: err.message });
@@ -583,7 +579,10 @@ export async function registerRoutes(
   });
 
   app.delete("/api/orders/:id", async (req, res) => {
-    await storage.deleteOrder(Number(req.params.id));
+    const orderId = Number(req.params.id);
+    // Restore stock before deleting
+    await storage.restoreStockForOrder(orderId);
+    await storage.deleteOrder(orderId);
     res.status(204).send();
   });
 

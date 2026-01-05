@@ -590,6 +590,8 @@ export default function Orders() {
     verifyDeliveryPinMutation.mutate(deliveryPin);
   };
 
+  const [pendingTagWorkerName, setPendingTagWorkerName] = useState<string | null>(null);
+  
   const verifyTagPinMutation = useMutation({
     mutationFn: async (pin: string) => {
       const res = await apiRequest("POST", "/api/delivery/verify-pin", { pin });
@@ -597,17 +599,35 @@ export default function Orders() {
     },
     onSuccess: (data) => {
       if (data.success && tagPinDialog) {
+        const currentOrderId = tagPinDialog.orderId;
+        setPendingTagWorkerName(data.worker.name);
+        
+        // Find next order BEFORE updating current one
+        const pendingTagOrders = orders?.filter(o => !o.tagDone && o.id !== currentOrderId) || [];
+        const nextOrder = pendingTagOrders.length > 0 ? pendingTagOrders[0] : null;
+        
         updateOrderMutation.mutate({
-          id: tagPinDialog.orderId,
+          id: currentOrderId,
           updates: {
             tagDone: true,
             tagDate: new Date().toISOString(),
             tagBy: data.worker.name,
           },
+        }, {
+          onSuccess: () => {
+            if (nextOrder) {
+              setTagPinDialog({ orderId: nextOrder.id });
+              setTagPin("");
+              setTagPinError("");
+              toast({ title: "Tag Complete", description: `Moving to next order: ${nextOrder.orderNumber}` });
+            } else {
+              setTagPinDialog(null);
+              setTagPin("");
+              setTagPinError("");
+              toast({ title: "All Done", description: "No more orders pending for tagging" });
+            }
+          }
         });
-        setTagPinDialog(null);
-        setTagPin("");
-        setTagPinError("");
       }
     },
     onError: () => {

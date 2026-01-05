@@ -716,6 +716,33 @@ export class DatabaseStorage implements IStorage {
       .set({ stockDeducted: true })
       .where(eq(orders.id, orderId));
   }
+
+  async restoreStockForOrder(orderId: number): Promise<void> {
+    const order = await this.getOrder(orderId);
+    if (!order || !order.stockDeducted || !order.items) return;
+    
+    const parsedItems = this.parseOrderItems(order.items);
+    const allProducts = await db.select().from(products);
+    
+    for (const item of parsedItems) {
+      let product = allProducts.find(p => p.name === item.name);
+      if (!product) {
+        product = allProducts.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+      }
+      if (!product) {
+        const baseName = item.name.replace(/\s*\(.*\)$/, '').trim();
+        product = allProducts.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+      }
+      
+      if (product) {
+        const currentStock = product.stockQuantity || 0;
+        const newStock = currentStock + item.quantity;
+        await db.update(products)
+          .set({ stockQuantity: newStock })
+          .where(eq(products.id, product.id));
+      }
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
