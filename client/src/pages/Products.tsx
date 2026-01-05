@@ -114,6 +114,10 @@ export default function Products() {
   
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
+  const { data: allocatedStock } = useQuery<Record<string, number>>({ 
+    queryKey: ["/api/products/allocated-stock"],
+    staleTime: 30000, // 30 seconds cache
+  });
   const { data: clients } = useClients();
   const { mutate: createClient, isPending: isCreatingClient } = useCreateClient();
   const updateProduct = useUpdateProduct();
@@ -269,6 +273,7 @@ export default function Products() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/products/allocated-stock'] });
       setQuantities({});
       setCustomerName("");
       toast({ title: "Order created", description: "Order has been created successfully." });
@@ -556,6 +561,19 @@ export default function Products() {
                   <div className="text-lg font-black text-primary mt-1 bg-primary/10 px-2 py-0.5 rounded-full" data-testid={`text-product-price-${product.id}`}>
                     {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
                   </div>
+
+                  {(product.stockQuantity !== null && product.stockQuantity !== undefined) && (
+                    <div className="flex flex-col items-center mt-1 gap-0.5">
+                      <div className="text-[10px] font-medium text-muted-foreground" data-testid={`text-stock-${product.id}`}>
+                        Stock: {product.stockQuantity}
+                        {allocatedStock && allocatedStock[product.name] ? (
+                          <span className="text-amber-600 dark:text-amber-400 ml-1">
+                            ({allocatedStock[product.name]} pending)
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
 
                   {quantities[product.id] ? (
                     <>

@@ -151,6 +151,8 @@ export default function Orders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/allocated-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "Order Updated", description: "Status updated successfully" });
     },
   });
@@ -164,6 +166,7 @@ export default function Orders() {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/allocated-stock"] });
       setIsCreateOpen(false);
       setPrefilledClientId(undefined);
       setPrefilledBillId(undefined);

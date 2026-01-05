@@ -639,20 +639,45 @@ export class DatabaseStorage implements IStorage {
     await db.delete(incidents).where(eq(incidents.id, id));
   }
 
+  private parseOrderItems(itemsString: string): { name: string; quantity: number }[] {
+    const parsedItems: { name: string; quantity: number }[] = [];
+    // Split on comma with optional space to handle both ", " and "," formats
+    const items = itemsString.split(/,\s*/);
+    
+    for (const item of items) {
+      const trimmedItem = item.trim();
+      if (!trimmedItem) continue;
+      
+      // Pattern 1: "Product Name x3" or "Product Name x3 (Hanging)" 
+      let match = trimmedItem.match(/^(.+?)\s+x(\d+)(?:\s+\(.*\))?$/);
+      if (match) {
+        parsedItems.push({ name: match[1].trim(), quantity: parseInt(match[2]) });
+        continue;
+      }
+      
+      // Pattern 2: "3x Product Name @ 10 AED" (custom items)
+      match = trimmedItem.match(/^(\d+)x\s+(.+?)(?:\s+@\s+[\d.]+\s+AED)?$/);
+      if (match) {
+        parsedItems.push({ name: match[2].trim(), quantity: parseInt(match[1]) });
+        continue;
+      }
+      
+      // Fallback: treat as 1 item with whole string as name
+      parsedItems.push({ name: trimmedItem, quantity: 1 });
+    }
+    
+    return parsedItems;
+  }
+
   async getAllocatedStock(): Promise<Record<string, number>> {
     const allOrders = await db.select().from(orders).where(eq(orders.delivered, false));
     const allocatedStock: Record<string, number> = {};
     
     for (const order of allOrders) {
       if (!order.items) continue;
-      const items = order.items.split(", ");
-      for (const item of items) {
-        const match = item.match(/^(.+)\s+x(\d+)$/);
-        if (match) {
-          const productName = match[1].trim();
-          const quantity = parseInt(match[2]);
-          allocatedStock[productName] = (allocatedStock[productName] || 0) + quantity;
-        }
+      const parsedItems = this.parseOrderItems(order.items);
+      for (const item of parsedItems) {
+        allocatedStock[item.name] = (allocatedStock[item.name] || 0) + item.quantity;
       }
     }
     
@@ -663,22 +688,27 @@ export class DatabaseStorage implements IStorage {
     const order = await this.getOrder(orderId);
     if (!order || order.stockDeducted || !order.items) return;
     
-    const items = order.items.split(", ");
-    for (const item of items) {
-      const match = item.match(/^(.+)\s+x(\d+)$/);
-      if (match) {
-        const productName = match[1].trim();
-        const quantity = parseInt(match[2]);
-        
-        const productList = await db.select().from(products).where(ilike(products.name, productName));
-        if (productList.length > 0) {
-          const product = productList[0];
-          const currentStock = product.stockQuantity || 0;
-          const newStock = Math.max(0, currentStock - quantity);
-          await db.update(products)
-            .set({ stockQuantity: newStock })
-            .where(eq(products.id, product.id));
-        }
+    const parsedItems = this.parseOrderItems(order.items);
+    const allProducts = await db.select().from(products);
+    
+    for (const item of parsedItems) {
+      // Try exact match first, then case-insensitive match
+      let product = allProducts.find(p => p.name === item.name);
+      if (!product) {
+        product = allProducts.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+      }
+      // Try partial match for items with size/type modifiers like "(Small)" or "(Hanging)"
+      if (!product) {
+        const baseName = item.name.replace(/\s*\(.*\)$/, '').trim();
+        product = allProducts.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+      }
+      
+      if (product) {
+        const currentStock = product.stockQuantity || 0;
+        const newStock = Math.max(0, currentStock - item.quantity);
+        await db.update(products)
+          .set({ stockQuantity: newStock })
+          .where(eq(products.id, product.id));
       }
     }
     
