@@ -60,6 +60,7 @@ export default function Orders() {
   const [prefilledBillId, setPrefilledBillId] = useState<string | undefined>();
   const [showBillDialog, setShowBillDialog] = useState(false);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [deliveryInvoiceOrder, setDeliveryInvoiceOrder] = useState<Order | null>(null);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -521,6 +522,7 @@ export default function Orders() {
     },
     onSuccess: (data) => {
       if (data.success && deliveryPinDialog) {
+        const currentOrder = orders?.find(o => o.id === deliveryPinDialog.orderId);
         updateOrderMutation.mutate({
           id: deliveryPinDialog.orderId,
           updates: {
@@ -531,6 +533,18 @@ export default function Orders() {
             deliveryPhoto: deliveryPhotos[0] || null,
             deliveryPhotos: deliveryPhotos.length > 0 ? deliveryPhotos : null,
           },
+        }, {
+          onSuccess: () => {
+            // Show invoice after delivery
+            if (currentOrder) {
+              setDeliveryInvoiceOrder({
+                ...currentOrder,
+                delivered: true,
+                deliveryDate: new Date(),
+                deliveryBy: data.worker.name,
+              });
+            }
+          }
         });
         setDeliveryPinDialog(null);
         setDeliveryPin("");
@@ -1682,6 +1696,216 @@ export default function Orders() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delivery Invoice Dialog */}
+      {deliveryInvoiceOrder && (() => {
+        const invoiceClient = clients?.find(c => c.id === deliveryInvoiceOrder.clientId);
+        const clientUnpaidBills = bills?.filter(b => b.clientId === deliveryInvoiceOrder.clientId && !b.isPaid) || [];
+        const clientPreviousBalance = invoiceClient?.balance ? parseFloat(invoiceClient.balance) : 0;
+        const clientPendingBillsTotal = clientUnpaidBills.reduce((sum, b) => {
+          const billAmount = parseFloat(b.amount) || 0;
+          const paidAmount = parseFloat(b.paidAmount || "0") || 0;
+          return sum + (billAmount - paidAmount);
+        }, 0);
+        const orderItems = parseOrderItems(deliveryInvoiceOrder.items || "");
+        const orderBill = bills?.find(b => b.id === deliveryInvoiceOrder.billId);
+        const orderTotal = orderBill ? parseFloat(orderBill.amount) : deliveryInvoiceOrder.totalAmount ? parseFloat(String(deliveryInvoiceOrder.totalAmount)) : 0;
+        
+        return (
+          <Dialog open={true} onOpenChange={() => setDeliveryInvoiceOrder(null)}>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5" />
+                  Delivery Invoice - Order #{deliveryInvoiceOrder.orderNumber}
+                </DialogTitle>
+                <DialogDescription>
+                  Order delivered successfully
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4" id="delivery-invoice-content">
+                {/* Header */}
+                <div className="text-center border-b pb-4">
+                  <h2 className="text-xl font-bold text-primary">Liquid Washes Laundry</h2>
+                  <p className="text-sm text-muted-foreground">Centra Market D/109, Al Dhanna City, Al Ruwais</p>
+                  <p className="text-sm text-muted-foreground">Abu Dhabi, UAE</p>
+                  <p className="text-sm font-medium">+971 50 123 4567</p>
+                </div>
+
+                {/* Invoice Info */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Invoice No:</p>
+                    <p className="font-semibold">INV-{deliveryInvoiceOrder.orderNumber}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-muted-foreground">Date:</p>
+                    <p className="font-semibold">{format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+                  </div>
+                </div>
+
+                {/* Client Info */}
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground">Bill To:</p>
+                  <p className="font-semibold">{invoiceClient?.name || "Unknown Client"}</p>
+                  {invoiceClient?.phone && <p className="text-sm">{invoiceClient.phone}</p>}
+                  {invoiceClient?.address && <p className="text-sm text-muted-foreground">{invoiceClient.address}</p>}
+                </div>
+
+                {/* Items Table */}
+                <div>
+                  <h3 className="font-semibold mb-2">Items</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead>Item</TableHead>
+                        <TableHead className="text-center">Qty</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orderItems.map((item, index) => {
+                        const product = products?.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+                        const unitPrice = product ? parseFloat(product.price || "0") : 0;
+                        const itemTotal = unitPrice * item.quantity;
+                        return (
+                          <TableRow key={index}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell className="text-center">{item.quantity}</TableCell>
+                            <TableCell className="text-right">{unitPrice.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">{itemTotal.toFixed(2)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Totals */}
+                <div className="border-t pt-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Order Total:</span>
+                    <span className="font-semibold">{orderTotal.toFixed(2)} AED</span>
+                  </div>
+                  {orderBill && (
+                    <div className="flex justify-between text-sm">
+                      <span>Paid Amount:</span>
+                      <span className="text-green-600">{parseFloat(orderBill.paidAmount || "0").toFixed(2)} AED</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Client Due Summary */}
+                {(clientUnpaidBills.length > 0 || clientPreviousBalance > 0) && (
+                  <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 space-y-2">
+                    <h4 className="font-semibold text-orange-700 dark:text-orange-400">Outstanding Balance</h4>
+                    {clientPreviousBalance > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Previous Balance:</span>
+                        <span className="font-medium">{clientPreviousBalance.toFixed(2)} AED</span>
+                      </div>
+                    )}
+                    {clientUnpaidBills.length > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Pending Bills ({clientUnpaidBills.length}):</span>
+                        <span className="font-medium">{clientPendingBillsTotal.toFixed(2)} AED</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-semibold text-orange-700 dark:text-orange-400 border-t border-orange-200 dark:border-orange-700 pt-2">
+                      <span>Total Due:</span>
+                      <span>{(clientPreviousBalance + clientPendingBillsTotal).toFixed(2)} AED</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Delivery Info */}
+                <div className="text-sm text-muted-foreground border-t pt-3">
+                  <p>Delivered by: {deliveryInvoiceOrder.deliveryBy || "Staff"}</p>
+                  <p>Delivery Date: {format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+                </div>
+
+                {/* Footer */}
+                <div className="text-center text-sm text-muted-foreground border-t pt-3">
+                  <p>Thank you for your business!</p>
+                  <p>For inquiries: +971 50 123 4567</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    const content = document.getElementById('delivery-invoice-content');
+                    if (content) {
+                      const printWindow = window.open("", "_blank", "width=800,height=600");
+                      if (printWindow) {
+                        printWindow.document.write(`
+                          <!DOCTYPE html>
+                          <html>
+                          <head>
+                            <title>Invoice INV-${deliveryInvoiceOrder.orderNumber}</title>
+                            <style>
+                              @page { size: A5; margin: 10mm; }
+                              * { margin: 0; padding: 0; box-sizing: border-box; }
+                              body { font-family: Arial, sans-serif; padding: 15px; max-width: 148mm; margin: 0 auto; }
+                              .space-y-4 > * + * { margin-top: 1rem; }
+                              .space-y-2 > * + * { margin-top: 0.5rem; }
+                              .text-center { text-align: center; }
+                              .text-right { text-align: right; }
+                              .font-bold { font-weight: bold; }
+                              .font-semibold { font-weight: 600; }
+                              .font-medium { font-weight: 500; }
+                              .text-xl { font-size: 1.25rem; }
+                              .text-sm { font-size: 0.875rem; }
+                              .text-muted { color: #666; }
+                              .border-b { border-bottom: 1px solid #e5e5e5; padding-bottom: 1rem; }
+                              .border-t { border-top: 1px solid #e5e5e5; padding-top: 0.75rem; }
+                              .grid { display: grid; }
+                              .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+                              .gap-4 { gap: 1rem; }
+                              .bg-muted { background: #f5f5f5; padding: 0.75rem; border-radius: 0.5rem; }
+                              .bg-orange { background: #fff7ed; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #fed7aa; }
+                              .text-orange { color: #c2410c; }
+                              .text-green { color: #16a34a; }
+                              table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; }
+                              th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+                              th { background: #1e40af; color: white; font-size: 0.75rem; }
+                              .flex { display: flex; }
+                              .justify-between { justify-content: space-between; }
+                              @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+                            </style>
+                          </head>
+                          <body>${content.innerHTML}</body>
+                          </html>
+                        `);
+                        printWindow.document.close();
+                        printWindow.focus();
+                        setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
+                      }
+                    }
+                  }}
+                  data-testid="button-print-delivery-invoice"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => setDeliveryInvoiceOrder(null)}
+                  data-testid="button-close-delivery-invoice"
+                >
+                  Done
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }

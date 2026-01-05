@@ -529,7 +529,7 @@ export default function Bills() {
       </main>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-visible flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display text-primary">Create New Bill</DialogTitle>
             <DialogDescription>Select items and client to create a bill</DialogDescription>
