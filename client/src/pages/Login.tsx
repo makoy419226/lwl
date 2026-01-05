@@ -4,8 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, Lock, User } from "lucide-react";
+import { Loader2, Lock, User, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import logoImage from "@assets/image_1767220512226.png";
 
 export interface UserInfo {
@@ -25,6 +32,8 @@ export default function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetUsername, setResetUsername] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,6 +154,19 @@ export default function Login({ onLogin }: LoginProps) {
                   {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Login
                 </Button>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm text-muted-foreground"
+                    onClick={() => setShowForgotPassword(true)}
+                    data-testid="button-forgot-password"
+                  >
+                    <HelpCircle className="w-4 h-4 mr-1" />
+                    Forgot Password?
+                  </Button>
+                </div>
               </form>
 
               <div className="mt-6 pt-4 border-t text-center text-xs text-muted-foreground space-y-1">
