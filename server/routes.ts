@@ -564,10 +564,18 @@ export async function registerRoutes(
 
   app.put("/api/orders/:id", async (req, res) => {
     try {
-      const order = await storage.updateOrder(Number(req.params.id), req.body);
+      const orderId = Number(req.params.id);
+      const existingOrder = await storage.getOrder(orderId);
+      const order = await storage.updateOrder(orderId, req.body);
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
+      
+      // Deduct stock when order is marked as delivered for the first time
+      if (order.delivered && (!existingOrder || !existingOrder.delivered)) {
+        await storage.deductStockForOrder(orderId);
+      }
+      
       res.json(order);
     } catch (err: any) {
       res.status(400).json({ message: err.message });
