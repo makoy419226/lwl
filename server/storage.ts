@@ -81,6 +81,8 @@ export interface IStorage {
   createIncident(incident: InsertIncident): Promise<Incident>;
   updateIncident(id: number, updates: Partial<InsertIncident>): Promise<Incident>;
   deleteIncident(id: number): Promise<void>;
+  getAllocatedStock(): Promise<Record<string, number>>;
+  deductStockForOrder(orderId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -496,9 +498,11 @@ export class DatabaseStorage implements IStorage {
   async updateOrder(id: number, updates: UpdateOrderRequest): Promise<Order> {
     const updateData: any = { ...updates };
     if (updates.entryDate) updateData.entryDate = new Date(updates.entryDate);
+    if (updates.tagDate) updateData.tagDate = new Date(updates.tagDate);
     if (updates.washingDate) updateData.washingDate = new Date(updates.washingDate);
     if (updates.packingDate) updateData.packingDate = new Date(updates.packingDate);
     if (updates.deliveryDate) updateData.deliveryDate = new Date(updates.deliveryDate);
+    if (updates.expectedDeliveryAt) updateData.expectedDeliveryAt = new Date(updates.expectedDeliveryAt);
     
     const [updated] = await db.update(orders)
       .set(updateData)
@@ -633,6 +637,54 @@ export class DatabaseStorage implements IStorage {
 
   async deleteIncident(id: number): Promise<void> {
     await db.delete(incidents).where(eq(incidents.id, id));
+  }
+
+  async getAllocatedStock(): Promise<Record<string, number>> {
+    const allOrders = await db.select().from(orders).where(eq(orders.delivered, false));
+    const allocatedStock: Record<string, number> = {};
+    
+    for (const order of allOrders) {
+      if (!order.items) continue;
+      const items = order.items.split(", ");
+      for (const item of items) {
+        const match = item.match(/^(.+)\s+x(\d+)$/);
+        if (match) {
+          const productName = match[1].trim();
+          const quantity = parseInt(match[2]);
+          allocatedStock[productName] = (allocatedStock[productName] || 0) + quantity;
+        }
+      }
+    }
+    
+    return allocatedStock;
+  }
+
+  async deductStockForOrder(orderId: number): Promise<void> {
+    const order = await this.getOrder(orderId);
+    if (!order || order.stockDeducted || !order.items) return;
+    
+    const items = order.items.split(", ");
+    for (const item of items) {
+      const match = item.match(/^(.+)\s+x(\d+)$/);
+      if (match) {
+        const productName = match[1].trim();
+        const quantity = parseInt(match[2]);
+        
+        const productList = await db.select().from(products).where(ilike(products.name, productName));
+        if (productList.length > 0) {
+          const product = productList[0];
+          const currentStock = product.stockQuantity || 0;
+          const newStock = Math.max(0, currentStock - quantity);
+          await db.update(products)
+            .set({ stockQuantity: newStock })
+            .where(eq(products.id, product.id));
+        }
+      }
+    }
+    
+    await db.update(orders)
+      .set({ stockDeducted: true })
+      .where(eq(orders.id, orderId));
   }
 }
 

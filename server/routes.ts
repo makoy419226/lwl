@@ -289,6 +289,16 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Get allocated stock for all products (from non-delivered orders)
+  app.get("/api/products/allocated-stock", async (req, res) => {
+    try {
+      const allocatedStock = await storage.getAllocatedStock();
+      res.json(allocatedStock);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   // Bill routes
   app.get(api.bills.list.path, async (req, res) => {
     const billList = await storage.getBills();

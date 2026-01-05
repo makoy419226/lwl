@@ -104,6 +104,7 @@ export const orders = pgTable("orders", {
   tips: numeric("tips", { precision: 12, scale: 2 }).default("0"),
   deliveryPhoto: text("delivery_photo"),
   deliveryPhotos: text("delivery_photos").array(),
+  stockDeducted: boolean("stock_deducted").default(false),
 });
 
 export const users = pgTable("users", {
@@ -194,6 +195,7 @@ export const insertOrderSchema = createInsertSchema(orders)
     customerName: z.string().optional(),
     entryDate: z.union([z.date(), z.string()]),
     expectedDeliveryAt: z.union([z.date(), z.string()]).optional().nullable(),
+    tagDate: z.union([z.date(), z.string()]).optional().nullable(),
     washingDate: z.union([z.date(), z.string()]).optional().nullable(),
     packingDate: z.union([z.date(), z.string()]).optional().nullable(),
     deliveryDate: z.union([z.date(), z.string()]).optional().nullable(),
