@@ -800,11 +800,11 @@ export default function Orders() {
             </TabsTrigger>
             <TabsTrigger value="tag-complete" className="bg-orange-100 dark:bg-orange-900/30 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
               <Tag className="w-4 h-4 mr-1" />
-              2. Tag Complete
+              2. Tag Pin
             </TabsTrigger>
             <TabsTrigger value="packing-done" className="bg-green-100 dark:bg-green-900/30 data-[state=active]:bg-green-500 data-[state=active]:text-white">
               <Package className="w-4 h-4 mr-1" />
-              3. Packing Done
+              3. Packing
             </TabsTrigger>
             <TabsTrigger value="delivery" className="bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
               <Truck className="w-4 h-4 mr-1" />
