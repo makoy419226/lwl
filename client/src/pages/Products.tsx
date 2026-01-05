@@ -75,6 +75,8 @@ export default function Products() {
   const [pinError, setPinError] = useState("");
   const [pendingUrgent, setPendingUrgent] = useState(false);
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+  const [editingStockId, setEditingStockId] = useState<number | null>(null);
+  const [stockValue, setStockValue] = useState("");
   
   const sizeOptions: Record<string, { small: number; large: number }> = {
     "Towel": { small: 5, large: 8 },
@@ -163,6 +165,30 @@ export default function Products() {
   const handleCancelEdit = () => {
     setEditingImageId(null);
     setImageUrl("");
+  };
+
+  const handleEditStock = (productId: number, currentStock: number | null) => {
+    setEditingStockId(productId);
+    setStockValue(currentStock?.toString() || "0");
+  };
+
+  const handleSaveStock = (productId: number) => {
+    const newStock = parseInt(stockValue) || 0;
+    updateProduct.mutate({ id: productId, stockQuantity: newStock }, {
+      onSuccess: () => {
+        setEditingStockId(null);
+        setStockValue("");
+        toast({ title: "Stock updated", description: `Stock quantity updated to ${newStock}` });
+      },
+      onError: () => {
+        toast({ title: "Error", description: "Failed to update stock", variant: "destructive" });
+      }
+    });
+  };
+
+  const handleCancelStockEdit = () => {
+    setEditingStockId(null);
+    setStockValue("");
   };
 
   const handleQuantityChange = (productId: number, delta: number) => {
