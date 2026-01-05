@@ -535,9 +535,9 @@ export default function Bills() {
             <DialogDescription>Select items and client to create a bill</DialogDescription>
           </DialogHeader>
           
-          <div className="flex gap-4 flex-1 overflow-hidden">
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="flex gap-4 flex-1 overflow-visible">
+            <div className="flex-1 overflow-visible flex flex-col">
+              <div className="grid grid-cols-2 gap-2 mb-4 relative z-50">
                 <div>
                   <Label>Select Client</Label>
                   <Select
