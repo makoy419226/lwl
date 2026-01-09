@@ -27,7 +27,7 @@ import {
   type InsertIncident,
   type UpdateProductRequest,
   type UpdateClientRequest,
-  type UpdateOrderRequest
+  type UpdateOrderRequest,
 } from "@shared/schema";
 import { eq, ilike, or, desc, and } from "drizzle-orm";
 
@@ -39,11 +39,28 @@ export interface IStorage {
   deleteProduct(id: number): Promise<void>;
   getClients(search?: string): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
-  findClientByNameAndPhone(name: string, phone: string, excludeId?: number): Promise<Client | undefined>;
-  findClientByNameAndAddress(name: string, address: string, excludeId?: number): Promise<Client | undefined>;
-  findClientByPhone(phone: string, excludeId?: number): Promise<Client | undefined>;
-  findClientByName(name: string, excludeId?: number): Promise<Client | undefined>;
-  findClientByAddress(address: string, excludeId?: number): Promise<Client | undefined>;
+  findClientByNameAndPhone(
+    name: string,
+    phone: string,
+    excludeId?: number,
+  ): Promise<Client | undefined>;
+  findClientByNameAndAddress(
+    name: string,
+    address: string,
+    excludeId?: number,
+  ): Promise<Client | undefined>;
+  findClientByPhone(
+    phone: string,
+    excludeId?: number,
+  ): Promise<Client | undefined>;
+  findClientByName(
+    name: string,
+    excludeId?: number,
+  ): Promise<Client | undefined>;
+  findClientByAddress(
+    address: string,
+    excludeId?: number,
+  ): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, updates: UpdateClientRequest): Promise<Client>;
   deleteClient(id: number): Promise<void>;
@@ -52,16 +69,32 @@ export interface IStorage {
   getClientBills(clientId: number): Promise<Bill[]>;
   getUnpaidBills(clientId: number): Promise<Bill[]>;
   createBill(bill: InsertBill): Promise<Bill>;
-  updateBill(id: number, updates: Partial<InsertBill> & { isPaid?: boolean }): Promise<Bill>;
+  updateBill(
+    id: number,
+    updates: Partial<InsertBill> & { isPaid?: boolean },
+  ): Promise<Bill>;
   deleteBill(id: number): Promise<void>;
   getBillPayments(billId: number): Promise<BillPayment[]>;
   getClientBillPayments(clientId: number): Promise<BillPayment[]>;
   createBillPayment(payment: InsertBillPayment): Promise<BillPayment>;
-  payBill(billId: number, amount: string, paymentMethod?: string, notes?: string): Promise<{ bill: Bill; payment: BillPayment }>;
+  payBill(
+    billId: number,
+    amount: string,
+    paymentMethod?: string,
+    notes?: string,
+  ): Promise<{ bill: Bill; payment: BillPayment }>;
   getClientTransactions(clientId: number): Promise<ClientTransaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<ClientTransaction>;
-  addClientBill(clientId: number, amount: string, description?: string): Promise<ClientTransaction>;
-  addClientDeposit(clientId: number, amount: string, description?: string): Promise<ClientTransaction>;
+  addClientBill(
+    clientId: number,
+    amount: string,
+    description?: string,
+  ): Promise<ClientTransaction>;
+  addClientDeposit(
+    clientId: number,
+    amount: string,
+    description?: string,
+  ): Promise<ClientTransaction>;
   getOrders(search?: string): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
   getOrderByPublicToken(token: string): Promise<Order | undefined>;
@@ -71,7 +104,10 @@ export interface IStorage {
   getPackingWorkers(): Promise<PackingWorker[]>;
   getPackingWorker(id: number): Promise<PackingWorker | undefined>;
   createPackingWorker(worker: InsertPackingWorker): Promise<PackingWorker>;
-  updatePackingWorker(id: number, updates: Partial<InsertPackingWorker>): Promise<PackingWorker>;
+  updatePackingWorker(
+    id: number,
+    updates: Partial<InsertPackingWorker>,
+  ): Promise<PackingWorker>;
   deletePackingWorker(id: number): Promise<void>;
   verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null>;
   verifyDeliveryWorkerPin(pin: string): Promise<PackingWorker | null>;
@@ -79,7 +115,10 @@ export interface IStorage {
   getIncidents(search?: string): Promise<Incident[]>;
   getIncident(id: number): Promise<Incident | undefined>;
   createIncident(incident: InsertIncident): Promise<Incident>;
-  updateIncident(id: number, updates: Partial<InsertIncident>): Promise<Incident>;
+  updateIncident(
+    id: number,
+    updates: Partial<InsertIncident>,
+  ): Promise<Incident>;
   deleteIncident(id: number): Promise<void>;
   getAllocatedStock(): Promise<Record<string, number>>;
   deductStockForOrder(orderId: number): Promise<void>;
@@ -89,28 +128,41 @@ export class DatabaseStorage implements IStorage {
   async getProducts(search?: string): Promise<Product[]> {
     if (search) {
       const searchPattern = `%${search}%`;
-      return await db.select().from(products).where(
-        or(
-          ilike(products.name, searchPattern),
-          ilike(products.description || '', searchPattern)
-        )
-      );
+      return await db
+        .select()
+        .from(products)
+        .where(
+          or(
+            ilike(products.name, searchPattern),
+            ilike(products.description || "", searchPattern),
+          ),
+        );
     }
     return await db.select().from(products);
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
-    const [product] = await db.select().from(products).where(eq(products.id, id));
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, id));
     return product;
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const [product] = await db.insert(products).values(insertProduct).returning();
+    const [product] = await db
+      .insert(products)
+      .values(insertProduct)
+      .returning();
     return product;
   }
 
-  async updateProduct(id: number, updates: UpdateProductRequest): Promise<Product> {
-    const [updated] = await db.update(products)
+  async updateProduct(
+    id: number,
+    updates: UpdateProductRequest,
+  ): Promise<Product> {
+    const [updated] = await db
+      .update(products)
       .set(updates)
       .where(eq(products.id, id))
       .returning();
@@ -124,14 +176,17 @@ export class DatabaseStorage implements IStorage {
   async getClients(search?: string): Promise<Client[]> {
     if (search) {
       const searchPattern = `%${search}%`;
-      return await db.select().from(clients).where(
-        or(
-          ilike(clients.name, searchPattern),
-          ilike(clients.phone || '', searchPattern),
-          ilike(clients.address || '', searchPattern),
-          ilike(clients.contact || '', searchPattern)
-        )
-      );
+      return await db
+        .select()
+        .from(clients)
+        .where(
+          or(
+            ilike(clients.name, searchPattern),
+            ilike(clients.phone || "", searchPattern),
+            ilike(clients.address || "", searchPattern),
+            ilike(clients.contact || "", searchPattern),
+          ),
+        );
     }
     return await db.select().from(clients);
   }
@@ -141,68 +196,89 @@ export class DatabaseStorage implements IStorage {
     return client;
   }
 
-  async findClientByNameAndPhone(name: string, phone: string, excludeId?: number): Promise<Client | undefined> {
-    const results = await db.select().from(clients).where(
-      and(
-        ilike(clients.name, name),
-        ilike(clients.phone || '', phone)
-      )
-    );
+  async findClientByNameAndPhone(
+    name: string,
+    phone: string,
+    excludeId?: number,
+  ): Promise<Client | undefined> {
+    const results = await db
+      .select()
+      .from(clients)
+      .where(and(ilike(clients.name, name), ilike(clients.phone || "", phone)));
     if (excludeId) {
-      return results.find(c => c.id !== excludeId);
+      return results.find((c) => c.id !== excludeId);
     }
     return results[0];
   }
 
-  async findClientByNameAndAddress(name: string, address: string, excludeId?: number): Promise<Client | undefined> {
-    const results = await db.select().from(clients).where(
-      and(
-        ilike(clients.name, name),
-        ilike(clients.address || '', address)
-      )
-    );
+  async findClientByNameAndAddress(
+    name: string,
+    address: string,
+    excludeId?: number,
+  ): Promise<Client | undefined> {
+    const results = await db
+      .select()
+      .from(clients)
+      .where(
+        and(ilike(clients.name, name), ilike(clients.address || "", address)),
+      );
     if (excludeId) {
-      return results.find(c => c.id !== excludeId);
+      return results.find((c) => c.id !== excludeId);
     }
     return results[0];
   }
 
-  async findClientByPhone(phone: string, excludeId?: number): Promise<Client | undefined> {
+  async findClientByPhone(
+    phone: string,
+    excludeId?: number,
+  ): Promise<Client | undefined> {
     if (excludeId) {
-      const results = await db.select().from(clients).where(
-        ilike(clients.phone || '', phone)
-      );
-      return results.find(c => c.id !== excludeId);
+      const results = await db
+        .select()
+        .from(clients)
+        .where(ilike(clients.phone || "", phone));
+      return results.find((c) => c.id !== excludeId);
     }
-    const [client] = await db.select().from(clients).where(
-      ilike(clients.phone || '', phone)
-    );
+    const [client] = await db
+      .select()
+      .from(clients)
+      .where(ilike(clients.phone || "", phone));
     return client;
   }
 
-  async findClientByName(name: string, excludeId?: number): Promise<Client | undefined> {
+  async findClientByName(
+    name: string,
+    excludeId?: number,
+  ): Promise<Client | undefined> {
     if (excludeId) {
-      const results = await db.select().from(clients).where(
-        ilike(clients.name, name)
-      );
-      return results.find(c => c.id !== excludeId);
+      const results = await db
+        .select()
+        .from(clients)
+        .where(ilike(clients.name, name));
+      return results.find((c) => c.id !== excludeId);
     }
-    const [client] = await db.select().from(clients).where(
-      ilike(clients.name, name)
-    );
+    const [client] = await db
+      .select()
+      .from(clients)
+      .where(ilike(clients.name, name));
     return client;
   }
 
-  async findClientByAddress(address: string, excludeId?: number): Promise<Client | undefined> {
+  async findClientByAddress(
+    address: string,
+    excludeId?: number,
+  ): Promise<Client | undefined> {
     if (excludeId) {
-      const results = await db.select().from(clients).where(
-        ilike(clients.address || '', address)
-      );
-      return results.find(c => c.id !== excludeId);
+      const results = await db
+        .select()
+        .from(clients)
+        .where(ilike(clients.address || "", address));
+      return results.find((c) => c.id !== excludeId);
     }
-    const [client] = await db.select().from(clients).where(
-      ilike(clients.address || '', address)
-    );
+    const [client] = await db
+      .select()
+      .from(clients)
+      .where(ilike(clients.address || "", address));
     return client;
   }
 
@@ -217,13 +293,20 @@ export class DatabaseStorage implements IStorage {
     return client;
   }
 
-  async updateClient(id: number, updates: UpdateClientRequest): Promise<Client> {
+  async updateClient(
+    id: number,
+    updates: UpdateClientRequest,
+  ): Promise<Client> {
     const updateData: any = { ...updates };
-    if (updates.amount !== undefined) updateData.amount = updates.amount.toString();
-    if (updates.deposit !== undefined) updateData.deposit = updates.deposit.toString();
-    if (updates.balance !== undefined) updateData.balance = updates.balance.toString();
-    
-    const [updated] = await db.update(clients)
+    if (updates.amount !== undefined)
+      updateData.amount = updates.amount.toString();
+    if (updates.deposit !== undefined)
+      updateData.deposit = updates.deposit.toString();
+    if (updates.balance !== undefined)
+      updateData.balance = updates.balance.toString();
+
+    const [updated] = await db
+      .update(clients)
       .set(updateData)
       .where(eq(clients.id, id))
       .returning();
@@ -244,17 +327,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClientBills(clientId: number): Promise<Bill[]> {
-    return await db.select().from(bills)
+    return await db
+      .select()
+      .from(bills)
       .where(eq(bills.clientId, clientId))
       .orderBy(desc(bills.billDate));
   }
 
   async getUnpaidBills(clientId: number): Promise<Bill[]> {
-    return await db.select().from(bills)
-      .where(and(
-        eq(bills.clientId, clientId),
-        eq(bills.isPaid, false)
-      ))
+    return await db
+      .select()
+      .from(bills)
+      .where(and(eq(bills.clientId, clientId), eq(bills.isPaid, false)))
       .orderBy(desc(bills.billDate));
   }
 
@@ -270,13 +354,19 @@ export class DatabaseStorage implements IStorage {
     return bill;
   }
 
-  async updateBill(id: number, updates: Partial<InsertBill> & { isPaid?: boolean }): Promise<Bill> {
+  async updateBill(
+    id: number,
+    updates: Partial<InsertBill> & { isPaid?: boolean },
+  ): Promise<Bill> {
     const updateData: any = { ...updates };
-    if (updates.amount !== undefined) updateData.amount = updates.amount.toString();
-    if (updates.paidAmount !== undefined) updateData.paidAmount = updates.paidAmount.toString();
+    if (updates.amount !== undefined)
+      updateData.amount = updates.amount.toString();
+    if (updates.paidAmount !== undefined)
+      updateData.paidAmount = updates.paidAmount.toString();
     if (updates.billDate) updateData.billDate = new Date(updates.billDate);
-    
-    const [updated] = await db.update(bills)
+
+    const [updated] = await db
+      .update(bills)
       .set(updateData)
       .where(eq(bills.id, id))
       .returning();
@@ -289,13 +379,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBillPayments(billId: number): Promise<BillPayment[]> {
-    return await db.select().from(billPayments)
+    return await db
+      .select()
+      .from(billPayments)
       .where(eq(billPayments.billId, billId))
       .orderBy(desc(billPayments.paymentDate));
   }
 
   async getClientBillPayments(clientId: number): Promise<BillPayment[]> {
-    return await db.select().from(billPayments)
+    return await db
+      .select()
+      .from(billPayments)
       .where(eq(billPayments.clientId, clientId))
       .orderBy(desc(billPayments.paymentDate));
   }
@@ -309,11 +403,19 @@ export class DatabaseStorage implements IStorage {
       paymentMethod: payment.paymentMethod || "cash",
       notes: payment.notes,
     };
-    const [created] = await db.insert(billPayments).values(paymentData).returning();
+    const [created] = await db
+      .insert(billPayments)
+      .values(paymentData)
+      .returning();
     return created;
   }
 
-  async payBill(billId: number, amount: string, paymentMethod?: string, notes?: string): Promise<{ bill: Bill; payment: BillPayment }> {
+  async payBill(
+    billId: number,
+    amount: string,
+    paymentMethod?: string,
+    notes?: string,
+  ): Promise<{ bill: Bill; payment: BillPayment }> {
     const bill = await this.getBill(billId);
     if (!bill) throw new Error("Bill not found");
 
@@ -350,12 +452,12 @@ export class DatabaseStorage implements IStorage {
         const currentAmount = parseFloat(client.amount || "0");
         const newDeposit = currentDeposit + paymentAmount;
         const newBalance = currentAmount - newDeposit;
-        
+
         await this.updateClient(bill.clientId, {
           deposit: newDeposit.toFixed(2),
           balance: newBalance.toFixed(2),
         });
-        
+
         // Record the transaction for history without triggering balance changes again
         await this.createTransaction({
           clientId: bill.clientId,
@@ -373,12 +475,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClientTransactions(clientId: number): Promise<ClientTransaction[]> {
-    return await db.select().from(clientTransactions)
+    return await db
+      .select()
+      .from(clientTransactions)
       .where(eq(clientTransactions.clientId, clientId))
       .orderBy(desc(clientTransactions.date));
   }
 
-  async createTransaction(transaction: InsertTransaction): Promise<ClientTransaction> {
+  async createTransaction(
+    transaction: InsertTransaction,
+  ): Promise<ClientTransaction> {
     const txData = {
       clientId: transaction.clientId,
       type: transaction.type,
@@ -389,11 +495,18 @@ export class DatabaseStorage implements IStorage {
       paymentMethod: transaction.paymentMethod || "cash",
       discount: transaction.discount?.toString() || "0",
     };
-    const [created] = await db.insert(clientTransactions).values(txData).returning();
+    const [created] = await db
+      .insert(clientTransactions)
+      .values(txData)
+      .returning();
     return created;
   }
 
-  async addClientBill(clientId: number, amount: string, description?: string): Promise<ClientTransaction> {
+  async addClientBill(
+    clientId: number,
+    amount: string,
+    description?: string,
+  ): Promise<ClientTransaction> {
     const client = await this.getClient(clientId);
     if (!client) throw new Error("Client not found");
 
@@ -418,7 +531,11 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async addClientDeposit(clientId: number, amount: string, description?: string): Promise<ClientTransaction> {
+  async addClientDeposit(
+    clientId: number,
+    amount: string,
+    description?: string,
+  ): Promise<ClientTransaction> {
     const client = await this.getClient(clientId);
     if (!client) throw new Error("Client not found");
 
@@ -446,13 +563,17 @@ export class DatabaseStorage implements IStorage {
   async getOrders(search?: string): Promise<Order[]> {
     if (search) {
       const searchPattern = `%${search}%`;
-      return await db.select().from(orders).where(
-        or(
-          ilike(orders.orderNumber, searchPattern),
-          ilike(orders.items || '', searchPattern),
-          ilike(orders.notes || '', searchPattern)
+      return await db
+        .select()
+        .from(orders)
+        .where(
+          or(
+            ilike(orders.orderNumber, searchPattern),
+            ilike(orders.items || "", searchPattern),
+            ilike(orders.notes || "", searchPattern),
+          ),
         )
-      ).orderBy(desc(orders.entryDate));
+        .orderBy(desc(orders.entryDate));
     }
     return await db.select().from(orders).orderBy(desc(orders.entryDate));
   }
@@ -463,7 +584,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOrderByPublicToken(token: string): Promise<Order | undefined> {
-    const [order] = await db.select().from(orders).where(eq(orders.publicViewToken, token));
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.publicViewToken, token));
     return order;
   }
 
@@ -473,20 +597,29 @@ export class DatabaseStorage implements IStorage {
       orderNumber: insertOrder.orderNumber,
       items: insertOrder.items,
       totalAmount: insertOrder.totalAmount.toString(),
+      finalAmount: insertOrder.finalAmount?.toString() || "0",
       paidAmount: insertOrder.paidAmount?.toString() || "0",
       status: insertOrder.status || "entry",
       deliveryType: insertOrder.deliveryType || "takeaway",
-      expectedDeliveryAt: insertOrder.expectedDeliveryAt ? new Date(insertOrder.expectedDeliveryAt) : null,
+      expectedDeliveryAt: insertOrder.expectedDeliveryAt
+        ? new Date(insertOrder.expectedDeliveryAt)
+        : null,
       entryDate: new Date(insertOrder.entryDate),
       entryBy: insertOrder.entryBy,
       washingDone: insertOrder.washingDone || false,
-      washingDate: insertOrder.washingDate ? new Date(insertOrder.washingDate) : null,
+      washingDate: insertOrder.washingDate
+        ? new Date(insertOrder.washingDate)
+        : null,
       washingBy: insertOrder.washingBy,
       packingDone: insertOrder.packingDone || false,
-      packingDate: insertOrder.packingDate ? new Date(insertOrder.packingDate) : null,
+      packingDate: insertOrder.packingDate
+        ? new Date(insertOrder.packingDate)
+        : null,
       packingBy: insertOrder.packingBy,
       delivered: insertOrder.delivered || false,
-      deliveryDate: insertOrder.deliveryDate ? new Date(insertOrder.deliveryDate) : null,
+      deliveryDate: insertOrder.deliveryDate
+        ? new Date(insertOrder.deliveryDate)
+        : null,
       deliveryBy: insertOrder.deliveryBy,
       notes: insertOrder.notes,
       urgent: insertOrder.urgent || false,
@@ -499,12 +632,17 @@ export class DatabaseStorage implements IStorage {
     const updateData: any = { ...updates };
     if (updates.entryDate) updateData.entryDate = new Date(updates.entryDate);
     if (updates.tagDate) updateData.tagDate = new Date(updates.tagDate);
-    if (updates.washingDate) updateData.washingDate = new Date(updates.washingDate);
-    if (updates.packingDate) updateData.packingDate = new Date(updates.packingDate);
-    if (updates.deliveryDate) updateData.deliveryDate = new Date(updates.deliveryDate);
-    if (updates.expectedDeliveryAt) updateData.expectedDeliveryAt = new Date(updates.expectedDeliveryAt);
-    
-    const [updated] = await db.update(orders)
+    if (updates.washingDate)
+      updateData.washingDate = new Date(updates.washingDate);
+    if (updates.packingDate)
+      updateData.packingDate = new Date(updates.packingDate);
+    if (updates.deliveryDate)
+      updateData.deliveryDate = new Date(updates.deliveryDate);
+    if (updates.expectedDeliveryAt)
+      updateData.expectedDeliveryAt = new Date(updates.expectedDeliveryAt);
+
+    const [updated] = await db
+      .update(orders)
       .set(updateData)
       .where(eq(orders.id, id))
       .returning();
@@ -520,22 +658,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPackingWorker(id: number): Promise<PackingWorker | undefined> {
-    const [worker] = await db.select().from(packingWorkers).where(eq(packingWorkers.id, id));
+    const [worker] = await db
+      .select()
+      .from(packingWorkers)
+      .where(eq(packingWorkers.id, id));
     return worker;
   }
 
-  async createPackingWorker(worker: InsertPackingWorker): Promise<PackingWorker> {
+  async createPackingWorker(
+    worker: InsertPackingWorker,
+  ): Promise<PackingWorker> {
     const hashedPin = await bcrypt.hash(worker.pin, 10);
-    const [created] = await db.insert(packingWorkers).values({ ...worker, pin: hashedPin }).returning();
+    const [created] = await db
+      .insert(packingWorkers)
+      .values({ ...worker, pin: hashedPin })
+      .returning();
     return created;
   }
 
-  async updatePackingWorker(id: number, updates: Partial<InsertPackingWorker>): Promise<PackingWorker> {
+  async updatePackingWorker(
+    id: number,
+    updates: Partial<InsertPackingWorker>,
+  ): Promise<PackingWorker> {
     const updateData: any = { ...updates };
     if (updates.pin) {
       updateData.pin = await bcrypt.hash(updates.pin, 10);
     }
-    const [updated] = await db.update(packingWorkers)
+    const [updated] = await db
+      .update(packingWorkers)
       .set(updateData)
       .where(eq(packingWorkers.id, id))
       .returning();
@@ -547,9 +697,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null> {
-    const activeWorkers = await db.select().from(packingWorkers).where(
-      eq(packingWorkers.active, true)
-    );
+    const activeWorkers = await db
+      .select()
+      .from(packingWorkers)
+      .where(eq(packingWorkers.active, true));
     for (const worker of activeWorkers) {
       const isMatch = await bcrypt.compare(pin, worker.pin);
       if (isMatch) {
@@ -560,9 +711,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async verifyDeliveryWorkerPin(pin: string): Promise<PackingWorker | null> {
-    const activeWorkers = await db.select().from(packingWorkers).where(
-      eq(packingWorkers.active, true)
-    );
+    const activeWorkers = await db
+      .select()
+      .from(packingWorkers)
+      .where(eq(packingWorkers.active, true));
     for (const worker of activeWorkers) {
       const isMatch = await bcrypt.compare(pin, worker.pin);
       if (isMatch) {
@@ -573,7 +725,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClientOrders(clientId: number): Promise<Order[]> {
-    return await db.select().from(orders)
+    return await db
+      .select()
+      .from(orders)
       .where(eq(orders.clientId, clientId))
       .orderBy(desc(orders.entryDate));
   }
@@ -581,20 +735,30 @@ export class DatabaseStorage implements IStorage {
   async getIncidents(search?: string): Promise<Incident[]> {
     if (search) {
       const searchPattern = `%${search}%`;
-      return await db.select().from(incidents).where(
-        or(
-          ilike(incidents.customerName, searchPattern),
-          ilike(incidents.orderNumber || '', searchPattern),
-          ilike(incidents.itemName || '', searchPattern),
-          ilike(incidents.reason, searchPattern)
+      return await db
+        .select()
+        .from(incidents)
+        .where(
+          or(
+            ilike(incidents.customerName, searchPattern),
+            ilike(incidents.orderNumber || "", searchPattern),
+            ilike(incidents.itemName || "", searchPattern),
+            ilike(incidents.reason, searchPattern),
+          ),
         )
-      ).orderBy(desc(incidents.incidentDate));
+        .orderBy(desc(incidents.incidentDate));
     }
-    return await db.select().from(incidents).orderBy(desc(incidents.incidentDate));
+    return await db
+      .select()
+      .from(incidents)
+      .orderBy(desc(incidents.incidentDate));
   }
 
   async getIncident(id: number): Promise<Incident | undefined> {
-    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
+    const [incident] = await db
+      .select()
+      .from(incidents)
+      .where(eq(incidents.id, id));
     return incident;
   }
 
@@ -614,21 +778,34 @@ export class DatabaseStorage implements IStorage {
       incidentType: insertIncident.incidentType || "refund",
       status: insertIncident.status || "open",
       incidentDate: new Date(insertIncident.incidentDate),
-      resolvedDate: insertIncident.resolvedDate ? new Date(insertIncident.resolvedDate) : null,
+      resolvedDate: insertIncident.resolvedDate
+        ? new Date(insertIncident.resolvedDate)
+        : null,
       resolution: insertIncident.resolution,
     };
-    const [incident] = await db.insert(incidents).values(incidentData).returning();
+    const [incident] = await db
+      .insert(incidents)
+      .values(incidentData)
+      .returning();
     return incident;
   }
 
-  async updateIncident(id: number, updates: Partial<InsertIncident>): Promise<Incident> {
+  async updateIncident(
+    id: number,
+    updates: Partial<InsertIncident>,
+  ): Promise<Incident> {
     const updateData: any = { ...updates };
-    if (updates.refundAmount !== undefined) updateData.refundAmount = updates.refundAmount.toString();
-    if (updates.itemValue !== undefined) updateData.itemValue = updates.itemValue.toString();
-    if (updates.incidentDate) updateData.incidentDate = new Date(updates.incidentDate);
-    if (updates.resolvedDate) updateData.resolvedDate = new Date(updates.resolvedDate);
-    
-    const [updated] = await db.update(incidents)
+    if (updates.refundAmount !== undefined)
+      updateData.refundAmount = updates.refundAmount.toString();
+    if (updates.itemValue !== undefined)
+      updateData.itemValue = updates.itemValue.toString();
+    if (updates.incidentDate)
+      updateData.incidentDate = new Date(updates.incidentDate);
+    if (updates.resolvedDate)
+      updateData.resolvedDate = new Date(updates.resolvedDate);
+
+    const [updated] = await db
+      .update(incidents)
       .set(updateData)
       .where(eq(incidents.id, id))
       .returning();
@@ -639,80 +816,98 @@ export class DatabaseStorage implements IStorage {
     await db.delete(incidents).where(eq(incidents.id, id));
   }
 
-  private parseOrderItems(itemsString: string): { name: string; quantity: number }[] {
+  private parseOrderItems(
+    itemsString: string,
+  ): { name: string; quantity: number }[] {
     const parsedItems: { name: string; quantity: number }[] = [];
     // Split on comma with optional space to handle both ", " and "," formats
     const items = itemsString.split(/,\s*/);
-    
+
     for (const item of items) {
       const trimmedItem = item.trim();
       if (!trimmedItem) continue;
-      
-      // Pattern 1: "Product Name x3" or "Product Name x3 (Hanging)" 
+
+      // Pattern 1: "Product Name x3" or "Product Name x3 (Hanging)"
       let match = trimmedItem.match(/^(.+?)\s+x(\d+)(?:\s+\(.*\))?$/);
       if (match) {
-        parsedItems.push({ name: match[1].trim(), quantity: parseInt(match[2]) });
+        parsedItems.push({
+          name: match[1].trim(),
+          quantity: parseInt(match[2]),
+        });
         continue;
       }
-      
+
       // Pattern 2: "3x Product Name @ 10 AED" (custom items)
       match = trimmedItem.match(/^(\d+)x\s+(.+?)(?:\s+@\s+[\d.]+\s+AED)?$/);
       if (match) {
-        parsedItems.push({ name: match[2].trim(), quantity: parseInt(match[1]) });
+        parsedItems.push({
+          name: match[2].trim(),
+          quantity: parseInt(match[1]),
+        });
         continue;
       }
-      
+
       // Fallback: treat as 1 item with whole string as name
       parsedItems.push({ name: trimmedItem, quantity: 1 });
     }
-    
+
     return parsedItems;
   }
 
   async getAllocatedStock(): Promise<Record<string, number>> {
-    const allOrders = await db.select().from(orders).where(eq(orders.delivered, false));
+    const allOrders = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.delivered, false));
     const allocatedStock: Record<string, number> = {};
-    
+
     for (const order of allOrders) {
       if (!order.items) continue;
       const parsedItems = this.parseOrderItems(order.items);
       for (const item of parsedItems) {
-        allocatedStock[item.name] = (allocatedStock[item.name] || 0) + item.quantity;
+        allocatedStock[item.name] =
+          (allocatedStock[item.name] || 0) + item.quantity;
       }
     }
-    
+
     return allocatedStock;
   }
 
   async deductStockForOrder(orderId: number): Promise<void> {
     const order = await this.getOrder(orderId);
     if (!order || order.stockDeducted || !order.items) return;
-    
+
     const parsedItems = this.parseOrderItems(order.items);
     const allProducts = await db.select().from(products);
-    
+
     for (const item of parsedItems) {
       // Try exact match first, then case-insensitive match
-      let product = allProducts.find(p => p.name === item.name);
+      let product = allProducts.find((p) => p.name === item.name);
       if (!product) {
-        product = allProducts.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+        product = allProducts.find(
+          (p) => p.name.toLowerCase() === item.name.toLowerCase(),
+        );
       }
       // Try partial match for items with size/type modifiers like "(Small)" or "(Hanging)"
       if (!product) {
-        const baseName = item.name.replace(/\s*\(.*\)$/, '').trim();
-        product = allProducts.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+        const baseName = item.name.replace(/\s*\(.*\)$/, "").trim();
+        product = allProducts.find(
+          (p) => p.name.toLowerCase() === baseName.toLowerCase(),
+        );
       }
-      
+
       if (product) {
         const currentStock = product.stockQuantity || 0;
         const newStock = Math.max(0, currentStock - item.quantity);
-        await db.update(products)
+        await db
+          .update(products)
           .set({ stockQuantity: newStock })
           .where(eq(products.id, product.id));
       }
     }
-    
-    await db.update(orders)
+
+    await db
+      .update(orders)
       .set({ stockDeducted: true })
       .where(eq(orders.id, orderId));
   }
@@ -720,24 +915,29 @@ export class DatabaseStorage implements IStorage {
   async restoreStockForOrder(orderId: number): Promise<void> {
     const order = await this.getOrder(orderId);
     if (!order || !order.stockDeducted || !order.items) return;
-    
+
     const parsedItems = this.parseOrderItems(order.items);
     const allProducts = await db.select().from(products);
-    
+
     for (const item of parsedItems) {
-      let product = allProducts.find(p => p.name === item.name);
+      let product = allProducts.find((p) => p.name === item.name);
       if (!product) {
-        product = allProducts.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+        product = allProducts.find(
+          (p) => p.name.toLowerCase() === item.name.toLowerCase(),
+        );
       }
       if (!product) {
-        const baseName = item.name.replace(/\s*\(.*\)$/, '').trim();
-        product = allProducts.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+        const baseName = item.name.replace(/\s*\(.*\)$/, "").trim();
+        product = allProducts.find(
+          (p) => p.name.toLowerCase() === baseName.toLowerCase(),
+        );
       }
-      
+
       if (product) {
         const currentStock = product.stockQuantity || 0;
         const newStock = currentStock + item.quantity;
-        await db.update(products)
+        await db
+          .update(products)
           .set({ stockQuantity: newStock })
           .where(eq(products.id, product.id));
       }

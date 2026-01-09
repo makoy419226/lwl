@@ -7,15 +7,56 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Loader2, Package, Shirt, CheckCircle2, Truck, Clock, 
-  AlertTriangle, Plus, Minus, Search, Bell, Printer, User, Receipt, Download, Camera, Image, X, Tag
+import {
+  Loader2,
+  Package,
+  Shirt,
+  CheckCircle2,
+  Truck,
+  Clock,
+  AlertTriangle,
+  Plus,
+  Minus,
+  Search,
+  Bell,
+  Printer,
+  User,
+  Receipt,
+  Download,
+  Camera,
+  Image,
+  X,
+  Tag,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -30,37 +71,52 @@ export default function Orders() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
-  const [packingPinDialog, setPackingPinDialog] = useState<{ orderId: number } | null>(null);
+  const [packingPinDialog, setPackingPinDialog] = useState<{
+    orderId: number;
+  } | null>(null);
   const [packingPin, setPackingPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [packingNotes, setPackingNotes] = useState("");
-  const [deliveryPinDialog, setDeliveryPinDialog] = useState<{ orderId: number } | null>(null);
+  const [deliveryPinDialog, setDeliveryPinDialog] = useState<{
+    orderId: number;
+  } | null>(null);
   const [deliveryPin, setDeliveryPin] = useState("");
   const [deliveryPinError, setDeliveryPinError] = useState("");
   const [deliveryPhotos, setDeliveryPhotos] = useState<string[]>([]);
-  const [deliveryPhotoPreviews, setDeliveryPhotoPreviews] = useState<string[]>([]);
-  const [tagPinDialog, setTagPinDialog] = useState<{ orderId: number } | null>(null);
+  const [deliveryPhotoPreviews, setDeliveryPhotoPreviews] = useState<string[]>(
+    [],
+  );
+  const [tagPinDialog, setTagPinDialog] = useState<{ orderId: number } | null>(
+    null,
+  );
   const [tagPin, setTagPin] = useState("");
   const [tagPinError, setTagPinError] = useState("");
   const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
-  const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
-  const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [reportStartDate, setReportStartDate] = useState<string>(
+    format(new Date(), "yyyy-MM-dd"),
+  );
+  const [reportEndDate, setReportEndDate] = useState<string>(
+    format(new Date(), "yyyy-MM-dd"),
+  );
   const [viewPhotoOrder, setViewPhotoOrder] = useState<Order | null>(null);
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const reportTableRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  
+
   const searchString = useSearch();
   const [, setLocation] = useLocation();
   const urlParams = new URLSearchParams(searchString);
   const urlBillId = urlParams.get("billId");
   const urlClientId = urlParams.get("clientId");
-  
-  const [prefilledClientId, setPrefilledClientId] = useState<string | undefined>();
+
+  const [prefilledClientId, setPrefilledClientId] = useState<
+    string | undefined
+  >();
   const [prefilledBillId, setPrefilledBillId] = useState<string | undefined>();
   const [showBillDialog, setShowBillDialog] = useState(false);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
-  const [deliveryInvoiceOrder, setDeliveryInvoiceOrder] = useState<Order | null>(null);
+  const [deliveryInvoiceOrder, setDeliveryInvoiceOrder] =
+    useState<Order | null>(null);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -82,10 +138,10 @@ export default function Orders() {
   const { data: bills } = useQuery<Bill[]>({
     queryKey: ["/api/bills"],
   });
-  
+
   useEffect(() => {
     if (urlBillId && urlClientId && bills) {
-      const bill = bills.find(b => b.id === parseInt(urlBillId));
+      const bill = bills.find((b) => b.id === parseInt(urlBillId));
       if (bill && bill.clientId === parseInt(urlClientId) && !bill.isPaid) {
         setPrefilledClientId(urlClientId);
         setPrefilledBillId(urlBillId);
@@ -95,13 +151,14 @@ export default function Orders() {
         setLocation("/orders", { replace: true });
         toast({
           title: "Invalid Bill",
-          description: "The selected bill is no longer available or has been paid.",
+          description:
+            "The selected bill is no longer available or has been paid.",
           variant: "destructive",
         });
       }
     }
   }, [urlBillId, urlClientId, bills]);
-  
+
   const handleDialogClose = (open: boolean) => {
     setIsCreateOpen(open);
     if (!open) {
@@ -111,16 +168,16 @@ export default function Orders() {
   };
 
   const getClientBills = (clientId: number) => {
-    return bills?.filter(b => b.clientId === clientId) || [];
+    return bills?.filter((b) => b.clientId === clientId) || [];
   };
 
   const getClientUnpaidBills = (clientId: number) => {
-    return getClientBills(clientId).filter(b => !b.isPaid);
+    return getClientBills(clientId).filter((b) => !b.isPaid);
   };
 
   const parseOrderItems = (itemsString: string | null) => {
     if (!itemsString) return [];
-    return itemsString.split(", ").map(item => {
+    return itemsString.split(", ").map((item) => {
       const match = item.match(/^(.+)\s+x(\d+)$/);
       if (match) {
         return { name: match[1], quantity: parseInt(match[2]) };
@@ -130,8 +187,8 @@ export default function Orders() {
   };
 
   const getProductImage = (productName: string) => {
-    const product = products?.find(p => 
-      p.name.toLowerCase() === productName.toLowerCase()
+    const product = products?.find(
+      (p) => p.name.toLowerCase() === productName.toLowerCase(),
     );
     return product?.imageUrl;
   };
@@ -152,9 +209,14 @@ export default function Orders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products/allocated-stock"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/products/allocated-stock"],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      toast({ title: "Order Updated", description: "Status updated successfully" });
+      toast({
+        title: "Order Updated",
+        description: "Status updated successfully",
+      });
     },
   });
 
@@ -167,12 +229,50 @@ export default function Orders() {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products/allocated-stock"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/products/allocated-stock"],
+      });
       setIsCreateOpen(false);
       setPrefilledClientId(undefined);
       setPrefilledBillId(undefined);
       setNewCreatedOrder(createdOrder);
-      toast({ title: "Order Created", description: "New order has been created. Generating PDF..." });
+      toast({
+        title: "Order Created",
+        description: "New order has been created. Generating PDF...",
+      });
+    },
+    onError: (error) => {
+      try {
+        const errorMsg = error.message; // e.g., '400: {"message":"Customer name is required"}'
+
+        // 1. Split the string at the first colon
+        const firstColonIndex = errorMsg.indexOf(":");
+
+        if (firstColonIndex !== -1) {
+          const statusCode = errorMsg.substring(0, firstColonIndex).trim();
+          const jsonString = errorMsg.substring(firstColonIndex + 1).trim();
+
+          // 2. Parse the JSON part
+          const parsedBody = JSON.parse(jsonString);
+          const cleanMessage = parsedBody.message || "An error occurred";
+
+          toast({
+            title: `Error ${statusCode}`,
+            description: cleanMessage,
+            variant: "destructive",
+          });
+        } else {
+          // Fallback if the format doesn't match the "400: {}" pattern
+          throw new Error("Standard format not found");
+        }
+      } catch (err) {
+        // If JSON parsing fails or the string is malformed
+        toast({
+          title: "Order Error",
+          description: error.message || "Failed to create order",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -181,43 +281,58 @@ export default function Orders() {
       const opt = {
         margin: 8,
         filename: `Order_${newCreatedOrder.orderNumber}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
+        image: { type: "jpeg" as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm' as const, format: 'a5' as const, orientation: 'portrait' as const }
+        jsPDF: {
+          unit: "mm" as const,
+          format: "a5" as const,
+          orientation: "portrait" as const,
+        },
       };
-      
+
       try {
         await html2pdf().set(opt).from(pdfReceiptRef.current).save();
-        toast({ title: "PDF Downloaded", description: `Order ${newCreatedOrder.orderNumber} PDF saved` });
+        toast({
+          title: "PDF Downloaded",
+          description: `Order ${newCreatedOrder.orderNumber} PDF saved`,
+        });
       } catch (err) {
-        toast({ title: "PDF Error", description: "Failed to generate PDF", variant: "destructive" });
+        toast({
+          title: "PDF Error",
+          description: "Failed to generate PDF",
+          variant: "destructive",
+        });
       }
     }
   };
 
   const generateTagReceipt = (order: Order) => {
-    const client = clients?.find(c => c.id === order.clientId);
+    const client = clients?.find((c) => c.id === order.clientId);
     const isUrgent = order.urgent;
     const parsedItems = parseOrderItems(order.items);
-    
-    const previousBills = bills?.filter(b => b.clientId === order.clientId) || [];
-    const unpaidBills = previousBills.filter(b => !b.isPaid);
+
+    const previousBills =
+      bills?.filter((b) => b.clientId === order.clientId) || [];
+    const unpaidBills = previousBills.filter((b) => !b.isPaid);
     const totalPreviousDue = unpaidBills.reduce((sum, b) => {
       const billTotal = parseFloat(b.amount) || 0;
-      const billPaid = parseFloat(b.paidAmount || '0') || 0;
+      const billPaid = parseFloat(b.paidAmount || "0") || 0;
       return sum + (billTotal - billPaid);
     }, 0);
-    
-    const itemsHtml = parsedItems.map((item, idx) => 
-      `<tr style="border-bottom: 1px solid #e5e5e5;">
+
+    const itemsHtml = parsedItems
+      .map(
+        (item, idx) =>
+          `<tr style="border-bottom: 1px solid #e5e5e5;">
         <td style="padding: 5px 4px; font-size: 9px;">${idx + 1}</td>
         <td style="padding: 5px 4px; font-size: 9px;">${item.name}</td>
         <td style="padding: 5px 4px; font-size: 9px; text-align: center; font-weight: bold;">${item.quantity}</td>
         <td style="padding: 5px 4px; font-size: 9px; text-align: right;">${item.quantity} pcs</td>
-      </tr>`
-    ).join('');
-    
-    const content = document.createElement('div');
+      </tr>`,
+      )
+      .join("");
+
+    const content = document.createElement("div");
     content.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 15px; max-width: 148mm; color: #000; background: #fff;">
         <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
@@ -226,7 +341,7 @@ export default function Orders() {
           <div style="font-size: 9px; margin-top: 2px; color: #888;">For Orders/Delivery: +971 50 123 4567</div>
         </div>
         
-        ${isUrgent ? `<div style="text-align: center; padding: 8px; margin: 10px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px; border-radius: 4px;">*** URGENT ORDER ***</div>` : ''}
+        ${isUrgent ? `<div style="text-align: center; padding: 8px; margin: 10px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px; border-radius: 4px;">*** URGENT ORDER ***</div>` : ""}
         
         <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
           <div style="flex: 1;">
@@ -237,10 +352,14 @@ export default function Orders() {
             <div style="font-size: 9px; color: #666;">Entry Date</div>
             <div style="font-size: 11px; font-weight: bold;">${format(new Date(order.entryDate), "dd MMM yyyy")}</div>
             <div style="font-size: 10px; color: #666;">${format(new Date(order.entryDate), "hh:mm a")}</div>
-            ${order.expectedDeliveryAt ? `
+            ${
+              order.expectedDeliveryAt
+                ? `
             <div style="font-size: 9px; color: #666; margin-top: 5px;">Expected Delivery</div>
             <div style="font-size: 11px; font-weight: bold; color: #2563eb;">${format(new Date(order.expectedDeliveryAt), "dd MMM yyyy")}</div>
-            ` : ''}
+            `
+                : ""
+            }
           </div>
         </div>
         
@@ -249,15 +368,15 @@ export default function Orders() {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <div>
               <div style="font-size: 8px; color: #888;">Name</div>
-              <div style="font-size: 12px; font-weight: bold;">${client?.name || order.customerName || 'Walk-in Customer'}</div>
+              <div style="font-size: 12px; font-weight: bold;">${client?.name || order.customerName || "Walk-in Customer"}</div>
             </div>
             <div>
               <div style="font-size: 8px; color: #888;">Phone</div>
-              <div style="font-size: 12px; font-weight: bold;">${client?.phone || '-'}</div>
+              <div style="font-size: 12px; font-weight: bold;">${client?.phone || "-"}</div>
             </div>
             <div style="grid-column: span 2;">
               <div style="font-size: 8px; color: #888;">Address</div>
-              <div style="font-size: 10px;">${client?.address || '-'}</div>
+              <div style="font-size: 10px;">${client?.address || "-"}</div>
             </div>
           </div>
         </div>
@@ -285,21 +404,31 @@ export default function Orders() {
           </table>
         </div>
         
-        ${order.discountPercent && parseFloat(order.discountPercent) > 0 ? `
+        ${
+          order.discountPercent && parseFloat(order.discountPercent) > 0
+            ? `
         <div style="text-align: right; margin-bottom: 5px;">
           <span style="font-size: 10px; color: #666;">Discount: </span>
           <span style="font-size: 11px; font-weight: bold; color: #16a34a;">${order.discountPercent}%</span>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
         
-        ${order.tips && parseFloat(order.tips) > 0 ? `
+        ${
+          order.tips && parseFloat(order.tips) > 0
+            ? `
         <div style="text-align: right; margin-bottom: 5px;">
           <span style="font-size: 10px; color: #666;">Tips: </span>
           <span style="font-size: 11px; font-weight: bold;">AED ${parseFloat(order.tips).toFixed(2)}</span>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
         
-        ${totalPreviousDue > 0 ? `
+        ${
+          totalPreviousDue > 0
+            ? `
         <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 8px; margin-bottom: 10px;">
           <div style="font-size: 10px; font-weight: bold; color: #856404; margin-bottom: 4px;">PREVIOUS OUTSTANDING DUES</div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -307,19 +436,25 @@ export default function Orders() {
             <span style="font-size: 12px; font-weight: bold; color: #dc3545;">AED ${totalPreviousDue.toFixed(2)}</span>
           </div>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
         
-        ${order.notes ? `
+        ${
+          order.notes
+            ? `
         <div style="background: #e8f4fd; border: 1px solid #90cdf4; border-radius: 4px; padding: 8px; margin-bottom: 10px;">
           <div style="font-size: 9px; font-weight: bold; color: #2b6cb0; margin-bottom: 3px;">ORDER NOTES</div>
           <div style="font-size: 10px;">${order.notes}</div>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
         
         <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
           <div>
             <div style="font-size: 8px; color: #888;">Packing</div>
-            <div style="font-size: 10px; font-weight: bold;">${order.packingDone ? 'Done' : 'Pending'}</div>
+            <div style="font-size: 10px; font-weight: bold;">${order.packingDone ? "Done" : "Pending"}</div>
           </div>
           <div>
             <div style="font-size: 8px; color: #888;">Status</div>
@@ -327,7 +462,7 @@ export default function Orders() {
           </div>
           <div>
             <div style="font-size: 8px; color: #888;">Tag</div>
-            <div style="font-size: 10px; font-weight: bold; color: ${order.tagDone ? '#16a34a' : '#dc2626'};">${order.tagDone ? 'Done' : 'Pending'}</div>
+            <div style="font-size: 10px; font-weight: bold; color: ${order.tagDone ? "#16a34a" : "#dc2626"};">${order.tagDone ? "Done" : "Pending"}</div>
           </div>
         </div>
         
@@ -338,60 +473,83 @@ export default function Orders() {
         </div>
       </div>
     `;
-    
+
     const opt = {
       margin: 8,
       filename: `Tag_${order.orderNumber}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
+      image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a5' as const, orientation: 'portrait' as const }
+      jsPDF: {
+        unit: "mm",
+        format: "a5" as const,
+        orientation: "portrait" as const,
+      },
     };
-    
+
     html2pdf().set(opt).from(content).save();
-    toast({ title: "Tag Downloaded", description: `Tag for ${order.orderNumber} saved` });
+    toast({
+      title: "Tag Downloaded",
+      description: `Tag for ${order.orderNumber} saved`,
+    });
   };
 
   const generateWashingReceipt = (order: Order) => {
-    const client = clients?.find(c => c.id === order.clientId);
+    const client = clients?.find((c) => c.id === order.clientId);
     const isUrgent = order.urgent;
-    
-    const content = document.createElement('div');
+
+    const content = document.createElement("div");
     content.innerHTML = `
       <div style="font-family: 'Courier New', monospace; padding: 10px; width: 70mm; font-size: 11px; color: #000;">
-        <div style="text-align: center; border-bottom: 2px dashed ${isUrgent ? '#dc2626' : '#000'}; padding-bottom: 8px; margin-bottom: 8px;">
-          <div style="font-size: 14px; font-weight: bold; color: ${isUrgent ? '#dc2626' : '#000'};">LIQUID WASHES LAUNDRY</div>
+        <div style="text-align: center; border-bottom: 2px dashed ${isUrgent ? "#dc2626" : "#000"}; padding-bottom: 8px; margin-bottom: 8px;">
+          <div style="font-size: 14px; font-weight: bold; color: ${isUrgent ? "#dc2626" : "#000"};">LIQUID WASHES LAUNDRY</div>
           <div style="font-size: 9px; margin-top: 3px;">WASHING SECTION</div>
         </div>
         
-        ${isUrgent ? `
+        ${
+          isUrgent
+            ? `
         <div style="text-align: center; padding: 8px; margin: 8px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 14px;">
           *** URGENT ORDER ***
         </div>
-        ` : ''}
+        `
+            : ""
+        }
         
-        <div style="text-align: center; font-size: 18px; font-weight: bold; padding: 10px; border: 2px dashed #000; margin: 10px 0; color: ${isUrgent ? '#dc2626' : '#000'};">
+        <div style="text-align: center; font-size: 18px; font-weight: bold; padding: 10px; border: 2px dashed #000; margin: 10px 0; color: ${isUrgent ? "#dc2626" : "#000"};">
           ${order.orderNumber}
         </div>
         
         <div style="margin: 10px 0; padding: 8px; background: #f5f5f5; border-radius: 4px;">
-          <div style="margin-bottom: 5px;"><strong>Client:</strong> ${client?.name || 'Walk-in'}</div>
-          <div style="margin-bottom: 5px;"><strong>Phone:</strong> ${client?.phone || order.customerName || '-'}</div>
+          <div style="margin-bottom: 5px;"><strong>Client:</strong> ${client?.name || "Walk-in"}</div>
+          <div style="margin-bottom: 5px;"><strong>Phone:</strong> ${client?.phone || order.customerName || "-"}</div>
           <div><strong>Date:</strong> ${format(new Date(order.entryDate), "dd/MM/yyyy HH:mm")}</div>
         </div>
         
         <div style="margin: 10px 0; border-top: 1px dashed #000; padding-top: 10px;">
           <div style="font-weight: bold; margin-bottom: 8px; font-size: 12px;">ITEMS FOR WASHING:</div>
           <div style="line-height: 1.8; font-size: 12px;">
-            ${order.items?.split(',').map(item => `<div style="padding: 3px 0; border-bottom: 1px dotted #ccc;">${item.trim()}</div>`).join('') || 'No items'}
+            ${
+              order.items
+                ?.split(",")
+                .map(
+                  (item) =>
+                    `<div style="padding: 3px 0; border-bottom: 1px dotted #ccc;">${item.trim()}</div>`,
+                )
+                .join("") || "No items"
+            }
           </div>
         </div>
         
-        ${order.notes ? `
+        ${
+          order.notes
+            ? `
         <div style="margin: 10px 0; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
           <div style="font-weight: bold; font-size: 10px;">NOTES:</div>
           <div style="font-size: 11px;">${order.notes}</div>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
         
         <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 2px dashed #000; font-size: 9px; color: #666;">
           <div>Printed: ${format(new Date(), "dd/MM/yyyy HH:mm")}</div>
@@ -399,17 +557,24 @@ export default function Orders() {
         </div>
       </div>
     `;
-    
+
     const opt = {
       margin: 2,
       filename: `Washing_${order.orderNumber}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
+      image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: [80, 150] as [number, number], orientation: 'portrait' as const }
+      jsPDF: {
+        unit: "mm",
+        format: [80, 150] as [number, number],
+        orientation: "portrait" as const,
+      },
     };
-    
+
     html2pdf().set(opt).from(content).save();
-    toast({ title: "Washing Receipt Downloaded", description: `Thermal receipt for ${order.orderNumber} saved` });
+    toast({
+      title: "Washing Receipt Downloaded",
+      description: `Thermal receipt for ${order.orderNumber} saved`,
+    });
   };
 
   useEffect(() => {
@@ -421,36 +586,60 @@ export default function Orders() {
     }
   }, [newCreatedOrder]);
 
-  const exportReportToExcel = (dateItemMap: Record<string, Record<string, number>>, sortedDates: string[], sortedItems: string[], itemTotals: Record<string, number>) => {
+  const exportReportToExcel = (
+    dateItemMap: Record<string, Record<string, number>>,
+    sortedDates: string[],
+    sortedItems: string[],
+    itemTotals: Record<string, number>,
+  ) => {
     const wsData: (string | number)[][] = [];
-    
-    wsData.push(["Item Quantity Report", "", "", `From: ${reportStartDate} To: ${reportEndDate}`]);
+
+    wsData.push([
+      "Item Quantity Report",
+      "",
+      "",
+      `From: ${reportStartDate} To: ${reportEndDate}`,
+    ]);
     wsData.push([]);
-    
-    const headerRow: (string | number)[] = ["Item Name", ...sortedDates, "Total"];
+
+    const headerRow: (string | number)[] = [
+      "Item Name",
+      ...sortedDates,
+      "Total",
+    ];
     wsData.push(headerRow);
-    
-    sortedItems.forEach(itemName => {
+
+    sortedItems.forEach((itemName) => {
       const row: (string | number)[] = [itemName];
-      sortedDates.forEach(date => {
+      sortedDates.forEach((date) => {
         row.push(dateItemMap[date][itemName] || 0);
       });
       row.push(itemTotals[itemName]);
       wsData.push(row);
     });
-    
+
     const dailyTotalRow: (string | number)[] = ["Daily Total"];
-    sortedDates.forEach(date => {
-      dailyTotalRow.push(Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0));
+    sortedDates.forEach((date) => {
+      dailyTotalRow.push(
+        Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0),
+      );
     });
-    dailyTotalRow.push(Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0));
+    dailyTotalRow.push(
+      Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0),
+    );
     wsData.push(dailyTotalRow);
-    
+
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Item Report");
-    XLSX.writeFile(wb, `Item_Report_${reportStartDate}_to_${reportEndDate}.xlsx`);
-    toast({ title: "Excel Downloaded", description: "Item report exported to Excel" });
+    XLSX.writeFile(
+      wb,
+      `Item_Report_${reportStartDate}_to_${reportEndDate}.xlsx`,
+    );
+    toast({
+      title: "Excel Downloaded",
+      description: "Item report exported to Excel",
+    });
   };
 
   const exportReportToPDF = () => {
@@ -458,13 +647,20 @@ export default function Orders() {
       const opt = {
         margin: 10,
         filename: `Item_Report_${reportStartDate}_to_${reportEndDate}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
+        image: { type: "jpeg" as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const }
+        jsPDF: {
+          unit: "mm" as const,
+          format: "a4" as const,
+          orientation: "landscape" as const,
+        },
       };
-      
+
       html2pdf().set(opt).from(reportTableRef.current).save();
-      toast({ title: "PDF Downloaded", description: "Item report exported to PDF" });
+      toast({
+        title: "PDF Downloaded",
+        description: "Item report exported to PDF",
+      });
     }
   };
 
@@ -475,9 +671,13 @@ export default function Orders() {
     },
     onSuccess: (data) => {
       if (data.success && packingPinDialog) {
-        const existingOrder = orders?.find(o => o.id === packingPinDialog.orderId);
-        const combinedNotes = packingNotes 
-          ? (existingOrder?.notes ? `${existingOrder.notes}\n[Packing: ${packingNotes}]` : `[Packing: ${packingNotes}]`)
+        const existingOrder = orders?.find(
+          (o) => o.id === packingPinDialog.orderId,
+        );
+        const combinedNotes = packingNotes
+          ? existingOrder?.notes
+            ? `${existingOrder.notes}\n[Packing: ${packingNotes}]`
+            : `[Packing: ${packingNotes}]`
           : existingOrder?.notes;
         updateOrderMutation.mutate({
           id: packingPinDialog.orderId,
@@ -522,30 +722,35 @@ export default function Orders() {
     },
     onSuccess: (data) => {
       if (data.success && deliveryPinDialog) {
-        const currentOrder = orders?.find(o => o.id === deliveryPinDialog.orderId);
-        updateOrderMutation.mutate({
-          id: deliveryPinDialog.orderId,
-          updates: {
-            delivered: true,
-            deliveryDate: new Date().toISOString(),
-            deliveryBy: data.worker.name,
-            deliveredByWorkerId: data.worker.id,
-            deliveryPhoto: deliveryPhotos[0] || null,
-            deliveryPhotos: deliveryPhotos.length > 0 ? deliveryPhotos : null,
+        const currentOrder = orders?.find(
+          (o) => o.id === deliveryPinDialog.orderId,
+        );
+        updateOrderMutation.mutate(
+          {
+            id: deliveryPinDialog.orderId,
+            updates: {
+              delivered: true,
+              deliveryDate: new Date().toISOString(),
+              deliveryBy: data.worker.name,
+              deliveredByWorkerId: data.worker.id,
+              deliveryPhoto: deliveryPhotos[0] || null,
+              deliveryPhotos: deliveryPhotos.length > 0 ? deliveryPhotos : null,
+            },
           },
-        }, {
-          onSuccess: () => {
-            // Show invoice after delivery
-            if (currentOrder) {
-              setDeliveryInvoiceOrder({
-                ...currentOrder,
-                delivered: true,
-                deliveryDate: new Date(),
-                deliveryBy: data.worker.name,
-              });
-            }
-          }
-        });
+          {
+            onSuccess: () => {
+              // Show invoice after delivery
+              if (currentOrder) {
+                setDeliveryInvoiceOrder({
+                  ...currentOrder,
+                  delivered: true,
+                  deliveryDate: new Date(),
+                  deliveryBy: data.worker.name,
+                });
+              }
+            },
+          },
+        );
         setDeliveryPinDialog(null);
         setDeliveryPin("");
         setDeliveryPinError("");
@@ -558,31 +763,41 @@ export default function Orders() {
     },
   });
 
-  const handleDeliveryPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDeliveryPhotoChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       if (deliveryPhotos.length >= 1) {
-        toast({ title: "Maximum Photos", description: "You can only upload 1 photo", variant: "destructive" });
+        toast({
+          title: "Maximum Photos",
+          description: "You can only upload 1 photo",
+          variant: "destructive",
+        });
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "Error", description: "Photo must be less than 5MB", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Photo must be less than 5MB",
+          variant: "destructive",
+        });
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result as string;
-        setDeliveryPhotos(prev => [...prev, base64]);
-        setDeliveryPhotoPreviews(prev => [...prev, base64]);
+        setDeliveryPhotos((prev) => [...prev, base64]);
+        setDeliveryPhotoPreviews((prev) => [...prev, base64]);
       };
       reader.readAsDataURL(file);
     }
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const removeDeliveryPhoto = (index: number) => {
-    setDeliveryPhotos(prev => prev.filter((_, i) => i !== index));
-    setDeliveryPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+    setDeliveryPhotos((prev) => prev.filter((_, i) => i !== index));
+    setDeliveryPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const clearDeliveryPhotos = () => {
@@ -604,8 +819,10 @@ export default function Orders() {
     verifyDeliveryPinMutation.mutate(deliveryPin);
   };
 
-  const [pendingTagWorkerName, setPendingTagWorkerName] = useState<string | null>(null);
-  
+  const [pendingTagWorkerName, setPendingTagWorkerName] = useState<
+    string | null
+  >(null);
+
   const verifyTagPinMutation = useMutation({
     mutationFn: async (pin: string) => {
       const res = await apiRequest("POST", "/api/delivery/verify-pin", { pin });
@@ -615,33 +832,44 @@ export default function Orders() {
       if (data.success && tagPinDialog) {
         const currentOrderId = tagPinDialog.orderId;
         setPendingTagWorkerName(data.worker.name);
-        
+
         // Find next order BEFORE updating current one
-        const pendingTagOrders = orders?.filter(o => !o.tagDone && o.id !== currentOrderId) || [];
-        const nextOrder = pendingTagOrders.length > 0 ? pendingTagOrders[0] : null;
-        
-        updateOrderMutation.mutate({
-          id: currentOrderId,
-          updates: {
-            tagDone: true,
-            tagDate: new Date().toISOString(),
-            tagBy: data.worker.name,
+        const pendingTagOrders =
+          orders?.filter((o) => !o.tagDone && o.id !== currentOrderId) || [];
+        const nextOrder =
+          pendingTagOrders.length > 0 ? pendingTagOrders[0] : null;
+
+        updateOrderMutation.mutate(
+          {
+            id: currentOrderId,
+            updates: {
+              tagDone: true,
+              tagDate: new Date().toISOString(),
+              tagBy: data.worker.name,
+            },
           },
-        }, {
-          onSuccess: () => {
-            if (nextOrder) {
-              setTagPinDialog({ orderId: nextOrder.id });
-              setTagPin("");
-              setTagPinError("");
-              toast({ title: "Tag Complete", description: `Moving to next order: ${nextOrder.orderNumber}` });
-            } else {
-              setTagPinDialog(null);
-              setTagPin("");
-              setTagPinError("");
-              toast({ title: "All Done", description: "No more orders pending for tagging" });
-            }
-          }
-        });
+          {
+            onSuccess: () => {
+              if (nextOrder) {
+                setTagPinDialog({ orderId: nextOrder.id });
+                setTagPin("");
+                setTagPinError("");
+                toast({
+                  title: "Tag Complete",
+                  description: `Moving to next order: ${nextOrder.orderNumber}`,
+                });
+              } else {
+                setTagPinDialog(null);
+                setTagPin("");
+                setTagPinError("");
+                toast({
+                  title: "All Done",
+                  description: "No more orders pending for tagging",
+                });
+              }
+            },
+          },
+        );
       }
     },
     onError: () => {
@@ -663,22 +891,27 @@ export default function Orders() {
     verifyTagPinMutation.mutate(tagPin);
   };
 
-  const filteredOrders = orders?.filter(order => {
-    const matchesSearch = !searchTerm || 
+  const filteredOrders = orders?.filter((order) => {
+    const matchesSearch =
+      !searchTerm ||
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.items?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "create") return matchesSearch && !order.tagDone;
-    if (activeTab === "tag-complete") return matchesSearch && order.tagDone && !order.packingDone;
-    if (activeTab === "packing-done") return matchesSearch && order.packingDone && !order.delivered;
+    if (activeTab === "tag-complete")
+      return matchesSearch && order.tagDone && !order.packingDone;
+    if (activeTab === "packing-done")
+      return matchesSearch && order.packingDone && !order.delivered;
     if (activeTab === "delivery") return matchesSearch && order.delivered;
     return matchesSearch;
   });
 
   const getStatusBadge = (order: Order) => {
-    if (order.delivered) return <Badge className="bg-green-500">Delivered</Badge>;
-    if (order.packingDone) return <Badge className="bg-purple-500">Ready</Badge>;
+    if (order.delivered)
+      return <Badge className="bg-green-500">Delivered</Badge>;
+    if (order.packingDone)
+      return <Badge className="bg-purple-500">Ready</Badge>;
     if (order.tagDone) return <Badge className="bg-blue-500">Washing</Badge>;
     return <Badge className="bg-orange-500">Tag Pending</Badge>;
   };
@@ -687,22 +920,41 @@ export default function Orders() {
     if (!expectedDeliveryAt) return null;
     const now = new Date();
     const diff = new Date(expectedDeliveryAt).getTime() - now.getTime();
-    if (diff <= 0) return <Badge variant="destructive" className="animate-pulse">Overdue</Badge>;
+    if (diff <= 0)
+      return (
+        <Badge variant="destructive" className="animate-pulse">
+          Overdue
+        </Badge>
+      );
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(minutes / 60);
     if (hours > 0) {
-      return <Badge variant="secondary">{hours}h {minutes % 60}m</Badge>;
+      return (
+        <Badge variant="secondary">
+          {hours}h {minutes % 60}m
+        </Badge>
+      );
     }
     if (minutes <= 30) {
-      return <Badge variant="destructive" className="animate-pulse">{minutes}m</Badge>;
+      return (
+        <Badge variant="destructive" className="animate-pulse">
+          {minutes}m
+        </Badge>
+      );
     }
     return <Badge variant="secondary">{minutes}m</Badge>;
   };
 
-  const handleStatusUpdate = (orderId: number, field: string, value: boolean) => {
+  const handleStatusUpdate = (
+    orderId: number,
+    field: string,
+    value: boolean,
+  ) => {
     const updates: any = { [field]: value };
     if (value) {
-      updates[field.replace('Done', 'Date').replace('delivered', 'deliveryDate')] = new Date().toISOString();
+      updates[
+        field.replace("Done", "Date").replace("delivered", "deliveryDate")
+      ] = new Date().toISOString();
     }
     updateOrderMutation.mutate({ id: orderId, updates });
   };
@@ -717,7 +969,10 @@ export default function Orders() {
           </h1>
           <div className="flex items-center gap-4">
             {dueSoonOrders && dueSoonOrders.length > 0 && (
-              <Badge variant="destructive" className="animate-pulse flex items-center gap-1">
+              <Badge
+                variant="destructive"
+                className="animate-pulse flex items-center gap-1"
+              >
                 <Bell className="w-4 h-4" />
                 {dueSoonOrders.length} Due Soon
               </Badge>
@@ -743,9 +998,9 @@ export default function Orders() {
                 <DialogHeader>
                   <DialogTitle>Create New Order</DialogTitle>
                 </DialogHeader>
-                <OrderForm 
-                  key={`${prefilledClientId || ''}-${prefilledBillId || ''}`}
-                  clients={clients || []} 
+                <OrderForm
+                  key={`${prefilledClientId || ""}-${prefilledBillId || ""}`}
+                  clients={clients || []}
                   bills={bills || []}
                   onSubmit={(data) => createOrderMutation.mutate(data)}
                   isLoading={createOrderMutation.isPending}
@@ -768,8 +1023,11 @@ export default function Orders() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Entry</p>
-                  <p className="text-2xl font-bold" data-testid="text-entry-count">
-                    {orders?.filter(o => !o.washingDone).length || 0}
+                  <p
+                    className="text-2xl font-bold"
+                    data-testid="text-entry-count"
+                  >
+                    {orders?.filter((o) => !o.washingDone).length || 0}
                   </p>
                 </div>
               </div>
@@ -780,12 +1038,19 @@ export default function Orders() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-blue-500 animate-spin" style={{ animationDuration: '3s' }} />
+                  <Clock
+                    className="w-6 h-6 text-blue-500 animate-spin"
+                    style={{ animationDuration: "3s" }}
+                  />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Washing</p>
-                  <p className="text-2xl font-bold" data-testid="text-washing-count">
-                    {orders?.filter(o => o.washingDone && !o.packingDone).length || 0}
+                  <p
+                    className="text-2xl font-bold"
+                    data-testid="text-washing-count"
+                  >
+                    {orders?.filter((o) => o.washingDone && !o.packingDone)
+                      .length || 0}
                   </p>
                 </div>
               </div>
@@ -800,8 +1065,12 @@ export default function Orders() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Packing</p>
-                  <p className="text-2xl font-bold" data-testid="text-packing-count">
-                    {orders?.filter(o => o.packingDone && !o.delivered).length || 0}
+                  <p
+                    className="text-2xl font-bold"
+                    data-testid="text-packing-count"
+                  >
+                    {orders?.filter((o) => o.packingDone && !o.delivered)
+                      .length || 0}
                   </p>
                 </div>
               </div>
@@ -816,8 +1085,11 @@ export default function Orders() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Delivered</p>
-                  <p className="text-2xl font-bold" data-testid="text-delivered-count">
-                    {orders?.filter(o => o.delivered).length || 0}
+                  <p
+                    className="text-2xl font-bold"
+                    data-testid="text-delivered-count"
+                  >
+                    {orders?.filter((o) => o.delivered).length || 0}
                   </p>
                 </div>
               </div>
@@ -828,19 +1100,31 @@ export default function Orders() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger value="create" className="bg-blue-100 dark:bg-blue-900/30 data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+            <TabsTrigger
+              value="create"
+              className="bg-blue-100 dark:bg-blue-900/30 data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+            >
               <Plus className="w-4 h-4 mr-1" />
               1. Create Order
             </TabsTrigger>
-            <TabsTrigger value="tag-complete" className="bg-orange-100 dark:bg-orange-900/30 data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+            <TabsTrigger
+              value="tag-complete"
+              className="bg-orange-100 dark:bg-orange-900/30 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+            >
               <Tag className="w-4 h-4 mr-1" />
               2. Tag Pin
             </TabsTrigger>
-            <TabsTrigger value="packing-done" className="bg-green-100 dark:bg-green-900/30 data-[state=active]:bg-green-500 data-[state=active]:text-white">
+            <TabsTrigger
+              value="packing-done"
+              className="bg-green-100 dark:bg-green-900/30 data-[state=active]:bg-green-500 data-[state=active]:text-white"
+            >
               <Package className="w-4 h-4 mr-1" />
               3. Packing
             </TabsTrigger>
-            <TabsTrigger value="delivery" className="bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+            <TabsTrigger
+              value="delivery"
+              className="bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+            >
               <Truck className="w-4 h-4 mr-1" />
               4. Delivery
             </TabsTrigger>
@@ -848,284 +1132,425 @@ export default function Orders() {
           </TabsList>
 
           {activeTab !== "item-report" && (
-          <TabsContent value={activeTab}>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-              </div>
-            ) : filteredOrders?.length === 0 ? (
-              <div className="text-center py-20 text-muted-foreground">
-                <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No orders found</p>
-              </div>
-            ) : (
-              <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order #</TableHead>
-                      <TableHead>Bill #</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Client Due</TableHead>
-                      <TableHead>Items</TableHead>
-                      {activeTab !== "create" && <TableHead>Amount</TableHead>}
-                      <TableHead>Type</TableHead>
-                      <TableHead>Time Left</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(() => {
-                      const groupedOrders = filteredOrders?.reduce((acc, order) => {
-                        const groupKey = order.clientId ? `client-${order.clientId}` : `walkin-${order.customerName || 'unknown'}`;
-                        if (!acc[groupKey]) {
-                          acc[groupKey] = [];
-                        }
-                        acc[groupKey].push(order);
-                        return acc;
-                      }, {} as Record<string, typeof filteredOrders>);
+            <TabsContent value={activeTab}>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                </div>
+              ) : filteredOrders?.length === 0 ? (
+                <div className="text-center py-20 text-muted-foreground">
+                  <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p>No orders found</p>
+                </div>
+              ) : (
+                <Card>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order #</TableHead>
+                        <TableHead>Bill #</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Client Due</TableHead>
+                        <TableHead>Items</TableHead>
+                        {activeTab !== "create" && (
+                          <TableHead>Amount</TableHead>
+                        )}
+                        <TableHead>Type</TableHead>
+                        <TableHead>Time Left</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(() => {
+                        const groupedOrders = filteredOrders?.reduce(
+                          (acc, order) => {
+                            const groupKey = order.clientId
+                              ? `client-${order.clientId}`
+                              : `walkin-${order.customerName || "unknown"}`;
+                            if (!acc[groupKey]) {
+                              acc[groupKey] = [];
+                            }
+                            acc[groupKey].push(order);
+                            return acc;
+                          },
+                          {} as Record<string, typeof filteredOrders>,
+                        );
 
-                      return Object.entries(groupedOrders || {}).map(([groupKey, clientOrders]) => {
-                        const isWalkIn = groupKey.startsWith('walkin-');
-                        const clientId = isWalkIn ? null : parseInt(groupKey.replace('client-', ''));
-                        const client = clientId ? clients?.find(c => c.id === clientId) : null;
-                        const orderCount = clientOrders?.length || 0;
-                        const displayName = client?.name || clientOrders?.[0]?.customerName || 'Walk-in Customer';
-                        
-                        return clientOrders?.map((order, idx) => (
-                          <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
-                            <TableCell className="font-mono font-bold">{order.orderNumber}</TableCell>
-                            <TableCell>
-                              {order.billId ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="font-mono text-primary h-auto py-1 px-2"
-                                  onClick={() => {
-                                    const bill = bills?.find(b => b.id === order.billId);
-                                    if (bill) {
-                                      setSelectedBill(bill);
-                                      setShowBillDialog(true);
-                                    }
-                                  }}
-                                  data-testid={`button-bill-${order.billId}`}
-                                >
-                                  <Receipt className="w-3 h-3 mr-1" />
-                                  #{order.billId}
-                                </Button>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">-</span>
-                              )}
-                            </TableCell>
-                            {idx === 0 ? (
-                              <>
-                                <TableCell rowSpan={orderCount} className="align-top border-r p-0">
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button variant="ghost" className="w-full h-full justify-start px-4 py-2 font-semibold hover-elevate" data-testid={`button-client-${client?.id || 'walkin'}`}>
-                                        <User className="w-4 h-4 mr-2" />
-                                        {displayName}
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80" align="start">
-                                      <div className="space-y-3">
-                                        <div className="flex items-center gap-2 border-b pb-2">
-                                          <User className="w-5 h-5 text-primary" />
-                                          <div>
-                                            <p className="font-semibold">{client?.name}</p>
-                                            <p className="text-sm text-muted-foreground">{client?.phone}</p>
-                                          </div>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-sm">Total Due:</span>
-                                          <span className={`font-bold ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}>
-                                            {parseFloat(client?.balance || "0").toFixed(2)} AED
-                                          </span>
-                                        </div>
-                                        {client && getClientUnpaidBills(client.id).length > 0 && (
-                                          <div className="space-y-2">
-                                            <p className="text-sm font-medium flex items-center gap-1">
-                                              <Receipt className="w-4 h-4" /> Unpaid Bills:
-                                            </p>
-                                            <ScrollArea className="h-32">
-                                              <div className="space-y-1">
-                                                {getClientUnpaidBills(client.id).map(bill => (
-                                                  <div key={bill.id} className="flex justify-between items-center text-sm bg-muted/50 rounded px-2 py-1">
-                                                    <span className="text-muted-foreground">
-                                                      {format(new Date(bill.billDate), "dd/MM/yy")}
-                                                    </span>
-                                                    <span className="font-medium text-destructive">
-                                                      {parseFloat(bill.amount).toFixed(2)} AED
-                                                    </span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </ScrollArea>
-                                          </div>
-                                        )}
-                                        {client && getClientUnpaidBills(client.id).length === 0 && (
-                                          <p className="text-sm text-muted-foreground text-center py-2">No unpaid bills</p>
-                                        )}
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
+                        return Object.entries(groupedOrders || {}).map(
+                          ([groupKey, clientOrders]) => {
+                            const isWalkIn = groupKey.startsWith("walkin-");
+                            const clientId = isWalkIn
+                              ? null
+                              : parseInt(groupKey.replace("client-", ""));
+                            const client = clientId
+                              ? clients?.find((c) => c.id === clientId)
+                              : null;
+                            const orderCount = clientOrders?.length || 0;
+                            const displayName =
+                              client?.name ||
+                              clientOrders?.[0]?.customerName ||
+                              "Walk-in Customer";
+
+                            return clientOrders?.map((order, idx) => (
+                              <TableRow
+                                key={order.id}
+                                data-testid={`row-order-${order.id}`}
+                              >
+                                <TableCell className="font-mono font-bold">
+                                  {order.orderNumber}
                                 </TableCell>
-                                <TableCell rowSpan={orderCount} className={`align-top font-semibold border-r ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`} data-testid={`text-client-due-${order.id}`}>
-                                  {parseFloat(client?.balance || "0").toFixed(2)} AED
-                                </TableCell>
-                              </>
-                            ) : null}
-                            <TableCell className={activeTab === "create" ? "max-w-md" : "max-w-xs"}>
-                              {activeTab === "create" ? (
-                                <div className="space-y-1">
-                                  {parseOrderItems(order.items).map((item, i) => {
-                                    const imageUrl = getProductImage(item.name);
-                                    return (
-                                      <div key={i} className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md px-2 py-1">
-                                        {imageUrl ? (
-                                          <img src={imageUrl} alt={item.name} className="w-6 h-6 object-contain" />
-                                        ) : (
-                                          <Shirt className="w-6 h-6 text-orange-500" />
-                                        )}
-                                        <span className="text-sm font-medium flex-1">{item.name}</span>
-                                        <Badge className="bg-orange-500 text-white">{item.quantity} pcs</Badge>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <div className="flex flex-wrap gap-1">
-                                  {parseOrderItems(order.items).map((item, i) => {
-                                    const imageUrl = getProductImage(item.name);
-                                    return (
-                                      <div key={i} className="flex items-center gap-1 bg-muted/50 rounded px-1.5 py-0.5">
-                                        {imageUrl ? (
-                                          <img src={imageUrl} alt={item.name} className="w-4 h-4 object-contain" />
-                                        ) : (
-                                          <Shirt className="w-4 h-4 text-muted-foreground" />
-                                        )}
-                                        <span className="text-xs">{item.name}</span>
-                                        <Badge variant="secondary" className="text-xs px-1 py-0 h-4">{item.quantity}</Badge>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </TableCell>
-                            {activeTab !== "create" && <TableCell className="font-semibold">{order.totalAmount} AED</TableCell>}
-                            <TableCell>
-                              {order.deliveryType === 'delivery' ? (
-                                <Badge variant="outline" className="gap-1">
-                                  <Truck className="w-3 h-3" /> Delivery
-                                </Badge>
-                              ) : (
-                                <Badge variant="secondary">Take Away</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>{getTimeRemaining(order.expectedDeliveryAt)}</TableCell>
-                            <TableCell>{getStatusBadge(order)}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-1 flex-wrap">
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost"
-                                  onClick={() => setPrintOrder(order)}
-                                  data-testid={`button-print-${order.id}`}
-                                >
-                                  <Printer className="w-4 h-4" />
-                                </Button>
-                                {!order.tagDone && (
-                                  <>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      className="bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300"
-                                      onClick={() => generateTagReceipt(order)}
-                                      data-testid={`button-print-tag-${order.id}`}
-                                    >
-                                      <Tag className="w-3 h-3 mr-1" />
-                                      Print Tag
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      onClick={() => handleTagWithPin(order.id)}
-                                      data-testid={`button-tag-done-${order.id}`}
-                                    >
-                                      Tag Done
-                                    </Button>
-                                  </>
-                                )}
-                                {order.tagDone && !order.packingDone && (
-                                  <>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      className="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300"
-                                      onClick={() => generateWashingReceipt(order)}
-                                      data-testid={`button-washing-receipt-${order.id}`}
-                                    >
-                                      <Printer className="w-3 h-3 mr-1" />
-                                      Washing
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      onClick={() => handlePackingWithPin(order.id)}
-                                      data-testid={`button-packing-${order.id}`}
-                                    >
-                                      Packing Done
-                                    </Button>
-                                  </>
-                                )}
-                                {order.packingDone && !order.delivered && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="default"
-                                    onClick={() => handleDeliveryWithPin(order.id)}
-                                    data-testid={`button-deliver-${order.id}`}
-                                  >
-                                    <Truck className="w-3 h-3 mr-1" />
-                                    Deliver
-                                  </Button>
-                                )}
-                                {order.delivered && (
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-green-600">Completed</Badge>
-                                    <Button 
-                                      size="icon" 
+                                <TableCell>
+                                  {order.billId ? (
+                                    <Button
                                       variant="ghost"
-                                      onClick={() => setViewPhotoOrder(order)}
-                                      data-testid={`button-view-photo-${order.id}`}
-                                      title={order.deliveryPhoto ? "View Delivery Photo" : "No photo available"}
-                                    >
-                                      <Camera className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-900 dark:text-blue-400" : "text-red-500"}`} />
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
+                                      size="sm"
+                                      className="font-mono text-primary h-auto py-1 px-2"
                                       onClick={() => {
-                                        setNewCreatedOrder(order);
+                                        const bill = bills?.find(
+                                          (b) => b.id === order.billId,
+                                        );
+                                        if (bill) {
+                                          setSelectedBill(bill);
+                                          setShowBillDialog(true);
+                                        }
                                       }}
-                                      data-testid={`button-invoice-${order.id}`}
+                                      data-testid={`button-bill-${order.billId}`}
                                     >
-                                      <Receipt className="w-3 h-3 mr-1" />
-                                      Invoice
+                                      <Receipt className="w-3 h-3 mr-1" />#
+                                      {order.billId}
                                     </Button>
-                                  </div>
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">
+                                      -
+                                    </span>
+                                  )}
+                                </TableCell>
+                                {idx === 0 ? (
+                                  <>
+                                    <TableCell
+                                      rowSpan={orderCount}
+                                      className="align-top border-r p-0"
+                                    >
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            className="w-full h-full justify-start px-4 py-2 font-semibold hover-elevate"
+                                            data-testid={`button-client-${client?.id || "walkin"}`}
+                                          >
+                                            <User className="w-4 h-4 mr-2" />
+                                            {displayName}
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                          className="w-80"
+                                          align="start"
+                                        >
+                                          <div className="space-y-3">
+                                            <div className="flex items-center gap-2 border-b pb-2">
+                                              <User className="w-5 h-5 text-primary" />
+                                              <div>
+                                                <p className="font-semibold">
+                                                  {client?.name}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                  {client?.phone}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-sm">
+                                                Total Due:
+                                              </span>
+                                              <span
+                                                className={`font-bold ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                              >
+                                                {parseFloat(
+                                                  client?.balance || "0",
+                                                ).toFixed(2)}{" "}
+                                                AED
+                                              </span>
+                                            </div>
+                                            {client &&
+                                              getClientUnpaidBills(client.id)
+                                                .length > 0 && (
+                                                <div className="space-y-2">
+                                                  <p className="text-sm font-medium flex items-center gap-1">
+                                                    <Receipt className="w-4 h-4" />{" "}
+                                                    Unpaid Bills:
+                                                  </p>
+                                                  <ScrollArea className="h-32">
+                                                    <div className="space-y-1">
+                                                      {getClientUnpaidBills(
+                                                        client.id,
+                                                      ).map((bill) => (
+                                                        <div
+                                                          key={bill.id}
+                                                          className="flex justify-between items-center text-sm bg-muted/50 rounded px-2 py-1"
+                                                        >
+                                                          <span className="text-muted-foreground">
+                                                            {format(
+                                                              new Date(
+                                                                bill.billDate,
+                                                              ),
+                                                              "dd/MM/yy",
+                                                            )}
+                                                          </span>
+                                                          <span className="font-medium text-destructive">
+                                                            {parseFloat(
+                                                              bill.amount,
+                                                            ).toFixed(2)}{" "}
+                                                            AED
+                                                          </span>
+                                                        </div>
+                                                      ))}
+                                                    </div>
+                                                  </ScrollArea>
+                                                </div>
+                                              )}
+                                            {client &&
+                                              getClientUnpaidBills(client.id)
+                                                .length === 0 && (
+                                                <p className="text-sm text-muted-foreground text-center py-2">
+                                                  No unpaid bills
+                                                </p>
+                                              )}
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                    </TableCell>
+                                    <TableCell
+                                      rowSpan={orderCount}
+                                      className={`align-top font-semibold border-r ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                      data-testid={`text-client-due-${order.id}`}
+                                    >
+                                      {parseFloat(
+                                        client?.balance || "0",
+                                      ).toFixed(2)}{" "}
+                                      AED
+                                    </TableCell>
+                                  </>
+                                ) : null}
+                                <TableCell
+                                  className={
+                                    activeTab === "create"
+                                      ? "max-w-md"
+                                      : "max-w-xs"
+                                  }
+                                >
+                                  {activeTab === "create" ? (
+                                    <div className="space-y-1">
+                                      {parseOrderItems(order.items).map(
+                                        (item, i) => {
+                                          const imageUrl = getProductImage(
+                                            item.name,
+                                          );
+                                          return (
+                                            <div
+                                              key={i}
+                                              className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md px-2 py-1"
+                                            >
+                                              {imageUrl ? (
+                                                <img
+                                                  src={imageUrl}
+                                                  alt={item.name}
+                                                  className="w-6 h-6 object-contain"
+                                                />
+                                              ) : (
+                                                <Shirt className="w-6 h-6 text-orange-500" />
+                                              )}
+                                              <span className="text-sm font-medium flex-1">
+                                                {item.name}
+                                              </span>
+                                              <Badge className="bg-orange-500 text-white">
+                                                {item.quantity} pcs
+                                              </Badge>
+                                            </div>
+                                          );
+                                        },
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-wrap gap-1">
+                                      {parseOrderItems(order.items).map(
+                                        (item, i) => {
+                                          const imageUrl = getProductImage(
+                                            item.name,
+                                          );
+                                          return (
+                                            <div
+                                              key={i}
+                                              className="flex items-center gap-1 bg-muted/50 rounded px-1.5 py-0.5"
+                                            >
+                                              {imageUrl ? (
+                                                <img
+                                                  src={imageUrl}
+                                                  alt={item.name}
+                                                  className="w-4 h-4 object-contain"
+                                                />
+                                              ) : (
+                                                <Shirt className="w-4 h-4 text-muted-foreground" />
+                                              )}
+                                              <span className="text-xs">
+                                                {item.name}
+                                              </span>
+                                              <Badge
+                                                variant="secondary"
+                                                className="text-xs px-1 py-0 h-4"
+                                              >
+                                                {item.quantity}
+                                              </Badge>
+                                            </div>
+                                          );
+                                        },
+                                      )}
+                                    </div>
+                                  )}
+                                </TableCell>
+                                {activeTab !== "create" && (
+                                  <TableCell className="font-semibold">
+                                    {order.totalAmount} AED
+                                  </TableCell>
                                 )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ));
-                      });
-                    })()}
-                  </TableBody>
-                </Table>
-              </Card>
-            )}
-          </TabsContent>
+                                <TableCell>
+                                  {order.deliveryType === "delivery" ? (
+                                    <Badge variant="outline" className="gap-1">
+                                      <Truck className="w-3 h-3" /> Delivery
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary">Take Away</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {getTimeRemaining(order.expectedDeliveryAt)}
+                                </TableCell>
+                                <TableCell>{getStatusBadge(order)}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-1 flex-wrap">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => setPrintOrder(order)}
+                                      data-testid={`button-print-${order.id}`}
+                                    >
+                                      <Printer className="w-4 h-4" />
+                                    </Button>
+                                    {!order.tagDone && (
+                                      <>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300"
+                                          onClick={() =>
+                                            generateTagReceipt(order)
+                                          }
+                                          data-testid={`button-print-tag-${order.id}`}
+                                        >
+                                          <Tag className="w-3 h-3 mr-1" />
+                                          Print Tag
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() =>
+                                            handleTagWithPin(order.id)
+                                          }
+                                          data-testid={`button-tag-done-${order.id}`}
+                                        >
+                                          Tag Done
+                                        </Button>
+                                      </>
+                                    )}
+                                    {order.tagDone && !order.packingDone && (
+                                      <>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300"
+                                          onClick={() =>
+                                            generateWashingReceipt(order)
+                                          }
+                                          data-testid={`button-washing-receipt-${order.id}`}
+                                        >
+                                          <Printer className="w-3 h-3 mr-1" />
+                                          Washing
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() =>
+                                            handlePackingWithPin(order.id)
+                                          }
+                                          data-testid={`button-packing-${order.id}`}
+                                        >
+                                          Packing Done
+                                        </Button>
+                                      </>
+                                    )}
+                                    {order.packingDone && !order.delivered && (
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        onClick={() =>
+                                          handleDeliveryWithPin(order.id)
+                                        }
+                                        data-testid={`button-deliver-${order.id}`}
+                                      >
+                                        <Truck className="w-3 h-3 mr-1" />
+                                        Deliver
+                                      </Button>
+                                    )}
+                                    {order.delivered && (
+                                      <div className="flex items-center gap-2">
+                                        <Badge
+                                          variant="outline"
+                                          className="text-green-600"
+                                        >
+                                          Completed
+                                        </Badge>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          onClick={() =>
+                                            setViewPhotoOrder(order)
+                                          }
+                                          data-testid={`button-view-photo-${order.id}`}
+                                          title={
+                                            order.deliveryPhoto
+                                              ? "View Delivery Photo"
+                                              : "No photo available"
+                                          }
+                                        >
+                                          <Camera
+                                            className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-900 dark:text-blue-400" : "text-red-500"}`}
+                                          />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            setNewCreatedOrder(order);
+                                          }}
+                                          data-testid={`button-invoice-${order.id}`}
+                                        >
+                                          <Receipt className="w-3 h-3 mr-1" />
+                                          Invoice
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ));
+                          },
+                        );
+                      })()}
+                    </TableBody>
+                  </Table>
+                </Card>
+              )}
+            </TabsContent>
           )}
 
           {activeTab === "item-report" && (
@@ -1169,37 +1594,54 @@ export default function Orders() {
                     const endDate = new Date(reportEndDate);
                     endDate.setHours(23, 59, 59, 999);
 
-                    const filteredOrdersForReport = orders?.filter(order => {
-                      const orderDate = new Date(order.entryDate);
-                      return orderDate >= startDate && orderDate <= endDate;
-                    }) || [];
+                    const filteredOrdersForReport =
+                      orders?.filter((order) => {
+                        const orderDate = new Date(order.entryDate);
+                        return orderDate >= startDate && orderDate <= endDate;
+                      }) || [];
 
-                    const dateItemMap: Record<string, Record<string, number>> = {};
+                    const dateItemMap: Record<
+                      string,
+                      Record<string, number>
+                    > = {};
                     const allItems: Set<string> = new Set();
 
-                    filteredOrdersForReport.forEach(order => {
-                      const dateKey = format(new Date(order.entryDate), "dd/MM/yyyy");
+                    filteredOrdersForReport.forEach((order) => {
+                      const dateKey = format(
+                        new Date(order.entryDate),
+                        "dd/MM/yyyy",
+                      );
                       if (!dateItemMap[dateKey]) {
                         dateItemMap[dateKey] = {};
                       }
                       const items = parseOrderItems(order.items);
-                      items.forEach(item => {
+                      items.forEach((item) => {
                         allItems.add(item.name);
-                        dateItemMap[dateKey][item.name] = (dateItemMap[dateKey][item.name] || 0) + item.quantity;
+                        dateItemMap[dateKey][item.name] =
+                          (dateItemMap[dateKey][item.name] || 0) +
+                          item.quantity;
                       });
                     });
 
-                    const sortedDates = Object.keys(dateItemMap).sort((a, b) => {
-                      const [dayA, monthA, yearA] = a.split('/').map(Number);
-                      const [dayB, monthB, yearB] = b.split('/').map(Number);
-                      return new Date(yearA, monthA - 1, dayA).getTime() - new Date(yearB, monthB - 1, dayB).getTime();
-                    });
+                    const sortedDates = Object.keys(dateItemMap).sort(
+                      (a, b) => {
+                        const [dayA, monthA, yearA] = a.split("/").map(Number);
+                        const [dayB, monthB, yearB] = b.split("/").map(Number);
+                        return (
+                          new Date(yearA, monthA - 1, dayA).getTime() -
+                          new Date(yearB, monthB - 1, dayB).getTime()
+                        );
+                      },
+                    );
 
                     const sortedItems = Array.from(allItems).sort();
 
                     const itemTotals: Record<string, number> = {};
-                    sortedItems.forEach(item => {
-                      itemTotals[item] = Object.values(dateItemMap).reduce((sum, dateData) => sum + (dateData[item] || 0), 0);
+                    sortedItems.forEach((item) => {
+                      itemTotals[item] = Object.values(dateItemMap).reduce(
+                        (sum, dateData) => sum + (dateData[item] || 0),
+                        0,
+                      );
                     });
 
                     if (filteredOrdersForReport.length === 0) {
@@ -1214,16 +1656,23 @@ export default function Orders() {
                     return (
                       <>
                         <div className="flex gap-2 mb-4">
-                          <Button 
-                            variant="outline" 
-                            onClick={() => exportReportToExcel(dateItemMap, sortedDates, sortedItems, itemTotals)}
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              exportReportToExcel(
+                                dateItemMap,
+                                sortedDates,
+                                sortedItems,
+                                itemTotals,
+                              )
+                            }
                             data-testid="button-export-excel"
                           >
                             <Download className="w-4 h-4 mr-2" />
                             Download Excel
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             onClick={exportReportToPDF}
                             data-testid="button-export-pdf"
                           >
@@ -1231,45 +1680,76 @@ export default function Orders() {
                             Download PDF
                           </Button>
                         </div>
-                        <div ref={reportTableRef} className="border rounded-lg overflow-auto bg-white p-4">
-                          <h3 className="text-lg font-bold mb-4">Item Quantity Report ({reportStartDate} to {reportEndDate})</h3>
+                        <div
+                          ref={reportTableRef}
+                          className="border rounded-lg overflow-auto bg-white p-4"
+                        >
+                          <h3 className="text-lg font-bold mb-4">
+                            Item Quantity Report ({reportStartDate} to{" "}
+                            {reportEndDate})
+                          </h3>
                           <Table>
-                          <TableHeader>
-                            <TableRow className="bg-muted/50">
-                              <TableHead className="font-bold sticky left-0 bg-muted/50 z-10">Item Name</TableHead>
-                              {sortedDates.map(date => (
-                                <TableHead key={date} className="text-center font-bold min-w-[100px]">{date}</TableHead>
+                            <TableHeader>
+                              <TableRow className="bg-muted/50">
+                                <TableHead className="font-bold sticky left-0 bg-muted/50 z-10">
+                                  Item Name
+                                </TableHead>
+                                {sortedDates.map((date) => (
+                                  <TableHead
+                                    key={date}
+                                    className="text-center font-bold min-w-[100px]"
+                                  >
+                                    {date}
+                                  </TableHead>
+                                ))}
+                                <TableHead className="text-center font-bold bg-primary/10 min-w-[100px]">
+                                  Total
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {sortedItems.map((itemName) => (
+                                <TableRow
+                                  key={itemName}
+                                  data-testid={`row-item-${itemName}`}
+                                >
+                                  <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">
+                                    {itemName}
+                                  </TableCell>
+                                  {sortedDates.map((date) => (
+                                    <TableCell
+                                      key={date}
+                                      className="text-center"
+                                    >
+                                      {dateItemMap[date][itemName] || "-"}
+                                    </TableCell>
+                                  ))}
+                                  <TableCell className="text-center font-bold bg-primary/10">
+                                    {itemTotals[itemName]}
+                                  </TableCell>
+                                </TableRow>
                               ))}
-                              <TableHead className="text-center font-bold bg-primary/10 min-w-[100px]">Total</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {sortedItems.map(itemName => (
-                              <TableRow key={itemName} data-testid={`row-item-${itemName}`}>
-                                <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">{itemName}</TableCell>
-                                {sortedDates.map(date => (
+                              <TableRow className="bg-muted/30 font-bold">
+                                <TableCell className="sticky left-0 bg-muted/30 z-10 border-r">
+                                  Daily Total
+                                </TableCell>
+                                {sortedDates.map((date) => (
                                   <TableCell key={date} className="text-center">
-                                    {dateItemMap[date][itemName] || "-"}
+                                    {Object.values(dateItemMap[date]).reduce(
+                                      (sum, qty) => sum + qty,
+                                      0,
+                                    )}
                                   </TableCell>
                                 ))}
-                                <TableCell className="text-center font-bold bg-primary/10">
-                                  {itemTotals[itemName]}
+                                <TableCell className="text-center bg-primary/20">
+                                  {Object.values(itemTotals).reduce(
+                                    (sum, qty) => sum + qty,
+                                    0,
+                                  )}
                                 </TableCell>
                               </TableRow>
-                            ))}
-                            <TableRow className="bg-muted/30 font-bold">
-                              <TableCell className="sticky left-0 bg-muted/30 z-10 border-r">Daily Total</TableCell>
-                              {sortedDates.map(date => (
-                                <TableCell key={date} className="text-center">
-                                  {Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0)}
-                                </TableCell>
-                              ))}
-                              <TableCell className="text-center bg-primary/20">
-                                {Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0)}
-                              </TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
+                            </TableBody>
+                          </Table>
                         </div>
                       </>
                     );
@@ -1284,13 +1764,16 @@ export default function Orders() {
       {printOrder && (
         <OrderReceipt
           order={printOrder}
-          client={clients?.find(c => c.id === printOrder.clientId)}
+          client={clients?.find((c) => c.id === printOrder.clientId)}
           onClose={() => setPrintOrder(null)}
         />
       )}
 
       {newCreatedOrder && (
-        <Dialog open={!!newCreatedOrder} onOpenChange={(open) => !open && setNewCreatedOrder(null)}>
+        <Dialog
+          open={!!newCreatedOrder}
+          onOpenChange={(open) => !open && setNewCreatedOrder(null)}
+        >
           <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -1298,19 +1781,35 @@ export default function Orders() {
                 Order Created - {newCreatedOrder.orderNumber}
               </DialogTitle>
               <DialogDescription>
-                Your order has been created. The PDF is being generated automatically.
+                Your order has been created. The PDF is being generated
+                automatically.
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-wrap gap-2 mb-4">
-              <Button onClick={generatePDF} variant="default" data-testid="button-download-pdf">
+              <Button
+                onClick={generatePDF}
+                variant="default"
+                data-testid="button-download-pdf"
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Download PDF
               </Button>
-              <Button onClick={() => generateWashingReceipt(newCreatedOrder)} variant="secondary" className="bg-orange-500 hover:bg-orange-600 text-white" data-testid="button-washing-receipt">
+              <Button
+                onClick={() => generateWashingReceipt(newCreatedOrder)}
+                variant="secondary"
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                data-testid="button-washing-receipt"
+              >
                 <Printer className="w-4 h-4 mr-2" />
                 Washing Receipt
               </Button>
-              <Button onClick={() => { setPrintOrder(newCreatedOrder); setNewCreatedOrder(null); }} variant="outline">
+              <Button
+                onClick={() => {
+                  setPrintOrder(newCreatedOrder);
+                  setNewCreatedOrder(null);
+                }}
+                variant="outline"
+              >
                 <Printer className="w-4 h-4 mr-2" />
                 Print Full
               </Button>
@@ -1319,50 +1818,194 @@ export default function Orders() {
               </Button>
             </div>
             <div ref={pdfReceiptRef} className="bg-white p-6 rounded-lg border">
-              <div style={{ fontFamily: 'Arial, sans-serif', color: '#333' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px', marginBottom: '30px', borderBottom: '2px solid #1e40af', paddingBottom: '20px' }}>
-                  <div style={{ width: '60px', height: '60px', background: '#1e40af', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" style={{ width: '36px', height: '36px' }}>
-                      <circle cx="12" cy="12" r="10" fill="white" fillOpacity="0.2"/>
-                      <circle cx="12" cy="12" r="3" fill="white"/>
+              <div style={{ fontFamily: "Arial, sans-serif", color: "#333" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "15px",
+                    marginBottom: "30px",
+                    borderBottom: "2px solid #1e40af",
+                    paddingBottom: "20px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      background: "#1e40af",
+                      borderRadius: "10px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="white"
+                      style={{ width: "36px", height: "36px" }}
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        fill="white"
+                        fillOpacity="0.2"
+                      />
+                      <circle cx="12" cy="12" r="3" fill="white" />
                     </svg>
                   </div>
                   <div>
-                    <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e40af', marginBottom: '6px' }}>Liquid Washes Laundry</div>
-                    <div style={{ fontSize: '11px', color: '#666', lineHeight: 1.5 }}>
-                      Centra Market D/109, Al Dhanna City, Al Ruwais<br />
-                      Abu Dhabi, UAE<br />
+                    <div
+                      style={{
+                        fontSize: "22px",
+                        fontWeight: "bold",
+                        color: "#1e40af",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Liquid Washes Laundry
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#666",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Centra Market D/109, Al Dhanna City, Al Ruwais
+                      <br />
+                      Abu Dhabi, UAE
+                      <br />
                       +971 50 123 4567
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', textAlign: 'center', margin: '20px 0', color: '#1e40af' }}>ORDER RECEIPT</div>
-                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e40af', textAlign: 'center', margin: '20px 0', padding: '10px', background: '#f3f4f6', borderRadius: '8px' }}>
+                <div
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    margin: "20px 0",
+                    color: "#1e40af",
+                  }}
+                >
+                  ORDER RECEIPT
+                </div>
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    color: "#1e40af",
+                    textAlign: "center",
+                    margin: "20px 0",
+                    padding: "10px",
+                    background: "#f3f4f6",
+                    borderRadius: "8px",
+                  }}
+                >
                   {newCreatedOrder.orderNumber}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                  <div style={{ width: '48%' }}>
-                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Client</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{clients?.find(c => c.id === newCreatedOrder.clientId)?.name || 'N/A'}</div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "15px",
+                  }}
+                >
+                  <div style={{ width: "48%" }}>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#666",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Client
+                    </div>
+                    <div style={{ fontSize: "14px", fontWeight: 500 }}>
+                      {clients?.find((c) => c.id === newCreatedOrder.clientId)
+                        ?.name || "N/A"}
+                    </div>
                   </div>
-                  <div style={{ width: '48%' }}>
-                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Date</div>
-                    <div style={{ fontSize: '14px', fontWeight: 500 }}>{format(new Date(newCreatedOrder.entryDate), "dd/MM/yyyy HH:mm")}</div>
+                  <div style={{ width: "48%" }}>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#666",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Date
+                    </div>
+                    <div style={{ fontSize: "14px", fontWeight: 500 }}>
+                      {format(
+                        new Date(newCreatedOrder.entryDate),
+                        "dd/MM/yyyy HH:mm",
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div style={{ margin: '20px 0', padding: '15px', background: '#f9fafb', borderRadius: '8px' }}>
-                  <div style={{ fontWeight: 600, marginBottom: '10px' }}>Items</div>
-                  <div style={{ fontSize: '14px' }}>{newCreatedOrder.items}</div>
+                <div
+                  style={{
+                    margin: "20px 0",
+                    padding: "15px",
+                    background: "#f9fafb",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: "10px" }}>
+                    Items
+                  </div>
+                  <div style={{ fontSize: "14px" }}>
+                    {newCreatedOrder.items}
+                  </div>
                 </div>
-                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e5e5e5' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '18px', fontWeight: 'bold', color: '#1e40af' }}>
+                <div
+                  style={{
+                    marginTop: "20px",
+                    paddingTop: "20px",
+                    borderTop: "2px solid #e5e5e5",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "8px 0",
+                      fontSize: "18px",
+                      fontWeight: "bold",
+                      color: "#1e40af",
+                    }}
+                  >
                     <span>Total Amount</span>
-                    <span>{parseFloat(newCreatedOrder.totalAmount).toFixed(2)} AED</span>
+                    <span>
+                      {parseFloat(newCreatedOrder.totalAmount).toFixed(2)} AED
+                    </span>
                   </div>
                 </div>
-                <div style={{ marginTop: '40px', textAlign: 'center', paddingTop: '20px', borderTop: '1px solid #e5e5e5' }}>
-                  <p style={{ fontSize: '12px', color: '#666' }}>Thank you for choosing Liquid Washes Laundry!</p>
-                  <p style={{ fontSize: '13px', fontWeight: 'bold', color: '#000', marginTop: '8px' }}>For Orders/Delivery: +971 50 123 4567</p>
+                <div
+                  style={{
+                    marginTop: "40px",
+                    textAlign: "center",
+                    paddingTop: "20px",
+                    borderTop: "1px solid #e5e5e5",
+                  }}
+                >
+                  <p style={{ fontSize: "12px", color: "#666" }}>
+                    Thank you for choosing Liquid Washes Laundry!
+                  </p>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: "bold",
+                      color: "#000",
+                      marginTop: "8px",
+                    }}
+                  >
+                    For Orders/Delivery: +971 50 123 4567
+                  </p>
                 </div>
               </div>
             </div>
@@ -1370,7 +2013,10 @@ export default function Orders() {
         </Dialog>
       )}
 
-      <Dialog open={!!packingPinDialog} onOpenChange={(open) => !open && setPackingPinDialog(null)}>
+      <Dialog
+        open={!!packingPinDialog}
+        onOpenChange={(open) => !open && setPackingPinDialog(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1395,11 +2041,11 @@ export default function Orders() {
               placeholder="Enter 5-digit PIN"
               value={packingPin}
               onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                const val = e.target.value.replace(/\D/g, "").slice(0, 5);
                 setPackingPin(val);
                 setPinError("");
               }}
-              onKeyDown={(e) => e.key === 'Enter' && submitPackingPin()}
+              onKeyDown={(e) => e.key === "Enter" && submitPackingPin()}
               className="text-center text-2xl tracking-widest"
               data-testid="input-packing-pin"
             />
@@ -1407,20 +2053,24 @@ export default function Orders() {
               <p className="text-sm text-destructive text-center">{pinError}</p>
             )}
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex-1"
                 onClick={() => setPackingPinDialog(null)}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 className="flex-1"
                 onClick={submitPackingPin}
-                disabled={packingPin.length !== 5 || verifyPinMutation.isPending}
+                disabled={
+                  packingPin.length !== 5 || verifyPinMutation.isPending
+                }
                 data-testid="button-submit-pin"
               >
-                {verifyPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {verifyPinMutation.isPending && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
                 Confirm
               </Button>
             </div>
@@ -1428,7 +2078,10 @@ export default function Orders() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!tagPinDialog} onOpenChange={(open) => !open && setTagPinDialog(null)}>
+      <Dialog
+        open={!!tagPinDialog}
+        onOpenChange={(open) => !open && setTagPinDialog(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1446,32 +2099,36 @@ export default function Orders() {
               placeholder="Enter 5-digit PIN"
               value={tagPin}
               onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                const val = e.target.value.replace(/\D/g, "").slice(0, 5);
                 setTagPin(val);
                 setTagPinError("");
               }}
-              onKeyDown={(e) => e.key === 'Enter' && submitTagPin()}
+              onKeyDown={(e) => e.key === "Enter" && submitTagPin()}
               className="text-center text-2xl tracking-widest"
               data-testid="input-tag-pin"
             />
             {tagPinError && (
-              <p className="text-sm text-destructive text-center">{tagPinError}</p>
+              <p className="text-sm text-destructive text-center">
+                {tagPinError}
+              </p>
             )}
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex-1"
                 onClick={() => setTagPinDialog(null)}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 className="flex-1 bg-orange-500 hover:bg-orange-600"
                 onClick={submitTagPin}
                 disabled={tagPin.length !== 5 || verifyTagPinMutation.isPending}
                 data-testid="button-submit-tag-pin"
               >
-                {verifyTagPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {verifyTagPinMutation.isPending && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
                 Confirm Tag
               </Button>
             </div>
@@ -1479,12 +2136,15 @@ export default function Orders() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deliveryPinDialog} onOpenChange={(open) => { 
-        if (!open) { 
-          setDeliveryPinDialog(null); 
-          clearDeliveryPhotos(); 
-        } 
-      }}>
+      <Dialog
+        open={!!deliveryPinDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeliveryPinDialog(null);
+            clearDeliveryPhotos();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1498,12 +2158,12 @@ export default function Orders() {
                 <Camera className="w-4 h-4" />
                 Delivery Photo (Optional)
               </Label>
-              
+
               {deliveryPhotoPreviews.length > 0 ? (
                 <div className="relative w-full">
-                  <img 
-                    src={deliveryPhotoPreviews[0]} 
-                    alt="Delivery proof" 
+                  <img
+                    src={deliveryPhotoPreviews[0]}
+                    alt="Delivery proof"
                     className="w-full h-32 object-cover rounded-lg border"
                   />
                   <Button
@@ -1519,7 +2179,9 @@ export default function Orders() {
               ) : (
                 <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                   <Camera className="w-6 h-6 text-muted-foreground mb-1" />
-                  <span className="text-xs text-muted-foreground">Click to add photo</span>
+                  <span className="text-xs text-muted-foreground">
+                    Click to add photo
+                  </span>
                   <input
                     type="file"
                     accept="image/*,.heic,.heif,.webp,.bmp,.gif,.png,.jpg,.jpeg"
@@ -1530,7 +2192,7 @@ export default function Orders() {
                 </label>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium">Enter Staff PIN</Label>
               <Input
@@ -1539,33 +2201,43 @@ export default function Orders() {
                 placeholder="Enter 5-digit PIN"
                 value={deliveryPin}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 5);
                   setDeliveryPin(val);
                   setDeliveryPinError("");
                 }}
-                onKeyDown={(e) => e.key === 'Enter' && submitDeliveryPin()}
+                onKeyDown={(e) => e.key === "Enter" && submitDeliveryPin()}
                 className="text-center text-2xl tracking-widest"
                 data-testid="input-delivery-pin"
               />
             </div>
             {deliveryPinError && (
-              <p className="text-sm text-destructive text-center">{deliveryPinError}</p>
+              <p className="text-sm text-destructive text-center">
+                {deliveryPinError}
+              </p>
             )}
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex-1"
-                onClick={() => { setDeliveryPinDialog(null); clearDeliveryPhotos(); }}
+                onClick={() => {
+                  setDeliveryPinDialog(null);
+                  clearDeliveryPhotos();
+                }}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 className="flex-1"
                 onClick={submitDeliveryPin}
-                disabled={deliveryPin.length !== 5 || verifyDeliveryPinMutation.isPending}
+                disabled={
+                  deliveryPin.length !== 5 ||
+                  verifyDeliveryPinMutation.isPending
+                }
                 data-testid="button-submit-delivery-pin"
               >
-                {verifyDeliveryPinMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {verifyDeliveryPinMutation.isPending && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
                 Confirm Delivery
               </Button>
             </div>
@@ -1573,7 +2245,10 @@ export default function Orders() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!viewPhotoOrder} onOpenChange={(open) => !open && setViewPhotoOrder(null)}>
+      <Dialog
+        open={!!viewPhotoOrder}
+        onOpenChange={(open) => !open && setViewPhotoOrder(null)}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1584,15 +2259,18 @@ export default function Orders() {
               Photos captured at delivery confirmation
             </DialogDescription>
           </DialogHeader>
-          {(viewPhotoOrder?.deliveryPhotos && viewPhotoOrder.deliveryPhotos.length > 0) || viewPhotoOrder?.deliveryPhoto ? (
+          {(viewPhotoOrder?.deliveryPhotos &&
+            viewPhotoOrder.deliveryPhotos.length > 0) ||
+          viewPhotoOrder?.deliveryPhoto ? (
             <div className="space-y-3">
-              {viewPhotoOrder?.deliveryPhotos && viewPhotoOrder.deliveryPhotos.length > 0 ? (
+              {viewPhotoOrder?.deliveryPhotos &&
+              viewPhotoOrder.deliveryPhotos.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3">
                   {viewPhotoOrder.deliveryPhotos.map((photo, index) => (
-                    <img 
+                    <img
                       key={index}
-                      src={photo} 
-                      alt={`Delivery proof ${index + 1}`} 
+                      src={photo}
+                      alt={`Delivery proof ${index + 1}`}
                       className="w-full max-h-[300px] rounded-lg object-contain border"
                       data-testid={`img-delivery-photo-${index}`}
                     />
@@ -1600,9 +2278,9 @@ export default function Orders() {
                 </div>
               ) : viewPhotoOrder?.deliveryPhoto ? (
                 <div className="flex justify-center">
-                  <img 
-                    src={viewPhotoOrder.deliveryPhoto} 
-                    alt="Delivery proof" 
+                  <img
+                    src={viewPhotoOrder.deliveryPhoto}
+                    alt="Delivery proof"
                     className="max-w-full max-h-[400px] rounded-lg object-contain"
                     data-testid="img-delivery-photo"
                   />
@@ -1615,8 +2293,8 @@ export default function Orders() {
               <p>No delivery photos available</p>
             </div>
           )}
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full"
             onClick={() => setViewPhotoOrder(null)}
           >
@@ -1641,22 +2319,36 @@ export default function Orders() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="text-muted-foreground">Client:</div>
-                <div className="font-medium">{clients?.find(c => c.id === selectedBill.clientId)?.name}</div>
-                
-                <div className="text-muted-foreground">Bill Date:</div>
-                <div className="font-medium">{format(new Date(selectedBill.billDate), "dd/MM/yyyy")}</div>
-                
-                <div className="text-muted-foreground">Total Amount:</div>
-                <div className="font-semibold">{parseFloat(selectedBill.amount).toFixed(2)} AED</div>
-                
-                <div className="text-muted-foreground">Paid Amount:</div>
-                <div className="font-medium text-green-600">{parseFloat(selectedBill.paidAmount || "0").toFixed(2)} AED</div>
-                
-                <div className="text-muted-foreground">Balance:</div>
-                <div className={`font-semibold ${(parseFloat(selectedBill.amount) - parseFloat(selectedBill.paidAmount || "0")) > 0 ? "text-destructive" : "text-green-600"}`}>
-                  {(parseFloat(selectedBill.amount) - parseFloat(selectedBill.paidAmount || "0")).toFixed(2)} AED
+                <div className="font-medium">
+                  {clients?.find((c) => c.id === selectedBill.clientId)?.name}
                 </div>
-                
+
+                <div className="text-muted-foreground">Bill Date:</div>
+                <div className="font-medium">
+                  {format(new Date(selectedBill.billDate), "dd/MM/yyyy")}
+                </div>
+
+                <div className="text-muted-foreground">Total Amount:</div>
+                <div className="font-semibold">
+                  {parseFloat(selectedBill.amount).toFixed(2)} AED
+                </div>
+
+                <div className="text-muted-foreground">Paid Amount:</div>
+                <div className="font-medium text-green-600">
+                  {parseFloat(selectedBill.paidAmount || "0").toFixed(2)} AED
+                </div>
+
+                <div className="text-muted-foreground">Balance:</div>
+                <div
+                  className={`font-semibold ${parseFloat(selectedBill.amount) - parseFloat(selectedBill.paidAmount || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                >
+                  {(
+                    parseFloat(selectedBill.amount) -
+                    parseFloat(selectedBill.paidAmount || "0")
+                  ).toFixed(2)}{" "}
+                  AED
+                </div>
+
                 <div className="text-muted-foreground">Status:</div>
                 <div>
                   {selectedBill.isPaid ? (
@@ -1666,23 +2358,25 @@ export default function Orders() {
                   )}
                 </div>
               </div>
-              
+
               {selectedBill.description && (
                 <div className="border-t pt-3">
-                  <div className="text-sm text-muted-foreground mb-1">Description:</div>
+                  <div className="text-sm text-muted-foreground mb-1">
+                    Description:
+                  </div>
                   <div className="text-sm">{selectedBill.description}</div>
                 </div>
               )}
-              
+
               <div className="flex gap-2 pt-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
                   onClick={() => setShowBillDialog(false)}
                 >
                   Close
                 </Button>
-                <Button 
+                <Button
                   className="flex-1"
                   onClick={() => {
                     setShowBillDialog(false);
@@ -1698,153 +2392,230 @@ export default function Orders() {
       </Dialog>
 
       {/* Delivery Invoice Dialog */}
-      {deliveryInvoiceOrder && (() => {
-        const invoiceClient = clients?.find(c => c.id === deliveryInvoiceOrder.clientId);
-        const clientUnpaidBills = bills?.filter(b => b.clientId === deliveryInvoiceOrder.clientId && !b.isPaid) || [];
-        const clientPreviousBalance = invoiceClient?.balance ? parseFloat(invoiceClient.balance) : 0;
-        const clientPendingBillsTotal = clientUnpaidBills.reduce((sum, b) => {
-          const billAmount = parseFloat(b.amount) || 0;
-          const paidAmount = parseFloat(b.paidAmount || "0") || 0;
-          return sum + (billAmount - paidAmount);
-        }, 0);
-        const orderItems = parseOrderItems(deliveryInvoiceOrder.items || "");
-        const orderBill = bills?.find(b => b.id === deliveryInvoiceOrder.billId);
-        const orderTotal = orderBill ? parseFloat(orderBill.amount) : deliveryInvoiceOrder.totalAmount ? parseFloat(String(deliveryInvoiceOrder.totalAmount)) : 0;
-        
-        return (
-          <Dialog open={true} onOpenChange={() => setDeliveryInvoiceOrder(null)}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Receipt className="w-5 h-5" />
-                  Delivery Invoice - Order #{deliveryInvoiceOrder.orderNumber}
-                </DialogTitle>
-                <DialogDescription>
-                  Order delivered successfully
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4" id="delivery-invoice-content">
-                {/* Header */}
-                <div className="text-center border-b pb-4">
-                  <h2 className="text-xl font-bold text-primary">Liquid Washes Laundry</h2>
-                  <p className="text-sm text-muted-foreground">Centra Market D/109, Al Dhanna City, Al Ruwais</p>
-                  <p className="text-sm text-muted-foreground">Abu Dhabi, UAE</p>
-                  <p className="text-sm font-medium">+971 50 123 4567</p>
-                </div>
+      {deliveryInvoiceOrder &&
+        (() => {
+          const invoiceClient = clients?.find(
+            (c) => c.id === deliveryInvoiceOrder.clientId,
+          );
+          const clientUnpaidBills =
+            bills?.filter(
+              (b) => b.clientId === deliveryInvoiceOrder.clientId && !b.isPaid,
+            ) || [];
+          const clientPreviousBalance = invoiceClient?.balance
+            ? parseFloat(invoiceClient.balance)
+            : 0;
+          const clientPendingBillsTotal = clientUnpaidBills.reduce((sum, b) => {
+            const billAmount = parseFloat(b.amount) || 0;
+            const paidAmount = parseFloat(b.paidAmount || "0") || 0;
+            return sum + (billAmount - paidAmount);
+          }, 0);
+          const orderItems = parseOrderItems(deliveryInvoiceOrder.items || "");
+          const orderBill = bills?.find(
+            (b) => b.id === deliveryInvoiceOrder.billId,
+          );
+          const orderTotal = orderBill
+            ? parseFloat(orderBill.amount)
+            : deliveryInvoiceOrder.totalAmount
+              ? parseFloat(String(deliveryInvoiceOrder.totalAmount))
+              : 0;
 
-                {/* Invoice Info */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
+          return (
+            <Dialog
+              open={true}
+              onOpenChange={() => setDeliveryInvoiceOrder(null)}
+            >
+              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Receipt className="w-5 h-5" />
+                    Delivery Invoice - Order #{deliveryInvoiceOrder.orderNumber}
+                  </DialogTitle>
+                  <DialogDescription>
+                    Order delivered successfully
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4" id="delivery-invoice-content">
+                  {/* Header */}
+                  <div className="text-center border-b pb-4">
+                    <h2 className="text-xl font-bold text-primary">
+                      Liquid Washes Laundry
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Centra Market D/109, Al Dhanna City, Al Ruwais
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Abu Dhabi, UAE
+                    </p>
+                    <p className="text-sm font-medium">+971 50 123 4567</p>
+                  </div>
+
+                  {/* Invoice Info */}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Invoice No:</p>
+                      <p className="font-semibold">
+                        INV-{deliveryInvoiceOrder.orderNumber}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-muted-foreground">Date:</p>
+                      <p className="font-semibold">
+                        {format(new Date(), "dd/MM/yyyy HH:mm")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Client Info */}
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground">Bill To:</p>
+                    <p className="font-semibold">
+                      {invoiceClient?.name || "Unknown Client"}
+                    </p>
+                    {invoiceClient?.phone && (
+                      <p className="text-sm">{invoiceClient.phone}</p>
+                    )}
+                    {invoiceClient?.address && (
+                      <p className="text-sm text-muted-foreground">
+                        {invoiceClient.address}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Items Table */}
                   <div>
-                    <p className="text-muted-foreground">Invoice No:</p>
-                    <p className="font-semibold">INV-{deliveryInvoiceOrder.orderNumber}</p>
+                    <h3 className="font-semibold mb-2">Items</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead>Item</TableHead>
+                          <TableHead className="text-center">Qty</TableHead>
+                          <TableHead className="text-right">Price</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orderItems.map((item, index) => {
+                          const product = products?.find(
+                            (p) =>
+                              p.name.toLowerCase() === item.name.toLowerCase(),
+                          );
+                          const unitPrice = product
+                            ? parseFloat(product.price || "0")
+                            : 0;
+                          const itemTotal = unitPrice * item.quantity;
+                          return (
+                            <TableRow key={index}>
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell className="font-medium">
+                                {item.name}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {item.quantity}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {unitPrice.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {itemTotal.toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
                   </div>
-                  <div className="text-right">
-                    <p className="text-muted-foreground">Date:</p>
-                    <p className="font-semibold">{format(new Date(), "dd/MM/yyyy HH:mm")}</p>
-                  </div>
-                </div>
 
-                {/* Client Info */}
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm text-muted-foreground">Bill To:</p>
-                  <p className="font-semibold">{invoiceClient?.name || "Unknown Client"}</p>
-                  {invoiceClient?.phone && <p className="text-sm">{invoiceClient.phone}</p>}
-                  {invoiceClient?.address && <p className="text-sm text-muted-foreground">{invoiceClient.address}</p>}
-                </div>
-
-                {/* Items Table */}
-                <div>
-                  <h3 className="font-semibold mb-2">Items</h3>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Item</TableHead>
-                        <TableHead className="text-center">Qty</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {orderItems.map((item, index) => {
-                        const product = products?.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-                        const unitPrice = product ? parseFloat(product.price || "0") : 0;
-                        const itemTotal = unitPrice * item.quantity;
-                        return (
-                          <TableRow key={index}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell className="text-center">{item.quantity}</TableCell>
-                            <TableCell className="text-right">{unitPrice.toFixed(2)}</TableCell>
-                            <TableCell className="text-right">{itemTotal.toFixed(2)}</TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Totals */}
-                <div className="border-t pt-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Order Total:</span>
-                    <span className="font-semibold">{orderTotal.toFixed(2)} AED</span>
-                  </div>
-                  {orderBill && (
+                  {/* Totals */}
+                  <div className="border-t pt-3 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Paid Amount:</span>
-                      <span className="text-green-600">{parseFloat(orderBill.paidAmount || "0").toFixed(2)} AED</span>
+                      <span>Order Total:</span>
+                      <span className="font-semibold">
+                        {orderTotal.toFixed(2)} AED
+                      </span>
+                    </div>
+                    {orderBill && (
+                      <div className="flex justify-between text-sm">
+                        <span>Paid Amount:</span>
+                        <span className="text-green-600">
+                          {parseFloat(orderBill.paidAmount || "0").toFixed(2)}{" "}
+                          AED
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Client Due Summary */}
+                  {(clientUnpaidBills.length > 0 ||
+                    clientPreviousBalance > 0) && (
+                    <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 space-y-2">
+                      <h4 className="font-semibold text-orange-700 dark:text-orange-400">
+                        Outstanding Balance
+                      </h4>
+                      {clientPreviousBalance > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>Previous Balance:</span>
+                          <span className="font-medium">
+                            {clientPreviousBalance.toFixed(2)} AED
+                          </span>
+                        </div>
+                      )}
+                      {clientUnpaidBills.length > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>
+                            Pending Bills ({clientUnpaidBills.length}):
+                          </span>
+                          <span className="font-medium">
+                            {clientPendingBillsTotal.toFixed(2)} AED
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold text-orange-700 dark:text-orange-400 border-t border-orange-200 dark:border-orange-700 pt-2">
+                        <span>Total Due:</span>
+                        <span>
+                          {(
+                            clientPreviousBalance + clientPendingBillsTotal
+                          ).toFixed(2)}{" "}
+                          AED
+                        </span>
+                      </div>
                     </div>
                   )}
-                </div>
 
-                {/* Client Due Summary */}
-                {(clientUnpaidBills.length > 0 || clientPreviousBalance > 0) && (
-                  <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 space-y-2">
-                    <h4 className="font-semibold text-orange-700 dark:text-orange-400">Outstanding Balance</h4>
-                    {clientPreviousBalance > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span>Previous Balance:</span>
-                        <span className="font-medium">{clientPreviousBalance.toFixed(2)} AED</span>
-                      </div>
-                    )}
-                    {clientUnpaidBills.length > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span>Pending Bills ({clientUnpaidBills.length}):</span>
-                        <span className="font-medium">{clientPendingBillsTotal.toFixed(2)} AED</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-semibold text-orange-700 dark:text-orange-400 border-t border-orange-200 dark:border-orange-700 pt-2">
-                      <span>Total Due:</span>
-                      <span>{(clientPreviousBalance + clientPendingBillsTotal).toFixed(2)} AED</span>
-                    </div>
+                  {/* Delivery Info */}
+                  <div className="text-sm text-muted-foreground border-t pt-3">
+                    <p>
+                      Delivered by: {deliveryInvoiceOrder.deliveryBy || "Staff"}
+                    </p>
+                    <p>
+                      Delivery Date: {format(new Date(), "dd/MM/yyyy HH:mm")}
+                    </p>
                   </div>
-                )}
 
-                {/* Delivery Info */}
-                <div className="text-sm text-muted-foreground border-t pt-3">
-                  <p>Delivered by: {deliveryInvoiceOrder.deliveryBy || "Staff"}</p>
-                  <p>Delivery Date: {format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+                  {/* Footer */}
+                  <div className="text-center text-sm text-muted-foreground border-t pt-3">
+                    <p>Thank you for your business!</p>
+                    <p>For inquiries: +971 50 123 4567</p>
+                  </div>
                 </div>
 
-                {/* Footer */}
-                <div className="text-center text-sm text-muted-foreground border-t pt-3">
-                  <p>Thank you for your business!</p>
-                  <p>For inquiries: +971 50 123 4567</p>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    const content = document.getElementById('delivery-invoice-content');
-                    if (content) {
-                      const printWindow = window.open("", "_blank", "width=800,height=600");
-                      if (printWindow) {
-                        printWindow.document.write(`
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      const content = document.getElementById(
+                        "delivery-invoice-content",
+                      );
+                      if (content) {
+                        const printWindow = window.open(
+                          "",
+                          "_blank",
+                          "width=800,height=600",
+                        );
+                        if (printWindow) {
+                          printWindow.document.write(`
                           <!DOCTYPE html>
                           <html>
                           <head>
@@ -1883,37 +2654,47 @@ export default function Orders() {
                           <body>${content.innerHTML}</body>
                           </html>
                         `);
-                        printWindow.document.close();
-                        printWindow.focus();
-                        setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
+                          printWindow.document.close();
+                          printWindow.focus();
+                          setTimeout(() => {
+                            printWindow.print();
+                            printWindow.close();
+                          }, 250);
+                        }
                       }
-                    }
-                  }}
-                  data-testid="button-print-delivery-invoice"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => setDeliveryInvoiceOrder(null)}
-                  data-testid="button-close-delivery-invoice"
-                >
-                  Done
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        );
-      })()}
+                    }}
+                    data-testid="button-print-delivery-invoice"
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={() => setDeliveryInvoiceOrder(null)}
+                    data-testid="button-close-delivery-invoice"
+                  >
+                    Done
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          );
+        })()}
     </div>
   );
 }
 
-function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initialBillId }: { 
-  clients: Client[]; 
+function OrderForm({
+  clients,
+  bills,
+  onSubmit,
+  isLoading,
+  initialClientId,
+  initialBillId,
+}: {
+  clients: Client[];
   bills: Bill[];
-  onSubmit: (data: any) => void; 
+  onSubmit: (data: any) => void;
   isLoading: boolean;
   initialClientId?: string;
   initialBillId?: string;
@@ -1925,6 +2706,8 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
     notes: "",
     billOption: (initialBillId ? "existing" : "new") as "new" | "existing",
     selectedBillId: initialBillId || "",
+    customerName: "",
+    customerPhone: "",
   });
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [productSearch, setProductSearch] = useState("");
@@ -1933,12 +2716,14 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
     queryKey: ["/api/products"],
   });
 
-  const selectedClient = clients.find(c => c.id === parseInt(formData.clientId));
-  
+  const selectedClient = clients.find(
+    (c) => c.id === parseInt(formData.clientId),
+  );
+
   const clientUnpaidBills = useMemo(() => {
     if (!formData.clientId || !bills) return [];
     const clientId = parseInt(formData.clientId);
-    return bills.filter(b => b.clientId === clientId && !b.isPaid);
+    return bills.filter((b) => b.clientId === clientId && !b.isPaid);
   }, [formData.clientId, bills]);
 
   const clientTotalDue = useMemo(() => {
@@ -1949,12 +2734,12 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
     }, 0);
   }, [clientUnpaidBills]);
 
-  const filteredProducts = products?.filter(p => 
-    p.name.toLowerCase().includes(productSearch.toLowerCase())
+  const filteredProducts = products?.filter((p) =>
+    p.name.toLowerCase().includes(productSearch.toLowerCase()),
   );
 
   const handleQuantityChange = (productId: number, delta: number) => {
-    setQuantities(prev => {
+    setQuantities((prev) => {
       const current = prev[productId] || 0;
       const newQty = Math.max(0, current + delta);
       if (newQty === 0) {
@@ -1967,7 +2752,7 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
 
   const handleManualQuantity = (productId: number, value: string) => {
     const qty = parseInt(value) || 0;
-    setQuantities(prev => {
+    setQuantities((prev) => {
       if (qty <= 0) {
         const { [productId]: _, ...rest } = prev;
         return rest;
@@ -1981,7 +2766,7 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
     return Object.entries(quantities)
       .filter(([_, qty]) => qty > 0)
       .map(([productId, qty]) => {
-        const product = products.find(p => p.id === parseInt(productId));
+        const product = products.find((p) => p.id === parseInt(productId));
         return product ? { product, quantity: qty } : null;
       })
       .filter(Boolean) as { product: Product; quantity: number }[];
@@ -1989,21 +2774,24 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
 
   const orderTotal = useMemo(() => {
     return orderItems.reduce((sum, item) => {
-      return sum + (parseFloat(item.product.price || "0") * item.quantity);
+      return sum + parseFloat(item.product.price || "0") * item.quantity;
     }, 0);
   }, [orderItems]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.clientId || orderItems.length === 0) return;
-    
-    const itemsText = orderItems.map(item => `${item.quantity}x ${item.product.name}`).join(", ");
+
+    const itemsText = orderItems
+      .map((item) => `${item.quantity}x ${item.product.name}`)
+      .join(", ");
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
-    
-    const billId = formData.billOption === "existing" && formData.selectedBillId 
-      ? parseInt(formData.selectedBillId) 
-      : null;
-    
+
+    const billId =
+      formData.billOption === "existing" && formData.selectedBillId
+        ? parseInt(formData.selectedBillId)
+        : null;
+
     onSubmit({
       ...formData,
       clientId: parseInt(formData.clientId),
@@ -2012,16 +2800,32 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
       items: itemsText,
       totalAmount: orderTotal.toFixed(2),
       entryDate: new Date().toISOString(),
+      customerName: formData.customerName,
+      customerPhone: formData.customerPhone,
       expectedDeliveryAt: formData.expectedDeliveryAt || null,
       createNewBill: formData.billOption === "new",
     });
   };
 
+  function handleClientChange(clientId: string) {
+    const client = clients.find((c) => c.id === parseInt(clientId));
+    setFormData({
+      ...formData,
+      clientId,
+      selectedBillId: "",
+      billOption: "new",
+      customerName: client?.name || "",
+      customerPhone: client?.phone || "",
+    });
+  }
+  useEffect(() => {
+    console.log("Form Data Updated:", formData);
+  }, [formData]); // This runs every time formData changes
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label>Client</Label>
-        <Select value={formData.clientId} onValueChange={(v) => setFormData({ ...formData, clientId: v, selectedBillId: "", billOption: "new" })}>
+        <Select value={formData.clientId} onValueChange={handleClientChange}>
           <SelectTrigger data-testid="select-client">
             <SelectValue placeholder="Select client" />
           </SelectTrigger>
@@ -2039,20 +2843,33 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
         <div className="p-3 border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-orange-600" />
-            <span className="font-medium text-orange-700 dark:text-orange-400">Client has due bills</span>
+            <span className="font-medium text-orange-700 dark:text-orange-400">
+              Client has due bills
+            </span>
           </div>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-muted-foreground">{clientUnpaidBills.length} unpaid bill(s)</span>
-            <span className="font-bold text-orange-600">{clientTotalDue.toFixed(2)} AED</span>
+            <span className="text-sm text-muted-foreground">
+              {clientUnpaidBills.length} unpaid bill(s)
+            </span>
+            <span className="font-bold text-orange-600">
+              {clientTotalDue.toFixed(2)} AED
+            </span>
           </div>
           <div className="space-y-2 max-h-24 overflow-auto">
-            {clientUnpaidBills.map(bill => (
-              <div key={bill.id} className="flex justify-between items-center text-sm bg-white/50 dark:bg-black/20 rounded px-2 py-1">
+            {clientUnpaidBills.map((bill) => (
+              <div
+                key={bill.id}
+                className="flex justify-between items-center text-sm bg-white/50 dark:bg-black/20 rounded px-2 py-1"
+              >
                 <span className="text-muted-foreground">
-                  Bill #{bill.referenceNumber || bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")}
+                  Bill #{bill.referenceNumber || bill.id} -{" "}
+                  {format(new Date(bill.billDate), "dd/MM/yy")}
                 </span>
                 <span className="font-medium text-orange-600">
-                  {(parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0")).toFixed(2)} AED
+                  {(
+                    parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0")
+                  ).toFixed(2)}{" "}
+                  AED
                 </span>
               </div>
             ))}
@@ -2068,7 +2885,13 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
               type="button"
               variant={formData.billOption === "new" ? "default" : "outline"}
               size="sm"
-              onClick={() => setFormData({ ...formData, billOption: "new", selectedBillId: "" })}
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  billOption: "new",
+                  selectedBillId: "",
+                })
+              }
               data-testid="button-new-bill"
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -2076,9 +2899,13 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
             </Button>
             <Button
               type="button"
-              variant={formData.billOption === "existing" ? "default" : "outline"}
+              variant={
+                formData.billOption === "existing" ? "default" : "outline"
+              }
               size="sm"
-              onClick={() => setFormData({ ...formData, billOption: "existing" })}
+              onClick={() =>
+                setFormData({ ...formData, billOption: "existing" })
+              }
               data-testid="button-existing-bill"
             >
               <Receipt className="w-4 h-4 mr-1" />
@@ -2086,14 +2913,25 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
             </Button>
           </div>
           {formData.billOption === "existing" && (
-            <Select value={formData.selectedBillId} onValueChange={(v) => setFormData({ ...formData, selectedBillId: v })}>
+            <Select
+              value={formData.selectedBillId}
+              onValueChange={(v) =>
+                setFormData({ ...formData, selectedBillId: v })
+              }
+            >
               <SelectTrigger data-testid="select-existing-bill">
                 <SelectValue placeholder="Select unpaid bill" />
               </SelectTrigger>
               <SelectContent className="z-[100]">
-                {clientUnpaidBills.map(bill => (
+                {clientUnpaidBills.map((bill) => (
                   <SelectItem key={bill.id} value={bill.id.toString()}>
-                    Bill #{bill.referenceNumber || bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")} ({(parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0")).toFixed(2)} AED due)
+                    Bill #{bill.referenceNumber || bill.id} -{" "}
+                    {format(new Date(bill.billDate), "dd/MM/yy")} (
+                    {(
+                      parseFloat(bill.amount) -
+                      parseFloat(bill.paidAmount || "0")
+                    ).toFixed(2)}{" "}
+                    AED due)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -2122,10 +2960,17 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
             </TableHeader>
             <TableBody>
               {filteredProducts?.map((product) => (
-                <TableRow key={product.id} className={quantities[product.id] ? "bg-primary/5" : ""}>
-                  <TableCell className="font-medium text-sm">{product.name}</TableCell>
+                <TableRow
+                  key={product.id}
+                  className={quantities[product.id] ? "bg-primary/5" : ""}
+                >
+                  <TableCell className="font-medium text-sm">
+                    {product.name}
+                  </TableCell>
                   <TableCell className="text-right text-sm text-primary font-semibold">
-                    {product.price ? `${parseFloat(product.price).toFixed(0)}` : "-"}
+                    {product.price
+                      ? `${parseFloat(product.price).toFixed(0)}`
+                      : "-"}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-1">
@@ -2143,7 +2988,9 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
                         type="number"
                         min="0"
                         value={quantities[product.id] || ""}
-                        onChange={(e) => handleManualQuantity(product.id, e.target.value)}
+                        onChange={(e) =>
+                          handleManualQuantity(product.id, e.target.value)
+                        }
                         className="w-12 h-7 text-center text-sm font-bold p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0"
                         data-testid={`input-qty-${product.id}`}
@@ -2169,11 +3016,17 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
       {orderItems.length > 0 && (
         <div className="p-3 bg-primary/5 rounded-lg border">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium">{orderItems.length} item(s) selected</span>
-            <span className="text-lg font-bold text-primary">{orderTotal.toFixed(2)} AED</span>
+            <span className="text-sm font-medium">
+              {orderItems.length} item(s) selected
+            </span>
+            <span className="text-lg font-bold text-primary">
+              {orderTotal.toFixed(2)} AED
+            </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {orderItems.map(item => `${item.quantity}x ${item.product.name}`).join(", ")}
+            {orderItems
+              .map((item) => `${item.quantity}x ${item.product.name}`)
+              .join(", ")}
           </p>
         </div>
       )}
@@ -2181,7 +3034,10 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Delivery Type</Label>
-          <Select value={formData.deliveryType} onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}>
+          <Select
+            value={formData.deliveryType}
+            onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}
+          >
             <SelectTrigger data-testid="select-delivery-type">
               <SelectValue />
             </SelectTrigger>
@@ -2192,13 +3048,15 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
           </Select>
         </div>
 
-        {formData.deliveryType === 'delivery' && (
+        {formData.deliveryType === "delivery" && (
           <div className="space-y-2">
             <Label>Expected Delivery</Label>
             <Input
               type="datetime-local"
               value={formData.expectedDeliveryAt}
-              onChange={(e) => setFormData({ ...formData, expectedDeliveryAt: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, expectedDeliveryAt: e.target.value })
+              }
               data-testid="input-delivery-time"
             />
           </div>
@@ -2215,17 +3073,24 @@ function OrderForm({ clients, bills, onSubmit, isLoading, initialClientId, initi
         />
       </div>
 
-      <Button 
-        type="submit" 
-        className="w-full" 
-        disabled={isLoading || !formData.clientId || orderItems.length === 0 || (formData.billOption === "existing" && !formData.selectedBillId)} 
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={
+          isLoading ||
+          !formData.clientId ||
+          orderItems.length === 0 ||
+          (formData.billOption === "existing" && !formData.selectedBillId)
+        }
         data-testid="button-submit-order"
       >
         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Create Order ({orderTotal.toFixed(2)} AED)
       </Button>
       {formData.billOption === "existing" && !formData.selectedBillId && (
-        <p className="text-sm text-orange-600 text-center">Please select an existing bill to attach this order to</p>
+        <p className="text-sm text-orange-600 text-center">
+          Please select an existing bill to attach this order to
+        </p>
       )}
     </form>
   );
