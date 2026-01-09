@@ -232,6 +232,7 @@ export default function Orders() {
       queryClient.invalidateQueries({
         queryKey: ["/api/products/allocated-stock"],
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] }); // Refresh products to show updated stock
       setIsCreateOpen(false);
       setPrefilledClientId(undefined);
       setPrefilledBillId(undefined);
@@ -2036,17 +2037,20 @@ export default function Orders() {
               data-testid="input-packing-notes"
             />
             <Input
-              type="password"
+              id="packing-pin" // Good practice to have an ID
+              type="tel" // Changed to 'tel' to stop password managers
               maxLength={5}
               placeholder="Enter 5-digit PIN"
               value={packingPin}
+              autoComplete="off" // Prevents autofill suggestions
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, "").slice(0, 5);
                 setPackingPin(val);
                 setPinError("");
               }}
               onKeyDown={(e) => e.key === "Enter" && submitPackingPin()}
-              className="text-center text-2xl tracking-widest"
+              // Added [-webkit-text-security:disc] to mask the input
+              className="text-center text-2xl tracking-widest [-webkit-text-security:disc]"
               data-testid="input-packing-pin"
             />
             {pinError && (
@@ -2094,17 +2098,19 @@ export default function Orders() {
               Enter your PIN to confirm all tags are done for this order.
             </p>
             <Input
-              type="password"
+              id="tag-pin"
+              type="tel"
               maxLength={5}
               placeholder="Enter 5-digit PIN"
               value={tagPin}
+              autoComplete="off"
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, "").slice(0, 5);
                 setTagPin(val);
                 setTagPinError("");
               }}
               onKeyDown={(e) => e.key === "Enter" && submitTagPin()}
-              className="text-center text-2xl tracking-widest"
+              className="text-center text-2xl tracking-widest [-webkit-text-security:disc]"
               data-testid="input-tag-pin"
             />
             {tagPinError && (
@@ -2196,17 +2202,19 @@ export default function Orders() {
             <div className="space-y-2">
               <Label className="text-sm font-medium">Enter Staff PIN</Label>
               <Input
-                type="password"
+                id="delivery-pin"
+                type="tel"
                 maxLength={5}
                 placeholder="Enter 5-digit PIN"
                 value={deliveryPin}
+                autoComplete="off"
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "").slice(0, 5);
                   setDeliveryPin(val);
                   setDeliveryPinError("");
                 }}
                 onKeyDown={(e) => e.key === "Enter" && submitDeliveryPin()}
-                className="text-center text-2xl tracking-widest"
+                className="text-center text-2xl tracking-widest [-webkit-text-security:disc]"
                 data-testid="input-delivery-pin"
               />
             </div>

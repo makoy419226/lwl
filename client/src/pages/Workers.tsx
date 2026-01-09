@@ -5,15 +5,64 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Users, Pencil, Trash2, Package, Truck, Search, Calendar, BarChart3, Tag, ClipboardList, FileSpreadsheet, FileText, Receipt, UserCog, Mail, Lock, Key } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Loader2,
+  Plus,
+  Users,
+  Pencil,
+  Trash2,
+  Package,
+  Truck,
+  Search,
+  Calendar,
+  BarChart3,
+  Tag,
+  ClipboardList,
+  FileSpreadsheet,
+  FileText,
+  Receipt,
+  UserCog,
+  Mail,
+  Lock,
+  Key,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import {
+  format,
+  startOfDay,
+  endOfDay,
+  subDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  parseISO,
+} from "date-fns";
 import type { Order, Bill } from "@shared/schema";
 import * as XLSX from "xlsx";
 import html2pdf from "html2pdf.js";
@@ -46,7 +95,13 @@ export default function Workers() {
 
   const [isUserCreateOpen, setIsUserCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<SystemUser | null>(null);
-  const [userFormData, setUserFormData] = useState({ username: "", password: "", name: "", email: "", role: "cashier" });
+  const [userFormData, setUserFormData] = useState({
+    username: "",
+    password: "",
+    name: "",
+    email: "",
+    role: "cashier",
+  });
 
   const { data: workers, isLoading } = useQuery<PackingWorker[]>({
     queryKey: ["/api/packing-workers"],
@@ -60,7 +115,9 @@ export default function Workers() {
     queryKey: ["/api/bills"],
   });
 
-  const { data: systemUsers, isLoading: isLoadingUsers } = useQuery<SystemUser[]>({
+  const { data: systemUsers, isLoading: isLoadingUsers } = useQuery<
+    SystemUser[]
+  >({
     queryKey: ["/api/users"],
   });
 
@@ -78,7 +135,10 @@ export default function Workers() {
         return { start: startOfMonth(now), end: endOfMonth(now) };
       case "custom":
         if (customFromDate && customToDate) {
-          return { start: startOfDay(parseISO(customFromDate)), end: endOfDay(parseISO(customToDate)) };
+          return {
+            start: startOfDay(parseISO(customFromDate)),
+            end: endOfDay(parseISO(customToDate)),
+          };
         }
         return { start: startOfDay(now), end: endOfDay(now) };
       case "all":
@@ -90,66 +150,87 @@ export default function Workers() {
   const workerStats = useMemo(() => {
     if (!workers || !orders) return [];
     const { start, end } = getDateRange();
-    
-    return workers.map(worker => {
-      const taggedOrders = orders.filter(o => {
-        if (o.tagWorkerId !== worker.id) return false;
-        if (!o.tagDate) return false;
-        try {
-          const tagDate = new Date(o.tagDate);
-          return tagDate >= start && tagDate <= end;
-        } catch { return false; }
-      });
-      
-      const packedOrders = orders.filter(o => {
-        if (o.packingWorkerId !== worker.id) return false;
-        if (!o.packingDate) return false;
-        try {
-          const packDate = new Date(o.packingDate);
-          return packDate >= start && packDate <= end;
-        } catch { return false; }
-      });
-      
-      const deliveredOrders = orders.filter(o => {
-        if (o.deliveredByWorkerId !== worker.id) return false;
-        if (!o.deliveryDate) return false;
-        try {
-          const delDate = new Date(o.deliveryDate);
-          return delDate >= start && delDate <= end;
-        } catch { return false; }
-      });
 
-      const createdBills = bills?.filter(b => {
-        if (b.createdByWorkerId !== worker.id) return false;
-        if (!b.billDate) return false;
-        try {
-          const billDate = new Date(b.billDate);
-          return billDate >= start && billDate <= end;
-        } catch { return false; }
-      }) || [];
+    return workers
+      .map((worker) => {
+        const taggedOrders = orders.filter((o) => {
+          if (o.tagWorkerId !== worker.id) return false;
+          if (!o.tagDate) return false;
+          try {
+            const tagDate = new Date(o.tagDate);
+            return tagDate >= start && tagDate <= end;
+          } catch {
+            return false;
+          }
+        });
 
-      const billsTotal = createdBills.reduce((sum, b) => sum + parseFloat(b.amount || "0"), 0);
-      
-      return {
-        worker,
-        taggedCount: taggedOrders.length,
-        packedCount: packedOrders.length,
-        deliveredCount: deliveredOrders.length,
-        billsCreated: createdBills.length,
-        billsTotal,
-        totalTasks: taggedOrders.length + packedOrders.length + deliveredOrders.length + createdBills.length
-      };
-    }).sort((a, b) => b.totalTasks - a.totalTasks);
+        const packedOrders = orders.filter((o) => {
+          if (o.packingWorkerId !== worker.id) return false;
+          if (!o.packingDate) return false;
+          try {
+            const packDate = new Date(o.packingDate);
+            return packDate >= start && packDate <= end;
+          } catch {
+            return false;
+          }
+        });
+
+        const deliveredOrders = orders.filter((o) => {
+          if (o.deliveredByWorkerId !== worker.id) return false;
+          if (!o.deliveryDate) return false;
+          try {
+            const delDate = new Date(o.deliveryDate);
+            return delDate >= start && delDate <= end;
+          } catch {
+            return false;
+          }
+        });
+
+        const createdBills =
+          bills?.filter((b) => {
+            if (b.createdByWorkerId !== worker.id) return false;
+            if (!b.billDate) return false;
+            try {
+              const billDate = new Date(b.billDate);
+              return billDate >= start && billDate <= end;
+            } catch {
+              return false;
+            }
+          }) || [];
+
+        const billsTotal = createdBills.reduce(
+          (sum, b) => sum + parseFloat(b.amount || "0"),
+          0,
+        );
+
+        return {
+          worker,
+          taggedCount: taggedOrders.length,
+          packedCount: packedOrders.length,
+          deliveredCount: deliveredOrders.length,
+          billsCreated: createdBills.length,
+          billsTotal,
+          totalTasks:
+            taggedOrders.length +
+            packedOrders.length +
+            deliveredOrders.length +
+            createdBills.length,
+        };
+      })
+      .sort((a, b) => b.totalTasks - a.totalTasks);
   }, [workers, orders, bills, dateFilter, customFromDate, customToDate]);
 
   const totals = useMemo(() => {
-    return workerStats.reduce((acc, s) => ({
-      tagged: acc.tagged + s.taggedCount,
-      packed: acc.packed + s.packedCount,
-      delivered: acc.delivered + s.deliveredCount,
-      billsCreated: acc.billsCreated + s.billsCreated,
-      billsTotal: acc.billsTotal + s.billsTotal
-    }), { tagged: 0, packed: 0, delivered: 0, billsCreated: 0, billsTotal: 0 });
+    return workerStats.reduce(
+      (acc, s) => ({
+        tagged: acc.tagged + s.taggedCount,
+        packed: acc.packed + s.packedCount,
+        delivered: acc.delivered + s.deliveredCount,
+        billsCreated: acc.billsCreated + s.billsCreated,
+        billsTotal: acc.billsTotal + s.billsTotal,
+      }),
+      { tagged: 0, packed: 0, delivered: 0, billsCreated: 0, billsTotal: 0 },
+    );
   }, [workerStats]);
 
   const getDateRangeLabel = () => {
@@ -158,26 +239,27 @@ export default function Workers() {
   };
 
   const exportToExcel = () => {
-    const data = filteredStats.map(s => ({
+    const data = filteredStats.map((s) => ({
       "Staff Name": s.worker.name,
-      "Status": s.worker.active ? "Active" : "Inactive",
+      Status: s.worker.active ? "Active" : "Inactive",
       "Tags Done": s.taggedCount,
       "Packing Done": s.packedCount,
-      "Deliveries": s.deliveredCount,
+      Deliveries: s.deliveredCount,
       "Bills Created": s.billsCreated,
       "Bills Total (AED)": s.billsTotal.toFixed(2),
-      "Total Tasks": s.totalTasks
+      "Total Tasks": s.totalTasks,
     }));
 
     data.push({
       "Staff Name": "TOTAL",
-      "Status": "",
+      Status: "",
       "Tags Done": totals.tagged,
       "Packing Done": totals.packed,
-      "Deliveries": totals.delivered,
+      Deliveries: totals.delivered,
       "Bills Created": totals.billsCreated,
       "Bills Total (AED)": totals.billsTotal.toFixed(2),
-      "Total Tasks": totals.tagged + totals.packed + totals.delivered + totals.billsCreated
+      "Total Tasks":
+        totals.tagged + totals.packed + totals.delivered + totals.billsCreated,
     });
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -197,7 +279,7 @@ export default function Workers() {
           <div style="font-size: 14px; margin-top: 5px; font-weight: bold;">Staff Performance Report</div>
           <div style="font-size: 11px; margin-top: 5px; color: #666;">${format(start, "dd/MM/yyyy")} - ${format(end, "dd/MM/yyyy")}</div>
         </div>
-        
+
         <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 15px;">
           <thead>
             <tr style="background: #f3f4f6;">
@@ -211,7 +293,9 @@ export default function Workers() {
             </tr>
           </thead>
           <tbody>
-            ${filteredStats.map(s => `
+            ${filteredStats
+              .map(
+                (s) => `
               <tr>
                 <td style="padding: 6px 4px; border: 1px solid #ddd;">${s.worker.name}</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.taggedCount}</td>
@@ -221,7 +305,9 @@ export default function Workers() {
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right;">${s.billsTotal.toFixed(2)}</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center; font-weight: bold;">${s.totalTasks}</td>
               </tr>
-            `).join('')}
+            `,
+              )
+              .join("")}
             <tr style="background: #e5e7eb; font-weight: bold;">
               <td style="padding: 8px 4px; border: 1px solid #ddd;">TOTAL</td>
               <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.tagged}</td>
@@ -239,18 +325,21 @@ export default function Workers() {
         </div>
       </div>
     `;
-    
-    html2pdf().set({
-      margin: 5,
-      filename: `Staff_Report_${format(new Date(), "yyyy-MM-dd")}.pdf`,
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "mm", format: "a5", orientation: "portrait" }
-    }).from(content).save();
+
+    html2pdf()
+      .set({
+        margin: 5,
+        filename: `Staff_Report_${format(new Date(), "yyyy-MM-dd")}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "mm", format: "a5", orientation: "portrait" },
+      })
+      .from(content)
+      .save();
     toast({ title: "PDF Downloaded", description: "Staff report saved" });
   };
 
-  const filteredStats = workerStats.filter(s => 
-    s.worker.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredStats = workerStats.filter((s) =>
+    s.worker.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const createMutation = useMutation({
@@ -264,7 +353,11 @@ export default function Workers() {
       toast({ title: "Staff Created", description: "New staff member added" });
     },
     onError: (err: any) => {
-      toast({ title: "Error", description: err.message || "Failed to create worker", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create worker",
+        variant: "destructive",
+      });
     },
   });
 
@@ -286,13 +379,20 @@ export default function Workers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
-      toast({ title: "Staff Deleted", description: "Staff member has been removed" });
+      toast({
+        title: "Staff Deleted",
+        description: "Staff member has been removed",
+      });
     },
   });
 
   const handleCreate = () => {
     if (!formData.name || formData.pin.length !== 5) {
-      toast({ title: "Error", description: "Name and 5-digit PIN are required", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Name and 5-digit PIN are required",
+        variant: "destructive",
+      });
       return;
     }
     createMutation.mutate(formData);
@@ -308,21 +408,40 @@ export default function Workers() {
   };
 
   const toggleActive = (worker: PackingWorker) => {
-    updateMutation.mutate({ id: worker.id, updates: { active: !worker.active } });
+    updateMutation.mutate({
+      id: worker.id,
+      updates: { active: !worker.active },
+    });
   };
 
   const createUserMutation = useMutation({
-    mutationFn: async (data: { username: string; password: string; name: string; email: string; role: string }) => {
+    mutationFn: async (data: {
+      username: string;
+      password: string;
+      name: string;
+      email: string;
+      role: string;
+    }) => {
       return apiRequest("POST", "/api/users", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setIsUserCreateOpen(false);
-      setUserFormData({ username: "", password: "", name: "", email: "", role: "cashier" });
+      setUserFormData({
+        username: "",
+        password: "",
+        name: "",
+        email: "",
+        role: "cashier",
+      });
       toast({ title: "User Created", description: "New user account added" });
     },
     onError: (err: any) => {
-      toast({ title: "Error", description: err.message || "Failed to create user", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create user",
+        variant: "destructive",
+      });
     },
   });
 
@@ -333,7 +452,13 @@ export default function Workers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setEditUser(null);
-      setUserFormData({ username: "", password: "", name: "", email: "", role: "cashier" });
+      setUserFormData({
+        username: "",
+        password: "",
+        name: "",
+        email: "",
+        role: "cashier",
+      });
       toast({ title: "User Updated", description: "User details updated" });
     },
   });
@@ -344,13 +469,20 @@ export default function Workers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      toast({ title: "User Deleted", description: "User account has been removed" });
+      toast({
+        title: "User Deleted",
+        description: "User account has been removed",
+      });
     },
   });
 
   const handleCreateUser = () => {
     if (!userFormData.username || !userFormData.password) {
-      toast({ title: "Error", description: "Username and password are required", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Username and password are required",
+        variant: "destructive",
+      });
       return;
     }
     createUserMutation.mutate(userFormData);
@@ -367,7 +499,10 @@ export default function Workers() {
   };
 
   const toggleUserActive = (user: SystemUser) => {
-    updateUserMutation.mutate({ id: user.id, updates: { active: !user.active } });
+    updateUserMutation.mutate({
+      id: user.id,
+      updates: { active: !user.active },
+    });
   };
 
   return (
@@ -395,30 +530,47 @@ export default function Workers() {
                   <Input
                     placeholder="Enter name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     data-testid="input-worker-name"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>5-Digit PIN</Label>
                   <Input
-                    type="password"
+                    id="worker-pin"
+                    type="tel"
                     maxLength={5}
                     placeholder="Enter 5-digit PIN"
                     value={formData.pin}
-                    onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '').slice(0, 5) })}
-                    className="text-center tracking-widest"
+                    autoComplete="off"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        pin: e.target.value.replace(/\D/g, "").slice(0, 5),
+                      })
+                    }
+                    className="text-center tracking-widest [-webkit-text-security:disc]"
                     data-testid="input-worker-pin"
                   />
-                  <p className="text-xs text-muted-foreground">Staff use this PIN to confirm packing/delivery</p>
+                  <p className="text-xs text-muted-foreground">
+                    Staff use this PIN to confirm packing/delivery
+                  </p>
                 </div>
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   onClick={handleCreate}
-                  disabled={createMutation.isPending || !formData.name || formData.pin.length !== 5}
+                  disabled={
+                    createMutation.isPending ||
+                    !formData.name ||
+                    formData.pin.length !== 5
+                  }
                   data-testid="button-submit-worker"
                 >
-                  {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {createMutation.isPending && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
                   Add Staff
                 </Button>
               </div>
@@ -455,7 +607,10 @@ export default function Workers() {
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <Select value={dateFilter} onValueChange={setDateFilter}>
-                      <SelectTrigger className="w-36" data-testid="select-date-filter">
+                      <SelectTrigger
+                        className="w-36"
+                        data-testid="select-date-filter"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -498,11 +653,21 @@ export default function Workers() {
                     />
                   </div>
                   <div className="flex items-center gap-2 ml-auto">
-                    <Button variant="outline" size="sm" onClick={exportToExcel} data-testid="button-export-excel">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={exportToExcel}
+                      data-testid="button-export-excel"
+                    >
                       <FileSpreadsheet className="w-4 h-4 mr-1" />
                       Excel
                     </Button>
-                    <Button variant="outline" size="sm" onClick={exportToPDF} data-testid="button-export-pdf">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={exportToPDF}
+                      data-testid="button-export-pdf"
+                    >
                       <FileText className="w-4 h-4 mr-1" />
                       PDF
                     </Button>
@@ -516,7 +681,9 @@ export default function Workers() {
                         <Tag className="w-5 h-5 text-orange-500" />
                         <div>
                           <p className="text-2xl font-bold">{totals.tagged}</p>
-                          <p className="text-xs text-muted-foreground">Tags Done</p>
+                          <p className="text-xs text-muted-foreground">
+                            Tags Done
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -527,7 +694,9 @@ export default function Workers() {
                         <Package className="w-5 h-5 text-green-500" />
                         <div>
                           <p className="text-2xl font-bold">{totals.packed}</p>
-                          <p className="text-xs text-muted-foreground">Packing Done</p>
+                          <p className="text-xs text-muted-foreground">
+                            Packing Done
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -537,8 +706,12 @@ export default function Workers() {
                       <div className="flex items-center gap-2">
                         <Truck className="w-5 h-5 text-purple-500" />
                         <div>
-                          <p className="text-2xl font-bold">{totals.delivered}</p>
-                          <p className="text-xs text-muted-foreground">Deliveries</p>
+                          <p className="text-2xl font-bold">
+                            {totals.delivered}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Deliveries
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -548,8 +721,12 @@ export default function Workers() {
                       <div className="flex items-center gap-2">
                         <Receipt className="w-5 h-5 text-cyan-500" />
                         <div>
-                          <p className="text-2xl font-bold">{totals.billsCreated}</p>
-                          <p className="text-xs text-muted-foreground">Bills ({totals.billsTotal.toFixed(0)} AED)</p>
+                          <p className="text-2xl font-bold">
+                            {totals.billsCreated}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Bills ({totals.billsTotal.toFixed(0)} AED)
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -559,8 +736,15 @@ export default function Workers() {
                       <div className="flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-blue-500" />
                         <div>
-                          <p className="text-2xl font-bold">{totals.tagged + totals.packed + totals.delivered + totals.billsCreated}</p>
-                          <p className="text-xs text-muted-foreground">Total Tasks</p>
+                          <p className="text-2xl font-bold">
+                            {totals.tagged +
+                              totals.packed +
+                              totals.delivered +
+                              totals.billsCreated}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Total Tasks
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -605,39 +789,61 @@ export default function Workers() {
                       </TableHeader>
                       <TableBody>
                         {filteredStats.map((s) => (
-                          <TableRow key={s.worker.id} data-testid={`row-stats-${s.worker.id}`}>
+                          <TableRow
+                            key={s.worker.id}
+                            data-testid={`row-stats-${s.worker.id}`}
+                          >
                             <TableCell className="font-medium">
                               {s.worker.name}
                               {!s.worker.active && (
-                                <Badge variant="secondary" className="ml-2">Inactive</Badge>
+                                <Badge variant="secondary" className="ml-2">
+                                  Inactive
+                                </Badge>
                               )}
                             </TableCell>
                             <TableCell className="text-center">
-                              <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
+                              <Badge
+                                variant="outline"
+                                className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
+                              >
                                 {s.taggedCount}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center">
-                              <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                              <Badge
+                                variant="outline"
+                                className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                              >
                                 {s.packedCount}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center">
-                              <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
+                              <Badge
+                                variant="outline"
+                                className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                              >
                                 {s.deliveredCount}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center">
-                              <Badge variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300">
+                              <Badge
+                                variant="outline"
+                                className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
+                              >
                                 {s.billsCreated} ({s.billsTotal.toFixed(0)})
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-center font-bold">{s.totalTasks}</TableCell>
+                            <TableCell className="text-center font-bold">
+                              {s.totalTasks}
+                            </TableCell>
                           </TableRow>
                         ))}
                         {filteredStats.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                            <TableCell
+                              colSpan={6}
+                              className="text-center text-muted-foreground py-8"
+                            >
                               No worker stats found for selected period
                             </TableCell>
                           </TableRow>
@@ -650,75 +856,87 @@ export default function Workers() {
             </TabsContent>
 
             <TabsContent value="manage">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Workers List</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!workers || workers.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  No workers added yet. Add workers to enable PIN verification for packing.
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {workers.map((worker) => (
-                      <TableRow key={worker.id} data-testid={`row-worker-${worker.id}`}>
-                        <TableCell className="font-medium">{worker.name}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <Switch
-                              checked={worker.active}
-                              onCheckedChange={() => toggleActive(worker)}
-                              data-testid={`switch-active-${worker.id}`}
-                            />
-                            <Badge variant={worker.active ? "default" : "secondary"}>
-                              {worker.active ? "Active" : "Inactive"}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditWorker(worker);
-                                setFormData({ name: worker.name, pin: "" });
-                              }}
-                              data-testid={`button-edit-${worker.id}`}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="text-destructive"
-                              onClick={() => {
-                                if (confirm(`Delete worker "${worker.name}"?`)) {
-                                  deleteMutation.mutate(worker.id);
-                                }
-                              }}
-                              data-testid={`button-delete-${worker.id}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Workers List</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!workers || workers.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No workers added yet. Add workers to enable PIN
+                      verification for packing.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {workers.map((worker) => (
+                          <TableRow
+                            key={worker.id}
+                            data-testid={`row-worker-${worker.id}`}
+                          >
+                            <TableCell className="font-medium">
+                              {worker.name}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <Switch
+                                  checked={worker.active}
+                                  onCheckedChange={() => toggleActive(worker)}
+                                  data-testid={`switch-active-${worker.id}`}
+                                />
+                                <Badge
+                                  variant={
+                                    worker.active ? "default" : "secondary"
+                                  }
+                                >
+                                  {worker.active ? "Active" : "Inactive"}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setEditWorker(worker);
+                                    setFormData({ name: worker.name, pin: "" });
+                                  }}
+                                  data-testid={`button-edit-${worker.id}`}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="text-destructive"
+                                  onClick={() => {
+                                    if (
+                                      confirm(`Delete worker "${worker.name}"?`)
+                                    ) {
+                                      deleteMutation.mutate(worker.id);
+                                    }
+                                  }}
+                                  data-testid={`button-delete-${worker.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="users">
@@ -728,14 +946,18 @@ export default function Workers() {
                     <UserCog className="w-5 h-5" />
                     System User Accounts
                   </CardTitle>
-                  <Button onClick={() => setIsUserCreateOpen(true)} data-testid="button-add-user">
+                  <Button
+                    onClick={() => setIsUserCreateOpen(true)}
+                    data-testid="button-add-user"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add User
                   </Button>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Manage login accounts for staff. Users with email addresses can use the "Forgot Password" feature.
+                    Manage login accounts for staff. Users with email addresses
+                    can use the "Forgot Password" feature.
                   </p>
                   {isLoadingUsers ? (
                     <div className="flex items-center justify-center h-32">
@@ -760,7 +982,9 @@ export default function Workers() {
                       <TableBody>
                         {systemUsers.map((user) => (
                           <TableRow key={user.id}>
-                            <TableCell className="font-medium">{user.username}</TableCell>
+                            <TableCell className="font-medium">
+                              {user.username}
+                            </TableCell>
                             <TableCell>{user.name || "-"}</TableCell>
                             <TableCell>
                               {user.email ? (
@@ -769,7 +993,9 @@ export default function Workers() {
                                   {user.email}
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground">Not set</span>
+                                <span className="text-muted-foreground">
+                                  Not set
+                                </span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -782,7 +1008,11 @@ export default function Workers() {
                                   onCheckedChange={() => toggleUserActive(user)}
                                   data-testid={`switch-user-active-${user.id}`}
                                 />
-                                <Badge variant={user.active ? "default" : "secondary"}>
+                                <Badge
+                                  variant={
+                                    user.active ? "default" : "secondary"
+                                  }
+                                >
                                   {user.active ? "Active" : "Inactive"}
                                 </Badge>
                               </div>
@@ -794,12 +1024,12 @@ export default function Workers() {
                                   variant="ghost"
                                   onClick={() => {
                                     setEditUser(user);
-                                    setUserFormData({ 
-                                      username: user.username, 
-                                      password: "", 
-                                      name: user.name || "", 
-                                      email: user.email || "", 
-                                      role: user.role 
+                                    setUserFormData({
+                                      username: user.username,
+                                      password: "",
+                                      name: user.name || "",
+                                      email: user.email || "",
+                                      role: user.role,
                                     });
                                   }}
                                   data-testid={`button-edit-user-${user.id}`}
@@ -811,7 +1041,9 @@ export default function Workers() {
                                   variant="ghost"
                                   className="text-destructive"
                                   onClick={() => {
-                                    if (confirm(`Delete user "${user.username}"?`)) {
+                                    if (
+                                      confirm(`Delete user "${user.username}"?`)
+                                    ) {
                                       deleteUserMutation.mutate(user.id);
                                     }
                                   }}
@@ -833,7 +1065,10 @@ export default function Workers() {
         )}
       </main>
 
-      <Dialog open={!!editWorker} onOpenChange={(open) => !open && setEditWorker(null)}>
+      <Dialog
+        open={!!editWorker}
+        onOpenChange={(open) => !open && setEditWorker(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Worker</DialogTitle>
@@ -844,29 +1079,40 @@ export default function Workers() {
               <Input
                 placeholder="Enter name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 data-testid="input-edit-worker-name"
               />
             </div>
             <div className="space-y-2">
               <Label>New PIN (optional)</Label>
               <Input
-                type="password"
+                id="edit-worker-pin"
+                type="tel"
                 maxLength={5}
                 placeholder="Leave empty to keep current PIN"
                 value={formData.pin}
-                onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '').slice(0, 5) })}
-                className="text-center tracking-widest"
+                autoComplete="off"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    pin: e.target.value.replace(/\D/g, "").slice(0, 5),
+                  })
+                }
+                className="text-center tracking-widest [-webkit-text-security:disc]"
                 data-testid="input-edit-worker-pin"
               />
             </div>
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={handleUpdate}
               disabled={updateMutation.isPending || !formData.name}
               data-testid="button-update-worker"
             >
-              {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {updateMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               Update Worker
             </Button>
           </div>
@@ -887,7 +1133,9 @@ export default function Workers() {
               <Input
                 placeholder="Enter username"
                 value={userFormData.username}
-                onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, username: e.target.value })
+                }
                 data-testid="input-new-username"
               />
             </div>
@@ -897,7 +1145,9 @@ export default function Workers() {
                 type="password"
                 placeholder="Enter password"
                 value={userFormData.password}
-                onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, password: e.target.value })
+                }
                 data-testid="input-new-password"
               />
             </div>
@@ -906,7 +1156,9 @@ export default function Workers() {
               <Input
                 placeholder="Enter display name"
                 value={userFormData.name}
-                onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, name: e.target.value })
+                }
                 data-testid="input-new-name"
               />
             </div>
@@ -919,13 +1171,20 @@ export default function Workers() {
                 type="email"
                 placeholder="email@example.com"
                 value={userFormData.email}
-                onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, email: e.target.value })
+                }
                 data-testid="input-new-email"
               />
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={userFormData.role} onValueChange={(value) => setUserFormData({ ...userFormData, role: value })}>
+              <Select
+                value={userFormData.role}
+                onValueChange={(value) =>
+                  setUserFormData({ ...userFormData, role: value })
+                }
+              >
                 <SelectTrigger data-testid="select-new-role">
                   <SelectValue />
                 </SelectTrigger>
@@ -936,20 +1195,29 @@ export default function Workers() {
                 </SelectContent>
               </Select>
             </div>
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={handleCreateUser}
-              disabled={createUserMutation.isPending || !userFormData.username || !userFormData.password}
+              disabled={
+                createUserMutation.isPending ||
+                !userFormData.username ||
+                !userFormData.password
+              }
               data-testid="button-submit-user"
             >
-              {createUserMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {createUserMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               Create User
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
+      <Dialog
+        open={!!editUser}
+        onOpenChange={(open) => !open && setEditUser(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -963,7 +1231,9 @@ export default function Workers() {
               <Input
                 placeholder="Enter display name"
                 value={userFormData.name}
-                onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, name: e.target.value })
+                }
                 data-testid="input-edit-user-name"
               />
             </div>
@@ -976,7 +1246,9 @@ export default function Workers() {
                 type="email"
                 placeholder="email@example.com"
                 value={userFormData.email}
-                onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, email: e.target.value })
+                }
                 data-testid="input-edit-user-email"
               />
             </div>
@@ -989,13 +1261,20 @@ export default function Workers() {
                 type="password"
                 placeholder="Enter new password"
                 value={userFormData.password}
-                onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, password: e.target.value })
+                }
                 data-testid="input-edit-user-password"
               />
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={userFormData.role} onValueChange={(value) => setUserFormData({ ...userFormData, role: value })}>
+              <Select
+                value={userFormData.role}
+                onValueChange={(value) =>
+                  setUserFormData({ ...userFormData, role: value })
+                }
+              >
                 <SelectTrigger data-testid="select-edit-role">
                   <SelectValue />
                 </SelectTrigger>
@@ -1006,13 +1285,15 @@ export default function Workers() {
                 </SelectContent>
               </Select>
             </div>
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={handleUpdateUser}
               disabled={updateUserMutation.isPending}
               data-testid="button-update-user"
             >
-              {updateUserMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {updateUserMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               Update User
             </Button>
           </div>

@@ -1,8 +1,29 @@
 import { useState, useMemo } from "react";
 import { TopBar } from "@/components/TopBar";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
-import { Loader2, Users, Trash2, Edit, MessageCircle, Plus, History, Receipt, Wallet, Calendar, Search, Printer, Lock, Download, FileSpreadsheet } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Loader2,
+  Users,
+  Trash2,
+  Edit,
+  MessageCircle,
+  Plus,
+  History,
+  Receipt,
+  Wallet,
+  Calendar,
+  Search,
+  Printer,
+  Lock,
+  Download,
+  FileSpreadsheet,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ClientForm } from "@/components/ClientForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +31,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns";
+import {
+  format,
+  isWithinInterval,
+  parseISO,
+  startOfDay,
+  endOfDay,
+} from "date-fns";
 import {
   Table,
   TableBody,
@@ -21,7 +48,13 @@ import {
 } from "@/components/ui/table";
 import { Invoice } from "@/components/Invoice";
 import type { Client, ClientTransaction, Bill } from "@shared/schema";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import html2pdf from "html2pdf.js";
 
@@ -29,14 +62,18 @@ export default function Clients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [transactionClient, setTransactionClient] = useState<Client | null>(null);
+  const [transactionClient, setTransactionClient] = useState<Client | null>(
+    null,
+  );
   const [billAmount, setBillAmount] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [billDescription, setBillDescription] = useState("");
   const [depositDescription, setDepositDescription] = useState("");
   const [filterFromDate, setFilterFromDate] = useState("");
   const [filterToDate, setFilterToDate] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "bill" | "deposit">("all");
+  const [filterType, setFilterType] = useState<"all" | "bill" | "deposit">(
+    "all",
+  );
   const [showDueClientsOnly, setShowDueClientsOnly] = useState(false);
   const [payingBillId, setPayingBillId] = useState<number | null>(null);
   const [billPaymentAmount, setBillPaymentAmount] = useState("");
@@ -44,7 +81,10 @@ export default function Clients() {
   const [showCashierPinDialog, setShowCashierPinDialog] = useState(false);
   const [cashierPin, setCashierPin] = useState("");
   const [cashierPinError, setCashierPinError] = useState("");
-  const [pendingCashPayment, setPendingCashPayment] = useState<{ billId: number; amount: string } | null>(null);
+  const [pendingCashPayment, setPendingCashPayment] = useState<{
+    billId: number;
+    amount: string;
+  } | null>(null);
   const [invoiceData, setInvoiceData] = useState<{
     invoiceNumber: string;
     date: string;
@@ -60,31 +100,53 @@ export default function Clients() {
   const { toast } = useToast();
 
   const { data: transactions } = useQuery<ClientTransaction[]>({
-    queryKey: ['/api/clients', transactionClient?.id, 'transactions'],
+    queryKey: ["/api/clients", transactionClient?.id, "transactions"],
     enabled: !!transactionClient,
   });
 
   const { data: unpaidBills } = useQuery<Bill[]>({
-    queryKey: ['/api/clients', transactionClient?.id, 'unpaid-bills'],
+    queryKey: ["/api/clients", transactionClient?.id, "unpaid-bills"],
     enabled: !!transactionClient,
   });
 
   const payBillMutation = useMutation({
-    mutationFn: async ({ billId, amount, paymentMethod }: { billId: number; amount: string; paymentMethod: string }) => {
-      return apiRequest("POST", `/api/bills/${billId}/pay`, { amount, paymentMethod });
+    mutationFn: async ({
+      billId,
+      amount,
+      paymentMethod,
+    }: {
+      billId: number;
+      amount: string;
+      paymentMethod: string;
+    }) => {
+      return apiRequest("POST", `/api/bills/${billId}/pay`, {
+        amount,
+        paymentMethod,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'unpaid-bills'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", transactionClient?.id, "transactions"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", transactionClient?.id, "unpaid-bills"],
+      });
       setPayingBillId(null);
       setBillPaymentAmount("");
       setBillPaymentMethod("cash");
       setPendingCashPayment(null);
-      toast({ title: "Payment recorded", description: "Bill payment has been recorded successfully." });
+      toast({
+        title: "Payment recorded",
+        description: "Bill payment has been recorded successfully.",
+      });
     },
     onError: (error: any) => {
-      toast({ title: "Payment failed", description: error.message || "Failed to record payment", variant: "destructive" });
+      toast({
+        title: "Payment failed",
+        description: error.message || "Failed to record payment",
+        variant: "destructive",
+      });
     },
   });
 
@@ -131,53 +193,88 @@ export default function Clients() {
 
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
-    
+
     return transactions.filter((tx) => {
       if (filterType !== "all" && tx.type !== filterType) return false;
-      
+
       if (filterFromDate || filterToDate) {
         const txDate = new Date(tx.date);
-        if (filterFromDate && txDate < startOfDay(new Date(filterFromDate))) return false;
-        if (filterToDate && txDate > endOfDay(new Date(filterToDate))) return false;
+        if (filterFromDate && txDate < startOfDay(new Date(filterFromDate)))
+          return false;
+        if (filterToDate && txDate > endOfDay(new Date(filterToDate)))
+          return false;
       }
-      
+
       return true;
     });
   }, [transactions, filterFromDate, filterToDate, filterType]);
 
   const filteredTotals = useMemo(() => {
-    const bills = filteredTransactions.filter(tx => tx.type === 'bill').reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
-    const deposits = filteredTransactions.filter(tx => tx.type === 'deposit').reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+    const bills = filteredTransactions
+      .filter((tx) => tx.type === "bill")
+      .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+    const deposits = filteredTransactions
+      .filter((tx) => tx.type === "deposit")
+      .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
     return { bills, deposits, due: bills - deposits };
   }, [filteredTransactions]);
 
   const addBillMutation = useMutation({
-    mutationFn: async ({ clientId, amount, description }: { clientId: number; amount: string; description: string }) => {
-      return apiRequest("POST", `/api/clients/${clientId}/bill`, { amount, description });
+    mutationFn: async ({
+      clientId,
+      amount,
+      description,
+    }: {
+      clientId: number;
+      amount: string;
+      description: string;
+    }) => {
+      return apiRequest("POST", `/api/clients/${clientId}/bill`, {
+        amount,
+        description,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'transactions'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", transactionClient?.id, "transactions"],
+      });
       setBillAmount("");
       setBillDescription("");
-      toast({ title: "Bill added", description: "Amount added to client's total." });
+      toast({
+        title: "Bill added",
+        description: "Amount added to client's total.",
+      });
     },
   });
 
   const addDepositMutation = useMutation({
-    mutationFn: async ({ clientId, amount, description }: { clientId: number; amount: string; description: string }) => {
-      return apiRequest("POST", `/api/clients/${clientId}/deposit`, { amount, description });
+    mutationFn: async ({
+      clientId,
+      amount,
+      description,
+    }: {
+      clientId: number;
+      amount: string;
+      description: string;
+    }) => {
+      return apiRequest("POST", `/api/clients/${clientId}/deposit`, {
+        amount,
+        description,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/clients', transactionClient?.id, 'transactions'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", transactionClient?.id, "transactions"],
+      });
+
       if (transactionClient) {
         const newDepositAmount = parseFloat(depositAmount);
         const totalBillAmount = parseFloat(transactionClient.amount || "0");
         const previousDeposits = parseFloat(transactionClient.deposit || "0");
         const totalPaidToDate = previousDeposits + newDepositAmount;
-        
+
         setInvoiceData({
           invoiceNumber: `REC-${Date.now().toString().slice(-8)}`,
           date: new Date().toISOString(),
@@ -189,10 +286,14 @@ export default function Clients() {
           paymentMethod: "Cash",
         });
       }
-      
+
       setDepositAmount("");
       setDepositDescription("");
-      toast({ title: "Deposit added", description: "Deposit recorded successfully. Receipt is ready to print." });
+      toast({
+        title: "Deposit added",
+        description:
+          "Deposit recorded successfully. Receipt is ready to print.",
+      });
     },
   });
 
@@ -219,58 +320,62 @@ export default function Clients() {
     const totalBill = parseFloat(client.amount || "0");
     const totalDeposit = parseFloat(client.deposit || "0");
     const balance = parseFloat(client.balance || "0");
-    
+
     // Fetch all transactions for this client
-    let transactionRows = '';
+    let transactionRows = "";
     try {
       const res = await fetch(`/api/clients/${client.id}/transactions`);
       if (res.ok) {
         const clientTransactions: ClientTransaction[] = await res.json();
         if (clientTransactions && clientTransactions.length > 0) {
           // Sort by date (oldest first)
-          const sortedTransactions = [...clientTransactions].sort((a, b) => 
-            new Date(a.date).getTime() - new Date(b.date).getTime()
+          const sortedTransactions = [...clientTransactions].sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
           );
-          transactionRows = sortedTransactions.map((t, idx) => `
+          transactionRows = sortedTransactions
+            .map(
+              (t, idx) => `
             <tr style="border-bottom: 1px solid #eee;">
               <td style="padding: 10px 8px; text-align: center;">${idx + 1}</td>
               <td style="padding: 10px 8px;">${format(new Date(t.date), "dd/MM/yyyy")}</td>
               <td style="padding: 10px 8px;">${format(new Date(t.date), "HH:mm")}</td>
-              <td style="padding: 10px 8px; text-transform: capitalize; font-weight: 500; color: ${t.type === 'bill' ? '#2196f3' : '#4caf50'};">${t.type}</td>
-              <td style="padding: 10px 8px;">${t.description || '-'}</td>
-              <td style="padding: 10px 8px; text-align: right; color: ${t.type === 'bill' ? '#2196f3' : '#4caf50'};">${parseFloat(t.amount).toFixed(2)} AED</td>
+              <td style="padding: 10px 8px; text-transform: capitalize; font-weight: 500; color: ${t.type === "bill" ? "#2196f3" : "#4caf50"};">${t.type}</td>
+              <td style="padding: 10px 8px;">${t.description || "-"}</td>
+              <td style="padding: 10px 8px; text-align: right; color: ${t.type === "bill" ? "#2196f3" : "#4caf50"};">${parseFloat(t.amount).toFixed(2)} AED</td>
               <td style="padding: 10px 8px; text-align: right; font-weight: 500;">${parseFloat(t.runningBalance).toFixed(2)} AED</td>
             </tr>
-          `).join('');
+          `,
+            )
+            .join("");
         }
       }
     } catch (e) {
-      console.log('Could not fetch transactions');
+      console.log("Could not fetch transactions");
     }
-    
-    const content = document.createElement('div');
+
+    const content = document.createElement("div");
     content.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: 0 auto;">
         <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e88e5; padding-bottom: 20px;">
           <h1 style="color: #1e88e5; margin: 0; font-size: 28px;">LIQUID WASHES LAUNDRY</h1>
           <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">Centra Market D/109, Al Dhanna City, Al Ruwais, Abu Dhabi-UAE</p>
         </div>
-        
+
         <h2 style="text-align: center; margin: 20px 0; color: #333; font-size: 22px;">CLIENT ACCOUNT SUMMARY</h2>
-        
+
         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
           <table style="width: 100%; font-size: 14px;">
             <tr>
               <td style="padding: 8px 0; width: 50%;"><strong>Client Name:</strong> ${client.name}</td>
-              <td style="padding: 8px 0;"><strong>Phone:</strong> ${client.phone || '-'}</td>
+              <td style="padding: 8px 0;"><strong>Phone:</strong> ${client.phone || "-"}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0;"><strong>Address:</strong> ${client.address || '-'}</td>
-              <td style="padding: 8px 0;"><strong>Bill Number:</strong> ${client.billNumber || '-'}</td>
+              <td style="padding: 8px 0;"><strong>Address:</strong> ${client.address || "-"}</td>
+              <td style="padding: 8px 0;"><strong>Bill Number:</strong> ${client.billNumber || "-"}</td>
             </tr>
           </table>
         </div>
-        
+
         <div style="display: flex; gap: 20px; margin-bottom: 25px;">
           <div style="flex: 1; background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
             <p style="margin: 0; font-size: 12px; color: #1565c0;">Total Bills</p>
@@ -280,14 +385,14 @@ export default function Clients() {
             <p style="margin: 0; font-size: 12px; color: #2e7d32;">Total Deposits</p>
             <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #4caf50;">${totalDeposit.toFixed(2)} AED</p>
           </div>
-          <div style="flex: 1; background: ${balance > 0 ? '#ffebee' : '#e8f5e9'}; padding: 15px; border-radius: 8px; text-align: center;">
-            <p style="margin: 0; font-size: 12px; color: ${balance > 0 ? '#c62828' : '#2e7d32'};">Balance Due</p>
-            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: ${balance > 0 ? '#f44336' : '#4caf50'};">${balance.toFixed(2)} AED</p>
+          <div style="flex: 1; background: ${balance > 0 ? "#ffebee" : "#e8f5e9"}; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: ${balance > 0 ? "#c62828" : "#2e7d32"};">Balance Due</p>
+            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: ${balance > 0 ? "#f44336" : "#4caf50"};">${balance.toFixed(2)} AED</p>
           </div>
         </div>
-        
+
         <h3 style="margin: 25px 0 15px 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Transaction History</h3>
-        
+
         <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
           <thead>
             <tr style="background: #1e88e5; color: white;">
@@ -304,7 +409,7 @@ export default function Clients() {
             ${transactionRows || '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No transaction history found</td></tr>'}
           </tbody>
         </table>
-        
+
         <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; text-align: center;">
           <p style="font-size: 11px; color: #666; margin: 0;">
             Generated on ${format(new Date(), "dd/MM/yyyy 'at' HH:mm")} | Thank you for your business!
@@ -315,24 +420,31 @@ export default function Clients() {
         </div>
       </div>
     `;
-    
+
     const opt = {
       margin: 10,
-      filename: `${client.name.replace(/\s+/g, '_')}_Summary.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
+      filename: `${client.name.replace(/\s+/g, "_")}_Summary.pdf`,
+      image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4' as const, orientation: 'portrait' as const }
+      jsPDF: {
+        unit: "mm",
+        format: "a4" as const,
+        orientation: "portrait" as const,
+      },
     };
-    
+
     html2pdf().set(opt).from(content).save();
-    toast({ title: "PDF Downloaded", description: `Full summary for ${client.name} saved` });
+    toast({
+      title: "PDF Downloaded",
+      description: `Full summary for ${client.name} saved`,
+    });
   };
 
   const downloadClientExcel = async (client: Client) => {
     const totalBill = parseFloat(client.amount || "0");
     const totalDeposit = parseFloat(client.deposit || "0");
     const balance = parseFloat(client.balance || "0");
-    
+
     // Fetch all transactions for this client
     let transactionData: any[][] = [];
     try {
@@ -341,24 +453,24 @@ export default function Clients() {
         const clientTransactions: ClientTransaction[] = await res.json();
         if (clientTransactions && clientTransactions.length > 0) {
           // Sort by date (oldest first)
-          const sortedTransactions = [...clientTransactions].sort((a, b) => 
-            new Date(a.date).getTime() - new Date(b.date).getTime()
+          const sortedTransactions = [...clientTransactions].sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
           );
           transactionData = sortedTransactions.map((t, idx) => [
             idx + 1,
             format(new Date(t.date), "dd/MM/yyyy"),
             format(new Date(t.date), "HH:mm"),
             t.type.toUpperCase(),
-            t.description || '-',
+            t.description || "-",
             `${parseFloat(t.amount).toFixed(2)} AED`,
-            `${parseFloat(t.runningBalance).toFixed(2)} AED`
+            `${parseFloat(t.runningBalance).toFixed(2)} AED`,
           ]);
         }
       }
     } catch (e) {
-      console.log('Could not fetch transactions');
+      console.log("Could not fetch transactions");
     }
-    
+
     const data = [
       ["LIQUID WASHES LAUNDRY - CLIENT ACCOUNT SUMMARY"],
       [],
@@ -378,41 +490,48 @@ export default function Clients() {
       [],
       ["Generated", format(new Date(), "dd/MM/yyyy HH:mm")],
     ];
-    
+
     const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [
-      { wch: 5 },   // #
-      { wch: 12 },  // Date
-      { wch: 8 },   // Time
-      { wch: 10 },  // Type
-      { wch: 30 },  // Description
-      { wch: 15 },  // Amount
-      { wch: 15 },  // Balance
+    ws["!cols"] = [
+      { wch: 5 }, // #
+      { wch: 12 }, // Date
+      { wch: 8 }, // Time
+      { wch: 10 }, // Type
+      { wch: 30 }, // Description
+      { wch: 15 }, // Amount
+      { wch: 15 }, // Balance
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Client Summary");
-    XLSX.writeFile(wb, `${client.name.replace(/\s+/g, '_')}_Summary.xlsx`);
-    toast({ title: "Excel Downloaded", description: `Full summary for ${client.name} saved` });
+    XLSX.writeFile(wb, `${client.name.replace(/\s+/g, "_")}_Summary.xlsx`);
+    toast({
+      title: "Excel Downloaded",
+      description: `Full summary for ${client.name} saved`,
+    });
   };
 
-  const totalAmount = clients?.reduce((sum, c) => sum + parseFloat(c.amount || "0"), 0) || 0;
-  const totalDeposit = clients?.reduce((sum, c) => sum + parseFloat(c.deposit || "0"), 0) || 0;
-  const totalBalance = clients?.reduce((sum, c) => sum + parseFloat(c.balance || "0"), 0) || 0;
+  const totalAmount =
+    clients?.reduce((sum, c) => sum + parseFloat(c.amount || "0"), 0) || 0;
+  const totalDeposit =
+    clients?.reduce((sum, c) => sum + parseFloat(c.deposit || "0"), 0) || 0;
+  const totalBalance =
+    clients?.reduce((sum, c) => sum + parseFloat(c.balance || "0"), 0) || 0;
 
   const displayedClients = useMemo(() => {
     if (!clients) return [];
     if (showDueClientsOnly) {
-      return clients.filter(c => parseFloat(c.balance || "0") > 0);
+      return clients.filter((c) => parseFloat(c.balance || "0") > 0);
     }
     return clients;
   }, [clients, showDueClientsOnly]);
 
-  const dueClientsCount = clients?.filter(c => parseFloat(c.balance || "0") > 0).length || 0;
+  const dueClientsCount =
+    clients?.filter((c) => parseFloat(c.balance || "0") > 0).length || 0;
 
   return (
     <div className="flex flex-col h-screen">
-      <TopBar 
-        onSearch={setSearchTerm} 
+      <TopBar
+        onSearch={setSearchTerm}
         searchValue={searchTerm}
         onAddClick={() => setIsCreateOpen(true)}
         addButtonLabel="Add Client"
@@ -428,7 +547,12 @@ export default function Clients() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Clients</p>
-                <p className="text-2xl font-bold text-foreground" data-testid="text-total-clients">{clients?.length || 0}</p>
+                <p
+                  className="text-2xl font-bold text-foreground"
+                  data-testid="text-total-clients"
+                >
+                  {clients?.length || 0}
+                </p>
               </div>
             </div>
           </div>
@@ -440,7 +564,12 @@ export default function Clients() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Bills</p>
-                <p className="text-2xl font-bold text-blue-600" data-testid="text-total-amount">{totalAmount.toFixed(2)} AED</p>
+                <p
+                  className="text-2xl font-bold text-blue-600"
+                  data-testid="text-total-amount"
+                >
+                  {totalAmount.toFixed(2)} AED
+                </p>
               </div>
             </div>
           </div>
@@ -452,13 +581,18 @@ export default function Clients() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Deposits</p>
-                <p className="text-2xl font-bold text-green-600" data-testid="text-total-deposit">{totalDeposit.toFixed(2)} AED</p>
+                <p
+                  className="text-2xl font-bold text-green-600"
+                  data-testid="text-total-deposit"
+                >
+                  {totalDeposit.toFixed(2)} AED
+                </p>
               </div>
             </div>
           </div>
 
-          <div 
-            className={`bg-card rounded-lg border p-4 cursor-pointer transition-all hover-elevate ${showDueClientsOnly ? 'ring-2 ring-destructive' : ''}`}
+          <div
+            className={`bg-card rounded-lg border p-4 cursor-pointer transition-all hover-elevate ${showDueClientsOnly ? "ring-2 ring-destructive" : ""}`}
             onClick={() => setShowDueClientsOnly(!showDueClientsOnly)}
             data-testid="card-total-due"
           >
@@ -467,10 +601,19 @@ export default function Clients() {
                 <Receipt className="w-5 h-5 text-destructive" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Due ({dueClientsCount} clients)</p>
-                <p className="text-2xl font-bold text-destructive" data-testid="text-total-balance">{totalBalance.toFixed(2)} AED</p>
+                <p className="text-sm text-muted-foreground">
+                  Total Due ({dueClientsCount} clients)
+                </p>
+                <p
+                  className="text-2xl font-bold text-destructive"
+                  data-testid="text-total-balance"
+                >
+                  {totalBalance.toFixed(2)} AED
+                </p>
                 {showDueClientsOnly && (
-                  <p className="text-xs text-destructive mt-1">Click to show all</p>
+                  <p className="text-xs text-destructive mt-1">
+                    Click to show all
+                  </p>
                 )}
               </div>
             </div>
@@ -482,9 +625,9 @@ export default function Clients() {
             <p className="text-sm font-medium text-destructive">
               Showing {dueClientsCount} clients with outstanding balance
             </p>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowDueClientsOnly(false)}
               className="text-destructive"
             >
@@ -501,17 +644,21 @@ export default function Clients() {
         ) : isError ? (
           <div className="flex flex-col items-center justify-center py-20 text-destructive">
             <p className="font-semibold text-lg">Failed to load clients</p>
-            <p className="text-sm opacity-80">Please try refreshing the page.</p>
+            <p className="text-sm opacity-80">
+              Please try refreshing the page.
+            </p>
           </div>
         ) : displayedClients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed border-border rounded-lg bg-card/50">
             <Users className="w-16 h-16 mb-4 opacity-50" />
-            <h3 className="text-xl font-bold text-foreground mb-2">No clients found</h3>
+            <h3 className="text-xl font-bold text-foreground mb-2">
+              No clients found
+            </h3>
             <p className="max-w-md text-center">
               {showDueClientsOnly
                 ? "No clients with outstanding balance."
-                : searchTerm 
-                  ? `No clients match "${searchTerm}". Try a different search term.` 
+                : searchTerm
+                  ? `No clients match "${searchTerm}". Try a different search term.`
                   : "Your client list is empty. Click the 'Add Client' button to get started."}
             </p>
           </div>
@@ -520,29 +667,53 @@ export default function Clients() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-primary/10">
-                  <TableHead className="font-bold text-foreground w-16">No.</TableHead>
-                  <TableHead className="font-bold text-foreground">Client Name</TableHead>
-                  <TableHead className="font-bold text-foreground">Contact / Address</TableHead>
-                  <TableHead className="font-bold text-foreground text-right">Total Bill</TableHead>
-                  <TableHead className="font-bold text-foreground text-right">Deposit</TableHead>
-                  <TableHead className="font-bold text-foreground text-right">Due</TableHead>
-                  <TableHead className="font-bold text-foreground text-center w-40">Actions</TableHead>
+                  <TableHead className="font-bold text-foreground w-16">
+                    No.
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground">
+                    Client Name
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground">
+                    Contact / Address
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-right">
+                    Total Bill
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-right">
+                    Deposit
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-right">
+                    Due
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground text-center w-40">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {displayedClients.map((client, index) => (
-                  <TableRow 
+                  <TableRow
                     key={client.id}
-                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                    className={
+                      index % 2 === 0 ? "bg-background" : "bg-muted/30"
+                    }
                     data-testid={`row-client-${client.id}`}
                   >
-                    <TableCell className="font-medium text-muted-foreground" data-testid={`text-serial-${client.id}`}>
+                    <TableCell
+                      className="font-medium text-muted-foreground"
+                      data-testid={`text-serial-${client.id}`}
+                    >
                       {index + 1}
                     </TableCell>
-                    <TableCell className="font-semibold" data-testid={`text-client-name-${client.id}`}>
+                    <TableCell
+                      className="font-semibold"
+                      data-testid={`text-client-name-${client.id}`}
+                    >
                       {client.name}
                       {client.billNumber && (
-                        <span className="ml-2 text-xs text-muted-foreground">({client.billNumber})</span>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          ({client.billNumber})
+                        </span>
                       )}
                     </TableCell>
                     <TableCell data-testid={`text-client-contact-${client.id}`}>
@@ -551,17 +722,25 @@ export default function Clients() {
                           <p className="text-sm">{client.phone}</p>
                         )}
                         {client.address && (
-                          <p className="text-sm text-muted-foreground">{client.address}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {client.address}
+                          </p>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right font-medium text-blue-600" data-testid={`text-client-amount-${client.id}`}>
+                    <TableCell
+                      className="text-right font-medium text-blue-600"
+                      data-testid={`text-client-amount-${client.id}`}
+                    >
                       {parseFloat(client.amount || "0").toFixed(2)}
                     </TableCell>
-                    <TableCell className="text-right font-medium text-green-600" data-testid={`text-client-deposit-${client.id}`}>
+                    <TableCell
+                      className="text-right font-medium text-green-600"
+                      data-testid={`text-client-deposit-${client.id}`}
+                    >
                       {parseFloat(client.deposit || "0").toFixed(2)}
                     </TableCell>
-                    <TableCell 
+                    <TableCell
                       className={`text-right font-bold ${parseFloat(client.balance || "0") > 0 ? "text-destructive" : "text-primary"}`}
                       data-testid={`text-client-balance-${client.id}`}
                     >
@@ -641,52 +820,67 @@ export default function Clients() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-display text-primary">Add New Client</DialogTitle>
+            <DialogTitle className="text-2xl font-display text-primary">
+              Add New Client
+            </DialogTitle>
           </DialogHeader>
-          <ClientForm 
-            mode="create" 
-            onSuccess={() => setIsCreateOpen(false)} 
-          />
+          <ClientForm mode="create" onSuccess={() => setIsCreateOpen(false)} />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
+      <Dialog
+        open={!!editingClient}
+        onOpenChange={(open) => !open && setEditingClient(null)}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-display text-primary">Edit Client</DialogTitle>
+            <DialogTitle className="text-2xl font-display text-primary">
+              Edit Client
+            </DialogTitle>
           </DialogHeader>
           {editingClient && (
-            <ClientForm 
+            <ClientForm
               mode="edit"
               client={editingClient}
-              onSuccess={() => setEditingClient(null)} 
+              onSuccess={() => setEditingClient(null)}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!transactionClient} onOpenChange={(open) => !open && setTransactionClient(null)}>
+      <Dialog
+        open={!!transactionClient}
+        onOpenChange={(open) => !open && setTransactionClient(null)}
+      >
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display text-primary">
               {transactionClient?.name} - Transaction History
             </DialogTitle>
           </DialogHeader>
-          
+
           {transactionClient && (
             <div className="space-y-6">
               <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Total Bill</p>
-                  <p className="text-xl font-bold text-blue-600">{parseFloat(transactionClient.amount || "0").toFixed(2)} AED</p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {parseFloat(transactionClient.amount || "0").toFixed(2)} AED
+                  </p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Deposit</p>
-                  <p className="text-xl font-bold text-green-600">{parseFloat(transactionClient.deposit || "0").toFixed(2)} AED</p>
+                  <p className="text-xl font-bold text-green-600">
+                    {parseFloat(transactionClient.deposit || "0").toFixed(2)}{" "}
+                    AED
+                  </p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Due</p>
-                  <p className="text-xl font-bold text-destructive">{parseFloat(transactionClient.balance || "0").toFixed(2)} AED</p>
+                  <p className="text-xl font-bold text-destructive">
+                    {parseFloat(transactionClient.balance || "0").toFixed(2)}{" "}
+                    AED
+                  </p>
                 </div>
               </div>
 
@@ -723,7 +917,11 @@ export default function Clients() {
                     disabled={!billAmount || addBillMutation.isPending}
                     data-testid="button-add-bill"
                   >
-                    {addBillMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                    {addBillMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4 mr-2" />
+                    )}
                     Add Bill
                   </Button>
                 </div>
@@ -760,7 +958,11 @@ export default function Clients() {
                     disabled={!depositAmount || addDepositMutation.isPending}
                     data-testid="button-add-deposit"
                   >
-                    {addDepositMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                    {addDepositMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4 mr-2" />
+                    )}
                     Add Deposit
                   </Button>
                 </div>
@@ -769,25 +971,53 @@ export default function Clients() {
               {unpaidBills && unpaidBills.length > 0 && (
                 <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
                   <h4 className="font-semibold mb-3 flex items-center gap-2 text-destructive">
-                    <Receipt className="w-4 h-4" /> Unpaid Bills ({unpaidBills.length})
+                    <Receipt className="w-4 h-4" /> Unpaid Bills (
+                    {unpaidBills.length})
                   </h4>
                   <div className="space-y-2">
                     {unpaidBills.map((bill) => {
-                      const remaining = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
+                      const remaining =
+                        parseFloat(bill.amount) -
+                        parseFloat(bill.paidAmount || "0");
                       return (
-                        <div key={bill.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                        <div
+                          key={bill.id}
+                          className="flex items-center justify-between p-3 bg-background rounded-lg border"
+                        >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium">Bill #{bill.id}</span>
+                              <span className="font-medium">
+                                Bill #{bill.id}
+                              </span>
                               <span className="text-xs text-muted-foreground">
                                 {format(new Date(bill.billDate), "dd/MM/yyyy")}
                               </span>
                             </div>
-                            <p className="text-sm text-muted-foreground">{bill.description || "No description"}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {bill.description || "No description"}
+                            </p>
                             <div className="flex items-center gap-3 mt-1 text-sm">
-                              <span>Total: <strong className="text-blue-600">{parseFloat(bill.amount).toFixed(2)} AED</strong></span>
-                              <span>Paid: <strong className="text-green-600">{parseFloat(bill.paidAmount || "0").toFixed(2)} AED</strong></span>
-                              <span>Due: <strong className="text-destructive">{remaining.toFixed(2)} AED</strong></span>
+                              <span>
+                                Total:{" "}
+                                <strong className="text-blue-600">
+                                  {parseFloat(bill.amount).toFixed(2)} AED
+                                </strong>
+                              </span>
+                              <span>
+                                Paid:{" "}
+                                <strong className="text-green-600">
+                                  {parseFloat(bill.paidAmount || "0").toFixed(
+                                    2,
+                                  )}{" "}
+                                  AED
+                                </strong>
+                              </span>
+                              <span>
+                                Due:{" "}
+                                <strong className="text-destructive">
+                                  {remaining.toFixed(2)} AED
+                                </strong>
+                              </span>
                             </div>
                           </div>
                           {payingBillId === bill.id ? (
@@ -797,12 +1027,20 @@ export default function Clients() {
                                 step="0.01"
                                 placeholder="Amount"
                                 value={billPaymentAmount}
-                                onChange={(e) => setBillPaymentAmount(e.target.value)}
+                                onChange={(e) =>
+                                  setBillPaymentAmount(e.target.value)
+                                }
                                 className="w-24"
                                 data-testid={`input-pay-amount-${bill.id}`}
                               />
-                              <Select value={billPaymentMethod} onValueChange={setBillPaymentMethod}>
-                                <SelectTrigger className="w-24" data-testid={`select-pay-method-${bill.id}`}>
+                              <Select
+                                value={billPaymentMethod}
+                                onValueChange={setBillPaymentMethod}
+                              >
+                                <SelectTrigger
+                                  className="w-24"
+                                  data-testid={`select-pay-method-${bill.id}`}
+                                >
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -815,13 +1053,24 @@ export default function Clients() {
                                 size="sm"
                                 onClick={() => {
                                   if (billPaymentAmount) {
-                                    handlePayBill(bill.id, billPaymentAmount, billPaymentMethod);
+                                    handlePayBill(
+                                      bill.id,
+                                      billPaymentAmount,
+                                      billPaymentMethod,
+                                    );
                                   }
                                 }}
-                                disabled={!billPaymentAmount || payBillMutation.isPending}
+                                disabled={
+                                  !billPaymentAmount ||
+                                  payBillMutation.isPending
+                                }
                                 data-testid={`button-confirm-pay-${bill.id}`}
                               >
-                                {payBillMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pay"}
+                                {payBillMutation.isPending ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  "Pay"
+                                )}
                               </Button>
                               <Button
                                 size="sm"
@@ -879,15 +1128,20 @@ export default function Clients() {
                               {format(new Date(tx.date), "dd/MM/yyyy HH:mm")}
                             </TableCell>
                             <TableCell>
-                              <span className={`text-xs font-semibold px-2 py-1 rounded ${tx.type === 'bill' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                                {tx.type === 'bill' ? 'Bill' : 'Deposit'}
+                              <span
+                                className={`text-xs font-semibold px-2 py-1 rounded ${tx.type === "bill" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}
+                              >
+                                {tx.type === "bill" ? "Bill" : "Deposit"}
                               </span>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {tx.description}
                             </TableCell>
-                            <TableCell className={`text-right font-medium ${tx.type === 'bill' ? 'text-blue-600' : 'text-green-600'}`}>
-                              {tx.type === 'bill' ? '+' : '-'}{parseFloat(tx.amount).toFixed(2)}
+                            <TableCell
+                              className={`text-right font-medium ${tx.type === "bill" ? "text-blue-600" : "text-green-600"}`}
+                            >
+                              {tx.type === "bill" ? "+" : "-"}
+                              {parseFloat(tx.amount).toFixed(2)}
                             </TableCell>
                             <TableCell className="text-right font-bold">
                               {parseFloat(tx.runningBalance).toFixed(2)}
@@ -898,7 +1152,9 @@ export default function Clients() {
                     </Table>
                   </div>
                 ) : (
-                  <p className="text-center py-8 text-muted-foreground">No transactions yet</p>
+                  <p className="text-center py-8 text-muted-foreground">
+                    No transactions yet
+                  </p>
                 )}
               </div>
             </div>
@@ -921,14 +1177,17 @@ export default function Clients() {
       )}
 
       {/* Cashier PIN Dialog for Cash Payments */}
-      <Dialog open={showCashierPinDialog} onOpenChange={(open) => {
-        if (!open) {
-          setShowCashierPinDialog(false);
-          setCashierPin("");
-          setCashierPinError("");
-          setPendingCashPayment(null);
-        }
-      }}>
+      <Dialog
+        open={showCashierPinDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowCashierPinDialog(false);
+            setCashierPin("");
+            setCashierPinError("");
+            setPendingCashPayment(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-xs">
           <DialogHeader>
             <DialogTitle className="text-center flex items-center justify-center gap-2">
@@ -944,19 +1203,22 @@ export default function Clients() {
               <Label htmlFor="cashier-pin">PIN</Label>
               <Input
                 id="cashier-pin"
-                type="password"
+                type="tel"
                 maxLength={5}
                 placeholder="Enter 5-digit PIN"
                 value={cashierPin}
+                autoComplete="off"
                 onChange={(e) => {
-                  setCashierPin(e.target.value.replace(/\D/g, '').slice(0, 5));
+                  setCashierPin(e.target.value.replace(/\D/g, "").slice(0, 5));
                   setCashierPinError("");
                 }}
-                className="text-center text-2xl tracking-widest"
+                className="text-center text-2xl tracking-widest [-webkit-text-security:disc]"
                 data-testid="input-cashier-pin"
               />
               {cashierPinError && (
-                <p className="text-sm text-destructive text-center">{cashierPinError}</p>
+                <p className="text-sm text-destructive text-center">
+                  {cashierPinError}
+                </p>
               )}
             </div>
             <div className="flex gap-2">
@@ -975,7 +1237,9 @@ export default function Clients() {
               <Button
                 className="flex-1"
                 onClick={handleCashierPinSubmit}
-                disabled={cashierPin.length !== 5 || verifyCashierPinMutation.isPending}
+                disabled={
+                  cashierPin.length !== 5 || verifyCashierPinMutation.isPending
+                }
                 data-testid="button-verify-cashier-pin"
               >
                 {verifyCashierPinMutation.isPending ? (

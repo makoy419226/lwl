@@ -861,8 +861,8 @@ export async function registerRoutes(
         }
       }
 
-      // Deduct stock immediately on order creation
-      await storage.deductStockForOrder(order.id);
+      // Add stock immediately on order creation
+      await storage.addStockForOrder(order.id);
 
       // Return order with updated billId
       const updatedOrder = await storage.getOrder(order.id);
@@ -893,8 +893,8 @@ export async function registerRoutes(
     if (isNaN(orderId)) {
       return res.status(400).json({ message: "Invalid order ID" });
     }
-    // Restore stock before deleting
-    await storage.restoreStockForOrder(orderId);
+    // Deduct stock before deleting
+    await storage.deductStockForOrder(orderId);
     await storage.deleteOrder(orderId);
     res.status(204).send();
   });

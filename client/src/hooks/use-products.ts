@@ -1,5 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type ProductInput, type ProductUpdateInput } from "@shared/routes";
+import {
+  api,
+  buildUrl,
+  type ProductInput,
+  type ProductUpdateInput,
+} from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 
 export function useProducts(search?: string, category?: string) {
@@ -8,14 +13,18 @@ export function useProducts(search?: string, category?: string) {
   if (category) queryParams.set("category", category);
 
   const queryString = queryParams.toString();
-  const path = queryString ? `${api.products.list.path}?${queryString}` : api.products.list.path;
+  const path = queryString
+    ? `${api.products.list.path}?${queryString}`
+    : api.products.list.path;
 
   return useQuery({
     queryKey: [api.products.list.path, search, category],
     queryFn: async () => {
       const res = await fetch(path, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch products");
-      return api.products.list.responses[200].parse(await res.json());
+      return api.products.list.responses[200]
+        .parse(await res.json())
+        .sort((a, b) => a.name.localeCompare(b.name));
     },
   });
 }
@@ -44,7 +53,7 @@ export function useCreateProduct() {
         ...data,
         stockQuantity: Number(data.stockQuantity),
         // Handle price if it's a string from input
-        price: data.price ? String(data.price) : undefined, 
+        price: data.price ? String(data.price) : undefined,
       };
 
       const res = await fetch(api.products.create.path, {
@@ -56,7 +65,9 @@ export function useCreateProduct() {
 
       if (!res.ok) {
         if (res.status === 400) {
-          const error = api.products.create.responses[400].parse(await res.json());
+          const error = api.products.create.responses[400].parse(
+            await res.json(),
+          );
           throw new Error(error.message);
         }
         throw new Error("Failed to create product");
@@ -86,11 +97,17 @@ export function useUpdateProduct() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: number } & ProductUpdateInput) => {
+    mutationFn: async ({
+      id,
+      ...updates
+    }: { id: number } & ProductUpdateInput) => {
       // Coerce types if needed
       const payload = {
         ...updates,
-        stockQuantity: updates.stockQuantity !== undefined ? Number(updates.stockQuantity) : undefined,
+        stockQuantity:
+          updates.stockQuantity !== undefined
+            ? Number(updates.stockQuantity)
+            : undefined,
         price: updates.price ? String(updates.price) : undefined,
       };
 
@@ -104,7 +121,9 @@ export function useUpdateProduct() {
 
       if (!res.ok) {
         if (res.status === 400) {
-          const error = api.products.update.responses[400].parse(await res.json());
+          const error = api.products.update.responses[400].parse(
+            await res.json(),
+          );
           throw new Error(error.message);
         }
         if (res.status === 404) throw new Error("Product not found");
@@ -136,7 +155,10 @@ export function useDeleteProduct() {
   return useMutation({
     mutationFn: async (id: number) => {
       const url = buildUrl(api.products.delete.path, { id });
-      const res = await fetch(url, { method: api.products.delete.method, credentials: "include" });
+      const res = await fetch(url, {
+        method: api.products.delete.method,
+        credentials: "include",
+      });
       if (res.status === 404) throw new Error("Product not found");
       if (!res.ok) throw new Error("Failed to delete product");
     },

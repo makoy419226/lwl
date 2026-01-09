@@ -29,7 +29,7 @@ import {
   type UpdateClientRequest,
   type UpdateOrderRequest,
 } from "@shared/schema";
-import { eq, ilike, or, desc, and } from "drizzle-orm";
+import { eq, ilike, or, desc, and, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   getProducts(search?: string): Promise<Product[]>;
@@ -121,6 +121,7 @@ export interface IStorage {
   ): Promise<Incident>;
   deleteIncident(id: number): Promise<void>;
   getAllocatedStock(): Promise<Record<string, number>>;
+  addStockForOrder(orderId: number): Promise<void>;
   deductStockForOrder(orderId: number): Promise<void>;
 }
 
@@ -443,6 +444,28 @@ export class DatabaseStorage implements IStorage {
       isPaid,
     });
 
+    // If bill is fully paid, also mark corresponding orders as paid
+    if (isPaid && bill.clientId) {
+      const clientOrders = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.clientId, bill.clientId));
+      const billOrderIds = clientOrders
+        .filter((order) => order.billId === billId)
+        .map((order) => order.id);
+
+      if (billOrderIds.length > 0) {
+        await db
+          .update(orders)
+          .set({ paidAmount: sql`total_amount` }) // Set paidAmount to match totalAmount
+          .where(inArray(orders.id, billOrderIds));
+
+        console.log(
+          `[PAYMENT] Marked ${billOrderIds.length} order(s) as paid for bill ${billId}`,
+        );
+      }
+    }
+
     // Update client deposit and balance directly without creating a transaction
     // to avoid double-counting (the bill payment itself is already tracked)
     if (bill.clientId) {
@@ -640,6 +663,15 @@ export class DatabaseStorage implements IStorage {
       updateData.deliveryDate = new Date(updates.deliveryDate);
     if (updates.expectedDeliveryAt)
       updateData.expectedDeliveryAt = new Date(updates.expectedDeliveryAt);
+
+    // Check if order is being marked as delivered
+    if (updates.delivered === true) {
+      const existingOrder = await this.getOrder(id);
+      if (existingOrder && !existingOrder.delivered) {
+        // Order is being marked as delivered for the first time, deduct stock
+        await this.deductStockForOrder(id);
+      }
+    }
 
     const [updated] = await db
       .update(orders)
@@ -873,32 +905,94 @@ export class DatabaseStorage implements IStorage {
     return allocatedStock;
   }
 
-  async deductStockForOrder(orderId: number): Promise<void> {
+  async addStockForOrder(orderId: number): Promise<void> {
+    console.log(`[STOCK DEBUG] Adding stock for order ${orderId}`);
     const order = await this.getOrder(orderId);
-    if (!order || order.stockDeducted || !order.items) return;
+    console.log(
+      `[STOCK DEBUG] Order:`,
+      order
+        ? {
+            id: order.id,
+            stockDeducted: order.stockDeducted,
+            items: order.items,
+          }
+        : "null",
+    );
+
+    if (!order || order.stockDeducted || !order.items) {
+      console.log(
+        `[STOCK DEBUG] Early return - !order: ${!order}, order.stockDeducted: ${order?.stockDeducted}, !order.items: ${!order?.items}`,
+      );
+      return;
+    }
 
     const parsedItems = this.parseOrderItems(order.items);
+    console.log(`[STOCK DEBUG] Parsed items:`, parsedItems);
     const allProducts = await db.select().from(products);
 
     for (const item of parsedItems) {
       // Try exact match first, then case-insensitive match
       let product = allProducts.find((p) => p.name === item.name);
+      console.log(
+        `[STOCK DEBUG] Step 1 - Exact match for "${item.name}":`,
+        product ? `Found: ${product.name}` : "Not found",
+      );
+
       if (!product) {
         product = allProducts.find(
           (p) => p.name.toLowerCase() === item.name.toLowerCase(),
         );
+        console.log(
+          `[STOCK DEBUG] Step 2 - Case-insensitive match for "${item.name}":`,
+          product ? `Found: ${product.name}` : "Not found",
+        );
       }
       // Try partial match for items with size/type modifiers like "(Small)" or "(Hanging)"
       if (!product) {
-        const baseName = item.name.replace(/\s*\(.*\)$/, "").trim();
+        const baseName = item.name.replace(/\s*\([^)]*\)$/, "").trim(); // Remove only the LAST parenthetical expression
+        console.log(
+          `[STOCK DEBUG] Step 3 - Removing last parenthesis: "${item.name}" -> "${baseName}"`,
+        );
         product = allProducts.find(
           (p) => p.name.toLowerCase() === baseName.toLowerCase(),
         );
+        console.log(
+          `[STOCK DEBUG] Step 3 - Base name match for "${baseName}":`,
+          product ? `Found: ${product.name}` : "Not found",
+        );
       }
+      // Try removing ALL parenthetical expressions as final fallback
+      if (!product) {
+        const baseName = item.name.replace(/\s*\(.*?\)/g, "").trim(); // Remove ALL parenthetical expressions
+        console.log(
+          `[STOCK DEBUG] Step 4 - Removing all parentheses: "${item.name}" -> "${baseName}"`,
+        );
+        product = allProducts.find(
+          (p) => p.name.toLowerCase() === baseName.toLowerCase(),
+        );
+        console.log(
+          `[STOCK DEBUG] Step 4 - All removed match for "${baseName}":`,
+          product ? `Found: ${product.name}` : "Not found",
+        );
+      }
+
+      console.log(
+        `[STOCK DEBUG] Item: "${item.name}" qty: ${item.quantity}, Product found:`,
+        product
+          ? {
+              id: product.id,
+              name: product.name,
+              currentStock: product.stockQuantity,
+            }
+          : "null",
+      );
 
       if (product) {
         const currentStock = product.stockQuantity || 0;
-        const newStock = Math.max(0, currentStock - item.quantity);
+        const newStock = currentStock + item.quantity;
+        console.log(
+          `[STOCK DEBUG] Updating stock from ${currentStock} to ${newStock}`,
+        );
         await db
           .update(products)
           .set({ stockQuantity: newStock })
@@ -912,7 +1006,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.id, orderId));
   }
 
-  async restoreStockForOrder(orderId: number): Promise<void> {
+  async deductStockForOrder(orderId: number): Promise<void> {
     const order = await this.getOrder(orderId);
     if (!order || !order.stockDeducted || !order.items) return;
 
@@ -927,7 +1021,14 @@ export class DatabaseStorage implements IStorage {
         );
       }
       if (!product) {
-        const baseName = item.name.replace(/\s*\(.*\)$/, "").trim();
+        const baseName = item.name.replace(/\s*\([^)]*\)$/, "").trim(); // Remove only the LAST parenthetical expression
+        product = allProducts.find(
+          (p) => p.name.toLowerCase() === baseName.toLowerCase(),
+        );
+      }
+      // Try removing ALL parenthetical expressions as final fallback
+      if (!product) {
+        const baseName = item.name.replace(/\s*\(.*?\)/g, "").trim(); // Remove ALL parenthetical expressions
         product = allProducts.find(
           (p) => p.name.toLowerCase() === baseName.toLowerCase(),
         );
@@ -935,7 +1036,7 @@ export class DatabaseStorage implements IStorage {
 
       if (product) {
         const currentStock = product.stockQuantity || 0;
-        const newStock = currentStock + item.quantity;
+        const newStock = Math.max(0, currentStock - item.quantity);
         await db
           .update(products)
           .set({ stockQuantity: newStock })
