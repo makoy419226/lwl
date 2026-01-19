@@ -96,17 +96,19 @@ function App() {
       <TooltipProvider>
         <div className="flex h-screen w-full bg-background">
           <Sidebar user={user} onLogout={handleLogout} />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <header className="h-16 border-b border-border bg-card flex items-center justify-end px-6">
-              <div className="flex flex-col items-center">
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+            <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6">
+              <div className="w-14 lg:hidden" />
+              <div className="flex flex-col items-center flex-1 lg:flex-none lg:ml-auto">
                 <img 
                   src={logoImage} 
                   alt="Liquide Washes Laundry" 
-                  className="h-10 object-contain"
+                  className="h-8 lg:h-10 object-contain"
                   data-testid="img-header-logo"
                 />
                 <span className="text-xs font-semibold text-primary mt-0.5">Liquide Washes</span>
               </div>
+              <div className="w-14 lg:hidden" />
             </header>
             <main className="flex-1 overflow-auto">
               <Router />

@@ -111,6 +111,40 @@
   .animate-blink {
     animation: blink 1s ease-in-out infinite;
   }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+}
+
+/* Tablet-friendly scrollable tables */
+@layer components {
+  .table-container {
+    @apply overflow-x-auto -mx-4 px-4;
+  }
+  
+  .table-container table {
+    @apply min-w-[600px];
+  }
+}
+
+/* Touch-friendly inputs on mobile/tablet */
+@media (max-width: 1023px) {
+  input, select, textarea, button {
+    font-size: 16px !important;
+  }
+  
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Prevent zoom on input focus for iOS */
+@media screen and (-webkit-min-device-pixel-ratio: 0) and (max-width: 1023px) {
+  select, textarea, input {
+    font-size: 16px !important;
+  }
 }
 
 @keyframes marquee {
