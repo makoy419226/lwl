@@ -1151,20 +1151,19 @@ export default function Orders() {
                 </div>
               ) : (
                 <Card className="overflow-hidden">
-                <div className="overflow-x-auto">
-                  <Table className="min-w-[900px]">
+                  <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="whitespace-nowrap">Order #</TableHead>
-                        <TableHead className="whitespace-nowrap">Bill #</TableHead>
+                        <TableHead className="whitespace-nowrap">Order</TableHead>
+                        <TableHead className="whitespace-nowrap hidden lg:table-cell">Bill</TableHead>
                         <TableHead className="whitespace-nowrap">Client</TableHead>
-                        <TableHead className="whitespace-nowrap">Client Due</TableHead>
-                        <TableHead className="whitespace-nowrap">Items</TableHead>
+                        <TableHead className="whitespace-nowrap hidden xl:table-cell">Due</TableHead>
+                        <TableHead className="whitespace-nowrap hidden md:table-cell">Items</TableHead>
                         {activeTab !== "create" && (
-                          <TableHead className="whitespace-nowrap">Amount</TableHead>
+                          <TableHead className="whitespace-nowrap hidden sm:table-cell">Amount</TableHead>
                         )}
-                        <TableHead className="whitespace-nowrap">Type</TableHead>
-                        <TableHead className="whitespace-nowrap">Time Left</TableHead>
+                        <TableHead className="whitespace-nowrap hidden lg:table-cell">Type</TableHead>
+                        <TableHead className="whitespace-nowrap">Time</TableHead>
                         <TableHead className="whitespace-nowrap">Status</TableHead>
                         <TableHead className="whitespace-nowrap">Actions</TableHead>
                       </TableRow>
@@ -1205,10 +1204,10 @@ export default function Orders() {
                                 key={order.id}
                                 data-testid={`row-order-${order.id}`}
                               >
-                                <TableCell className="font-mono font-bold">
+                                <TableCell className="font-mono font-bold text-sm">
                                   {order.orderNumber}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="hidden lg:table-cell">
                                   {order.billId ? (
                                     <Button
                                       variant="ghost"
@@ -1238,7 +1237,7 @@ export default function Orders() {
                                   <>
                                     <TableCell
                                       rowSpan={orderCount}
-                                      className="align-top border-r p-0"
+                                      className="align-top border-r p-0 max-w-[120px]"
                                     >
                                       <Popover>
                                         <PopoverTrigger asChild>
@@ -1330,7 +1329,7 @@ export default function Orders() {
                                     </TableCell>
                                     <TableCell
                                       rowSpan={orderCount}
-                                      className={`align-top font-semibold border-r ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                      className={`align-top font-semibold border-r hidden xl:table-cell ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
                                       data-testid={`text-client-due-${order.id}`}
                                     >
                                       {parseFloat(
@@ -1341,11 +1340,11 @@ export default function Orders() {
                                   </>
                                 ) : null}
                                 <TableCell
-                                  className={
+                                  className={`hidden md:table-cell ${
                                     activeTab === "create"
                                       ? "max-w-md"
                                       : "max-w-xs"
-                                  }
+                                  }`}
                                 >
                                   {activeTab === "create" ? (
                                     <div className="space-y-1">
@@ -1417,11 +1416,11 @@ export default function Orders() {
                                   )}
                                 </TableCell>
                                 {activeTab !== "create" && (
-                                  <TableCell className="font-semibold">
+                                  <TableCell className="font-semibold hidden sm:table-cell">
                                     {order.totalAmount} AED
                                   </TableCell>
                                 )}
-                                <TableCell>
+                                <TableCell className="hidden lg:table-cell">
                                   {order.deliveryType === "delivery" ? (
                                     <Badge variant="outline" className="gap-1">
                                       <Truck className="w-3 h-3" /> Delivery
@@ -1556,7 +1555,6 @@ export default function Orders() {
                       })()}
                     </TableBody>
                   </Table>
-                </div>
                 </Card>
               )}
             </TabsContent>
