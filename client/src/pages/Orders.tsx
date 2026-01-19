@@ -963,39 +963,43 @@ export default function Orders() {
   return (
     <div className="flex flex-col h-full">
       <div className="sticky top-0 z-30 w-full bg-card border-b border-border shadow-sm">
-        <div className="h-20 px-6 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-            <Package className="w-6 h-6 text-primary" />
-            Order Tracking
-          </h1>
-          <div className="flex items-center gap-4">
+        <div className="min-h-16 lg:h-20 px-4 lg:px-6 py-3 lg:py-0 flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-4">
+          <div className="flex items-center justify-between lg:justify-start gap-2">
+            <h1 className="text-lg lg:text-2xl font-display font-bold text-foreground flex items-center gap-2">
+              <Package className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />
+              <span className="hidden sm:inline">Order Tracking</span>
+              <span className="sm:hidden">Orders</span>
+            </h1>
             {dueSoonOrders && dueSoonOrders.length > 0 && (
               <Badge
                 variant="destructive"
                 className="animate-pulse flex items-center gap-1"
               >
                 <Bell className="w-4 h-4" />
-                {dueSoonOrders.length} Due Soon
+                <span className="hidden sm:inline">{dueSoonOrders.length} Due Soon</span>
+                <span className="sm:hidden">{dueSoonOrders.length}</span>
               </Badge>
             )}
-            <div className="relative">
+          </div>
+          <div className="flex items-center gap-2 lg:gap-4">
+            <div className="relative flex-1 lg:flex-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search orders..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full lg:w-64 h-11 touch-manipulation"
                 data-testid="input-search-orders"
               />
             </div>
             <Dialog open={isCreateOpen} onOpenChange={handleDialogClose}>
               <DialogTrigger asChild>
-                <Button data-testid="button-new-order">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Order
+                <Button className="h-11 px-3 lg:px-4 touch-manipulation whitespace-nowrap" data-testid="button-new-order">
+                  <Plus className="w-4 h-4 lg:mr-2" />
+                  <span className="hidden lg:inline">New Order</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[650px]">
+              <DialogContent className="max-w-[95vw] sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Order</DialogTitle>
                 </DialogHeader>
@@ -1014,18 +1018,18 @@ export default function Orders() {
         </div>
       </div>
 
-      <main className="flex-1 container mx-auto px-4 py-6 overflow-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <main className="flex-1 container mx-auto px-4 py-4 lg:py-6 overflow-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Shirt className="w-6 h-6 text-orange-500" />
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                  <Shirt className="w-5 h-5 lg:w-6 lg:h-6 text-orange-500" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Entry</p>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">Entry</p>
                   <p
-                    className="text-2xl font-bold"
+                    className="text-xl lg:text-2xl font-bold"
                     data-testid="text-entry-count"
                   >
                     {orders?.filter((o) => !o.washingDone).length || 0}
@@ -1036,18 +1040,18 @@ export default function Orders() {
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                   <Clock
-                    className="w-6 h-6 text-blue-500 animate-spin"
+                    className="w-5 h-5 lg:w-6 lg:h-6 text-blue-500 animate-spin"
                     style={{ animationDuration: "3s" }}
                   />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Washing</p>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">Washing</p>
                   <p
-                    className="text-2xl font-bold"
+                    className="text-xl lg:text-2xl font-bold"
                     data-testid="text-washing-count"
                   >
                     {orders?.filter((o) => o.washingDone && !o.packingDone)
@@ -1059,15 +1063,15 @@ export default function Orders() {
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
-                  <Package className="w-6 h-6 text-purple-500" />
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                  <Package className="w-5 h-5 lg:w-6 lg:h-6 text-purple-500" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Packing</p>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">Packing</p>
                   <p
-                    className="text-2xl font-bold"
+                    className="text-xl lg:text-2xl font-bold"
                     data-testid="text-packing-count"
                   >
                     {orders?.filter((o) => o.packingDone && !o.delivered)
@@ -1079,15 +1083,15 @@ export default function Orders() {
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 lg:w-6 lg:h-6 text-green-500" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Delivered</p>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">Delivered</p>
                   <p
-                    className="text-2xl font-bold"
+                    className="text-xl lg:text-2xl font-bold"
                     data-testid="text-delivered-count"
                   >
                     {orders?.filter((o) => o.delivered).length || 0}
@@ -1099,38 +1103,40 @@ export default function Orders() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4 flex-wrap">
-            <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger
-              value="create"
-              className="bg-blue-100 dark:bg-blue-900/30 data-[state=active]:bg-blue-500 data-[state=active]:text-white"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              1. Create Order
-            </TabsTrigger>
-            <TabsTrigger
-              value="tag-complete"
-              className="bg-orange-100 dark:bg-orange-900/30 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
-            >
-              <Tag className="w-4 h-4 mr-1" />
-              2. Tag Pin
-            </TabsTrigger>
-            <TabsTrigger
-              value="packing-done"
-              className="bg-green-100 dark:bg-green-900/30 data-[state=active]:bg-green-500 data-[state=active]:text-white"
-            >
-              <Package className="w-4 h-4 mr-1" />
-              3. Packing
-            </TabsTrigger>
-            <TabsTrigger
-              value="delivery"
-              className="bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
-            >
-              <Truck className="w-4 h-4 mr-1" />
-              4. Delivery
-            </TabsTrigger>
-            <TabsTrigger value="item-report">Item Report</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 mb-4">
+            <TabsList className="inline-flex min-w-max h-auto p-1 gap-1">
+              <TabsTrigger value="all" className="h-10 px-3 text-sm touch-manipulation">All</TabsTrigger>
+              <TabsTrigger
+                value="create"
+                className="h-10 px-3 text-sm touch-manipulation bg-blue-100 dark:bg-blue-900/30 data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">1.</span> Create
+              </TabsTrigger>
+              <TabsTrigger
+                value="tag-complete"
+                className="h-10 px-3 text-sm touch-manipulation bg-orange-100 dark:bg-orange-900/30 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+              >
+                <Tag className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">2.</span> Tag
+              </TabsTrigger>
+              <TabsTrigger
+                value="packing-done"
+                className="h-10 px-3 text-sm touch-manipulation bg-green-100 dark:bg-green-900/30 data-[state=active]:bg-green-500 data-[state=active]:text-white"
+              >
+                <Package className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">3.</span> Pack
+              </TabsTrigger>
+              <TabsTrigger
+                value="delivery"
+                className="h-10 px-3 text-sm touch-manipulation bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+              >
+                <Truck className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">4.</span> Deliver
+              </TabsTrigger>
+              <TabsTrigger value="item-report" className="h-10 px-3 text-sm touch-manipulation">Report</TabsTrigger>
+            </TabsList>
+          </div>
 
           {activeTab !== "item-report" && (
             <TabsContent value={activeTab}>
@@ -1144,22 +1150,23 @@ export default function Orders() {
                   <p>No orders found</p>
                 </div>
               ) : (
-                <Card>
-                  <Table>
+                <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[900px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Order #</TableHead>
-                        <TableHead>Bill #</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Client Due</TableHead>
-                        <TableHead>Items</TableHead>
+                        <TableHead className="whitespace-nowrap">Order #</TableHead>
+                        <TableHead className="whitespace-nowrap">Bill #</TableHead>
+                        <TableHead className="whitespace-nowrap">Client</TableHead>
+                        <TableHead className="whitespace-nowrap">Client Due</TableHead>
+                        <TableHead className="whitespace-nowrap">Items</TableHead>
                         {activeTab !== "create" && (
-                          <TableHead>Amount</TableHead>
+                          <TableHead className="whitespace-nowrap">Amount</TableHead>
                         )}
-                        <TableHead>Type</TableHead>
-                        <TableHead>Time Left</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="whitespace-nowrap">Type</TableHead>
+                        <TableHead className="whitespace-nowrap">Time Left</TableHead>
+                        <TableHead className="whitespace-nowrap">Status</TableHead>
+                        <TableHead className="whitespace-nowrap">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1549,6 +1556,7 @@ export default function Orders() {
                       })()}
                     </TableBody>
                   </Table>
+                </div>
                 </Card>
               )}
             </TabsContent>
@@ -1564,26 +1572,26 @@ export default function Orders() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="report-start">From:</Label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Label htmlFor="report-start" className="whitespace-nowrap">From:</Label>
                       <Input
                         id="report-start"
                         type="date"
                         value={reportStartDate}
                         onChange={(e) => setReportStartDate(e.target.value)}
-                        className="w-40"
+                        className="w-full sm:w-40 h-11 touch-manipulation"
                         data-testid="input-report-start-date"
                       />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="report-end">To:</Label>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Label htmlFor="report-end" className="whitespace-nowrap">To:</Label>
                       <Input
                         id="report-end"
                         type="date"
                         value={reportEndDate}
                         onChange={(e) => setReportEndDate(e.target.value)}
-                        className="w-40"
+                        className="w-full sm:w-40 h-11 touch-manipulation"
                         data-testid="input-report-end-date"
                       />
                     </div>
