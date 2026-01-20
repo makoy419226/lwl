@@ -7,6 +7,7 @@ import { db } from "./db";
 import { users, passwordResetTokens } from "@shared/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
+import PDFDocument from "pdfkit";
 
 import { seedDatabase } from "./seed";
 
@@ -1096,6 +1097,570 @@ export async function registerRoutes(
     }
     await storage.deleteIncident(incidentId);
     res.status(204).send();
+  });
+
+  // Generate System Flowchart PDF
+  app.get("/api/system-flowchart", async (req, res) => {
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="LiquidWashes_System_Flowchart.pdf"',
+    );
+    doc.pipe(res);
+
+    const pageWidth = 595.28;
+    const contentWidth = pageWidth - 80;
+    const centerX = pageWidth / 2;
+    let currentY = 40;
+
+    const colors = {
+      primary: "#3B82F6",
+      success: "#22C55E",
+      warning: "#F59E0B",
+      danger: "#EF4444",
+      purple: "#8B5CF6",
+      cyan: "#06B6D4",
+      gray: "#6B7280",
+      lightGray: "#F3F4F6",
+    };
+
+    const drawBox = (
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      text: string,
+      color: string,
+      isRounded = true,
+    ) => {
+      doc
+        .roundedRect(x, y, width, height, isRounded ? 8 : 0)
+        .fillAndStroke(color, color);
+      doc
+        .fillColor("white")
+        .fontSize(9)
+        .text(text, x + 5, y + height / 2 - 5, {
+          width: width - 10,
+          align: "center",
+        });
+      doc.fillColor("black");
+    };
+
+    const drawDiamond = (
+      x: number,
+      y: number,
+      size: number,
+      text: string,
+      color: string,
+    ) => {
+      doc
+        .save()
+        .translate(x + size / 2, y + size / 2)
+        .rotate(45)
+        .rect(-size / 2.8, -size / 2.8, size / 1.4, size / 1.4)
+        .fillAndStroke(color, color)
+        .restore();
+      doc
+        .fillColor("white")
+        .fontSize(7)
+        .text(text, x - 5, y + size / 2 - 5, { width: size + 10, align: "center" });
+      doc.fillColor("black");
+    };
+
+    const drawArrow = (
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number,
+      color = "#374151",
+    ) => {
+      doc.strokeColor(color).lineWidth(1.5).moveTo(x1, y1).lineTo(x2, y2).stroke();
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      const arrowLength = 8;
+      doc
+        .moveTo(x2, y2)
+        .lineTo(
+          x2 - arrowLength * Math.cos(angle - Math.PI / 6),
+          y2 - arrowLength * Math.sin(angle - Math.PI / 6),
+        )
+        .lineTo(
+          x2 - arrowLength * Math.cos(angle + Math.PI / 6),
+          y2 - arrowLength * Math.sin(angle + Math.PI / 6),
+        )
+        .lineTo(x2, y2)
+        .fill(color);
+    };
+
+    const drawSectionTitle = (title: string, y: number) => {
+      doc
+        .fontSize(14)
+        .font("Helvetica-Bold")
+        .fillColor(colors.primary)
+        .text(title, 40, y, { width: contentWidth, align: "center" });
+      doc.font("Helvetica");
+      return y + 25;
+    };
+
+    // Cover Page
+    doc
+      .fontSize(28)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text("LIQUID WASHES LAUNDRY", 40, 150, {
+        width: contentWidth,
+        align: "center",
+      });
+    doc.fontSize(20).fillColor(colors.gray).text("System Flowchart", 40, 190, {
+      width: contentWidth,
+      align: "center",
+    });
+    doc
+      .fontSize(12)
+      .text("Comprehensive Business Process Documentation", 40, 230, {
+        width: contentWidth,
+        align: "center",
+      });
+
+    doc
+      .roundedRect(centerX - 150, 280, 300, 200, 10)
+      .fillAndStroke(colors.lightGray, colors.primary);
+    doc.fillColor(colors.gray).fontSize(11);
+    const features = [
+      "Order Management & Workflow",
+      "Client & Financial Tracking",
+      "Inventory Management",
+      "Billing & Invoice System",
+      "Staff PIN Verification",
+      "Reports & Analytics",
+      "Role-Based Authentication",
+      "WhatsApp Integration",
+    ];
+    features.forEach((feature, i) => {
+      doc.text(`• ${feature}`, centerX - 130, 295 + i * 22);
+    });
+
+    doc.fontSize(10).fillColor(colors.gray);
+    doc.text("Contact: +971 50 123 4567", 40, 520, {
+      width: contentWidth,
+      align: "center",
+    });
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 40, 535, {
+      width: contentWidth,
+      align: "center",
+    });
+
+    // PAGE 2: Authentication Flow
+    doc.addPage();
+    currentY = 40;
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text("1. AUTHENTICATION SYSTEM", 40, currentY);
+    currentY += 40;
+
+    drawBox(centerX - 60, currentY, 120, 30, "User Opens App", colors.gray);
+    currentY += 30;
+    drawArrow(centerX, currentY, centerX, currentY + 20);
+    currentY += 20;
+
+    drawDiamond(centerX - 25, currentY, 50, "Logged In?", colors.warning);
+    currentY += 50;
+
+    // Left branch - Not logged in
+    drawArrow(centerX - 25, currentY - 25, centerX - 100, currentY - 25);
+    drawArrow(centerX - 100, currentY - 25, centerX - 100, currentY + 10);
+    drawBox(centerX - 160, currentY + 10, 120, 30, "Show Login Page", colors.cyan);
+
+    drawArrow(centerX - 100, currentY + 40, centerX - 100, currentY + 60);
+    drawBox(
+      centerX - 165,
+      currentY + 60,
+      130,
+      30,
+      "Enter Username & Password",
+      colors.gray,
+    );
+
+    drawArrow(centerX - 100, currentY + 90, centerX - 100, currentY + 110);
+    drawDiamond(centerX - 125, currentY + 110, 50, "Valid?", colors.warning);
+
+    drawArrow(centerX - 100, currentY + 160, centerX - 100, currentY + 180);
+    drawBox(centerX - 160, currentY + 180, 120, 30, "Store Session", colors.success);
+
+    // Right branch - Already logged in
+    drawArrow(centerX + 25, currentY - 25, centerX + 100, currentY - 25);
+    drawArrow(centerX + 100, currentY - 25, centerX + 100, currentY + 180);
+    drawBox(centerX + 40, currentY + 180, 120, 30, "Load Dashboard", colors.success);
+
+    currentY += 240;
+    doc.fontSize(10).fillColor(colors.gray);
+    doc.text("Password Reset Flow:", 40, currentY);
+    currentY += 15;
+    doc.text(
+      "1. User clicks 'Forgot Password' → 2. Enter email → 3. Receive 6-digit code via email",
+      50,
+      currentY,
+    );
+    currentY += 12;
+    doc.text(
+      "4. Enter verification code → 5. Set new password → 6. Login with new credentials",
+      50,
+      currentY,
+    );
+
+    currentY += 30;
+    doc.text("User Roles:", 40, currentY);
+    currentY += 15;
+    doc.text("• Admin: Full system access, user management, all reports", 50, currentY);
+    currentY += 12;
+    doc.text(
+      "• Manager: Order management, billing, inventory, limited reports",
+      50,
+      currentY,
+    );
+    currentY += 12;
+    doc.text("• Cashier: Order creation, billing, basic operations", 50, currentY);
+
+    // PAGE 3: Order Workflow
+    doc.addPage();
+    currentY = 40;
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text("2. ORDER WORKFLOW (Main Business Process)", 40, currentY);
+    currentY += 40;
+
+    // Stage 1: Create Order
+    drawBox(40, currentY, 120, 35, "1. CREATE ORDER", colors.primary);
+    doc.fontSize(8).fillColor(colors.gray);
+    doc.text("• Select/Create Client", 45, currentY + 40);
+    doc.text("• Enter phone (required)", 45, currentY + 50);
+    doc.text("• Add laundry items", 45, currentY + 60);
+    doc.text("• Set delivery date", 45, currentY + 70);
+    doc.text("• Stock auto-deducted", 45, currentY + 80);
+
+    drawArrow(160, currentY + 17, 190, currentY + 17);
+
+    // Stage 2: Tag PIN
+    drawBox(190, currentY, 110, 35, "2. TAG PIN", colors.warning);
+    doc.text("• Enter staff PIN", 195, currentY + 40);
+    doc.text("• Print tag (A5)", 195, currentY + 50);
+    doc.text("• Attach to clothes", 195, currentY + 60);
+    doc.text("• Auto-navigate next", 195, currentY + 70);
+
+    drawArrow(300, currentY + 17, 330, currentY + 17);
+
+    // Stage 3: Packing
+    drawBox(330, currentY, 100, 35, "3. PACKING", colors.purple);
+    doc.text("• Enter packing PIN", 335, currentY + 40);
+    doc.text("• Mark items packed", 335, currentY + 50);
+    doc.text("• Quality check", 335, currentY + 60);
+
+    drawArrow(430, currentY + 17, 460, currentY + 17);
+
+    // Stage 4: Delivery
+    drawBox(460, currentY, 95, 35, "4. DELIVERY", colors.success);
+    doc.text("• Enter delivery PIN", 465, currentY + 40);
+    doc.text("• Upload proof photo", 465, currentY + 50);
+    doc.text("• Print invoice", 465, currentY + 60);
+    doc.text("• Complete order", 465, currentY + 70);
+
+    currentY += 110;
+    doc.fontSize(11).font("Helvetica-Bold").fillColor(colors.primary);
+    doc.text("Staff PIN Verification at Each Stage:", 40, currentY);
+    currentY += 20;
+
+    doc.fontSize(9).font("Helvetica").fillColor(colors.gray);
+    const pinSteps = [
+      "1. Staff enters 5-digit PIN when completing any stage",
+      "2. System verifies PIN against worker database",
+      "3. Worker name & timestamp recorded for accountability",
+      "4. System auto-navigates to next pending order in queue",
+    ];
+    pinSteps.forEach((step, i) => {
+      doc.text(step, 50, currentY + i * 14);
+    });
+
+    currentY += 80;
+    doc.fontSize(11).font("Helvetica-Bold").fillColor(colors.primary);
+    doc.text("Order Status Tracking:", 40, currentY);
+    currentY += 20;
+
+    const statuses = [
+      { name: "Pending", color: colors.warning, desc: "Order created, awaiting tag" },
+      { name: "Washing", color: colors.cyan, desc: "Tag complete, in laundry" },
+      { name: "Ready", color: colors.purple, desc: "Packing done, ready for delivery" },
+      { name: "Delivered", color: colors.success, desc: "Order completed" },
+    ];
+
+    statuses.forEach((status, i) => {
+      drawBox(50 + i * 130, currentY, 100, 25, status.name, status.color);
+      doc.fontSize(7).fillColor(colors.gray);
+      doc.text(status.desc, 50 + i * 130, currentY + 30, {
+        width: 100,
+        align: "center",
+      });
+    });
+
+    // PAGE 4: Client Management
+    doc.addPage();
+    currentY = 40;
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text("3. CLIENT MANAGEMENT", 40, currentY);
+    currentY += 40;
+
+    drawBox(centerX - 60, currentY, 120, 30, "Clients Module", colors.primary);
+    currentY += 50;
+
+    // Three branches
+    const clientActions = [
+      { title: "Add Client", items: ["Name", "Phone (required)", "Address", "Notes"] },
+      {
+        title: "View Client",
+        items: ["Order history", "Balance due", "Transaction log", "Total spent"],
+      },
+      {
+        title: "Manage Balance",
+        items: ["Add payment", "Record credit", "View unpaid bills", "Export statement"],
+      },
+    ];
+
+    clientActions.forEach((action, i) => {
+      const x = 60 + i * 180;
+      drawArrow(
+        centerX,
+        currentY - 20,
+        x + 60,
+        currentY - 20 + (i === 1 ? 0 : 20),
+      );
+      drawBox(x, currentY, 120, 30, action.title, colors.cyan);
+      doc.fontSize(8).fillColor(colors.gray);
+      action.items.forEach((item, j) => {
+        doc.text(`• ${item}`, x + 5, currentY + 35 + j * 12);
+      });
+    });
+
+    currentY += 120;
+    doc.fontSize(11).font("Helvetica-Bold").fillColor(colors.primary);
+    doc.text("Client Transaction Flow:", 40, currentY);
+    currentY += 25;
+
+    drawBox(50, currentY, 100, 30, "Bill Created", colors.warning);
+    drawArrow(150, currentY + 15, 180, currentY + 15);
+    drawBox(180, currentY, 100, 30, "Balance Updated", colors.cyan);
+    drawArrow(280, currentY + 15, 310, currentY + 15);
+    drawBox(310, currentY, 100, 30, "Payment Made", colors.purple);
+    drawArrow(410, currentY + 15, 440, currentY + 15);
+    drawBox(440, currentY, 100, 30, "Balance Reduced", colors.success);
+
+    // PAGE 5: Billing System
+    doc.addPage();
+    currentY = 40;
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text("4. BILLING & INVOICE SYSTEM", 40, currentY);
+    currentY += 40;
+
+    drawBox(centerX - 60, currentY, 120, 30, "Create Bill", colors.primary);
+    currentY += 50;
+
+    doc.fontSize(9).fillColor(colors.gray);
+    doc.text("Bill Creation Process:", 40, currentY);
+    currentY += 15;
+
+    const billSteps = [
+      "1. Select client from dropdown",
+      "2. Choose linked order (optional)",
+      "3. Add bill items with quantities & prices",
+      "4. Apply discount if applicable",
+      "5. Enter staff PIN for verification",
+      "6. Save bill & update client balance",
+    ];
+    billSteps.forEach((step, i) => {
+      doc.text(step, 50, currentY + i * 14);
+    });
+
+    currentY += 100;
+    doc.fontSize(11).font("Helvetica-Bold").fillColor(colors.primary);
+    doc.text("Bill Actions:", 40, currentY);
+    currentY += 25;
+
+    const billActions = [
+      { title: "Download PDF", color: colors.cyan },
+      { title: "Thermal Print", color: colors.warning },
+      { title: "WhatsApp Share", color: colors.success },
+      { title: "Mark as Paid", color: colors.purple },
+    ];
+
+    billActions.forEach((action, i) => {
+      drawBox(50 + i * 130, currentY, 110, 30, action.title, action.color);
+    });
+
+    currentY += 60;
+    doc.fontSize(10).fillColor(colors.gray);
+    doc.text("Bidirectional Linking: Bills can be linked to Orders and vice versa.", 40, currentY);
+    doc.text(
+      "Client balance automatically updates when bills are created or payments received.",
+      40,
+      currentY + 14,
+    );
+
+    // PAGE 6: Inventory
+    doc.addPage();
+    currentY = 40;
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text("5. INVENTORY MANAGEMENT", 40, currentY);
+    currentY += 40;
+
+    drawBox(centerX - 60, currentY, 120, 30, "Inventory Module", colors.primary);
+    currentY += 50;
+
+    doc.fontSize(9).fillColor(colors.gray);
+    doc.text("47 Pre-seeded Laundry Items:", 40, currentY);
+    currentY += 15;
+
+    const categories = [
+      "Clothing (shirts, pants, dresses, etc.)",
+      "Bedding (sheets, pillowcases, comforters)",
+      "Household (towels, curtains, tablecloths)",
+      "Specialty (suits, wedding dresses, leather)",
+    ];
+    categories.forEach((cat, i) => {
+      doc.text(`• ${cat}`, 50, currentY + i * 14);
+    });
+
+    currentY += 70;
+    doc.fontSize(11).font("Helvetica-Bold").fillColor(colors.primary);
+    doc.text("Stock Flow:", 40, currentY);
+    currentY += 25;
+
+    drawBox(50, currentY, 110, 30, "Add Stock", colors.success);
+    drawArrow(160, currentY + 15, 190, currentY + 15);
+    drawBox(190, currentY, 120, 30, "Current Quantity", colors.cyan);
+    drawArrow(310, currentY + 15, 340, currentY + 15);
+    drawBox(340, currentY, 120, 30, "Order Created", colors.warning);
+    drawArrow(460, currentY + 15, 490, currentY + 15);
+    drawBox(490, currentY - 5, 50, 40, "-Stock", colors.danger);
+
+    currentY += 60;
+    doc.fontSize(9).fillColor(colors.gray);
+    doc.text("• Stock is automatically deducted when orders are created", 50, currentY);
+    doc.text("• Low stock alerts appear on dashboard", 50, currentY + 14);
+    doc.text("• Upload product images for visual identification", 50, currentY + 28);
+
+    // PAGE 7: Reports
+    doc.addPage();
+    currentY = 40;
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text("6. REPORTS & ANALYTICS", 40, currentY);
+    currentY += 40;
+
+    const reportTypes = [
+      {
+        title: "Sales Report",
+        items: [
+          "Daily/Weekly/Monthly sales",
+          "Revenue breakdown",
+          "Top selling items",
+          "Export to Excel/PDF",
+        ],
+      },
+      {
+        title: "Due Customers",
+        items: [
+          "Outstanding balances",
+          "Aging analysis",
+          "Contact details",
+          "Quick bill creation",
+        ],
+      },
+      {
+        title: "Staff Performance",
+        items: [
+          "Orders completed per worker",
+          "Average completion time",
+          "PIN verification logs",
+          "Productivity trends",
+        ],
+      },
+    ];
+
+    reportTypes.forEach((report, i) => {
+      drawBox(40, currentY + i * 100, 140, 30, report.title, colors.primary);
+      doc.fontSize(8).fillColor(colors.gray);
+      report.items.forEach((item, j) => {
+        doc.text(`• ${item}`, 190, currentY + i * 100 + 5 + j * 12);
+      });
+    });
+
+    // PAGE 8: System Overview
+    doc.addPage();
+    currentY = 40;
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .fillColor(colors.primary)
+      .text("7. COMPLETE SYSTEM OVERVIEW", 40, currentY);
+    currentY += 40;
+
+    // Main flow diagram
+    const modules = [
+      { name: "Login", x: centerX - 50, y: currentY, color: colors.gray },
+      { name: "Dashboard", x: centerX - 50, y: currentY + 60, color: colors.primary },
+      { name: "Orders", x: 60, y: currentY + 130, color: colors.warning },
+      { name: "Clients", x: 180, y: currentY + 130, color: colors.cyan },
+      { name: "Inventory", x: 300, y: currentY + 130, color: colors.purple },
+      { name: "Bills", x: 420, y: currentY + 130, color: colors.success },
+      { name: "Reports", x: centerX - 50, y: currentY + 200, color: colors.danger },
+      { name: "Workers", x: 180, y: currentY + 200, color: colors.gray },
+      { name: "Incidents", x: 320, y: currentY + 200, color: colors.warning },
+    ];
+
+    modules.forEach((m) => {
+      drawBox(m.x, m.y, 100, 30, m.name, m.color);
+    });
+
+    // Draw connecting arrows
+    drawArrow(centerX, currentY + 30, centerX, currentY + 60);
+    drawArrow(centerX, currentY + 90, 110, currentY + 130);
+    drawArrow(centerX, currentY + 90, 230, currentY + 130);
+    drawArrow(centerX, currentY + 90, 350, currentY + 130);
+    drawArrow(centerX, currentY + 90, 470, currentY + 130);
+
+    currentY += 250;
+    doc.fontSize(10).fillColor(colors.gray);
+    doc.text("All modules interconnected through shared database", 40, currentY, {
+      width: contentWidth,
+      align: "center",
+    });
+
+    currentY += 30;
+    doc.fontSize(11).font("Helvetica-Bold").fillColor(colors.primary);
+    doc.text("Technical Stack:", 40, currentY);
+    currentY += 20;
+    doc.fontSize(9).font("Helvetica").fillColor(colors.gray);
+    doc.text("• Frontend: React + TypeScript + Tailwind CSS + shadcn/ui", 50, currentY);
+    doc.text("• Backend: Express.js + Node.js", 50, currentY + 12);
+    doc.text("• Database: PostgreSQL with Drizzle ORM", 50, currentY + 24);
+    doc.text("• Email: Resend for password reset", 50, currentY + 36);
+    doc.text("• Documents: A5 format for all prints/PDFs", 50, currentY + 48);
+
+    doc.end();
   });
 
   return httpServer;
