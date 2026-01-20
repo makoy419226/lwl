@@ -130,6 +130,13 @@ export default function Orders() {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [deliveryInvoiceOrder, setDeliveryInvoiceOrder] =
     useState<Order | null>(null);
+  
+  const [incidentReportOrder, setIncidentReportOrder] = useState<Order | null>(null);
+  const [incidentType, setIncidentType] = useState("missing_item");
+  const [incidentItems, setIncidentItems] = useState<string[]>([]);
+  const [incidentReason, setIncidentReason] = useState("");
+  const [incidentNotes, setIncidentNotes] = useState("");
+  const [reporterName, setReporterName] = useState("");
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -910,6 +917,105 @@ export default function Orders() {
     verifyTagPinMutation.mutate(tagPin);
   };
 
+  const createIncidentMutation = useMutation({
+    mutationFn: async (data: {
+      customerName: string;
+      customerPhone?: string;
+      orderId: number;
+      orderNumber: string;
+      itemName: string;
+      reason: string;
+      notes?: string;
+      responsibleStaffId?: number;
+      responsibleStaffName?: string;
+      reporterName?: string;
+      incidentType: string;
+      incidentDate: string;
+    }) => {
+      const res = await apiRequest("POST", "/api/incidents", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      toast({
+        title: "Incident Reported",
+        description: "The incident has been recorded successfully.",
+      });
+      resetIncidentForm();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to report incident",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetIncidentForm = () => {
+    setIncidentReportOrder(null);
+    setIncidentType("missing_item");
+    setIncidentItems([]);
+    setIncidentReason("");
+    setIncidentNotes("");
+    setReporterName("");
+  };
+
+  const handleReportIncident = (order: Order) => {
+    setIncidentReportOrder(order);
+    setIncidentType("missing_item");
+    setIncidentItems([]);
+    setIncidentReason("");
+    setIncidentNotes("");
+  };
+
+  const submitIncidentReport = () => {
+    if (!incidentReportOrder) return;
+    if (incidentItems.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one item",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!incidentReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!reporterName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your name as the reporter",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const client = incidentReportOrder.clientId 
+      ? clients?.find(c => c.id === incidentReportOrder.clientId) 
+      : null;
+
+    createIncidentMutation.mutate({
+      customerName: client?.name || incidentReportOrder.customerName || "Unknown",
+      customerPhone: client?.phone || undefined,
+      orderId: incidentReportOrder.id,
+      orderNumber: incidentReportOrder.orderNumber,
+      itemName: incidentItems.join(", "),
+      reason: incidentReason,
+      notes: incidentNotes || undefined,
+      responsibleStaffId: incidentReportOrder.packingWorkerId || undefined,
+      responsibleStaffName: incidentReportOrder.packingBy || undefined,
+      reporterName: reporterName,
+      incidentType: incidentType,
+      incidentDate: new Date().toISOString(),
+    });
+  };
+
   const filteredOrders = orders?.filter((order) => {
     const matchesSearch =
       !searchTerm ||
@@ -1373,6 +1479,16 @@ export default function Orders() {
                                 <Receipt className="w-4 h-4 mr-1" />
                                 Invoice
                               </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-orange-500"
+                                onClick={() => handleReportIncident(order)}
+                                data-testid={`button-mobile-report-incident-${order.id}`}
+                                title="Report Incident"
+                              >
+                                <AlertTriangle className="w-4 h-4" />
+                              </Button>
                             </>
                           )}
                         </div>
@@ -1756,6 +1872,16 @@ export default function Orders() {
                                         >
                                           <Receipt className="w-3 h-3 sm:mr-1" />
                                           <span className="hidden sm:inline">Invoice</span>
+                                        </Button>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="shrink-0 touch-manipulation text-orange-500"
+                                          onClick={() => handleReportIncident(order)}
+                                          data-testid={`button-report-incident-${order.id}`}
+                                          title="Report Incident"
+                                        >
+                                          <AlertTriangle className="w-4 h-4" />
                                         </Button>
                                       </div>
                                     )}
@@ -2647,6 +2773,138 @@ export default function Orders() {
                   }}
                 >
                   Go to Bills
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Incident Report Dialog */}
+      <Dialog 
+        open={!!incidentReportOrder} 
+        onOpenChange={(open) => !open && resetIncidentForm()}
+      >
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              Report Incident / Missing Item
+            </DialogTitle>
+            <DialogDescription>
+              Report an issue with order #{incidentReportOrder?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+          {incidentReportOrder && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Order:</span>
+                  <span className="font-medium">{incidentReportOrder.orderNumber}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Customer:</span>
+                  <span className="font-medium">
+                    {clients?.find(c => c.id === incidentReportOrder.clientId)?.name || incidentReportOrder.customerName || "Walk-in"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Responsible Staff:</span>
+                  <span className="font-medium">
+                    {incidentReportOrder.packingBy || "Not assigned"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Incident Type</Label>
+                <Select value={incidentType} onValueChange={setIncidentType}>
+                  <SelectTrigger data-testid="select-incident-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="missing_item">Missing Item</SelectItem>
+                    <SelectItem value="damage">Damage</SelectItem>
+                    <SelectItem value="complaint">Customer Complaint</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Select Item(s)</Label>
+                <div className="border rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
+                  {parseOrderItems(incidentReportOrder.items).map((item, idx) => (
+                    <div key={idx} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`item-${idx}`}
+                        checked={incidentItems.includes(`${item.name} x${item.quantity}`)}
+                        onCheckedChange={(checked) => {
+                          const itemStr = `${item.name} x${item.quantity}`;
+                          if (checked) {
+                            setIncidentItems([...incidentItems, itemStr]);
+                          } else {
+                            setIncidentItems(incidentItems.filter(i => i !== itemStr));
+                          }
+                        }}
+                        data-testid={`checkbox-item-${idx}`}
+                      />
+                      <label htmlFor={`item-${idx}`} className="text-sm flex-1">
+                        {item.name} x{item.quantity}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Reason / Description</Label>
+                <Textarea
+                  placeholder="Describe the incident..."
+                  value={incidentReason}
+                  onChange={(e) => setIncidentReason(e.target.value)}
+                  data-testid="input-incident-reason"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Additional Notes (Optional)</Label>
+                <Textarea
+                  placeholder="Any additional details..."
+                  value={incidentNotes}
+                  onChange={(e) => setIncidentNotes(e.target.value)}
+                  data-testid="input-incident-notes"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Your Name (Reporter)</Label>
+                <Input
+                  placeholder="Enter your name"
+                  value={reporterName}
+                  onChange={(e) => setReporterName(e.target.value)}
+                  data-testid="input-reporter-name"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={resetIncidentForm}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                  onClick={submitIncidentReport}
+                  disabled={createIncidentMutation.isPending}
+                  data-testid="button-submit-incident"
+                >
+                  {createIncidentMutation.isPending && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
+                  Report Incident
                 </Button>
               </div>
             </div>
