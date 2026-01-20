@@ -15,7 +15,6 @@ import Workers from "@/pages/Workers";
 import SalesReports from "@/pages/SalesReports";
 import Incidents from "@/pages/Incidents";
 import DueCustomers from "@/pages/DueCustomers";
-import MissingItems from "@/pages/MissingItems";
 import Contact from "@/pages/Contact";
 import Login, { type UserInfo } from "@/pages/Login";
 import PublicOrder from "@/pages/PublicOrder";
@@ -37,7 +36,6 @@ function Router() {
       <Route path="/sales-reports" component={SalesReports} />
       <Route path="/incidents" component={Incidents} />
       <Route path="/due-customers" component={DueCustomers} />
-      <Route path="/missing-items" component={MissingItems} />
       <Route path="/contact" component={Contact} />
       <Route component={NotFound} />
     </Switch>

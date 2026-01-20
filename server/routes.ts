@@ -721,10 +721,51 @@ export async function registerRoutes(
       return res.status(404).json({ message: "Delivered order not found" });
     }
     let items: Array<{ name: string; quantity: number; price: number }> = [];
-    try {
-      items = order.items ? JSON.parse(order.items) : [];
-    } catch (e) {
-      items = [];
+    if (order.items) {
+      const trimmed = order.items.trim();
+      // Try JSON parsing first
+      if (trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            items = parsed.map((item: any) => ({
+              name: item.name || item.productName || 'Unknown',
+              quantity: item.quantity || item.qty || 1,
+              price: parseFloat(item.price) || 0
+            }));
+          }
+        } catch (e) {
+          // Fall through to string parsing
+        }
+      }
+      
+      // String format parsing: "2x Shirt, 3x Pants" or "Shirt x2, Pants x3"
+      if (items.length === 0) {
+        items = trimmed.split(", ").map((itemStr: string) => {
+          // Try "2x ProductName" format first
+          const quantityFirstMatch = itemStr.match(/^(\d+)x\s+(.+)$/);
+          if (quantityFirstMatch) {
+            return { 
+              name: quantityFirstMatch[2].trim(), 
+              quantity: parseInt(quantityFirstMatch[1]),
+              price: 0 
+            };
+          }
+          
+          // Try "ProductName x2" format
+          const nameFirstMatch = itemStr.match(/^(.+)\s+x(\d+)$/);
+          if (nameFirstMatch) {
+            return { 
+              name: nameFirstMatch[1].trim(), 
+              quantity: parseInt(nameFirstMatch[2]),
+              price: 0 
+            };
+          }
+          
+          // No quantity found, assume 1
+          return { name: itemStr.trim(), quantity: 1, price: 0 };
+        }).filter(item => item.name && item.name !== '');
+      }
     }
     res.json({ order, items });
   });

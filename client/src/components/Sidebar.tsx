@@ -52,7 +52,6 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isSalesReports = location === "/sales-reports";
   const isIncidents = location === "/incidents";
   const isDueCustomers = location === "/due-customers";
-  const isMissingItems = location === "/missing-items";
   const isContact = location === "/contact";
 
   const navItems = [
@@ -64,7 +63,6 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers" },
     { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports" },
     { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents" },
-    { href: "/missing-items", icon: Search, label: "Missing Items", active: isMissingItems, testId: "nav-missing-items" },
     { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers" },
     { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact" },
   ];

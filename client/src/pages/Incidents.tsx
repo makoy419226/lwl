@@ -240,6 +240,8 @@ export default function Incidents() {
 
   const getTypeBadge = (type: string | null) => {
     switch (type) {
+      case "missing_item":
+        return <Badge variant="outline" className="border-purple-500 text-purple-600">Missing Item</Badge>;
       case "refund":
         return <Badge variant="outline" className="border-red-500 text-red-600">Refund</Badge>;
       case "damage":
@@ -365,6 +367,7 @@ export default function Incidents() {
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="missing_item">Missing Item</SelectItem>
               <SelectItem value="refund">Refund</SelectItem>
               <SelectItem value="damage">Damage</SelectItem>
               <SelectItem value="complaint">Complaint</SelectItem>
