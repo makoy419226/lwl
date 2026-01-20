@@ -195,8 +195,26 @@ export default function Orders() {
     return getClientBills(clientId).filter((b) => !b.isPaid);
   };
 
-  const parseOrderItems = (itemsString: string | null) => {
+  const parseOrderItems = (itemsString: string | null): Array<{name: string, quantity: number}> => {
     if (!itemsString) return [];
+    
+    // Try parsing as JSON first (new format: array of objects)
+    const trimmed = itemsString.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: any) => ({
+            name: item.name || item.productName || 'Unknown',
+            quantity: item.quantity || item.qty || 1
+          }));
+        }
+      } catch (e) {
+        // Fall through to legacy parsing
+      }
+    }
+    
+    // Legacy format: "item x2, item2 x3"
     return itemsString.split(", ").map((item) => {
       const match = item.match(/^(.+)\s+x(\d+)$/);
       if (match) {
