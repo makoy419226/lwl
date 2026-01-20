@@ -222,6 +222,37 @@ export const insertIncidentSchema = createInsertSchema(incidents)
     resolvedDate: z.union([z.date(), z.string()]).optional().nullable(),
   });
 
+export const missingItems = pgTable("missing_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id"),
+  orderNumber: text("order_number"),
+  customerName: text("customer_name"),
+  itemName: text("item_name").notNull(),
+  quantity: integer("quantity").default(1),
+  itemValue: numeric("item_value", { precision: 12, scale: 2 }).default("0"),
+  stage: text("stage").notNull(), // 'tag', 'washing', 'packing', 'delivery', 'storage'
+  responsibleWorkerId: integer("responsible_worker_id"),
+  responsibleWorkerName: text("responsible_worker_name"),
+  reportedByWorkerId: integer("reported_by_worker_id"),
+  reportedByWorkerName: text("reported_by_worker_name"),
+  notes: text("notes"),
+  status: text("status").default("reported"), // 'reported', 'investigating', 'found', 'lost', 'compensated'
+  reportedAt: timestamp("reported_at").notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  resolution: text("resolution"),
+});
+
+export const insertMissingItemSchema = createInsertSchema(missingItems)
+  .omit({ id: true })
+  .extend({
+    itemName: z.string().min(1, "Item name is required"),
+    stage: z.string().min(1, "Stage is required"),
+    quantity: z.number().optional(),
+    itemValue: z.union([z.string(), z.number()]).optional(),
+    reportedAt: z.union([z.date(), z.string()]),
+    resolvedAt: z.union([z.date(), z.string()]).optional().nullable(),
+  });
+
 export type Product = typeof products.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Bill = typeof bills.$inferSelect;
@@ -240,6 +271,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPackingWorker = z.infer<typeof insertPackingWorkerSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
+export type MissingItem = typeof missingItems.$inferSelect;
+export type InsertMissingItem = z.infer<typeof insertMissingItemSchema>;
 
 // Explicit API types
 export type ProductResponse = Product;
