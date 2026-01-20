@@ -1099,6 +1099,56 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Missing Items Routes
+  app.get("/api/missing-items", async (req, res) => {
+    const search = req.query.search as string | undefined;
+    const items = await storage.getMissingItems(search);
+    res.json(items);
+  });
+
+  app.get("/api/missing-items/:id", async (req, res) => {
+    const itemId = Number(req.params.id);
+    if (isNaN(itemId)) {
+      return res.status(400).json({ message: "Invalid item ID" });
+    }
+    const item = await storage.getMissingItem(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Missing item not found" });
+    }
+    res.json(item);
+  });
+
+  app.post("/api/missing-items", async (req, res) => {
+    try {
+      const item = await storage.createMissingItem(req.body);
+      res.status(201).json(item);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.put("/api/missing-items/:id", async (req, res) => {
+    try {
+      const itemId = Number(req.params.id);
+      if (isNaN(itemId)) {
+        return res.status(400).json({ message: "Invalid item ID" });
+      }
+      const item = await storage.updateMissingItem(itemId, req.body);
+      res.json(item);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.delete("/api/missing-items/:id", async (req, res) => {
+    const itemId = Number(req.params.id);
+    if (isNaN(itemId)) {
+      return res.status(400).json({ message: "Invalid item ID" });
+    }
+    await storage.deleteMissingItem(itemId);
+    res.status(204).send();
+  });
+
   // Generate System Flowchart PDF
   app.get("/api/system-flowchart", async (req, res) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
