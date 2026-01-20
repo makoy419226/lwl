@@ -9,6 +9,7 @@ import {
   orders,
   packingWorkers,
   incidents,
+  missingItems,
   type Product,
   type Client,
   type Bill,
@@ -17,6 +18,7 @@ import {
   type Order,
   type PackingWorker,
   type Incident,
+  type MissingItem,
   type InsertProduct,
   type InsertClient,
   type InsertBill,
@@ -25,6 +27,7 @@ import {
   type InsertOrder,
   type InsertPackingWorker,
   type InsertIncident,
+  type InsertMissingItem,
   type UpdateProductRequest,
   type UpdateClientRequest,
   type UpdateOrderRequest,
@@ -123,6 +126,11 @@ export interface IStorage {
   getAllocatedStock(): Promise<Record<string, number>>;
   addStockForOrder(orderId: number): Promise<void>;
   deductStockForOrder(orderId: number): Promise<void>;
+  getMissingItems(search?: string): Promise<MissingItem[]>;
+  getMissingItem(id: number): Promise<MissingItem | undefined>;
+  createMissingItem(item: InsertMissingItem): Promise<MissingItem>;
+  updateMissingItem(id: number, updates: Partial<InsertMissingItem>): Promise<MissingItem>;
+  deleteMissingItem(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1043,6 +1051,54 @@ export class DatabaseStorage implements IStorage {
           .where(eq(products.id, product.id));
       }
     }
+  }
+
+  async getMissingItems(search?: string): Promise<MissingItem[]> {
+    if (search) {
+      const searchPattern = `%${search}%`;
+      return await db
+        .select()
+        .from(missingItems)
+        .where(
+          or(
+            ilike(missingItems.itemName, searchPattern),
+            ilike(missingItems.customerName || "", searchPattern),
+            ilike(missingItems.orderNumber || "", searchPattern),
+            ilike(missingItems.responsibleWorkerName || "", searchPattern),
+          ),
+        )
+        .orderBy(desc(missingItems.reportedAt));
+    }
+    return await db.select().from(missingItems).orderBy(desc(missingItems.reportedAt));
+  }
+
+  async getMissingItem(id: number): Promise<MissingItem | undefined> {
+    const [item] = await db
+      .select()
+      .from(missingItems)
+      .where(eq(missingItems.id, id));
+    return item;
+  }
+
+  async createMissingItem(item: InsertMissingItem): Promise<MissingItem> {
+    const [created] = await db.insert(missingItems).values(item).returning();
+    return created;
+  }
+
+  async updateMissingItem(
+    id: number,
+    updates: Partial<InsertMissingItem>,
+  ): Promise<MissingItem> {
+    const [updated] = await db
+      .update(missingItems)
+      .set(updates)
+      .where(eq(missingItems.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMissingItem(id: number): Promise<void> {
+    await db.delete(missingItems).where(eq(missingItems.id, id));
   }
 }
 

@@ -1,0 +1,153 @@
+1. MVP Term for Implementing Payment Method Tracking
+
+For an MVP, you want terminology that is simple, intuitive, and expandable later.
+
+Recommended MVP Term
+
+“Payment Method Tracking”
+or (even simpler for MVP)
+“Payment Records”
+
+What it Means in MVP Scope
+
+At minimum, this should track:
+
+Payment Method (Cash / GCash / Card / Other)
+
+Amount Paid
+
+Date & Time
+
+Order / Receipt Number
+
+Payment Status (Paid / Partial / Unpaid)
+
+Example MVP Labels (UI-friendly)
+
+Payment Type
+
+Payment Mode
+
+Payment Method
+
+👉 Best MVP choice:
+Payment Method — universally understood and future-proof.
+
+2. Preventing Missing or Lost Customer Items (MVP-Level Solutions)
+
+This is a common laundry problem, so your app + process should work together.
+
+A. Itemized Intake (MOST IMPORTANT)
+
+At drop-off, record:
+
+Number of items
+
+Item categories (Shirt, Pants, Bedsheet, Towel, etc.)
+
+Special items (Jackets, Delicates)
+
+MVP Term:
+
+Item Count
+
+Item List
+
+Example:
+
+Shirts (5), Pants (3), Bedsheet (1)
+
+✅ This alone prevents most disputes.
+
+B. Claim Stub / Digital Receipt
+
+Generate a receipt with:
+
+Order ID
+
+Item count
+
+Customer name
+
+Pickup date
+
+MVP Term:
+
+Claim Ticket
+
+Order Receipt
+
+Even better:
+
+QR Code (optional, later)
+
+SMS or printed receipt
+
+C. Status Tracking per Order
+
+Simple statuses help reduce confusion:
+
+Received
+
+Washing
+
+Ready for Pickup
+
+Released
+
+MVP Term:
+
+Order Status
+
+This prevents:
+
+Items being released to the wrong customer
+
+Customers claiming items too early
+
+D. Item Verification on Release
+
+Before handing over items:
+
+Staff confirms item count matches intake
+
+Customer confirms count before leaving
+
+MVP Term:
+
+Item Verification
+
+Release Confirmation
+
+E. Optional MVP+ Safeguards (Still Simple)
+
+If you want one step better than MVP:
+
+Color-coded laundry tags per order
+
+Order ID written on laundry bag
+
+Separate basket per order
+
+No tech required, but huge impact.
+
+Summary (MVP-Focused)
+MVP Features You Should Include
+
+Payment Method (Cash / Digital / Card)
+
+Item Count per Order
+
+Order Status
+
+Claim Receipt / Order ID
+
+MVP Business Outcome
+
+Fewer lost items
+
+Clear payment tracking
+
+Less customer dispute
+
+Faster operations
