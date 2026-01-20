@@ -105,6 +105,12 @@ export const orders = pgTable("orders", {
   deliveryPhoto: text("delivery_photo"),
   deliveryPhotos: text("delivery_photos").array(),
   stockDeducted: boolean("stock_deducted").default(false),
+  itemCountVerified: boolean("item_count_verified").default(false),
+  verifiedAt: timestamp("verified_at"),
+  verifiedByWorkerId: integer("verified_by_worker_id"),
+  verifiedByWorkerName: text("verified_by_worker_name"),
+  itemCountAtIntake: integer("item_count_at_intake"),
+  itemCountAtRelease: integer("item_count_at_release"),
 });
 
 export const users = pgTable("users", {

@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -83,6 +84,7 @@ export default function Orders() {
   } | null>(null);
   const [deliveryPin, setDeliveryPin] = useState("");
   const [deliveryPinError, setDeliveryPinError] = useState("");
+  const [itemCountVerified, setItemCountVerified] = useState(false);
   const [deliveryPhotos, setDeliveryPhotos] = useState<string[]>([]);
   const [deliveryPhotoPreviews, setDeliveryPhotoPreviews] = useState<string[]>(
     [],
@@ -737,6 +739,10 @@ export default function Orders() {
               deliveredByWorkerId: data.worker.id,
               deliveryPhoto: deliveryPhotos[0] || null,
               deliveryPhotos: deliveryPhotos.length > 0 ? deliveryPhotos : null,
+              itemCountVerified: itemCountVerified,
+              verifiedAt: itemCountVerified ? new Date().toISOString() : null,
+              verifiedByWorkerId: itemCountVerified ? data.worker.id : null,
+              verifiedByWorkerName: itemCountVerified ? data.worker.name : null,
             },
           },
           {
@@ -811,6 +817,7 @@ export default function Orders() {
     setDeliveryPinDialog({ orderId });
     setDeliveryPin("");
     setDeliveryPinError("");
+    setItemCountVerified(false);
   };
 
   const submitDeliveryPin = () => {
@@ -1028,7 +1035,7 @@ export default function Orders() {
                   <Shirt className="w-5 h-5 lg:w-6 lg:h-6 text-orange-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">Entry</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">Received</p>
                   <p
                     className="text-xl lg:text-2xl font-bold"
                     data-testid="text-entry-count"
@@ -1070,7 +1077,7 @@ export default function Orders() {
                   <Package className="w-5 h-5 lg:w-6 lg:h-6 text-purple-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">Packing</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">Ready</p>
                   <p
                     className="text-xl lg:text-2xl font-bold"
                     data-testid="text-packing-count"
@@ -1090,7 +1097,7 @@ export default function Orders() {
                   <CheckCircle2 className="w-5 h-5 lg:w-6 lg:h-6 text-green-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">Delivered</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">Released</p>
                   <p
                     className="text-xl lg:text-2xl font-bold"
                     data-testid="text-delivered-count"
@@ -2402,6 +2409,35 @@ export default function Orders() {
               )}
             </div>
 
+            {/* Item Count Verification Section */}
+            {deliveryPinDialog && (() => {
+              const order = orders?.find(o => o.id === deliveryPinDialog.orderId);
+              const itemCount = order?.items ? 
+                JSON.parse(order.items).reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) : 0;
+              return (
+                <div className="p-3 bg-muted rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Item Count at Intake</span>
+                    <Badge variant="outline" className="text-lg font-bold" data-testid="text-item-count">{itemCount} items</Badge>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="itemVerified" 
+                      checked={itemCountVerified}
+                      onCheckedChange={(checked) => setItemCountVerified(checked === true)}
+                      data-testid="checkbox-item-verified"
+                    />
+                    <label 
+                      htmlFor="itemVerified" 
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I confirm all {itemCount} items are present and match intake
+                    </label>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="space-y-2">
               <Label className="text-sm font-medium">Enter Staff PIN</Label>
               <Input
@@ -2426,6 +2462,11 @@ export default function Orders() {
                 {deliveryPinError}
               </p>
             )}
+            {!itemCountVerified && (
+              <p className="text-sm text-amber-600 dark:text-amber-400 text-center">
+                Please verify item count before confirming delivery
+              </p>
+            )}
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -2434,6 +2475,7 @@ export default function Orders() {
                   setDeliveryPinDialog(null);
                   clearDeliveryPhotos();
                 }}
+                data-testid="button-cancel-delivery"
               >
                 Cancel
               </Button>
