@@ -1159,12 +1159,12 @@ export default function Orders() {
                         <TableHead className="whitespace-nowrap hidden lg:table-cell">Bill</TableHead>
                         <TableHead className="whitespace-nowrap">Client</TableHead>
                         <TableHead className="whitespace-nowrap hidden xl:table-cell">Due</TableHead>
-                        <TableHead className="whitespace-nowrap hidden md:table-cell">Items</TableHead>
+                        <TableHead className="whitespace-nowrap">Items</TableHead>
                         {activeTab !== "create" && (
                           <TableHead className="whitespace-nowrap hidden sm:table-cell">Amount</TableHead>
                         )}
                         <TableHead className="whitespace-nowrap hidden lg:table-cell">Type</TableHead>
-                        <TableHead className="whitespace-nowrap w-16 sm:w-auto">Time</TableHead>
+                        <TableHead className="whitespace-nowrap hidden sm:table-cell">Time</TableHead>
                         <TableHead className="whitespace-nowrap w-20 sm:w-auto">Status</TableHead>
                         <TableHead className="whitespace-nowrap">Actions</TableHead>
                       </TableRow>
@@ -1340,18 +1340,18 @@ export default function Orders() {
                                     </TableCell>
                                   </>
                                 ) : null}
-                                <TableCell className="hidden md:table-cell">
+                                <TableCell>
                                   <Popover>
                                     <PopoverTrigger asChild>
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        className="gap-1 touch-manipulation"
+                                        className="gap-1 touch-manipulation text-xs sm:text-sm"
                                         data-testid={`button-view-items-${order.id}`}
                                       >
                                         <Package className="w-3 h-3" />
                                         <span className="font-medium">
-                                          {parseOrderItems(order.items).reduce((sum, item) => sum + item.quantity, 0)} items
+                                          {parseOrderItems(order.items).reduce((sum, item) => sum + item.quantity, 0)}
                                         </span>
                                         <ChevronDown className="w-3 h-3" />
                                       </Button>
@@ -1403,7 +1403,7 @@ export default function Orders() {
                                     <Badge variant="secondary">Take Away</Badge>
                                   )}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="hidden sm:table-cell">
                                   {getTimeRemaining(order.expectedDeliveryAt)}
                                 </TableCell>
                                 <TableCell>{getStatusBadge(order)}</TableCell>
