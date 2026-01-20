@@ -1116,6 +1116,32 @@ export async function registerRoutes(
     });
   });
 
+  // Public order tracking by order number (no auth required) - limited safe data only
+  app.get("/api/orders/track/:orderNumber", async (req, res) => {
+    const { orderNumber } = req.params;
+    if (!orderNumber || orderNumber.length < 1) {
+      return res.status(400).json({ message: "Invalid order number" });
+    }
+    const order = await storage.getOrderByNumber(orderNumber.toUpperCase());
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    // Return only safe, non-sensitive fields for public view (no financial data, no personal details)
+    res.json({
+      orderNumber: order.orderNumber,
+      items: order.items,
+      status: order.status,
+      entryDate: order.entryDate,
+      deliveryType: order.deliveryType,
+      tagDone: order.tagDone,
+      washingDone: order.washingDone,
+      packingDone: order.packingDone,
+      delivered: order.delivered,
+      urgent: order.urgent,
+      expectedDeliveryAt: order.expectedDeliveryAt,
+    });
+  });
+
   // Generate public view token for order
   app.post("/api/orders/:id/generate-token", async (req, res) => {
     const orderId = Number(req.params.id);

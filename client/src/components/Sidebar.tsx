@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, Search } from "lucide-react";
+import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, Search, FlaskConical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -53,6 +53,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isIncidents = location === "/incidents";
   const isDueCustomers = location === "/due-customers";
   const isContact = location === "/contact";
+  const isTrackOrder = location === "/track";
 
   const navItems = [
     { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory" },
@@ -65,6 +66,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents" },
     { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers" },
     { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact" },
+    { href: "/track", icon: FlaskConical, label: "Track Order", active: isTrackOrder, testId: "nav-track-order", experimental: true },
   ];
 
   return (
@@ -116,7 +118,12 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
                 data-testid={item.testId}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate flex-1 text-left">{item.label}</span>
+                {"experimental" in item && item.experimental && (
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 shrink-0">
+                    Beta
+                  </Badge>
+                )}
               </Button>
             </Link>
           ))}

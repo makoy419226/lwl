@@ -18,6 +18,7 @@ import DueCustomers from "@/pages/DueCustomers";
 import Contact from "@/pages/Contact";
 import Login, { type UserInfo } from "@/pages/Login";
 import PublicOrder from "@/pages/PublicOrder";
+import TrackOrder from "@/pages/TrackOrder";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/incidents" component={Incidents} />
       <Route path="/due-customers" component={DueCustomers} />
       <Route path="/contact" component={Contact} />
+      <Route path="/track" component={TrackOrder} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -68,12 +70,13 @@ function App() {
     setUser(null);
   };
 
-  if (location.startsWith("/order/")) {
+  if (location.startsWith("/order/") || location === "/track") {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Switch>
             <Route path="/order/:token" component={PublicOrder} />
+            <Route path="/track" component={TrackOrder} />
           </Switch>
           <Toaster />
         </TooltipProvider>

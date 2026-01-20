@@ -1,0 +1,155 @@
+## MVP Terms of Reference (TOR)
+### Laundry Shop Web App – Order Status Lookup Portal
+
+---
+
+### 1. Project Title  
+Laundry Shop Order Status Lookup Web Application (MVP)
+
+---
+
+### 2. Project Overview  
+This project is a lightweight web-based system that allows customers to check the status of their laundry order by entering only the order number.  
+No account creation or login is required, making it fast, accessible, and customer-friendly.
+
+---
+
+### 3. Project Objectives  
+
+- Allow customers to quickly track laundry order status  
+- Eliminate the need for customer login or registration  
+- Reduce customer inquiries and manual follow-ups  
+- Provide a low-cost, automated status-checking solution  
+
+---
+
+### 4. Scope of the MVP  
+
+#### 4.1 Included Features  
+
+Order Status Lookup
+- Input field for customer order number  
+- Automatic validation of order number  
+- Display of current order status  
+- Display of order progress stage  
+
+Order Status Stages
+- Order Received  
+- Washing  
+- Drying  
+- Ready for Pickup  
+- Out for Delivery  
+- Delivered  
+
+Admin Order Management
+- Admin login  
+- Create orders and assign unique order numbers  
+- Update order status  
+
+Notifications (Optional MVP+)
+- Web push notifications (FCM)  
+- Email notifications (SMTP)  
+
+---
+
+#### 4.2 Excluded Features (Out of Scope)
+
+- Customer accounts or login system  
+- Online payments  
+- SMS notifications  
+- Mobile application  
+- Order history for customers  
+- Chat or messaging system  
+
+---
+
+### 5. User Roles  
+
+Customer
+- Enters order number  
+- Views order status  
+
+Admin (Laundry Staff)
+- Creates and manages orders  
+- Updates order status  
+
+---
+
+### 6. Functional Requirements  
+
+- The system must validate the order number before displaying data  
+- Only order status information is displayed (no personal data)  
+- Order status updates reflect immediately  
+- Invalid order numbers show a clear error message  
+- Mobile-responsive interface  
+
+---
+
+### 7. Non-Functional Requirements  
+
+- Web-based and accessible on modern browsers  
+- Secure backend API for order lookup  
+- HTTPS-enabled  
+- Fast response time  
+- Minimal server resource usage  
+
+---
+
+### 8. Technology Stack (Proposed)  
+
+- Frontend: HTML, CSS, JavaScript  
+- Backend: PHP / Node.js  
+- Database: MySQL / PostgreSQL  
+- Notifications: Firebase Cloud Messaging (Optional)  
+- Email: SMTP (Optional)  
+
+---
+
+### 9. Security Considerations  
+
+- Order numbers should be non-sequential or partially masked  
+- Rate limiting on lookup requests  
+- No customer personal information exposed  
+- Backend validation for all requests  
+
+---
+
+### 10. Success Criteria  
+
+The MVP will be considered successful if:
+
+- Customers can retrieve order status using only the order number  
+- Admin can update order status reliably  
+- The system responds quickly and accurately  
+- The portal works on desktop and mobile browsers  
+
+---
+
+### 11. Future Enhancements  
+
+- Order number + phone/email verification  
+- QR code scanning for order lookup  
+- WhatsApp or SMS notifications  
+- Customer accounts for order history  
+- Delivery tracking integration  
+
+---
+
+### 12. Estimated Timeline  
+
+| Phase | Duration |
+|------|---------|
+| Planning | 3–5 days |
+| Development | 1–2 weeks |
+| Testing | 3–5 days |
+| Deployment | 1–2 days |
+
+---
+
+### 13. Conclusion  
+This MVP provides a simple, secure, and efficient order-tracking solution for laundry shops.  
+By requiring only an order number, it minimizes friction for customers while reducing operational overhead for the business.
+
+---
+
+End of Document
