@@ -323,6 +323,18 @@ export async function registerRoutes(
     res.json({ exists: !!existingClient, client: existingClient || null });
   });
 
+  app.get("/api/clients/by-phone/:phone", async (req, res) => {
+    const phone = req.params.phone;
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number required" });
+    }
+    const client = await storage.findClientByPhone(phone);
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+    res.json(client);
+  });
+
   app.post(api.clients.create.path, async (req, res) => {
     try {
       const input = api.clients.create.input.parse(req.body);
