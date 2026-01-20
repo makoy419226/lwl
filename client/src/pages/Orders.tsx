@@ -198,8 +198,9 @@ export default function Orders() {
   const parseOrderItems = (itemsString: string | null): Array<{name: string, quantity: number}> => {
     if (!itemsString) return [];
     
-    // Try parsing as JSON first (new format: array of objects)
     const trimmed = itemsString.trim();
+    
+    // Try parsing as JSON first (array of objects format)
     if (trimmed.startsWith('[')) {
       try {
         const parsed = JSON.parse(trimmed);
@@ -210,17 +211,26 @@ export default function Orders() {
           }));
         }
       } catch (e) {
-        // Fall through to legacy parsing
+        // Fall through to string parsing
       }
     }
     
-    // Legacy format: "item x2, item2 x3"
+    // String format: "2x Shirt, 3x Pants" (quantity first) or "Shirt x2, Pants x3" (name first)
     return itemsString.split(", ").map((item) => {
-      const match = item.match(/^(.+)\s+x(\d+)$/);
-      if (match) {
-        return { name: match[1], quantity: parseInt(match[2]) };
+      // Try "2x ProductName" format first (current format used in order creation)
+      const quantityFirstMatch = item.match(/^(\d+)x\s+(.+)$/);
+      if (quantityFirstMatch) {
+        return { name: quantityFirstMatch[2].trim(), quantity: parseInt(quantityFirstMatch[1]) };
       }
-      return { name: item, quantity: 1 };
+      
+      // Try "ProductName x2" format (legacy)
+      const nameFirstMatch = item.match(/^(.+)\s+x(\d+)$/);
+      if (nameFirstMatch) {
+        return { name: nameFirstMatch[1].trim(), quantity: parseInt(nameFirstMatch[2]) };
+      }
+      
+      // No quantity found, assume 1
+      return { name: item.trim(), quantity: 1 };
     });
   };
 
