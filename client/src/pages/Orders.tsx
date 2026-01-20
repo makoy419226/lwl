@@ -910,11 +910,11 @@ export default function Orders() {
 
   const getStatusBadge = (order: Order) => {
     if (order.delivered)
-      return <Badge className="bg-green-500">Delivered</Badge>;
+      return <Badge className="bg-green-500 text-xs sm:text-sm transition-all duration-200">Delivered</Badge>;
     if (order.packingDone)
-      return <Badge className="bg-purple-500">Ready</Badge>;
-    if (order.tagDone) return <Badge className="bg-blue-500">Washing</Badge>;
-    return <Badge className="bg-orange-500">Tag Pending</Badge>;
+      return <Badge className="bg-purple-500 text-xs sm:text-sm transition-all duration-200">Ready</Badge>;
+    if (order.tagDone) return <Badge className="bg-blue-500 text-xs sm:text-sm transition-all duration-200">Washing</Badge>;
+    return <Badge className="bg-orange-500 text-xs sm:text-sm transition-all duration-200">Pending</Badge>;
   };
 
   const getTimeRemaining = (expectedDeliveryAt: Date | null) => {
@@ -923,7 +923,7 @@ export default function Orders() {
     const diff = new Date(expectedDeliveryAt).getTime() - now.getTime();
     if (diff <= 0)
       return (
-        <Badge variant="destructive" className="animate-pulse">
+        <Badge variant="destructive" className="animate-pulse text-xs sm:text-sm transition-all duration-200 whitespace-nowrap">
           Overdue
         </Badge>
       );
@@ -931,19 +931,19 @@ export default function Orders() {
     const hours = Math.floor(minutes / 60);
     if (hours > 0) {
       return (
-        <Badge variant="secondary">
+        <Badge variant="secondary" className="text-xs sm:text-sm transition-all duration-200 whitespace-nowrap">
           {hours}h {minutes % 60}m
         </Badge>
       );
     }
     if (minutes <= 30) {
       return (
-        <Badge variant="destructive" className="animate-pulse">
+        <Badge variant="destructive" className="animate-pulse text-xs sm:text-sm transition-all duration-200 whitespace-nowrap">
           {minutes}m
         </Badge>
       );
     }
-    return <Badge variant="secondary">{minutes}m</Badge>;
+    return <Badge variant="secondary" className="text-xs sm:text-sm transition-all duration-200 whitespace-nowrap">{minutes}m</Badge>;
   };
 
   const handleStatusUpdate = (
@@ -1019,11 +1019,11 @@ export default function Orders() {
       </div>
 
       <main className="flex-1 container mx-auto px-4 py-4 lg:py-6 overflow-auto">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
-          <Card>
+        <div className="stats-grid mb-4 lg:mb-6">
+          <Card className="responsive-card">
             <CardContent className="p-3 lg:pt-6 lg:px-6">
               <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
                   <Shirt className="w-5 h-5 lg:w-6 lg:h-6 text-orange-500" />
                 </div>
                 <div className="min-w-0">
@@ -1039,10 +1039,10 @@ export default function Orders() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="responsive-card">
             <CardContent className="p-3 lg:pt-6 lg:px-6">
               <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
                   <Clock
                     className="w-5 h-5 lg:w-6 lg:h-6 text-blue-500 animate-spin"
                     style={{ animationDuration: "3s" }}
@@ -1062,10 +1062,10 @@ export default function Orders() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="responsive-card">
             <CardContent className="p-3 lg:pt-6 lg:px-6">
               <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
                   <Package className="w-5 h-5 lg:w-6 lg:h-6 text-purple-500" />
                 </div>
                 <div className="min-w-0">
@@ -1082,10 +1082,10 @@ export default function Orders() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="responsive-card">
             <CardContent className="p-3 lg:pt-6 lg:px-6">
               <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
                   <CheckCircle2 className="w-5 h-5 lg:w-6 lg:h-6 text-green-500" />
                 </div>
                 <div className="min-w-0">
@@ -1150,11 +1150,11 @@ export default function Orders() {
                   <p>No orders found</p>
                 </div>
               ) : (
-                <Card className="overflow-hidden">
-                  <Table>
+                <Card className="overflow-hidden responsive-card">
+                  <Table className="w-full table-fixed sm:table-auto">
                     <TableHeader>
-                      <TableRow>
-                        <TableHead className="whitespace-nowrap">Order</TableHead>
+                      <TableRow className="transition-all duration-200">
+                        <TableHead className="whitespace-nowrap w-16 sm:w-auto">Order</TableHead>
                         <TableHead className="whitespace-nowrap hidden lg:table-cell">Bill</TableHead>
                         <TableHead className="whitespace-nowrap">Client</TableHead>
                         <TableHead className="whitespace-nowrap hidden xl:table-cell">Due</TableHead>
@@ -1163,8 +1163,8 @@ export default function Orders() {
                           <TableHead className="whitespace-nowrap hidden sm:table-cell">Amount</TableHead>
                         )}
                         <TableHead className="whitespace-nowrap hidden lg:table-cell">Type</TableHead>
-                        <TableHead className="whitespace-nowrap">Time</TableHead>
-                        <TableHead className="whitespace-nowrap">Status</TableHead>
+                        <TableHead className="whitespace-nowrap w-16 sm:w-auto">Time</TableHead>
+                        <TableHead className="whitespace-nowrap w-20 sm:w-auto">Status</TableHead>
                         <TableHead className="whitespace-nowrap">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1433,11 +1433,12 @@ export default function Orders() {
                                   {getTimeRemaining(order.expectedDeliveryAt)}
                                 </TableCell>
                                 <TableCell>{getStatusBadge(order)}</TableCell>
-                                <TableCell>
-                                  <div className="flex gap-1 flex-wrap">
+                                <TableCell className="p-2 sm:p-3 lg:p-4">
+                                  <div className="action-buttons">
                                     <Button
                                       size="icon"
                                       variant="ghost"
+                                      className="shrink-0 touch-manipulation"
                                       onClick={() => setPrintOrder(order)}
                                       data-testid={`button-print-${order.id}`}
                                     >
@@ -1448,24 +1449,26 @@ export default function Orders() {
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300"
+                                          className="bg-orange-100 text-orange-700 border-orange-300 whitespace-nowrap touch-manipulation"
                                           onClick={() =>
                                             generateTagReceipt(order)
                                           }
                                           data-testid={`button-print-tag-${order.id}`}
                                         >
-                                          <Tag className="w-3 h-3 mr-1" />
-                                          Print Tag
+                                          <Tag className="w-3 h-3 sm:mr-1" />
+                                          <span className="hidden sm:inline">Print Tag</span>
                                         </Button>
                                         <Button
                                           size="sm"
                                           variant="outline"
+                                          className="whitespace-nowrap touch-manipulation"
                                           onClick={() =>
                                             handleTagWithPin(order.id)
                                           }
                                           data-testid={`button-tag-done-${order.id}`}
                                         >
-                                          Tag Done
+                                          <span className="sm:hidden">Tag</span>
+                                          <span className="hidden sm:inline">Tag Done</span>
                                         </Button>
                                       </>
                                     )}
@@ -1474,24 +1477,26 @@ export default function Orders() {
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300"
+                                          className="bg-blue-100 text-blue-700 border-blue-300 whitespace-nowrap touch-manipulation"
                                           onClick={() =>
                                             generateWashingReceipt(order)
                                           }
                                           data-testid={`button-washing-receipt-${order.id}`}
                                         >
-                                          <Printer className="w-3 h-3 mr-1" />
-                                          Washing
+                                          <Printer className="w-3 h-3 sm:mr-1" />
+                                          <span className="hidden sm:inline">Washing</span>
                                         </Button>
                                         <Button
                                           size="sm"
                                           variant="outline"
+                                          className="whitespace-nowrap touch-manipulation"
                                           onClick={() =>
                                             handlePackingWithPin(order.id)
                                           }
                                           data-testid={`button-packing-${order.id}`}
                                         >
-                                          Packing Done
+                                          <span className="sm:hidden">Pack</span>
+                                          <span className="hidden sm:inline">Packing Done</span>
                                         </Button>
                                       </>
                                     )}
@@ -1499,26 +1504,28 @@ export default function Orders() {
                                       <Button
                                         size="sm"
                                         variant="default"
+                                        className="whitespace-nowrap touch-manipulation"
                                         onClick={() =>
                                           handleDeliveryWithPin(order.id)
                                         }
                                         data-testid={`button-deliver-${order.id}`}
                                       >
-                                        <Truck className="w-3 h-3 mr-1" />
-                                        Deliver
+                                        <Truck className="w-3 h-3 sm:mr-1" />
+                                        <span className="hidden sm:inline">Deliver</span>
                                       </Button>
                                     )}
                                     {order.delivered && (
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                                         <Badge
                                           variant="outline"
-                                          className="text-green-600"
+                                          className="text-green-600 hidden sm:inline-flex"
                                         >
                                           Completed
                                         </Badge>
                                         <Button
                                           size="icon"
                                           variant="ghost"
+                                          className="shrink-0 touch-manipulation"
                                           onClick={() =>
                                             setViewPhotoOrder(order)
                                           }
@@ -1536,13 +1543,14 @@ export default function Orders() {
                                         <Button
                                           size="sm"
                                           variant="outline"
+                                          className="whitespace-nowrap touch-manipulation"
                                           onClick={() => {
                                             setNewCreatedOrder(order);
                                           }}
                                           data-testid={`button-invoice-${order.id}`}
                                         >
-                                          <Receipt className="w-3 h-3 mr-1" />
-                                          Invoice
+                                          <Receipt className="w-3 h-3 sm:mr-1" />
+                                          <span className="hidden sm:inline">Invoice</span>
                                         </Button>
                                       </div>
                                     )}

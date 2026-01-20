@@ -117,14 +117,94 @@
   }
 }
 
-/* Tablet-friendly scrollable tables */
+/* Responsive table utilities */
 @layer components {
   .table-container {
     @apply overflow-x-auto -mx-4 px-4;
   }
   
-  .table-container table {
-    @apply min-w-[600px];
+  /* Smooth responsive transitions */
+  .responsive-card {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  .responsive-grid {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  /* Responsive action buttons container */
+  .action-buttons {
+    @apply flex gap-1 transition-all duration-200;
+  }
+  
+  /* Mobile: vertical stack, compact with full-width buttons */
+  @media (max-width: 639px) {
+    .action-buttons {
+      @apply flex-col items-stretch;
+    }
+    .action-buttons button {
+      @apply w-full justify-center min-h-[44px];
+    }
+    .action-buttons > div {
+      @apply flex flex-col gap-1 w-full;
+    }
+    .action-buttons > div button {
+      @apply w-full justify-center min-h-[44px];
+    }
+  }
+  
+  /* Tablet: wrap with smaller gaps */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .action-buttons {
+      @apply flex-wrap gap-1;
+    }
+    .action-buttons button {
+      @apply min-h-[44px];
+    }
+  }
+  
+  /* Desktop: inline row */
+  @media (min-width: 1024px) {
+    .action-buttons {
+      @apply flex-row flex-wrap gap-2;
+    }
+  }
+  
+  /* Compact table cell on mobile */
+  .compact-cell {
+    @apply py-2 px-2 text-sm;
+  }
+  
+  @media (min-width: 640px) {
+    .compact-cell {
+      @apply py-3 px-3;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .compact-cell {
+      @apply py-4 px-4;
+    }
+  }
+  
+  /* Responsive stats grid */
+  .stats-grid {
+    @apply grid gap-2 transition-all duration-200;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (min-width: 640px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      @apply gap-3;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(4, 1fr);
+      @apply gap-4;
+    }
   }
 }
 
