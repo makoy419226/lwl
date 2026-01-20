@@ -142,6 +142,7 @@ export const incidents = pgTable("incidents", {
   id: serial("id").primaryKey(),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone"),
+  customerAddress: text("customer_address"),
   orderId: integer("order_id"),
   orderNumber: text("order_number"),
   itemName: text("item_name"),

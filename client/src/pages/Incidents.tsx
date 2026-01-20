@@ -33,11 +33,12 @@ export default function Incidents() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [foundOrder, setFoundOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+  const [selectedItemIndices, setSelectedItemIndices] = useState<number[]>([]);
 
   const [formData, setFormData] = useState({
     customerName: "",
     customerPhone: "",
+    customerAddress: "",
     orderNumber: "",
     itemName: "",
     reason: "",
@@ -101,6 +102,7 @@ export default function Incidents() {
     setFormData({
       customerName: "",
       customerPhone: "",
+      customerAddress: "",
       orderNumber: "",
       itemName: "",
       reason: "",
@@ -117,7 +119,7 @@ export default function Incidents() {
     setOrderLookupNumber("");
     setFoundOrder(null);
     setOrderItems([]);
-    setSelectedItemIndex(null);
+    setSelectedItemIndices([]);
   };
 
   const lookupOrder = async () => {
@@ -136,35 +138,51 @@ export default function Incidents() {
         }
         setFoundOrder(null);
         setOrderItems([]);
+        setSelectedItemIndices([]);
+        setFormData(prev => ({ ...prev, itemName: "", itemValue: "" }));
         return;
       }
       const data = await res.json();
       setFoundOrder(data.order);
       setOrderItems(data.items || []);
-      setSelectedItemIndex(null);
+      setSelectedItemIndices([]);
       setFormData(prev => ({
         ...prev,
         orderNumber: data.order.orderNumber,
-        customerName: data.order.customerName || "",
+        customerName: data.order.customerName || prev.customerName,
+        customerPhone: data.customerPhone || prev.customerPhone,
+        customerAddress: data.customerAddress || prev.customerAddress,
       }));
       toast({ title: "Order Found", description: `Found ${data.items?.length || 0} items in order ${data.order.orderNumber}` });
     } catch (err) {
       toast({ title: "Error", description: "Failed to lookup order", variant: "destructive" });
+      setFoundOrder(null);
+      setOrderItems([]);
+      setSelectedItemIndices([]);
+      setFormData(prev => ({ ...prev, itemName: "", itemValue: "" }));
     } finally {
       setLookupLoading(false);
     }
   };
 
-  const selectOrderItem = (index: number) => {
-    const item = orderItems[index];
-    if (item) {
-      setSelectedItemIndex(index);
-      setFormData(prev => ({
-        ...prev,
-        itemName: item.name,
-        itemValue: String(item.price * item.quantity),
+  const toggleOrderItem = (index: number) => {
+    setSelectedItemIndices(prev => {
+      const newIndices = prev.includes(index)
+        ? prev.filter(i => i !== index)
+        : [...prev, index];
+      
+      const selectedItems = newIndices.map(i => orderItems[i]).filter(Boolean);
+      const itemNames = selectedItems.map(item => `${item.quantity}x ${item.name}`).join(", ");
+      const totalValue = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      setFormData(f => ({
+        ...f,
+        itemName: itemNames,
+        itemValue: String(totalValue),
       }));
-    }
+      
+      return newIndices;
+    });
   };
 
   const handleCreate = () => {
@@ -200,6 +218,7 @@ export default function Incidents() {
     setFormData({
       customerName: incident.customerName,
       customerPhone: incident.customerPhone || "",
+      customerAddress: incident.customerAddress || "",
       orderNumber: incident.orderNumber || "",
       itemName: incident.itemName || "",
       reason: incident.reason,
@@ -280,19 +299,19 @@ export default function Incidents() {
         {foundOrder && orderItems.length > 0 && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Select item from order <span className="font-mono font-bold">{foundOrder.orderNumber}</span>:
+              Select items from order <span className="font-mono font-bold">{foundOrder.orderNumber}</span> (select multiple):
             </p>
             <div className="max-h-32 overflow-y-auto border rounded-md">
               {orderItems.map((item, idx) => (
                 <div 
                   key={idx}
-                  className={`flex items-center gap-3 p-2 cursor-pointer border-b last:border-b-0 hover-elevate ${selectedItemIndex === idx ? 'bg-primary/10' : ''}`}
-                  onClick={() => selectOrderItem(idx)}
+                  className={`flex items-center gap-3 p-2 cursor-pointer border-b last:border-b-0 hover-elevate ${selectedItemIndices.includes(idx) ? 'bg-primary/10' : ''}`}
+                  onClick={() => toggleOrderItem(idx)}
                   data-testid={`incident-item-select-${idx}`}
                 >
                   <Checkbox 
-                    checked={selectedItemIndex === idx}
-                    onCheckedChange={() => selectOrderItem(idx)}
+                    checked={selectedItemIndices.includes(idx)}
+                    onCheckedChange={() => toggleOrderItem(idx)}
                     data-testid={`incident-checkbox-item-${idx}`}
                   />
                   <div className="flex-1">
@@ -331,6 +350,17 @@ export default function Incidents() {
             data-testid="input-incident-customer-phone"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="customerAddress">Customer Address</Label>
+        <Input
+          id="customerAddress"
+          value={formData.customerAddress}
+          onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
+          placeholder="Customer address"
+          data-testid="input-incident-customer-address"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -767,7 +767,18 @@ export async function registerRoutes(
         }).filter(item => item.name && item.name !== '');
       }
     }
-    res.json({ order, items });
+    // Fetch client details if order has clientId
+    let customerPhone = "";
+    let customerAddress = "";
+    if (order.clientId) {
+      const client = await storage.getClient(order.clientId);
+      if (client) {
+        customerPhone = client.phone || "";
+        customerAddress = client.address || "";
+      }
+    }
+    
+    res.json({ order, items, customerPhone, customerAddress });
   });
 
   app.get("/api/orders/:id", async (req, res) => {
