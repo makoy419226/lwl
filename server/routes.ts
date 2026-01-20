@@ -699,6 +699,24 @@ export async function registerRoutes(
     res.json(dueSoon);
   });
 
+  app.get("/api/orders/by-number/:orderNumber", async (req, res) => {
+    const { orderNumber } = req.params;
+    if (!orderNumber) {
+      return res.status(400).json({ message: "Order number is required" });
+    }
+    const order = await storage.getDeliveredOrderByNumber(orderNumber);
+    if (!order) {
+      return res.status(404).json({ message: "Delivered order not found" });
+    }
+    let items: Array<{ name: string; quantity: number; price: number }> = [];
+    try {
+      items = order.items ? JSON.parse(order.items) : [];
+    } catch (e) {
+      items = [];
+    }
+    res.json({ order, items });
+  });
+
   app.get("/api/orders/:id", async (req, res) => {
     const orderId = Number(req.params.id);
     if (isNaN(orderId)) {
