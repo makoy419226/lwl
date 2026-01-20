@@ -911,11 +911,11 @@ export default function Orders() {
 
   const getStatusBadge = (order: Order) => {
     if (order.delivered)
-      return <Badge className="bg-green-500 text-xs sm:text-sm transition-all duration-200">Delivered</Badge>;
+      return <Badge className="bg-green-500 dark:bg-green-600 text-white text-xs sm:text-sm transition-all duration-200">Delivered</Badge>;
     if (order.packingDone)
-      return <Badge className="bg-purple-500 text-xs sm:text-sm transition-all duration-200">Ready</Badge>;
-    if (order.tagDone) return <Badge className="bg-blue-500 text-xs sm:text-sm transition-all duration-200">Washing</Badge>;
-    return <Badge className="bg-orange-500 text-xs sm:text-sm transition-all duration-200">Pending</Badge>;
+      return <Badge className="bg-purple-500 dark:bg-purple-600 text-white text-xs sm:text-sm transition-all duration-200">Ready</Badge>;
+    if (order.tagDone) return <Badge className="bg-blue-500 dark:bg-blue-600 text-white text-xs sm:text-sm transition-all duration-200">Washing</Badge>;
+    return <Badge className="bg-orange-500 dark:bg-orange-600 text-white text-xs sm:text-sm transition-all duration-200">Pending</Badge>;
   };
 
   const getTimeRemaining = (expectedDeliveryAt: Date | null) => {
@@ -1151,7 +1151,221 @@ export default function Orders() {
                   <p>No orders found</p>
                 </div>
               ) : (
-                <Card className="overflow-hidden responsive-card">
+                <>
+                {/* Mobile Card Layout */}
+                <div className="md:hidden space-y-3">
+                  {filteredOrders?.map((order) => {
+                    const client = order.clientId ? clients?.find((c) => c.id === order.clientId) : null;
+                    const displayName = client?.name || order.customerName || "Walk-in";
+                    const items = parseOrderItems(order.items);
+                    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+                    
+                    return (
+                      <Card 
+                        key={order.id} 
+                        className="border shadow-sm"
+                        data-testid={`card-order-${order.id}`}
+                      >
+                        <CardHeader className="flex flex-row items-center justify-between gap-2 p-3 pb-2 bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-primary">{order.orderNumber}</span>
+                            {order.deliveryType === "delivery" && (
+                              <Truck className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(order)}
+                          </div>
+                        </CardHeader>
+                        
+                        <CardContent className="p-3 pt-2 space-y-3">
+                          {/* Client Row */}
+                          <div className="flex items-center justify-between gap-2">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="font-medium text-left justify-start gap-2"
+                                  data-testid={`button-mobile-client-${order.id}`}
+                                >
+                                  <User className="w-4 h-4 text-primary shrink-0" />
+                                  <span className="truncate max-w-[140px]">{displayName}</span>
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72" align="start">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 border-b pb-2">
+                                    <User className="w-5 h-5 text-primary" />
+                                    <div>
+                                      <p className="font-semibold">{client?.name || displayName}</p>
+                                      <p className="text-sm text-muted-foreground">{client?.phone || "No phone"}</p>
+                                    </div>
+                                  </div>
+                                  {client && (
+                                    <div className="flex justify-between items-center gap-2">
+                                      <span className="text-sm">Balance:</span>
+                                      <span className={`font-bold ${parseFloat(client.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}>
+                                        {parseFloat(client.balance || "0").toFixed(2)} AED
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                            <span className="font-semibold text-sm">{order.totalAmount} AED</span>
+                          </div>
+                          
+                          {/* Items Row */}
+                          <div className="flex items-center justify-between gap-2">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="gap-1.5"
+                                  data-testid={`button-mobile-items-${order.id}`}
+                                >
+                                  <Package className="w-3.5 h-3.5" />
+                                  <span>{totalItems} items</span>
+                                  <ChevronDown className="w-3 h-3" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-64 p-2" align="start">
+                                <ScrollArea className="max-h-48">
+                                  <div className="space-y-1">
+                                    {items.map((item, i) => {
+                                      const imageUrl = getProductImage(item.name);
+                                      return (
+                                        <div key={i} className="flex items-center gap-2 p-1.5 rounded bg-muted/50">
+                                          {imageUrl ? (
+                                            <img src={imageUrl} alt="" className="w-6 h-6 rounded object-cover" />
+                                          ) : (
+                                            <Shirt className="w-5 h-5 text-muted-foreground" />
+                                          )}
+                                          <span className="text-sm flex-1 truncate">{item.name}</span>
+                                          <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </ScrollArea>
+                              </PopoverContent>
+                            </Popover>
+                            <span className="text-xs text-muted-foreground">
+                              {getTimeRemaining(order.expectedDeliveryAt)}
+                            </span>
+                          </div>
+                        </CardContent>
+                        
+                        {/* Card Footer - Actions */}
+                        <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setPrintOrder(order)}
+                            data-testid={`button-mobile-print-${order.id}`}
+                          >
+                            <Printer className="w-4 h-4" />
+                          </Button>
+                          
+                          {!order.tagDone && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800"
+                                onClick={() => generateTagReceipt(order)}
+                                data-testid={`button-mobile-print-tag-${order.id}`}
+                              >
+                                <Tag className="w-4 h-4 mr-1" />
+                                Print Tag
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="flex-1"
+                                onClick={() => handleTagWithPin(order.id)}
+                                data-testid={`button-mobile-tag-done-${order.id}`}
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                Tag Done
+                              </Button>
+                            </>
+                          )}
+                          
+                          {order.tagDone && !order.packingDone && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                                onClick={() => generateWashingReceipt(order)}
+                                data-testid={`button-mobile-washing-${order.id}`}
+                              >
+                                <Printer className="w-4 h-4 mr-1" />
+                                Washing
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="flex-1"
+                                onClick={() => handlePackingWithPin(order.id)}
+                                data-testid={`button-mobile-packing-${order.id}`}
+                              >
+                                <Package className="w-4 h-4 mr-1" />
+                                Pack Done
+                              </Button>
+                            </>
+                          )}
+                          
+                          {order.packingDone && !order.delivered && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="flex-1"
+                              onClick={() => handleDeliveryWithPin(order.id)}
+                              data-testid={`button-mobile-deliver-${order.id}`}
+                            >
+                              <Truck className="w-4 h-4 mr-1" />
+                              Deliver
+                            </Button>
+                          )}
+                          
+                          {order.delivered && (
+                            <>
+                              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30">
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                Done
+                              </Badge>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setViewPhotoOrder(order)}
+                                data-testid={`button-mobile-photo-${order.id}`}
+                              >
+                                <Camera className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-600" : "text-muted-foreground"}`} />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => setNewCreatedOrder(order)}
+                                data-testid={`button-mobile-invoice-${order.id}`}
+                              >
+                                <Receipt className="w-4 h-4 mr-1" />
+                                Invoice
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+                
+                {/* Desktop Table Layout */}
+                <Card className="overflow-hidden responsive-card hidden md:block">
                   <Table className="w-full table-fixed sm:table-auto">
                     <TableHeader>
                       <TableRow className="transition-all duration-200">
@@ -1267,7 +1481,7 @@ export default function Orders() {
                                                 </p>
                                               </div>
                                             </div>
-                                            <div className="flex justify-between items-center">
+                                            <div className="flex justify-between items-center gap-2">
                                               <span className="text-sm">
                                                 Total Due:
                                               </span>
@@ -1295,7 +1509,7 @@ export default function Orders() {
                                                       ).map((bill) => (
                                                         <div
                                                           key={bill.id}
-                                                          className="flex justify-between items-center text-sm bg-muted/50 rounded px-2 py-1"
+                                                          className="flex justify-between items-center gap-2 text-sm bg-muted/50 rounded px-2 py-1"
                                                         >
                                                           <span className="text-muted-foreground">
                                                             {format(
@@ -1538,6 +1752,7 @@ export default function Orders() {
                     </TableBody>
                   </Table>
                 </Card>
+                </>
               )}
             </TabsContent>
           )}
