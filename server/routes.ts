@@ -898,61 +898,9 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid order ID" });
       }
       
-      // Get old order state to check if it's being marked delivered
-      const oldOrder = await storage.getOrder(orderId);
-      const wasDelivered = oldOrder?.delivered;
-      
       const order = await storage.updateOrder(orderId, req.body);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
-      }
-      
-      // Update loyalty when order is marked as delivered for the first time
-      if (order.delivered && !wasDelivered && order.clientId) {
-        try {
-          const client = await storage.getClient(order.clientId);
-          if (client) {
-            const orderAmount = parseFloat(order.finalAmount || order.totalAmount || "0");
-            // Guard against NaN or negative amounts
-            if (!isNaN(orderAmount) && orderAmount > 0) {
-              const pointsEarned = Math.floor(orderAmount); // 1 point per AED spent
-              const currentPoints = client.loyaltyPoints || 0;
-              const currentSpent = parseFloat(client.totalSpent || "0") || 0;
-              const currentOrders = client.ordersCount || 0;
-              
-              const newPoints = currentPoints + pointsEarned;
-              const newTotalSpent = currentSpent + orderAmount;
-              const newOrdersCount = currentOrders + 1;
-              
-              // Calculate tier based on total spent
-              let newTier = "bronze";
-              let rewardPercent = "0";
-              if (newTotalSpent >= 5000) {
-                newTier = "platinum";
-                rewardPercent = "10";
-              } else if (newTotalSpent >= 2000) {
-                newTier = "gold";
-                rewardPercent = "7";
-              } else if (newTotalSpent >= 500) {
-                newTier = "silver";
-                rewardPercent = "5";
-              } else {
-                rewardPercent = "0";
-              }
-              
-              await storage.updateClient(order.clientId, {
-                loyaltyPoints: newPoints,
-                loyaltyTier: newTier,
-                totalSpent: String(newTotalSpent),
-                ordersCount: newOrdersCount,
-                loyaltyRewardPercent: rewardPercent,
-              });
-            }
-          }
-        } catch (loyaltyErr) {
-          console.error("Failed to update loyalty:", loyaltyErr);
-          // Non-critical, don't fail the order update
-        }
       }
       
       res.json(order);

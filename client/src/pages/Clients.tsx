@@ -686,9 +686,6 @@ export default function Clients() {
                   <TableHead className="font-bold text-foreground text-right">
                     Due
                   </TableHead>
-                  <TableHead className="font-bold text-foreground text-center">
-                    Loyalty
-                  </TableHead>
                   <TableHead className="font-bold text-foreground text-center w-40">
                     Actions
                   </TableHead>
@@ -749,23 +746,6 @@ export default function Clients() {
                       data-testid={`text-client-balance-${client.id}`}
                     >
                       {parseFloat(client.balance || "0").toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge 
-                        variant="secondary"
-                        className={
-                          client.loyaltyTier === "platinum" ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" :
-                          client.loyaltyTier === "gold" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" :
-                          client.loyaltyTier === "silver" ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300" :
-                          "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
-                        }
-                        data-testid={`badge-loyalty-${client.id}`}
-                      >
-                        {(client.loyaltyTier || "bronze").charAt(0).toUpperCase() + (client.loyaltyTier || "bronze").slice(1)}
-                      </Badge>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {client.loyaltyPoints || 0} pts
-                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
