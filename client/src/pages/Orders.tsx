@@ -57,6 +57,7 @@ import {
   Image,
   X,
   Tag,
+  ChevronDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -1339,81 +1340,54 @@ export default function Orders() {
                                     </TableCell>
                                   </>
                                 ) : null}
-                                <TableCell
-                                  className={`hidden md:table-cell ${
-                                    activeTab === "create"
-                                      ? "max-w-md"
-                                      : "max-w-xs"
-                                  }`}
-                                >
-                                  {activeTab === "create" ? (
-                                    <div className="space-y-1">
-                                      {parseOrderItems(order.items).map(
-                                        (item, i) => {
-                                          const imageUrl = getProductImage(
-                                            item.name,
-                                          );
-                                          return (
-                                            <div
-                                              key={i}
-                                              className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md px-2 py-1"
-                                            >
-                                              {imageUrl ? (
-                                                <img
-                                                  src={imageUrl}
-                                                  alt={item.name}
-                                                  className="w-6 h-6 object-contain"
-                                                />
-                                              ) : (
-                                                <Shirt className="w-6 h-6 text-orange-500" />
-                                              )}
-                                              <span className="text-sm font-medium flex-1">
-                                                {item.name}
-                                              </span>
-                                              <Badge className="bg-orange-500 text-white">
-                                                {item.quantity} pcs
-                                              </Badge>
-                                            </div>
-                                          );
-                                        },
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-wrap gap-1">
-                                      {parseOrderItems(order.items).map(
-                                        (item, i) => {
-                                          const imageUrl = getProductImage(
-                                            item.name,
-                                          );
-                                          return (
-                                            <div
-                                              key={i}
-                                              className="flex items-center gap-1 bg-muted/50 rounded px-1.5 py-0.5"
-                                            >
-                                              {imageUrl ? (
-                                                <img
-                                                  src={imageUrl}
-                                                  alt={item.name}
-                                                  className="w-4 h-4 object-contain"
-                                                />
-                                              ) : (
-                                                <Shirt className="w-4 h-4 text-muted-foreground" />
-                                              )}
-                                              <span className="text-xs">
-                                                {item.name}
-                                              </span>
-                                              <Badge
-                                                variant="secondary"
-                                                className="text-xs px-1 py-0 h-4"
+                                <TableCell className="hidden md:table-cell">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1 touch-manipulation"
+                                        data-testid={`button-view-items-${order.id}`}
+                                      >
+                                        <Package className="w-3 h-3" />
+                                        <span className="font-medium">
+                                          {parseOrderItems(order.items).reduce((sum, item) => sum + item.quantity, 0)} items
+                                        </span>
+                                        <ChevronDown className="w-3 h-3" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-64 p-2" align="start">
+                                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                                        {parseOrderItems(order.items).map(
+                                          (item, i) => {
+                                            const imageUrl = getProductImage(item.name);
+                                            return (
+                                              <div
+                                                key={i}
+                                                className="flex items-center gap-2 bg-muted/50 rounded-md px-2 py-1.5"
                                               >
-                                                {item.quantity}
-                                              </Badge>
-                                            </div>
-                                          );
-                                        },
-                                      )}
-                                    </div>
-                                  )}
+                                                {imageUrl ? (
+                                                  <img
+                                                    src={imageUrl}
+                                                    alt={item.name}
+                                                    className="w-5 h-5 object-contain"
+                                                  />
+                                                ) : (
+                                                  <Shirt className="w-5 h-5 text-muted-foreground" />
+                                                )}
+                                                <span className="text-sm flex-1 truncate">
+                                                  {item.name}
+                                                </span>
+                                                <Badge variant="secondary" className="text-xs">
+                                                  {item.quantity}
+                                                </Badge>
+                                              </div>
+                                            );
+                                          },
+                                        )}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                 </TableCell>
                                 {activeTab !== "create" && (
                                   <TableCell className="font-semibold hidden sm:table-cell">
