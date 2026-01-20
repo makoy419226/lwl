@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FileDown } from "lucide-react";
+import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -120,19 +120,6 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
               </Button>
             </Link>
           ))}
-          
-          <div className="pt-3 border-t border-border mt-3">
-            <a href="/api/system-flowchart" download="LiquidWashes_System_Flowchart.pdf">
-              <Button
-                variant="outline"
-                className="w-full justify-start rounded-lg font-semibold gap-3 h-12 touch-manipulation text-primary border-primary/30 hover:bg-primary/5"
-                data-testid="button-download-flowchart"
-              >
-                <FileDown className="w-5 h-5 flex-shrink-0" />
-                <span className="truncate">System Flowchart</span>
-              </Button>
-            </a>
-          </div>
         </nav>
 
         {user && (
