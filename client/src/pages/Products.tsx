@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearch } from "wouter";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients, useCreateClient } from "@/hooks/use-clients";
 import {
@@ -73,7 +74,18 @@ const getCategoryIcon = (category: string | null) => {
 };
 
 export default function Products() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearch();
+  const urlSearch = new URLSearchParams(searchParams).get("search") || "";
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    const newSearch = params.get("search") || "";
+    if (newSearch !== searchTerm) {
+      setSearchTerm(newSearch);
+    }
+  }, [searchParams]);
+
   const [editingImageId, setEditingImageId] = useState<number | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [quantities, setQuantities] = useState<Record<number, number>>({});

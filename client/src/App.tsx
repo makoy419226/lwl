@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/Sidebar";
+import { QuickSearch } from "@/components/QuickSearch";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import Clients from "@/pages/Clients";
@@ -99,9 +100,12 @@ function App() {
         <div className="flex h-screen w-full bg-background">
           <Sidebar user={user} onLogout={handleLogout} />
           <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-            <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6">
+            <header className="h-16 border-b border-border bg-card flex items-center justify-between gap-4 px-4 lg:px-6">
               <div className="w-14 lg:hidden" />
-              <div className="flex flex-col items-center flex-1 lg:flex-none lg:ml-auto">
+              <div className="flex-1 flex justify-center lg:justify-start">
+                <QuickSearch />
+              </div>
+              <div className="flex flex-col items-center">
                 <img 
                   src={logoImage} 
                   alt="Liquide Washes Laundry" 
@@ -110,7 +114,7 @@ function App() {
                 />
                 <span className="text-xs font-semibold text-primary mt-0.5">Liquide Washes</span>
               </div>
-              <div className="w-14 lg:hidden" />
+              <div className="flex-1 lg:hidden" />
             </header>
             <main className="flex-1 overflow-auto">
               <Router />

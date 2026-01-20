@@ -69,8 +69,18 @@ import html2pdf from "html2pdf.js";
 import * as XLSX from "xlsx";
 
 export default function Orders() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearch();
+  const urlSearch = new URLSearchParams(searchParams).get("search") || "";
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    const newSearch = params.get("search") || "";
+    if (newSearch !== searchTerm) {
+      setSearchTerm(newSearch);
+    }
+  }, [searchParams]);
   const [activeTab, setActiveTab] = useState("all");
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [packingPinDialog, setPackingPinDialog] = useState<{

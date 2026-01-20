@@ -27,6 +27,11 @@ export const clients = pgTable("clients", {
   billNumber: text("bill_number"),
   preferredPaymentMethod: text("preferred_payment_method").default("cash"), // 'cash', 'card', 'bank'
   discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }).default("0"),
+  loyaltyPoints: integer("loyalty_points").default(0),
+  loyaltyTier: text("loyalty_tier").default("bronze"), // 'bronze', 'silver', 'gold', 'platinum'
+  totalSpent: numeric("total_spent", { precision: 12, scale: 2 }).default("0"),
+  ordersCount: integer("orders_count").default(0),
+  loyaltyRewardPercent: numeric("loyalty_reward_percent", { precision: 5, scale: 2 }).default("0"),
 });
 
 export const clientTransactions = pgTable("client_transactions", {

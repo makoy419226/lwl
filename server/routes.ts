@@ -897,10 +897,64 @@ export async function registerRoutes(
       if (isNaN(orderId)) {
         return res.status(400).json({ message: "Invalid order ID" });
       }
+      
+      // Get old order state to check if it's being marked delivered
+      const oldOrder = await storage.getOrder(orderId);
+      const wasDelivered = oldOrder?.delivered;
+      
       const order = await storage.updateOrder(orderId, req.body);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
+      
+      // Update loyalty when order is marked as delivered for the first time
+      if (order.delivered && !wasDelivered && order.clientId) {
+        try {
+          const client = await storage.getClient(order.clientId);
+          if (client) {
+            const orderAmount = parseFloat(order.finalAmount || order.totalAmount || "0");
+            // Guard against NaN or negative amounts
+            if (!isNaN(orderAmount) && orderAmount > 0) {
+              const pointsEarned = Math.floor(orderAmount); // 1 point per AED spent
+              const currentPoints = client.loyaltyPoints || 0;
+              const currentSpent = parseFloat(client.totalSpent || "0") || 0;
+              const currentOrders = client.ordersCount || 0;
+              
+              const newPoints = currentPoints + pointsEarned;
+              const newTotalSpent = currentSpent + orderAmount;
+              const newOrdersCount = currentOrders + 1;
+              
+              // Calculate tier based on total spent
+              let newTier = "bronze";
+              let rewardPercent = "0";
+              if (newTotalSpent >= 5000) {
+                newTier = "platinum";
+                rewardPercent = "10";
+              } else if (newTotalSpent >= 2000) {
+                newTier = "gold";
+                rewardPercent = "7";
+              } else if (newTotalSpent >= 500) {
+                newTier = "silver";
+                rewardPercent = "5";
+              } else {
+                rewardPercent = "0";
+              }
+              
+              await storage.updateClient(order.clientId, {
+                loyaltyPoints: newPoints,
+                loyaltyTier: newTier,
+                totalSpent: String(newTotalSpent),
+                ordersCount: newOrdersCount,
+                loyaltyRewardPercent: rewardPercent,
+              });
+            }
+          }
+        } catch (loyaltyErr) {
+          console.error("Failed to update loyalty:", loyaltyErr);
+          // Non-critical, don't fail the order update
+        }
+      }
+      
       res.json(order);
     } catch (err: any) {
       res.status(400).json({ message: err.message });
@@ -1729,6 +1783,106 @@ export async function registerRoutes(
     doc.text("• Documents: A5 format for all prints/PDFs", 50, currentY + 48);
 
     doc.end();
+  });
+
+  // Global search endpoint
+  app.get("/api/search", async (req, res) => {
+    const q = String(req.query.q || "").toLowerCase().trim();
+    if (!q) {
+      return res.json([]);
+    }
+
+    const results: Array<{
+      id: number;
+      type: "order" | "client" | "product" | "bill";
+      title: string;
+      subtitle?: string;
+      status?: string;
+    }> = [];
+
+    try {
+      // Search orders
+      const orders = await storage.getOrders();
+      const matchedOrders = orders
+        .filter(o => 
+          o.orderNumber?.toLowerCase().includes(q) ||
+          o.customerName?.toLowerCase().includes(q)
+        )
+        .slice(0, 5);
+      
+      for (const o of matchedOrders) {
+        results.push({
+          id: o.id,
+          type: "order",
+          title: `Order #${o.orderNumber}`,
+          subtitle: o.customerName || undefined,
+          status: o.delivered ? "Released" : o.packingDone ? "Ready" : o.washingDone ? "Washing" : o.tagDone ? "Tag" : "Received",
+        });
+      }
+
+      // Search clients
+      const clients = await storage.getClients();
+      const matchedClients = clients
+        .filter(c => 
+          c.name?.toLowerCase().includes(q) ||
+          c.phone?.toLowerCase().includes(q) ||
+          c.email?.toLowerCase().includes(q)
+        )
+        .slice(0, 5);
+      
+      for (const c of matchedClients) {
+        results.push({
+          id: c.id,
+          type: "client",
+          title: c.name,
+          subtitle: c.phone || c.email || undefined,
+        });
+      }
+
+      // Search products
+      const products = await storage.getProducts();
+      const matchedProducts = products
+        .filter(p => 
+          p.name?.toLowerCase().includes(q) ||
+          p.sku?.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q)
+        )
+        .slice(0, 5);
+      
+      for (const p of matchedProducts) {
+        results.push({
+          id: p.id,
+          type: "product",
+          title: p.name,
+          subtitle: p.category || undefined,
+        });
+      }
+
+      // Search bills
+      const bills = await storage.getBills();
+      const matchedBills = bills
+        .filter(b => 
+          b.referenceNumber?.toLowerCase().includes(q) ||
+          b.customerName?.toLowerCase().includes(q) ||
+          b.description?.toLowerCase().includes(q)
+        )
+        .slice(0, 5);
+      
+      for (const b of matchedBills) {
+        results.push({
+          id: b.id,
+          type: "bill",
+          title: `Bill #${b.referenceNumber || b.id}`,
+          subtitle: b.customerName || undefined,
+          status: b.isPaid ? "Paid" : "Unpaid",
+        });
+      }
+
+      res.json(results.slice(0, 15));
+    } catch (err) {
+      console.error("Search error:", err);
+      res.status(500).json({ error: "Search failed" });
+    }
   });
 
   return httpServer;

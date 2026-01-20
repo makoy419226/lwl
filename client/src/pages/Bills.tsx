@@ -1,5 +1,5 @@
-import { useState, useRef, useMemo, useEffect } from "react"; // Added useEffect, useMemo
-import { useLocation } from "wouter";
+import { useState, useRef, useMemo, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { useBills, useDeleteBill } from "@/hooks/use-bills";
 import { useClients } from "@/hooks/use-clients";
@@ -56,6 +56,18 @@ import type { Product, Client, Bill } from "@shared/schema";
 import html2pdf from "html2pdf.js";
 
 export default function Bills() {
+  const searchParams = useSearch();
+  const urlSearch = new URLSearchParams(searchParams).get("search") || "";
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
+  
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    const newSearch = params.get("search") || "";
+    if (newSearch !== searchTerm) {
+      setSearchTerm(newSearch);
+    }
+  }, [searchParams]);
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("bills");
   const [selectedClientId, setSelectedClientId] = useState<string>("");
@@ -98,6 +110,17 @@ export default function Bills() {
 
   // Destructure refetch to ensure fresh data
   const { data: bills, isLoading, isError, refetch } = useBills();
+
+  const filteredBills = useMemo(() => {
+    if (!bills || !searchTerm) return bills;
+    const term = searchTerm.toLowerCase();
+    return bills.filter(b => 
+      b.referenceNumber?.toLowerCase().includes(term) ||
+      b.customerName?.toLowerCase().includes(term) ||
+      b.description?.toLowerCase().includes(term) ||
+      String(b.id).includes(term)
+    );
+  }, [bills, searchTerm]);
   const { data: clients = [] } = useClients();
   const { mutate: deleteBill } = useDeleteBill();
   const { mutate: createProduct, isPending: isCreatingProduct } =
@@ -521,8 +544,8 @@ export default function Bills() {
   return (
     <div className="flex flex-col h-screen">
       <TopBar
-        onSearch={() => {}}
-        searchValue=""
+        onSearch={setSearchTerm}
+        searchValue={searchTerm}
         onAddClick={() => setIsCreateOpen(true)}
         addButtonLabel="Add Bill"
         pageTitle="Bills"
@@ -556,19 +579,19 @@ export default function Bills() {
               <div className="flex flex-col items-center justify-center py-20 text-destructive">
                 <p className="font-semibold text-lg">Failed to load bills</p>
               </div>
-            ) : bills?.length === 0 ? (
+            ) : filteredBills?.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed border-border rounded-3xl bg-card/50">
                 <FileText className="w-16 h-16 mb-4 opacity-50" />
                 <h3 className="text-xl font-bold text-foreground mb-2">
-                  No bills found
+                  {searchTerm ? "No matching bills" : "No bills found"}
                 </h3>
                 <p className="max-w-md text-center">
-                  Click 'Add Bill' to create your first bill.
+                  {searchTerm ? `No bills match "${searchTerm}"` : "Click 'Add Bill' to create your first bill."}
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {bills?.map((bill) => (
+                {filteredBills?.map((bill) => (
                   <Card
                     key={bill.id}
                     className="border-border/50 hover:shadow-md transition-shadow"
