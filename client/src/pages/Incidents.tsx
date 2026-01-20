@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,7 +14,13 @@ import { Loader2, Plus, AlertTriangle, Search, Pencil, Trash2, CheckCircle, Cloc
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
-import type { Incident, PackingWorker } from "@shared/schema";
+import type { Incident, PackingWorker, Order } from "@shared/schema";
+
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
 
 export default function Incidents() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -21,6 +28,12 @@ export default function Incidents() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { toast } = useToast();
+
+  const [orderLookupNumber, setOrderLookupNumber] = useState("");
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [foundOrder, setFoundOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -101,6 +114,57 @@ export default function Incidents() {
       incidentDate: new Date().toISOString().split('T')[0],
       resolution: "",
     });
+    setOrderLookupNumber("");
+    setFoundOrder(null);
+    setOrderItems([]);
+    setSelectedItemIndex(null);
+  };
+
+  const lookupOrder = async () => {
+    if (!orderLookupNumber.trim()) {
+      toast({ title: "Error", description: "Please enter an order number", variant: "destructive" });
+      return;
+    }
+    setLookupLoading(true);
+    try {
+      const res = await fetch(`/api/orders/by-number/${encodeURIComponent(orderLookupNumber.trim())}`);
+      if (!res.ok) {
+        if (res.status === 404) {
+          toast({ title: "Not Found", description: "No delivered order found with this number", variant: "destructive" });
+        } else {
+          toast({ title: "Error", description: "Failed to lookup order", variant: "destructive" });
+        }
+        setFoundOrder(null);
+        setOrderItems([]);
+        return;
+      }
+      const data = await res.json();
+      setFoundOrder(data.order);
+      setOrderItems(data.items || []);
+      setSelectedItemIndex(null);
+      setFormData(prev => ({
+        ...prev,
+        orderNumber: data.order.orderNumber,
+        customerName: data.order.customerName || "",
+      }));
+      toast({ title: "Order Found", description: `Found ${data.items?.length || 0} items in order ${data.order.orderNumber}` });
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to lookup order", variant: "destructive" });
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const selectOrderItem = (index: number) => {
+    const item = orderItems[index];
+    if (item) {
+      setSelectedItemIndex(index);
+      setFormData(prev => ({
+        ...prev,
+        itemName: item.name,
+        itemValue: String(item.price * item.quantity),
+      }));
+    }
   };
 
   const handleCreate = () => {
@@ -191,6 +255,59 @@ export default function Incidents() {
 
   const IncidentForm = ({ isEdit = false }: { isEdit?: boolean }) => (
     <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
+      <div className="p-3 bg-muted/50 rounded-lg border space-y-3">
+        <Label className="text-sm font-medium">Lookup Order (Optional)</Label>
+        <div className="flex gap-2">
+          <Input
+            value={orderLookupNumber}
+            onChange={(e) => setOrderLookupNumber(e.target.value)}
+            placeholder="Enter order number to lookup"
+            onKeyDown={(e) => e.key === "Enter" && lookupOrder()}
+            data-testid="input-lookup-incident-order"
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={lookupOrder} 
+            disabled={lookupLoading}
+            data-testid="button-lookup-incident-order"
+          >
+            {lookupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+          </Button>
+        </div>
+        {foundOrder && orderItems.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Select item from order <span className="font-mono font-bold">{foundOrder.orderNumber}</span>:
+            </p>
+            <div className="max-h-32 overflow-y-auto border rounded-md">
+              {orderItems.map((item, idx) => (
+                <div 
+                  key={idx}
+                  className={`flex items-center gap-3 p-2 cursor-pointer border-b last:border-b-0 hover-elevate ${selectedItemIndex === idx ? 'bg-primary/10' : ''}`}
+                  onClick={() => selectOrderItem(idx)}
+                  data-testid={`incident-item-select-${idx}`}
+                >
+                  <Checkbox 
+                    checked={selectedItemIndex === idx}
+                    onCheckedChange={() => selectOrderItem(idx)}
+                    data-testid={`incident-checkbox-item-${idx}`}
+                  />
+                  <div className="flex-1">
+                    <span className="font-medium">{item.name}</span>
+                    <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+                  </div>
+                  <Badge variant="outline">AED {(item.price * item.quantity).toFixed(2)}</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {foundOrder && orderItems.length === 0 && (
+          <p className="text-sm text-amber-600">No items found in this order</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="customerName">Customer Name *</Label>

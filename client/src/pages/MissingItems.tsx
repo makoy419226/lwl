@@ -143,10 +143,14 @@ export default function MissingItems() {
       setFoundOrder(data.order);
       setOrderItems(data.items || []);
       setSelectedItemIndex(null);
+      const currentStage = formData.stage;
+      const worker = getResponsibleWorkerFromOrder(data.order, currentStage);
       setFormData(prev => ({
         ...prev,
         orderNumber: data.order.orderNumber,
         customerName: data.order.customerName || "",
+        responsibleWorkerId: worker.id,
+        responsibleWorkerName: worker.name,
       }));
       toast({ title: "Order Found", description: `Found ${data.items?.length || 0} items in order ${data.order.orderNumber}` });
     } catch (err) {
@@ -167,6 +171,45 @@ export default function MissingItems() {
         itemValue: String(item.price * item.quantity),
       }));
     }
+  };
+
+  const getResponsibleWorkerFromOrder = (order: Order | null, stage: string) => {
+    if (!order) return { id: "", name: "" };
+    switch (stage) {
+      case "tag":
+        return { 
+          id: order.tagWorkerId ? String(order.tagWorkerId) : "", 
+          name: order.tagBy || "" 
+        };
+      case "washing":
+        return { id: "", name: order.washingBy || "" };
+      case "packing":
+        return { 
+          id: order.packingWorkerId ? String(order.packingWorkerId) : "", 
+          name: order.packingBy || "" 
+        };
+      case "delivery":
+        return { 
+          id: order.deliveredByWorkerId ? String(order.deliveredByWorkerId) : "", 
+          name: order.deliveryBy || "" 
+        };
+      default:
+        return { id: "", name: "" };
+    }
+  };
+
+  const getResponsibleWorkerForStage = (stage: string) => {
+    return getResponsibleWorkerFromOrder(foundOrder, stage);
+  };
+
+  const handleStageChange = (stage: string) => {
+    const worker = getResponsibleWorkerForStage(stage);
+    setFormData(prev => ({
+      ...prev,
+      stage,
+      responsibleWorkerId: worker.id,
+      responsibleWorkerName: worker.name,
+    }));
   };
 
   const handleWorkerSelect = (workerId: string, type: 'responsible' | 'reporter') => {
@@ -404,7 +447,7 @@ export default function MissingItems() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="stage">Stage Where Missing *</Label>
-          <Select value={formData.stage} onValueChange={(val) => setFormData({ ...formData, stage: val })}>
+          <Select value={formData.stage} onValueChange={handleStageChange}>
             <SelectTrigger data-testid="select-stage">
               <SelectValue placeholder="Select stage" />
             </SelectTrigger>
