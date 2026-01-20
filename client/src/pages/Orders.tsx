@@ -1238,17 +1238,17 @@ export default function Orders() {
                                   <>
                                     <TableCell
                                       rowSpan={orderCount}
-                                      className="align-top border-r p-0 max-w-[120px]"
+                                      className="align-top border-r p-0 w-20 sm:w-28 md:w-32 lg:w-40"
                                     >
                                       <Popover>
                                         <PopoverTrigger asChild>
                                           <Button
                                             variant="ghost"
-                                            className="w-full h-full justify-start px-4 py-2 font-semibold hover-elevate"
+                                            className="w-full h-full justify-start px-2 sm:px-3 py-2 font-semibold hover-elevate touch-manipulation"
                                             data-testid={`button-client-${client?.id || "walkin"}`}
                                           >
-                                            <User className="w-4 h-4 mr-2" />
-                                            {displayName}
+                                            <User className="w-4 h-4 mr-1 sm:mr-2 shrink-0" />
+                                            <span className="truncate text-xs sm:text-sm">{displayName}</span>
                                           </Button>
                                         </PopoverTrigger>
                                         <PopoverContent
