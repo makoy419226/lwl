@@ -76,7 +76,10 @@ const getCategoryIcon = (category: string | null) => {
 export default function Products() {
   const searchParams = useSearch();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
+  const urlClientId = new URLSearchParams(searchParams).get("clientId");
+  const urlClientName = new URLSearchParams(searchParams).get("clientName");
   const [searchTerm, setSearchTerm] = useState(urlSearch);
+  const [initialClientLoaded, setInitialClientLoaded] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
@@ -85,6 +88,17 @@ export default function Products() {
       setSearchTerm(newSearch);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (urlClientId && urlClientName && !initialClientLoaded) {
+      const clientIdNum = parseInt(urlClientId, 10);
+      if (!isNaN(clientIdNum)) {
+        setSelectedClientId(clientIdNum);
+        setCustomerName(decodeURIComponent(urlClientName));
+        setInitialClientLoaded(true);
+      }
+    }
+  }, [urlClientId, urlClientName, initialClientLoaded]);
 
   const [editingImageId, setEditingImageId] = useState<number | null>(null);
   const [imageUrl, setImageUrl] = useState("");

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
 import {
@@ -17,6 +18,10 @@ import {
   Lock,
   Download,
   FileSpreadsheet,
+  ShoppingBag,
+  ExternalLink,
+  Package,
+  Eye,
 } from "lucide-react";
 import {
   Dialog,
@@ -48,7 +53,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Invoice } from "@/components/Invoice";
-import type { Client, ClientTransaction, Bill } from "@shared/schema";
+import type { Client, ClientTransaction, Bill, Order } from "@shared/schema";
 import {
   Select,
   SelectContent,
@@ -60,9 +65,11 @@ import * as XLSX from "xlsx";
 import html2pdf from "html2pdf.js";
 
 export default function Clients() {
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [transactionClient, setTransactionClient] = useState<Client | null>(
     null,
   );
@@ -108,6 +115,11 @@ export default function Clients() {
   const { data: unpaidBills } = useQuery<Bill[]>({
     queryKey: ["/api/clients", transactionClient?.id, "unpaid-bills"],
     enabled: !!transactionClient,
+  });
+
+  const { data: clientOrders, isLoading: clientOrdersLoading } = useQuery<Order[]>({
+    queryKey: ["/api/clients", viewingClient?.id, "orders"],
+    enabled: !!viewingClient,
   });
 
   const payBillMutation = useMutation({
@@ -707,15 +719,19 @@ export default function Clients() {
                       {index + 1}
                     </TableCell>
                     <TableCell
-                      className="font-semibold"
+                      className="font-semibold cursor-pointer hover:text-primary hover:underline"
                       data-testid={`text-client-name-${client.id}`}
+                      onClick={() => setViewingClient(client)}
                     >
-                      {client.name}
-                      {client.billNumber && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          ({client.billNumber})
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <span>{client.name}</span>
+                        {client.billNumber && (
+                          <span className="text-xs text-muted-foreground">
+                            ({client.billNumber})
+                          </span>
+                        )}
+                        <Eye className="w-3 h-3 opacity-50" />
+                      </div>
                     </TableCell>
                     <TableCell data-testid={`text-client-contact-${client.id}`}>
                       <div className="space-y-1">
@@ -1251,6 +1267,172 @@ export default function Clients() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!viewingClient}
+        onOpenChange={(open) => !open && setViewingClient(null)}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-display text-primary flex items-center gap-2">
+              <Users className="w-6 h-6" />
+              {viewingClient?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {viewingClient && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium">{viewingClient.phone || "-"}</p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <p className="font-medium">{viewingClient.address || "-"}</p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground">Bill Number</p>
+                  <p className="font-medium">{viewingClient.billNumber || "-"}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 text-center">
+                  <Receipt className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <p className="text-sm text-muted-foreground">Total Bills</p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {parseFloat(viewingClient.amount || "0").toFixed(2)} AED
+                  </p>
+                </div>
+                <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 text-center">
+                  <Wallet className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                  <p className="text-sm text-muted-foreground">Total Deposits</p>
+                  <p className="text-xl font-bold text-green-600">
+                    {parseFloat(viewingClient.deposit || "0").toFixed(2)} AED
+                  </p>
+                </div>
+                <div className={`rounded-lg p-4 text-center ${parseFloat(viewingClient.balance || "0") > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-green-50 dark:bg-green-950/30"}`}>
+                  <Wallet className={`w-6 h-6 mx-auto mb-2 ${parseFloat(viewingClient.balance || "0") > 0 ? "text-red-600" : "text-green-600"}`} />
+                  <p className="text-sm text-muted-foreground">Balance Due</p>
+                  <p className={`text-xl font-bold ${parseFloat(viewingClient.balance || "0") > 0 ? "text-red-600" : "text-green-600"}`}>
+                    {parseFloat(viewingClient.balance || "0").toFixed(2)} AED
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Order History ({clientOrders?.length || 0})
+                </h3>
+                <Button
+                  onClick={() => {
+                    setViewingClient(null);
+                    navigate(`/products?clientId=${viewingClient.id}&clientName=${encodeURIComponent(viewingClient.name)}`);
+                  }}
+                  data-testid="button-new-order-for-client"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Order
+                </Button>
+              </div>
+
+              {clientOrdersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : !clientOrders || clientOrders.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                  <ShoppingBag className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No orders found for this client</p>
+                  <p className="text-sm">Click "New Order" to create one</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Order #</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Items</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clientOrders.map((order) => (
+                        <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
+                          <TableCell className="font-mono font-semibold">
+                            {order.orderNumber}
+                          </TableCell>
+                          <TableCell>
+                            {order.entryDate
+                              ? format(new Date(order.entryDate), "dd/MM/yyyy")
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {order.itemCountAtIntake || "-"} items
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {parseFloat(order.totalAmount || "0").toFixed(2)} AED
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                order.status === "released"
+                                  ? "default"
+                                  : order.status === "ready"
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                              className="capitalize"
+                            >
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setViewingClient(null);
+                                navigate(`/orders?highlight=${order.orderNumber}`);
+                              }}
+                              data-testid={`button-view-order-${order.id}`}
+                              title="View Order"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setTransactionClient(viewingClient)}
+                >
+                  <History className="w-4 h-4 mr-2" />
+                  Add Bill/Deposit
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => downloadClientPDF(viewingClient)}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Summary
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
