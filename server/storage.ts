@@ -304,6 +304,17 @@ export class DatabaseStorage implements IStorage {
       balance: insertClient.balance?.toString(),
     };
     const [client] = await db.insert(clients).values(clientData).returning();
+    
+    // Auto-generate account number if not provided
+    if (!client.billNumber) {
+      const accountNumber = `ACC-${client.id.toString().padStart(4, '0')}`;
+      const [updated] = await db
+        .update(clients)
+        .set({ billNumber: accountNumber })
+        .where(eq(clients.id, client.id))
+        .returning();
+      return updated;
+    }
     return client;
   }
 
