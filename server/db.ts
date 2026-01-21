@@ -1,19 +1,18 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as schema from "@shared/schema";
 
-// Use environment-specific database URL
-const connectionString = process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/laundry_db";
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
+}
 
-// Configure postgres connection with error handling
-const sql = postgres(connectionString, {
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10,
-  onnotice: () => {}, // Suppress notices
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
 });
 
-export const db = drizzle(sql, { schema });
+export const db = drizzle(pool, { schema });

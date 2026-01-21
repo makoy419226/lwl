@@ -1,4 +1,12 @@
-import { pgTable, text, integer, real, boolean, serial, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  numeric,
+  boolean,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -6,7 +14,7 @@ export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  price: real("price"),
+  price: numeric("price", { precision: 10, scale: 2 }),
   sku: text("sku"),
   category: text("category").default("Laundry"),
   stockQuantity: integer("stock_quantity").default(0),
@@ -20,26 +28,32 @@ export const clients = pgTable("clients", {
   address: text("address"),
   phone: text("phone"),
   phoneModified: boolean("phone_modified").default(false),
-  amount: real("amount").default(0),
-  deposit: real("deposit").default(0),
-  balance: real("balance").default(0),
+  amount: numeric("amount", { precision: 12, scale: 2 }).default("0"),
+  deposit: numeric("deposit", { precision: 12, scale: 2 }).default("0"),
+  balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
   notes: text("notes"),
   billNumber: text("bill_number"),
-  preferredPaymentMethod: text("preferred_payment_method").default("cash"),
-  discountPercent: real("discount_percent").default(0),
+  preferredPaymentMethod: text("preferred_payment_method").default("cash"), // 'cash', 'card', 'bank'
+  discountPercent: numeric("discount_percent", {
+    precision: 5,
+    scale: 2,
+  }).default("0"),
 });
 
 export const clientTransactions = pgTable("client_transactions", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull(),
-  billId: integer("bill_id"),
-  type: text("type").notNull(),
-  amount: real("amount").notNull(),
+  billId: integer("bill_id"), // Link to bills table for bill transactions
+  type: text("type").notNull(), // 'bill' or 'deposit'
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   description: text("description"),
-  date: text("date").notNull(),
-  runningBalance: real("running_balance").notNull(),
-  paymentMethod: text("payment_method").default("cash"),
-  discount: real("discount").default(0),
+  date: timestamp("date").notNull(),
+  runningBalance: numeric("running_balance", {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
+  paymentMethod: text("payment_method").default("cash"), // 'cash', 'card', 'bank'
+  discount: numeric("discount", { precision: 12, scale: 2 }).default("0"),
 });
 
 export const bills = pgTable("bills", {
@@ -47,10 +61,10 @@ export const bills = pgTable("bills", {
   clientId: integer("client_id"),
   customerName: text("customer_name"),
   customerPhone: text("customer_phone"),
-  amount: real("amount").notNull(),
-  paidAmount: real("paid_amount").default(0),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paidAmount: numeric("paid_amount", { precision: 12, scale: 2 }).default("0"),
   description: text("description"),
-  billDate: text("bill_date").notNull(),
+  billDate: timestamp("bill_date").notNull(),
   referenceNumber: text("reference_number"),
   isPaid: boolean("is_paid").default(false),
   createdByWorkerId: integer("created_by_worker_id"),
@@ -60,8 +74,8 @@ export const billPayments = pgTable("bill_payments", {
   id: serial("id").primaryKey(),
   billId: integer("bill_id").notNull(),
   clientId: integer("client_id").notNull(),
-  amount: real("amount").notNull(),
-  paymentDate: text("payment_date").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paymentDate: timestamp("payment_date").notNull(),
   paymentMethod: text("payment_method").default("cash"),
   notes: text("notes"),
 });
@@ -73,43 +87,47 @@ export const orders = pgTable("orders", {
   customerName: text("customer_name"),
   orderNumber: text("order_number").notNull(),
   items: text("items"),
-  totalAmount: real("total_amount").notNull(),
-  paidAmount: real("paid_amount").default(0),
-  discountPercent: real("discount_percent").default(0),
-  discountAmount: real("discount_amount").default(0),
-  finalAmount: real("final_amount"),
-  paymentMethod: text("payment_method").default("cash"),
-  paymentOption: text("payment_option").default("pay_later"),
+  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
+  paidAmount: numeric("paid_amount", { precision: 12, scale: 2 }).default("0"),
+  discountPercent: numeric("discount_percent", {
+    precision: 5,
+    scale: 2,
+  }).default("0"),
+  discountAmount: numeric("discount_amount", {
+    precision: 12,
+    scale: 2,
+  }).default("0"),
+  finalAmount: numeric("final_amount", { precision: 12, scale: 2 }),
+  paymentMethod: text("payment_method").default("cash"), // 'cash', 'card', 'bank'
   status: text("status").default("entry"),
-  orderType: text("order_type").default("regular"),
   deliveryType: text("delivery_type").default("takeaway"),
-  expectedDeliveryAt: text("expected_delivery_at"),
-  entryDate: text("entry_date").notNull(),
+  expectedDeliveryAt: timestamp("expected_delivery_at"),
+  entryDate: timestamp("entry_date").notNull(),
   entryBy: text("entry_by"),
   tagDone: boolean("tag_done").default(false),
-  tagDate: text("tag_date"),
+  tagDate: timestamp("tag_date"),
   tagBy: text("tag_by"),
   tagWorkerId: integer("tag_worker_id"),
   washingDone: boolean("washing_done").default(false),
-  washingDate: text("washing_date"),
+  washingDate: timestamp("washing_date"),
   washingBy: text("washing_by"),
   packingDone: boolean("packing_done").default(false),
-  packingDate: text("packing_date"),
+  packingDate: timestamp("packing_date"),
   packingBy: text("packing_by"),
   packingWorkerId: integer("packing_worker_id"),
   delivered: boolean("delivered").default(false),
-  deliveryDate: text("delivery_date"),
+  deliveryDate: timestamp("delivery_date"),
   deliveryBy: text("delivery_by"),
   deliveredByWorkerId: integer("delivered_by_worker_id"),
   notes: text("notes"),
   urgent: boolean("urgent").default(false),
   publicViewToken: text("public_view_token"),
-  tips: real("tips").default(0),
+  tips: numeric("tips", { precision: 12, scale: 2 }).default("0"),
   deliveryPhoto: text("delivery_photo"),
-  deliveryPhotos: text("delivery_photos"),
+  deliveryPhotos: text("delivery_photos").array(),
   stockDeducted: boolean("stock_deducted").default(false),
   itemCountVerified: boolean("item_count_verified").default(false),
-  verifiedAt: text("verified_at"),
+  verifiedAt: timestamp("verified_at"),
   verifiedByWorkerId: integer("verified_by_worker_id"),
   verifiedByWorkerName: text("verified_by_worker_name"),
   itemCountAtIntake: integer("item_count_at_intake"),
@@ -120,8 +138,8 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  pin: text("pin").notNull().default("12345"),
-  role: text("role").notNull().default("cashier"),
+  pin: text("pin").notNull().default("12345"), // 5-digit PIN for verification
+  role: text("role").notNull().default("cashier"), // 'admin', 'manager', 'packer', 'cashier'
   name: text("name"),
   email: text("email"),
   active: boolean("active").default(true),
@@ -131,14 +149,14 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   token: text("token").notNull(),
-  expiresAt: text("expires_at").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
   used: boolean("used").default(false),
 });
 
 export const packingWorkers = pgTable("packing_workers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  pin: text("pin").notNull(),
+  pin: text("pin").notNull(), // 5-digit PIN
   active: boolean("active").default(true),
 });
 
@@ -152,54 +170,24 @@ export const incidents = pgTable("incidents", {
   itemName: text("item_name"),
   reason: text("reason").notNull(),
   notes: text("notes"),
-  refundAmount: real("refund_amount").default(0),
-  itemValue: real("item_value").default(0),
+  refundAmount: numeric("refund_amount", { precision: 12, scale: 2 }).default(
+    "0",
+  ),
+  itemValue: numeric("item_value", { precision: 12, scale: 2 }).default("0"),
   responsibleStaffId: integer("responsible_staff_id"),
   responsibleStaffName: text("responsible_staff_name"),
   reporterName: text("reporter_name"),
-  incidentType: text("incident_type").default("refund"),
-  incidentStage: text("incident_stage").default("delivery"),
-  status: text("status").default("open"),
-  incidentDate: text("incident_date").notNull(),
-  resolvedDate: text("resolved_date"),
+  incidentType: text("incident_type").default("refund"), // 'refund', 'damage', 'complaint', 'missing_item', 'other'
+  incidentStage: text("incident_stage").default("delivery"), // 'reception', 'tagging', 'washing', 'packing', 'delivery'
+  status: text("status").default("open"), // 'open', 'resolved', 'pending'
+  incidentDate: timestamp("incident_date").notNull(),
+  resolvedDate: timestamp("resolved_date"),
   resolution: text("resolution"),
 });
 
-export const missingItems = pgTable("missing_items", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id"),
-  orderNumber: text("order_number"),
-  customerName: text("customer_name"),
-  itemName: text("item_name").notNull(),
-  quantity: integer("quantity").default(1),
-  itemValue: real("item_value").default(0),
-  stage: text("stage").notNull(),
-  responsibleWorkerId: integer("responsible_worker_id"),
-  responsibleWorkerName: text("responsible_worker_name"),
-  reportedByWorkerId: integer("reported_by_worker_id"),
-  reportedByWorkerName: text("reported_by_worker_name"),
-  notes: text("notes"),
-  status: text("status").default("reported"),
-  reportedAt: text("reported_at").notNull(),
-  resolvedAt: text("resolved_at"),
-  resolution: text("resolution"),
+export const insertProductSchema = createInsertSchema(products).omit({
+  id: true,
 });
-
-export const stageChecklists = pgTable("stage_checklists", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull(),
-  stage: text("stage").notNull(),
-  checkedItems: text("checked_items"),
-  totalItems: integer("total_items").notNull(),
-  checkedCount: integer("checked_count").default(0),
-  isComplete: boolean("is_complete").default(false),
-  startedAt: text("started_at"),
-  completedAt: text("completed_at"),
-  workerId: integer("worker_id"),
-  workerName: text("worker_name"),
-});
-
-export const insertProductSchema = createInsertSchema(products).omit({ id: true });
 export const insertClientSchema = createInsertSchema(clients)
   .omit({ id: true })
   .extend({
@@ -239,7 +227,10 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertPackingWorkerSchema = createInsertSchema(packingWorkers)
   .omit({ id: true })
   .extend({
-    pin: z.string().length(5, "PIN must be exactly 5 digits").regex(/^\d{5}$/, "PIN must be 5 digits"),
+    pin: z
+      .string()
+      .length(5, "PIN must be exactly 5 digits")
+      .regex(/^\d{5}$/, "PIN must be 5 digits"),
   });
 export const insertOrderSchema = createInsertSchema(orders)
   .omit({ id: true })
@@ -269,6 +260,26 @@ export const insertIncidentSchema = createInsertSchema(incidents)
     resolvedDate: z.union([z.date(), z.string()]).optional().nullable(),
   });
 
+export const missingItems = pgTable("missing_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id"),
+  orderNumber: text("order_number"),
+  customerName: text("customer_name"),
+  itemName: text("item_name").notNull(),
+  quantity: integer("quantity").default(1),
+  itemValue: numeric("item_value", { precision: 12, scale: 2 }).default("0"),
+  stage: text("stage").notNull(), // 'tag', 'washing', 'packing', 'delivery', 'storage'
+  responsibleWorkerId: integer("responsible_worker_id"),
+  responsibleWorkerName: text("responsible_worker_name"),
+  reportedByWorkerId: integer("reported_by_worker_id"),
+  reportedByWorkerName: text("reported_by_worker_name"),
+  notes: text("notes"),
+  status: text("status").default("reported"), // 'reported', 'investigating', 'found', 'lost', 'compensated'
+  reportedAt: timestamp("reported_at").notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  resolution: text("resolution"),
+});
+
 export const insertMissingItemSchema = createInsertSchema(missingItems)
   .omit({ id: true })
   .extend({
@@ -279,6 +290,21 @@ export const insertMissingItemSchema = createInsertSchema(missingItems)
     reportedAt: z.union([z.date(), z.string()]),
     resolvedAt: z.union([z.date(), z.string()]).optional().nullable(),
   });
+
+// Stage checklists - track item verification at each processing stage
+export const stageChecklists = pgTable("stage_checklists", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  stage: text("stage").notNull(), // 'tagging', 'washing', 'sorting', 'folding', 'packing'
+  checkedItems: text("checked_items"), // JSON array of checked item indices
+  totalItems: integer("total_items").notNull(),
+  checkedCount: integer("checked_count").default(0),
+  isComplete: boolean("is_complete").default(false),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  workerId: integer("worker_id"),
+  workerName: text("worker_name"),
+});
 
 export const insertStageChecklistSchema = createInsertSchema(stageChecklists)
   .omit({ id: true })
@@ -314,6 +340,7 @@ export type InsertMissingItem = z.infer<typeof insertMissingItemSchema>;
 export type StageChecklist = typeof stageChecklists.$inferSelect;
 export type InsertStageChecklist = z.infer<typeof insertStageChecklistSchema>;
 
+// Explicit API types
 export type ProductResponse = Product;
 export type CreateProductRequest = InsertProduct;
 export type UpdateProductRequest = Partial<InsertProduct>;
