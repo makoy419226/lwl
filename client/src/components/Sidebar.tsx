@@ -55,19 +55,26 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isContact = location === "/contact";
   const isTrackOrder = location === "/track";
 
-  const navItems = [
-    { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory" },
-    { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order" },
-    { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients" },
-    { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills" },
-    { href: "/orders", icon: ClipboardList, label: "Orders", active: isOrders, testId: "nav-orders" },
-    { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers" },
-    { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports" },
-    { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents" },
-    { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers" },
-    { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact" },
-    { href: "/track", icon: FlaskConical, label: "Track Order", active: isTrackOrder, testId: "nav-track-order", experimental: true },
+  const userRole = user?.role || "cashier";
+  const isAdmin = userRole === "admin";
+  const isManager = userRole === "manager";
+  const isAdminOrManager = isAdmin || isManager;
+
+  const allNavItems = [
+    { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "manager", "cashier", "packer"] },
+    { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "manager", "cashier", "packer"] },
+    { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "manager"] },
+    { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "manager", "cashier"] },
+    { href: "/orders", icon: ClipboardList, label: "Orders", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "cashier", "packer"] },
+    { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
+    { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
+    { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "manager"] },
+    { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "manager"] },
+    { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "manager", "cashier", "packer"] },
+    { href: "/track", icon: FlaskConical, label: "Track Order", active: isTrackOrder, testId: "nav-track-order", experimental: true, roles: ["admin", "manager", "cashier", "packer"] },
   ];
+
+  const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
   return (
     <>
