@@ -88,6 +88,7 @@ export interface IStorage {
   ): Promise<{ bill: Bill; payment: BillPayment }>;
   getClientTransactions(clientId: number): Promise<ClientTransaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<ClientTransaction>;
+  updateClientTransaction(transactionId: number, data: { amount: string; description: string }): Promise<ClientTransaction>;
   addClientBill(
     clientId: number,
     amount: string,
@@ -640,6 +641,57 @@ export class DatabaseStorage implements IStorage {
     }
 
     await db.delete(clientTransactions).where(eq(clientTransactions.id, transactionId));
+  }
+
+  async updateClientTransaction(
+    transactionId: number,
+    data: { amount: string; description: string }
+  ): Promise<ClientTransaction> {
+    const transaction = await db
+      .select()
+      .from(clientTransactions)
+      .where(eq(clientTransactions.id, transactionId))
+      .then(rows => rows[0]);
+    
+    if (!transaction) throw new Error("Transaction not found");
+
+    const client = await this.getClient(transaction.clientId);
+    if (!client) throw new Error("Client not found");
+
+    const oldAmount = parseFloat(transaction.amount || "0");
+    const newAmount = parseFloat(data.amount);
+    const amountDiff = newAmount - oldAmount;
+    const currentAmount = parseFloat(client.amount || "0");
+    const currentDeposit = parseFloat(client.deposit || "0");
+
+    // Update client balance based on transaction type
+    if (transaction.type === "bill") {
+      const updatedAmount = currentAmount + amountDiff;
+      const newBalance = updatedAmount - currentDeposit;
+      await this.updateClient(transaction.clientId, {
+        amount: updatedAmount.toFixed(2),
+        balance: newBalance.toFixed(2),
+      });
+    } else if (transaction.type === "deposit") {
+      const updatedDeposit = currentDeposit + amountDiff;
+      const newBalance = currentAmount - updatedDeposit;
+      await this.updateClient(transaction.clientId, {
+        deposit: updatedDeposit.toFixed(2),
+        balance: newBalance.toFixed(2),
+      });
+    }
+
+    // Update the transaction
+    const [updated] = await db
+      .update(clientTransactions)
+      .set({
+        amount: newAmount.toFixed(2),
+        description: data.description,
+      })
+      .where(eq(clientTransactions.id, transactionId))
+      .returning();
+
+    return updated;
   }
 
   async getOrders(search?: string): Promise<Order[]> {

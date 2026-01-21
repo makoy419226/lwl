@@ -40,7 +40,13 @@ export function QuickSearch() {
 
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
+      // Ctrl+K or Cmd+K
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+      // Windows+S (Meta+S) - prevent default Windows search
+      if (e.metaKey && e.key === "s") {
         e.preventDefault();
         setIsOpen(true);
       }
@@ -133,7 +139,7 @@ export function QuickSearch() {
         <Search className="w-4 h-4" />
         <span className="hidden sm:inline">Search...</span>
         <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-          <span className="text-xs">⌘</span>K
+          <span className="text-xs">⊞</span>S
         </kbd>
       </Button>
     );

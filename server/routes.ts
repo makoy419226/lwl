@@ -668,6 +668,20 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/transactions/:id", async (req, res) => {
+    try {
+      const transactionId = Number(req.params.id);
+      if (isNaN(transactionId)) {
+        return res.status(400).json({ message: "Invalid transaction ID" });
+      }
+      const { amount, description } = req.body;
+      const updated = await storage.updateClientTransaction(transactionId, { amount, description });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || "Failed to update transaction" });
+    }
+  });
+
   app.post("/api/clients/:id/bill", async (req, res) => {
     try {
       const { amount, description } = req.body;

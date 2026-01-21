@@ -22,6 +22,9 @@ import {
   ExternalLink,
   Package,
   Eye,
+  Check,
+  X,
+  Pencil,
 } from "lucide-react";
 import {
   Dialog,
@@ -93,6 +96,9 @@ export default function Clients() {
     billId: number;
     amount: string;
   } | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<ClientTransaction | null>(null);
+  const [editTransactionAmount, setEditTransactionAmount] = useState("");
+  const [editTransactionDescription, setEditTransactionDescription] = useState("");
   const [invoiceData, setInvoiceData] = useState<{
     invoiceNumber: string;
     date: string;
@@ -315,6 +321,74 @@ export default function Clients() {
       });
     },
   });
+
+  const deleteTransactionMutation = useMutation({
+    mutationFn: async (transactionId: number) => {
+      return apiRequest("DELETE", `/api/transactions/${transactionId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", viewingClient?.id, "transactions"],
+      });
+      toast({
+        title: "Transaction deleted",
+        description: "Transaction has been removed and balance updated.",
+      });
+    },
+  });
+
+  const updateTransactionMutation = useMutation({
+    mutationFn: async ({
+      transactionId,
+      amount,
+      description,
+    }: {
+      transactionId: number;
+      amount: string;
+      description: string;
+    }) => {
+      return apiRequest("PATCH", `/api/transactions/${transactionId}`, {
+        amount,
+        description,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", viewingClient?.id, "transactions"],
+      });
+      setEditingTransaction(null);
+      setEditTransactionAmount("");
+      setEditTransactionDescription("");
+      toast({
+        title: "Transaction updated",
+        description: "Transaction has been updated and balance recalculated.",
+      });
+    },
+  });
+
+  const handleDeleteTransaction = (tx: ClientTransaction) => {
+    if (confirm(`Are you sure you want to delete this ${tx.type} of ${parseFloat(tx.amount).toFixed(2)} AED?`)) {
+      deleteTransactionMutation.mutate(tx.id);
+    }
+  };
+
+  const handleEditTransaction = (tx: ClientTransaction) => {
+    setEditingTransaction(tx);
+    setEditTransactionAmount(tx.amount);
+    setEditTransactionDescription(tx.description || "");
+  };
+
+  const handleSaveTransaction = () => {
+    if (editingTransaction && editTransactionAmount) {
+      updateTransactionMutation.mutate({
+        transactionId: editingTransaction.id,
+        amount: editTransactionAmount,
+        description: editTransactionDescription,
+      });
+    }
+  };
 
   const handleDelete = (client: Client) => {
     if (confirm(`Are you sure you want to delete ${client.name}?`)) {
@@ -1441,6 +1515,7 @@ export default function Clients() {
                           <TableHead>Description</TableHead>
                           <TableHead className="text-right">Amount</TableHead>
                           <TableHead className="text-right">Balance</TableHead>
+                          <TableHead className="text-center">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1458,13 +1533,85 @@ export default function Clients() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {tx.description}
+                              {editingTransaction?.id === tx.id ? (
+                                <Input
+                                  value={editTransactionDescription}
+                                  onChange={(e) => setEditTransactionDescription(e.target.value)}
+                                  placeholder="Description"
+                                  className="h-8"
+                                  data-testid={`input-edit-description-${tx.id}`}
+                                />
+                              ) : (
+                                tx.description
+                              )}
                             </TableCell>
                             <TableCell className={`text-right font-medium ${tx.type === "bill" ? "text-blue-600" : "text-green-600"}`}>
-                              {tx.type === "bill" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED
+                              {editingTransaction?.id === tx.id ? (
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={editTransactionAmount}
+                                  onChange={(e) => setEditTransactionAmount(e.target.value)}
+                                  className="h-8 w-24 ml-auto"
+                                  data-testid={`input-edit-amount-${tx.id}`}
+                                />
+                              ) : (
+                                <>{tx.type === "bill" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED</>
+                              )}
                             </TableCell>
                             <TableCell className="text-right font-bold">
                               {parseFloat(tx.runningBalance).toFixed(2)} AED
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {editingTransaction?.id === tx.id ? (
+                                <div className="flex items-center justify-center gap-1">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={handleSaveTransaction}
+                                    disabled={updateTransactionMutation.isPending}
+                                    className="h-7 w-7 text-green-600"
+                                    data-testid={`button-save-transaction-${tx.id}`}
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setEditingTransaction(null);
+                                      setEditTransactionAmount("");
+                                      setEditTransactionDescription("");
+                                    }}
+                                    className="h-7 w-7"
+                                    data-testid={`button-cancel-edit-${tx.id}`}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center gap-1">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleEditTransaction(tx)}
+                                    className="h-7 w-7"
+                                    data-testid={`button-edit-transaction-${tx.id}`}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteTransaction(tx)}
+                                    disabled={deleteTransactionMutation.isPending}
+                                    className="h-7 w-7 text-destructive"
+                                    data-testid={`button-delete-transaction-${tx.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
