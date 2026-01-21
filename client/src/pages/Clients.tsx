@@ -323,11 +323,6 @@ export default function Clients() {
     }
   };
 
-  const openWhatsApp = (contact: string | null) => {
-    if (contact) {
-      window.open(contact, "_blank");
-    }
-  };
 
   const downloadClientPDF = async (client: Client) => {
     const totalBill = parseFloat(client.amount || "0");
@@ -707,7 +702,7 @@ export default function Clients() {
                     Client Name
                   </TableHead>
                   <TableHead className="font-bold text-foreground">
-                    Contact / Address
+                    Phone / Address
                   </TableHead>
                   <TableHead className="font-bold text-foreground text-right">
                     Total Bill
@@ -815,17 +810,6 @@ export default function Clients() {
                         >
                           <FileSpreadsheet className="w-4 h-4" />
                         </Button>
-                        {client.contact && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-green-600"
-                            onClick={() => openWhatsApp(client.contact)}
-                            data-testid={`button-whatsapp-${client.id}`}
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="icon"

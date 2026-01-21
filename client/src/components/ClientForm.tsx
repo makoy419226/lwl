@@ -36,7 +36,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
       amount: client?.amount || "0",
       deposit: client?.deposit || "0",
       balance: client?.balance || "0",
-      contact: client?.contact || "",
+      notes: client?.notes || "",
       billNumber: client?.billNumber || "",
       preferredPaymentMethod: client?.preferredPaymentMethod || "cash",
       discountPercent: client?.discountPercent || "0",
@@ -321,12 +321,12 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
 
         <FormField
           control={form.control}
-          name="contact"
+          name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>WhatsApp Contact</FormLabel>
+              <FormLabel>Notes / Suggestions</FormLabel>
               <FormControl>
-                <Input placeholder="https://wa.me/1234567890" {...field} data-testid="input-contact" />
+                <Input placeholder="Add any notes about this client..." {...field} data-testid="input-notes" />
               </FormControl>
               <FormMessage />
             </FormItem>

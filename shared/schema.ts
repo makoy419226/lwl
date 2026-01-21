@@ -23,7 +23,7 @@ export const clients = pgTable("clients", {
   amount: numeric("amount", { precision: 12, scale: 2 }).default("0"),
   deposit: numeric("deposit", { precision: 12, scale: 2 }).default("0"),
   balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
-  contact: text("contact"),
+  notes: text("notes"),
   billNumber: text("bill_number"),
   preferredPaymentMethod: text("preferred_payment_method").default("cash"), // 'cash', 'card', 'bank'
   discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }).default("0"),
