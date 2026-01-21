@@ -1083,6 +1083,22 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Verify staff user PIN (for bill creation, etc.)
+  app.post("/api/workers/verify-pin", async (req, res) => {
+    const { pin } = req.body;
+    if (!pin || !/^\d{5}$/.test(pin)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid PIN format" });
+    }
+    const user = await storage.verifyUserPin(pin);
+    if (user) {
+      res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid PIN" });
+    }
+  });
+
   // Verify packing worker PIN
   app.post("/api/packing/verify-pin", async (req, res) => {
     const { pin } = req.body;

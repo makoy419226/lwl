@@ -118,6 +118,7 @@ export interface IStorage {
   deletePackingWorker(id: number): Promise<void>;
   verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null>;
   verifyDeliveryWorkerPin(pin: string): Promise<PackingWorker | null>;
+  verifyUserPin(pin: string): Promise<User | null>;
   getClientOrders(clientId: number): Promise<Order[]>;
   getIncidents(search?: string): Promise<Incident[]>;
   getIncident(id: number): Promise<Incident | undefined>;
@@ -880,6 +881,19 @@ export class DatabaseStorage implements IStorage {
       const isMatch = await bcrypt.compare(pin, worker.pin);
       if (isMatch) {
         return worker;
+      }
+    }
+    return null;
+  }
+
+  async verifyUserPin(pin: string): Promise<User | null> {
+    const activeUsers = await db
+      .select()
+      .from(users)
+      .where(eq(users.active, true));
+    for (const user of activeUsers) {
+      if (user.pin === pin) {
+        return user;
       }
     }
     return null;
