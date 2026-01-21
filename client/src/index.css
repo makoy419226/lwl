@@ -26,6 +26,10 @@
   --card: 0 0% 100%;
   --card-foreground: 215 25% 15%;
 
+  /* Popover backgrounds */
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 25% 15%;
+
   /* Borders: Subtle cool gray */
   --border: 210 20% 90%;
   --input: 210 20% 90%;
