@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
-import { users, passwordResetTokens } from "@shared/schema";
+import { users, passwordResetTokens, stageChecklists } from "@shared/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
 import PDFDocument from "pdfkit";
@@ -1259,6 +1259,182 @@ export async function registerRoutes(
     }
     await storage.deleteMissingItem(itemId);
     res.status(204).send();
+  });
+
+  // Stage Checklists Routes
+  app.get("/api/stage-checklists/order/:orderId", async (req, res) => {
+    const orderId = Number(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ message: "Invalid order ID" });
+    }
+    const checklists = await db
+      .select()
+      .from(stageChecklists)
+      .where(eq(stageChecklists.orderId, orderId));
+    res.json(checklists);
+  });
+
+  app.get("/api/stage-checklists/order/:orderId/:stage", async (req, res) => {
+    const orderId = Number(req.params.orderId);
+    const stage = req.params.stage;
+    if (isNaN(orderId)) {
+      return res.status(400).json({ message: "Invalid order ID" });
+    }
+    const [checklist] = await db
+      .select()
+      .from(stageChecklists)
+      .where(
+        and(
+          eq(stageChecklists.orderId, orderId),
+          eq(stageChecklists.stage, stage)
+        )
+      );
+    res.json(checklist || null);
+  });
+
+  app.post("/api/stage-checklists", async (req, res) => {
+    try {
+      const { orderId, stage, totalItems, workerName, workerId } = req.body;
+      
+      // Check if checklist already exists for this order and stage
+      const [existing] = await db
+        .select()
+        .from(stageChecklists)
+        .where(
+          and(
+            eq(stageChecklists.orderId, orderId),
+            eq(stageChecklists.stage, stage)
+          )
+        );
+      
+      if (existing) {
+        return res.json(existing);
+      }
+      
+      const [checklist] = await db
+        .insert(stageChecklists)
+        .values({
+          orderId,
+          stage,
+          totalItems,
+          checkedItems: "[]",
+          checkedCount: 0,
+          isComplete: false,
+          startedAt: new Date(),
+          workerId,
+          workerName,
+        })
+        .returning();
+      res.status(201).json(checklist);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.put("/api/stage-checklists/:id", async (req, res) => {
+    try {
+      const checklistId = Number(req.params.id);
+      if (isNaN(checklistId)) {
+        return res.status(400).json({ message: "Invalid checklist ID" });
+      }
+      
+      const { checkedItems, checkedCount, isComplete, workerId, workerName } = req.body;
+      const updates: any = {};
+      
+      if (checkedItems !== undefined) updates.checkedItems = checkedItems;
+      if (checkedCount !== undefined) updates.checkedCount = checkedCount;
+      if (isComplete !== undefined) {
+        updates.isComplete = isComplete;
+        if (isComplete) {
+          updates.completedAt = new Date();
+        }
+      }
+      if (workerId !== undefined) updates.workerId = workerId;
+      if (workerName !== undefined) updates.workerName = workerName;
+      
+      const [checklist] = await db
+        .update(stageChecklists)
+        .set(updates)
+        .where(eq(stageChecklists.id, checklistId))
+        .returning();
+      
+      if (!checklist) {
+        return res.status(404).json({ message: "Checklist not found" });
+      }
+      res.json(checklist);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  app.put("/api/stage-checklists/order/:orderId/:stage/toggle", async (req, res) => {
+    try {
+      const orderId = Number(req.params.orderId);
+      const stage = req.params.stage;
+      const { itemIndex, checked, workerId, workerName } = req.body;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      
+      // Get or create checklist
+      let [checklist] = await db
+        .select()
+        .from(stageChecklists)
+        .where(
+          and(
+            eq(stageChecklists.orderId, orderId),
+            eq(stageChecklists.stage, stage)
+          )
+        );
+      
+      if (!checklist) {
+        return res.status(404).json({ message: "Checklist not found. Create it first." });
+      }
+      
+      // Parse checked items and update
+      let items: number[] = [];
+      try {
+        items = JSON.parse(checklist.checkedItems || "[]");
+      } catch (e) {
+        items = [];
+      }
+      
+      if (checked && !items.includes(itemIndex)) {
+        items.push(itemIndex);
+      } else if (!checked) {
+        items = items.filter(i => i !== itemIndex);
+      }
+      
+      const checkedCount = items.length;
+      const isComplete = checkedCount >= checklist.totalItems;
+      
+      const [updated] = await db
+        .update(stageChecklists)
+        .set({
+          checkedItems: JSON.stringify(items),
+          checkedCount,
+          isComplete,
+          completedAt: isComplete ? new Date() : null,
+          workerId: workerId || checklist.workerId,
+          workerName: workerName || checklist.workerName,
+        })
+        .where(eq(stageChecklists.id, checklist.id))
+        .returning();
+      
+      res.json(updated);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  // Get incomplete checklists (for supervisor alerts)
+  app.get("/api/stage-checklists/incomplete", async (req, res) => {
+    const incomplete = await db
+      .select()
+      .from(stageChecklists)
+      .where(eq(stageChecklists.isComplete, false));
+    res.json(incomplete);
   });
 
   // Generate System Flowchart PDF
