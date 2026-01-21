@@ -518,10 +518,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTransaction(
-    transaction: InsertTransaction,
+    transaction: InsertTransaction & { billId?: number },
   ): Promise<ClientTransaction> {
     const txData = {
       clientId: transaction.clientId,
+      billId: transaction.billId || null,
       type: transaction.type,
       amount: transaction.amount.toString(),
       description: transaction.description,
@@ -558,7 +559,7 @@ export class DatabaseStorage implements IStorage {
 
     // Also create a bill record so it shows in the Bills tab
     const referenceNumber = `BL-${Date.now().toString(36).toUpperCase()}`;
-    await this.createBill({
+    const createdBill = await this.createBill({
       clientId,
       amount: billAmount.toFixed(2),
       referenceNumber,
@@ -571,9 +572,10 @@ export class DatabaseStorage implements IStorage {
 
     return await this.createTransaction({
       clientId,
+      billId: createdBill.id,
       type: "bill",
       amount: billAmount.toFixed(2),
-      description: description || "Bill added",
+      description: description || `Bill #${createdBill.id}`,
       date: new Date(),
       runningBalance: newBalance.toFixed(2),
     });

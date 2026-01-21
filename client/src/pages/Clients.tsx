@@ -1512,6 +1512,7 @@ export default function Clients() {
                         <TableRow className="bg-muted/50">
                           <TableHead>Date</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead>Bill #</TableHead>
                           <TableHead>Description</TableHead>
                           <TableHead className="text-right">Amount</TableHead>
                           <TableHead className="text-right">Balance</TableHead>
@@ -1531,6 +1532,9 @@ export default function Clients() {
                               >
                                 {tx.type === "bill" ? "Bill" : "Deposit"}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm font-medium">
+                              {tx.billId ? `#${tx.billId}` : "-"}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {editingTransaction?.id === tx.id ? (

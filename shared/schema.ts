@@ -32,6 +32,7 @@ export const clients = pgTable("clients", {
 export const clientTransactions = pgTable("client_transactions", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull(),
+  billId: integer("bill_id"), // Link to bills table for bill transactions
   type: text("type").notNull(), // 'bill' or 'deposit'
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   description: text("description"),
