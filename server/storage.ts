@@ -98,6 +98,7 @@ export interface IStorage {
     amount: string,
     description?: string,
   ): Promise<ClientTransaction>;
+  deleteClientTransaction(transactionId: number): Promise<void>;
   getOrders(search?: string): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
   getOrderByPublicToken(token: string): Promise<Order | undefined>;
@@ -195,7 +196,7 @@ export class DatabaseStorage implements IStorage {
             ilike(clients.name, searchPattern),
             ilike(clients.phone || "", searchPattern),
             ilike(clients.address || "", searchPattern),
-            ilike(clients.contact || "", searchPattern),
+            ilike(clients.notes || "", searchPattern),
           ),
         );
     }
@@ -554,6 +555,19 @@ export class DatabaseStorage implements IStorage {
       balance: newBalance.toFixed(2),
     });
 
+    // Also create a bill record so it shows in the Bills tab
+    const referenceNumber = `BL-${Date.now().toString(36).toUpperCase()}`;
+    await this.createBill({
+      clientId,
+      amount: billAmount.toFixed(2),
+      referenceNumber,
+      customerName: client.name,
+      customerPhone: client.phone || "",
+      isPaid: false,
+      billDate: new Date(),
+      description: description || "Bill from client account",
+    });
+
     return await this.createTransaction({
       clientId,
       type: "bill",
@@ -591,6 +605,41 @@ export class DatabaseStorage implements IStorage {
       date: new Date(),
       runningBalance: newBalance.toFixed(2),
     });
+  }
+
+  async deleteClientTransaction(transactionId: number): Promise<void> {
+    const transaction = await db
+      .select()
+      .from(clientTransactions)
+      .where(eq(clientTransactions.id, transactionId))
+      .then(rows => rows[0]);
+    
+    if (!transaction) throw new Error("Transaction not found");
+
+    const client = await this.getClient(transaction.clientId);
+    if (!client) throw new Error("Client not found");
+
+    const transactionAmount = parseFloat(transaction.amount || "0");
+    const currentAmount = parseFloat(client.amount || "0");
+    const currentDeposit = parseFloat(client.deposit || "0");
+
+    if (transaction.type === "bill") {
+      const newAmount = currentAmount - transactionAmount;
+      const newBalance = newAmount - currentDeposit;
+      await this.updateClient(transaction.clientId, {
+        amount: newAmount.toFixed(2),
+        balance: newBalance.toFixed(2),
+      });
+    } else if (transaction.type === "deposit") {
+      const newDeposit = currentDeposit - transactionAmount;
+      const newBalance = currentAmount - newDeposit;
+      await this.updateClient(transaction.clientId, {
+        deposit: newDeposit.toFixed(2),
+        balance: newBalance.toFixed(2),
+      });
+    }
+
+    await db.delete(clientTransactions).where(eq(clientTransactions.id, transactionId));
   }
 
   async getOrders(search?: string): Promise<Order[]> {

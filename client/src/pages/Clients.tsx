@@ -122,6 +122,12 @@ export default function Clients() {
     enabled: !!viewingClient,
   });
 
+  // Transactions for the viewing client popup
+  const { data: viewingClientTransactions } = useQuery<ClientTransaction[]>({
+    queryKey: ["/api/clients", viewingClient?.id, "transactions"],
+    enabled: !!viewingClient,
+  });
+
   const payBillMutation = useMutation({
     mutationFn: async ({
       billId,
@@ -1416,6 +1422,55 @@ export default function Clients() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              )}
+
+              {/* Transaction History - shows where bill amounts came from */}
+              {viewingClientTransactions && viewingClientTransactions.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                    <History className="w-5 h-5" />
+                    Transaction History ({viewingClientTransactions.length})
+                  </h3>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="text-right">Balance</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {viewingClientTransactions.map((tx) => (
+                          <TableRow key={tx.id}>
+                            <TableCell className="text-sm">
+                              {format(new Date(tx.date), "dd/MM/yyyy HH:mm")}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={tx.type === "bill" ? "default" : "secondary"}
+                                className={tx.type === "bill" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}
+                              >
+                                {tx.type === "bill" ? "Bill" : "Deposit"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {tx.description}
+                            </TableCell>
+                            <TableCell className={`text-right font-medium ${tx.type === "bill" ? "text-blue-600" : "text-green-600"}`}>
+                              {tx.type === "bill" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED
+                            </TableCell>
+                            <TableCell className="text-right font-bold">
+                              {parseFloat(tx.runningBalance).toFixed(2)} AED
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
 

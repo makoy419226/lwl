@@ -655,6 +655,19 @@ export async function registerRoutes(
     res.json(transactions);
   });
 
+  app.delete("/api/transactions/:id", async (req, res) => {
+    try {
+      const transactionId = Number(req.params.id);
+      if (isNaN(transactionId)) {
+        return res.status(400).json({ message: "Invalid transaction ID" });
+      }
+      await storage.deleteClientTransaction(transactionId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || "Failed to delete transaction" });
+    }
+  });
+
   app.post("/api/clients/:id/bill", async (req, res) => {
     try {
       const { amount, description } = req.body;
