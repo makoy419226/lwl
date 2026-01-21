@@ -92,7 +92,7 @@ export default function TrackOrder() {
           <img src={logoImage} alt="Liquid Washes" className="h-20 mx-auto mb-3" data-testid="img-track-logo" />
           <h1 className="text-2xl font-bold text-blue-800 dark:text-blue-300">Liquid Washes Laundry</h1>
           <p className="text-muted-foreground mt-1">Track Your Order Status</p>
-          <Badge variant="outline" className="mt-2 gap-1">
+          <Badge variant="outline" className="mt-2 gap-1 text-blue-600 border-blue-600">
             <FlaskConical className="h-3 w-3" />
             Beta Feature
           </Badge>
