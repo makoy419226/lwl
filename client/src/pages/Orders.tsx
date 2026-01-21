@@ -1473,16 +1473,33 @@ export default function Orders() {
                                 <Printer className="w-4 h-4 mr-1" />
                                 Washing
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                                onClick={() => setStageChecklistDialog({ order, stage: "packing" })}
-                                data-testid={`button-mobile-checklist-packing-${order.id}`}
-                              >
-                                <CheckCircle2 className="w-4 h-4 mr-1" />
-                                Checklist
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                                    data-testid={`button-mobile-checklist-${order.id}`}
+                                  >
+                                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                                    Checklists
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "washing" })}>
+                                    Washing Checklist
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "sorting" })}>
+                                    Sorting Checklist
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "folding" })}>
+                                    Folding Checklist
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "packing" })}>
+                                    Packing Checklist
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                               <Button
                                 size="sm"
                                 variant="default"
@@ -1873,18 +1890,33 @@ export default function Orders() {
                                           <Printer className="w-3 h-3 sm:mr-1" />
                                           <span className="hidden sm:inline">Washing</span>
                                         </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="bg-green-100 text-green-700 border-green-300 whitespace-nowrap touch-manipulation"
-                                          onClick={() =>
-                                            setStageChecklistDialog({ order, stage: "packing" })
-                                          }
-                                          data-testid={`button-checklist-packing-${order.id}`}
-                                        >
-                                          <CheckCircle2 className="w-3 h-3 sm:mr-1" />
-                                          <span className="hidden sm:inline">Checklist</span>
-                                        </Button>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="bg-green-100 text-green-700 border-green-300 whitespace-nowrap touch-manipulation"
+                                              data-testid={`button-checklist-${order.id}`}
+                                            >
+                                              <CheckCircle2 className="w-3 h-3 sm:mr-1" />
+                                              <span className="hidden sm:inline">Checklists</span>
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "washing" })}>
+                                              Washing Checklist
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "sorting" })}>
+                                              Sorting Checklist
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "folding" })}>
+                                              Folding Checklist
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "packing" })}>
+                                              Packing Checklist
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
                                         <Button
                                           size="sm"
                                           variant="outline"
