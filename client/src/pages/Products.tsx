@@ -655,7 +655,7 @@ export default function Products() {
 
   return (
     <div className="flex h-screen">
-      {/* Left side - Price List */}
+      {/* Left side - New Order */}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="sticky top-0 z-30 w-full bg-gradient-to-r from-primary/10 via-white to-primary/5 dark:from-primary/20 dark:via-background dark:to-primary/10 backdrop-blur-md border-b border-primary/20 shadow-sm">
           <div className="h-12 px-3 flex items-center justify-between gap-3">
@@ -663,7 +663,7 @@ export default function Products() {
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow">
                 <ShoppingCart className="w-4 h-4 text-white" />
               </div>
-              Price List
+              New Order
             </h1>
             <div className="flex-1 max-w-sm relative group">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">

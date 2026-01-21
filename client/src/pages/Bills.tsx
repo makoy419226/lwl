@@ -556,7 +556,7 @@ export default function Bills() {
           <TabsList className="mb-4">
             <TabsTrigger value="bills">Bills List</TabsTrigger>
             <TabsTrigger value="due">Due Customers</TabsTrigger>
-            <TabsTrigger value="pricelist">Price List</TabsTrigger>
+            <TabsTrigger value="pricelist">New Order</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bills">
@@ -828,7 +828,7 @@ export default function Bills() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
-                  Laundry Price List
+                  Laundry Items
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1209,7 +1209,7 @@ export default function Bills() {
               Add New Item
             </DialogTitle>
             <DialogDescription>
-              Create a new item for the price list
+              Create a new laundry item
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

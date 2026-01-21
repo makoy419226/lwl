@@ -57,7 +57,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
 
   const navItems = [
     { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory" },
-    { href: "/products", icon: List, label: "Price List", active: isPriceList, testId: "nav-price-list" },
+    { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order" },
     { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients" },
     { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills" },
     { href: "/orders", icon: ClipboardList, label: "Orders", active: isOrders, testId: "nav-orders" },
