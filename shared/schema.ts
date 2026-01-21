@@ -262,6 +262,32 @@ export const insertMissingItemSchema = createInsertSchema(missingItems)
     resolvedAt: z.union([z.date(), z.string()]).optional().nullable(),
   });
 
+// Stage checklists - track item verification at each processing stage
+export const stageChecklists = pgTable("stage_checklists", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  stage: text("stage").notNull(), // 'tagging', 'washing', 'sorting', 'folding', 'packing'
+  checkedItems: text("checked_items"), // JSON array of checked item indices
+  totalItems: integer("total_items").notNull(),
+  checkedCount: integer("checked_count").default(0),
+  isComplete: boolean("is_complete").default(false),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  workerId: integer("worker_id"),
+  workerName: text("worker_name"),
+});
+
+export const insertStageChecklistSchema = createInsertSchema(stageChecklists)
+  .omit({ id: true })
+  .extend({
+    orderId: z.number(),
+    stage: z.string().min(1, "Stage is required"),
+    totalItems: z.number(),
+    checkedItems: z.string().optional(),
+    startedAt: z.union([z.date(), z.string()]).optional().nullable(),
+    completedAt: z.union([z.date(), z.string()]).optional().nullable(),
+  });
+
 export type Product = typeof products.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Bill = typeof bills.$inferSelect;
@@ -282,6 +308,8 @@ export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type MissingItem = typeof missingItems.$inferSelect;
 export type InsertMissingItem = z.infer<typeof insertMissingItemSchema>;
+export type StageChecklist = typeof stageChecklists.$inferSelect;
+export type InsertStageChecklist = z.infer<typeof insertStageChecklistSchema>;
 
 // Explicit API types
 export type ProductResponse = Product;
