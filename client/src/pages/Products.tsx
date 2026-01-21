@@ -518,7 +518,7 @@ export default function Products() {
         tips: tipsAmt.toFixed(2),
         finalAmount: finalTotal.toFixed(2),
         entryDate: new Date().toISOString(),
-        deliveryType: "takeaway",
+        deliveryType: "pickup",
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
       });

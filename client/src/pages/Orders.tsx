@@ -3382,7 +3382,7 @@ function OrderForm({
 }) {
   const [formData, setFormData] = useState({
     clientId: initialClientId || "",
-    deliveryType: "takeaway",
+    deliveryType: "pickup",
     expectedDeliveryAt: "",
     notes: "",
     billOption: (initialBillId ? "existing" : "new") as "new" | "existing",
@@ -3723,7 +3723,7 @@ function OrderForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="takeaway">Take Away</SelectItem>
+              <SelectItem value="pickup">Pickup</SelectItem>
               <SelectItem value="delivery">Delivery</SelectItem>
             </SelectContent>
           </Select>
