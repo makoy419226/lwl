@@ -716,9 +716,10 @@ export async function registerRoutes(
     if (!orderNumber) {
       return res.status(400).json({ message: "Order number is required" });
     }
-    const order = await storage.getDeliveredOrderByNumber(orderNumber);
+    // Find any order (not just delivered) for incident reporting
+    const order = await storage.getOrderByNumber(orderNumber);
     if (!order) {
-      return res.status(404).json({ message: "Delivered order not found" });
+      return res.status(404).json({ message: "Order not found" });
     }
     let items: Array<{ name: string; quantity: number; price: number }> = [];
     if (order.items) {

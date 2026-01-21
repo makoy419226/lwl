@@ -48,6 +48,7 @@ export default function Incidents() {
     responsibleStaffId: "",
     responsibleStaffName: "",
     incidentType: "refund",
+    incidentStage: "delivery",
     status: "open",
     incidentDate: new Date().toISOString().split('T')[0],
     resolution: "",
@@ -112,6 +113,7 @@ export default function Incidents() {
       responsibleStaffId: "",
       responsibleStaffName: "",
       incidentType: "refund",
+      incidentStage: "delivery",
       status: "open",
       incidentDate: new Date().toISOString().split('T')[0],
       resolution: "",
@@ -132,7 +134,7 @@ export default function Incidents() {
       const res = await fetch(`/api/orders/by-number/${encodeURIComponent(orderLookupNumber.trim())}`);
       if (!res.ok) {
         if (res.status === 404) {
-          toast({ title: "Not Found", description: "No delivered order found with this number", variant: "destructive" });
+          toast({ title: "Not Found", description: "No order found with this number", variant: "destructive" });
         } else {
           toast({ title: "Error", description: "Failed to lookup order", variant: "destructive" });
         }
@@ -228,6 +230,7 @@ export default function Incidents() {
       responsibleStaffId: incident.responsibleStaffId?.toString() || "",
       responsibleStaffName: incident.responsibleStaffName || "",
       incidentType: incident.incidentType || "refund",
+      incidentStage: incident.incidentStage || "delivery",
       status: incident.status || "open",
       incidentDate: incident.incidentDate ? new Date(incident.incidentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       resolution: incident.resolution || "",
@@ -269,6 +272,23 @@ export default function Incidents() {
         return <Badge variant="outline" className="border-yellow-500 text-yellow-600">Complaint</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
+    }
+  };
+
+  const getStageBadge = (stage: string | null) => {
+    switch (stage) {
+      case "reception":
+        return <Badge variant="secondary" className="text-xs">Reception</Badge>;
+      case "tagging":
+        return <Badge variant="secondary" className="text-xs">Tagging</Badge>;
+      case "washing":
+        return <Badge variant="secondary" className="text-xs">Washing</Badge>;
+      case "packing":
+        return <Badge variant="secondary" className="text-xs">Packing</Badge>;
+      case "delivery":
+        return <Badge variant="secondary" className="text-xs">Delivery</Badge>;
+      default:
+        return <Badge variant="secondary" className="text-xs">{stage}</Badge>;
     }
   };
 
@@ -398,23 +418,42 @@ export default function Incidents() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="missing_item">Missing Item</SelectItem>
-              <SelectItem value="refund">Refund</SelectItem>
               <SelectItem value="damage">Damage</SelectItem>
+              <SelectItem value="refund">Refund</SelectItem>
               <SelectItem value="complaint">Complaint</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="incidentDate">Incident Date</Label>
-          <Input
-            id="incidentDate"
-            type="date"
-            value={formData.incidentDate}
-            onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
-            data-testid="input-incident-date"
-          />
+          <Label htmlFor="incidentStage">Where It Happened</Label>
+          <Select
+            value={formData.incidentStage}
+            onValueChange={(value) => setFormData({ ...formData, incidentStage: value })}
+          >
+            <SelectTrigger data-testid="select-incident-stage">
+              <SelectValue placeholder="Select stage" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="reception">Reception (Order Entry)</SelectItem>
+              <SelectItem value="tagging">Tagging</SelectItem>
+              <SelectItem value="washing">Washing/Processing</SelectItem>
+              <SelectItem value="packing">Packing/Ready</SelectItem>
+              <SelectItem value="delivery">Delivery/Pickup</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="incidentDate">Incident Date</Label>
+        <Input
+          id="incidentDate"
+          type="date"
+          value={formData.incidentDate}
+          onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
+          data-testid="input-incident-date"
+        />
       </div>
 
       <div className="space-y-2">
@@ -662,6 +701,7 @@ export default function Incidents() {
                     <TableHead>Order #</TableHead>
                     <TableHead>Item</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Stage</TableHead>
                     <TableHead>Refund</TableHead>
                     <TableHead>Staff</TableHead>
                     <TableHead>Status</TableHead>
@@ -683,6 +723,7 @@ export default function Incidents() {
                       <TableCell className="font-mono">{incident.orderNumber || "-"}</TableCell>
                       <TableCell>{incident.itemName || "-"}</TableCell>
                       <TableCell>{getTypeBadge(incident.incidentType)}</TableCell>
+                      <TableCell>{getStageBadge(incident.incidentStage)}</TableCell>
                       <TableCell className="font-semibold text-red-600">
                         {parseFloat(incident.refundAmount || "0").toFixed(2)} AED
                       </TableCell>

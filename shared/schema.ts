@@ -153,7 +153,8 @@ export const incidents = pgTable("incidents", {
   responsibleStaffId: integer("responsible_staff_id"),
   responsibleStaffName: text("responsible_staff_name"),
   reporterName: text("reporter_name"),
-  incidentType: text("incident_type").default("refund"), // 'refund', 'damage', 'complaint', 'other', 'missing_item'
+  incidentType: text("incident_type").default("refund"), // 'refund', 'damage', 'complaint', 'missing_item', 'other'
+  incidentStage: text("incident_stage").default("delivery"), // 'reception', 'tagging', 'washing', 'packing', 'delivery'
   status: text("status").default("open"), // 'open', 'resolved', 'pending'
   incidentDate: timestamp("incident_date").notNull(),
   resolvedDate: timestamp("resolved_date"),
