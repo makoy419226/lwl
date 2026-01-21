@@ -1569,8 +1569,9 @@ export default function Orders() {
                 </div>
                 
                 {/* Desktop Table Layout */}
-                <Card className="overflow-hidden responsive-card hidden md:block">
-                  <Table className="w-full table-fixed sm:table-auto">
+                <Card className="responsive-card hidden md:block">
+                  <div className="overflow-x-auto scrollbar-always-visible" style={{ scrollbarWidth: 'thin' }}>
+                  <Table className="w-full min-w-[900px]">
                     <TableHeader>
                       <TableRow className="transition-all duration-200">
                         <TableHead className="whitespace-nowrap w-16 sm:w-auto">Order</TableHead>
@@ -2004,6 +2005,7 @@ export default function Orders() {
                       })()}
                     </TableBody>
                   </Table>
+                  </div>
                 </Card>
                 </>
               )}
