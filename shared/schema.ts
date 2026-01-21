@@ -1,147 +1,147 @@
-import { pgTable, text, serial, integer, numeric, boolean, timestamp } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
+export const products = sqliteTable("products", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   description: text("description"),
-  price: numeric("price", { precision: 10, scale: 2 }),
+  price: real("price"),
   sku: text("sku"),
   category: text("category").default("Laundry"),
   stockQuantity: integer("stock_quantity").default(0),
   imageUrl: text("image_url"),
 });
 
-export const clients = pgTable("clients", {
-  id: serial("id").primaryKey(),
+export const clients = sqliteTable("clients", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   email: text("email"),
   address: text("address"),
   phone: text("phone"),
-  phoneModified: boolean("phone_modified").default(false),
-  amount: numeric("amount", { precision: 12, scale: 2 }).default("0"),
-  deposit: numeric("deposit", { precision: 12, scale: 2 }).default("0"),
-  balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
+  phoneModified: integer("phone_modified", { mode: "boolean" }).default(false),
+  amount: real("amount").default(0),
+  deposit: real("deposit").default(0),
+  balance: real("balance").default(0),
   notes: text("notes"),
   billNumber: text("bill_number"),
-  preferredPaymentMethod: text("preferred_payment_method").default("cash"), // 'cash', 'card', 'bank'
-  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }).default("0"),
+  preferredPaymentMethod: text("preferred_payment_method").default("cash"),
+  discountPercent: real("discount_percent").default(0),
 });
 
-export const clientTransactions = pgTable("client_transactions", {
-  id: serial("id").primaryKey(),
+export const clientTransactions = sqliteTable("client_transactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   clientId: integer("client_id").notNull(),
-  billId: integer("bill_id"), // Link to bills table for bill transactions
-  type: text("type").notNull(), // 'bill' or 'deposit'
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  billId: integer("bill_id"),
+  type: text("type").notNull(),
+  amount: real("amount").notNull(),
   description: text("description"),
-  date: timestamp("date").notNull(),
-  runningBalance: numeric("running_balance", { precision: 12, scale: 2 }).notNull(),
-  paymentMethod: text("payment_method").default("cash"), // 'cash', 'card', 'bank'
-  discount: numeric("discount", { precision: 12, scale: 2 }).default("0"),
+  date: text("date").notNull(),
+  runningBalance: real("running_balance").notNull(),
+  paymentMethod: text("payment_method").default("cash"),
+  discount: real("discount").default(0),
 });
 
-export const bills = pgTable("bills", {
-  id: serial("id").primaryKey(),
+export const bills = sqliteTable("bills", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   clientId: integer("client_id"),
   customerName: text("customer_name"),
   customerPhone: text("customer_phone"),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  paidAmount: numeric("paid_amount", { precision: 12, scale: 2 }).default("0"),
+  amount: real("amount").notNull(),
+  paidAmount: real("paid_amount").default(0),
   description: text("description"),
-  billDate: timestamp("bill_date").notNull(),
+  billDate: text("bill_date").notNull(),
   referenceNumber: text("reference_number"),
-  isPaid: boolean("is_paid").default(false),
+  isPaid: integer("is_paid", { mode: "boolean" }).default(false),
   createdByWorkerId: integer("created_by_worker_id"),
 });
 
-export const billPayments = pgTable("bill_payments", {
-  id: serial("id").primaryKey(),
+export const billPayments = sqliteTable("bill_payments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   billId: integer("bill_id").notNull(),
   clientId: integer("client_id").notNull(),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  paymentDate: timestamp("payment_date").notNull(),
+  amount: real("amount").notNull(),
+  paymentDate: text("payment_date").notNull(),
   paymentMethod: text("payment_method").default("cash"),
   notes: text("notes"),
 });
 
-export const orders = pgTable("orders", {
-  id: serial("id").primaryKey(),
+export const orders = sqliteTable("orders", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   clientId: integer("client_id"),
   billId: integer("bill_id"),
   customerName: text("customer_name"),
   orderNumber: text("order_number").notNull(),
   items: text("items"),
-  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
-  paidAmount: numeric("paid_amount", { precision: 12, scale: 2 }).default("0"),
-  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }).default("0"),
-  discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }).default("0"),
-  finalAmount: numeric("final_amount", { precision: 12, scale: 2 }),
-  paymentMethod: text("payment_method").default("cash"), // 'cash', 'card', 'bank'
+  totalAmount: real("total_amount").notNull(),
+  paidAmount: real("paid_amount").default(0),
+  discountPercent: real("discount_percent").default(0),
+  discountAmount: real("discount_amount").default(0),
+  finalAmount: real("final_amount"),
+  paymentMethod: text("payment_method").default("cash"),
   status: text("status").default("entry"),
   deliveryType: text("delivery_type").default("takeaway"),
-  expectedDeliveryAt: timestamp("expected_delivery_at"),
-  entryDate: timestamp("entry_date").notNull(),
+  expectedDeliveryAt: text("expected_delivery_at"),
+  entryDate: text("entry_date").notNull(),
   entryBy: text("entry_by"),
-  tagDone: boolean("tag_done").default(false),
-  tagDate: timestamp("tag_date"),
+  tagDone: integer("tag_done", { mode: "boolean" }).default(false),
+  tagDate: text("tag_date"),
   tagBy: text("tag_by"),
   tagWorkerId: integer("tag_worker_id"),
-  washingDone: boolean("washing_done").default(false),
-  washingDate: timestamp("washing_date"),
+  washingDone: integer("washing_done", { mode: "boolean" }).default(false),
+  washingDate: text("washing_date"),
   washingBy: text("washing_by"),
-  packingDone: boolean("packing_done").default(false),
-  packingDate: timestamp("packing_date"),
+  packingDone: integer("packing_done", { mode: "boolean" }).default(false),
+  packingDate: text("packing_date"),
   packingBy: text("packing_by"),
   packingWorkerId: integer("packing_worker_id"),
-  delivered: boolean("delivered").default(false),
-  deliveryDate: timestamp("delivery_date"),
+  delivered: integer("delivered", { mode: "boolean" }).default(false),
+  deliveryDate: text("delivery_date"),
   deliveryBy: text("delivery_by"),
   deliveredByWorkerId: integer("delivered_by_worker_id"),
   notes: text("notes"),
-  urgent: boolean("urgent").default(false),
+  urgent: integer("urgent", { mode: "boolean" }).default(false),
   publicViewToken: text("public_view_token"),
-  tips: numeric("tips", { precision: 12, scale: 2 }).default("0"),
+  tips: real("tips").default(0),
   deliveryPhoto: text("delivery_photo"),
-  deliveryPhotos: text("delivery_photos").array(),
-  stockDeducted: boolean("stock_deducted").default(false),
-  itemCountVerified: boolean("item_count_verified").default(false),
-  verifiedAt: timestamp("verified_at"),
+  deliveryPhotos: text("delivery_photos"),
+  stockDeducted: integer("stock_deducted", { mode: "boolean" }).default(false),
+  itemCountVerified: integer("item_count_verified", { mode: "boolean" }).default(false),
+  verifiedAt: text("verified_at"),
   verifiedByWorkerId: integer("verified_by_worker_id"),
   verifiedByWorkerName: text("verified_by_worker_name"),
   itemCountAtIntake: integer("item_count_at_intake"),
   itemCountAtRelease: integer("item_count_at_release"),
 });
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  pin: text("pin").notNull().default("12345"), // 5-digit PIN for verification
-  role: text("role").notNull().default("cashier"), // 'admin', 'manager', 'packer', 'cashier'
+  pin: text("pin").notNull().default("12345"),
+  role: text("role").notNull().default("cashier"),
   name: text("name"),
   email: text("email"),
-  active: boolean("active").default(true),
+  active: integer("active", { mode: "boolean" }).default(true),
 });
 
-export const passwordResetTokens = pgTable("password_reset_tokens", {
-  id: serial("id").primaryKey(),
+export const passwordResetTokens = sqliteTable("password_reset_tokens", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
   token: text("token").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  used: boolean("used").default(false),
+  expiresAt: text("expires_at").notNull(),
+  used: integer("used", { mode: "boolean" }).default(false),
 });
 
-export const packingWorkers = pgTable("packing_workers", {
-  id: serial("id").primaryKey(),
+export const packingWorkers = sqliteTable("packing_workers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  pin: text("pin").notNull(), // 5-digit PIN
-  active: boolean("active").default(true),
+  pin: text("pin").notNull(),
+  active: integer("active", { mode: "boolean" }).default(true),
 });
 
-export const incidents = pgTable("incidents", {
-  id: serial("id").primaryKey(),
+export const incidents = sqliteTable("incidents", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone"),
   customerAddress: text("customer_address"),
@@ -150,17 +150,51 @@ export const incidents = pgTable("incidents", {
   itemName: text("item_name"),
   reason: text("reason").notNull(),
   notes: text("notes"),
-  refundAmount: numeric("refund_amount", { precision: 12, scale: 2 }).default("0"),
-  itemValue: numeric("item_value", { precision: 12, scale: 2 }).default("0"),
+  refundAmount: real("refund_amount").default(0),
+  itemValue: real("item_value").default(0),
   responsibleStaffId: integer("responsible_staff_id"),
   responsibleStaffName: text("responsible_staff_name"),
   reporterName: text("reporter_name"),
-  incidentType: text("incident_type").default("refund"), // 'refund', 'damage', 'complaint', 'missing_item', 'other'
-  incidentStage: text("incident_stage").default("delivery"), // 'reception', 'tagging', 'washing', 'packing', 'delivery'
-  status: text("status").default("open"), // 'open', 'resolved', 'pending'
-  incidentDate: timestamp("incident_date").notNull(),
-  resolvedDate: timestamp("resolved_date"),
+  incidentType: text("incident_type").default("refund"),
+  incidentStage: text("incident_stage").default("delivery"),
+  status: text("status").default("open"),
+  incidentDate: text("incident_date").notNull(),
+  resolvedDate: text("resolved_date"),
   resolution: text("resolution"),
+});
+
+export const missingItems = sqliteTable("missing_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  orderId: integer("order_id"),
+  orderNumber: text("order_number"),
+  customerName: text("customer_name"),
+  itemName: text("item_name").notNull(),
+  quantity: integer("quantity").default(1),
+  itemValue: real("item_value").default(0),
+  stage: text("stage").notNull(),
+  responsibleWorkerId: integer("responsible_worker_id"),
+  responsibleWorkerName: text("responsible_worker_name"),
+  reportedByWorkerId: integer("reported_by_worker_id"),
+  reportedByWorkerName: text("reported_by_worker_name"),
+  notes: text("notes"),
+  status: text("status").default("reported"),
+  reportedAt: text("reported_at").notNull(),
+  resolvedAt: text("resolved_at"),
+  resolution: text("resolution"),
+});
+
+export const stageChecklists = sqliteTable("stage_checklists", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  orderId: integer("order_id").notNull(),
+  stage: text("stage").notNull(),
+  checkedItems: text("checked_items"),
+  totalItems: integer("total_items").notNull(),
+  checkedCount: integer("checked_count").default(0),
+  isComplete: integer("is_complete", { mode: "boolean" }).default(false),
+  startedAt: text("started_at"),
+  completedAt: text("completed_at"),
+  workerId: integer("worker_id"),
+  workerName: text("worker_name"),
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
@@ -233,26 +267,6 @@ export const insertIncidentSchema = createInsertSchema(incidents)
     resolvedDate: z.union([z.date(), z.string()]).optional().nullable(),
   });
 
-export const missingItems = pgTable("missing_items", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id"),
-  orderNumber: text("order_number"),
-  customerName: text("customer_name"),
-  itemName: text("item_name").notNull(),
-  quantity: integer("quantity").default(1),
-  itemValue: numeric("item_value", { precision: 12, scale: 2 }).default("0"),
-  stage: text("stage").notNull(), // 'tag', 'washing', 'packing', 'delivery', 'storage'
-  responsibleWorkerId: integer("responsible_worker_id"),
-  responsibleWorkerName: text("responsible_worker_name"),
-  reportedByWorkerId: integer("reported_by_worker_id"),
-  reportedByWorkerName: text("reported_by_worker_name"),
-  notes: text("notes"),
-  status: text("status").default("reported"), // 'reported', 'investigating', 'found', 'lost', 'compensated'
-  reportedAt: timestamp("reported_at").notNull(),
-  resolvedAt: timestamp("resolved_at"),
-  resolution: text("resolution"),
-});
-
 export const insertMissingItemSchema = createInsertSchema(missingItems)
   .omit({ id: true })
   .extend({
@@ -263,21 +277,6 @@ export const insertMissingItemSchema = createInsertSchema(missingItems)
     reportedAt: z.union([z.date(), z.string()]),
     resolvedAt: z.union([z.date(), z.string()]).optional().nullable(),
   });
-
-// Stage checklists - track item verification at each processing stage
-export const stageChecklists = pgTable("stage_checklists", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull(),
-  stage: text("stage").notNull(), // 'tagging', 'washing', 'sorting', 'folding', 'packing'
-  checkedItems: text("checked_items"), // JSON array of checked item indices
-  totalItems: integer("total_items").notNull(),
-  checkedCount: integer("checked_count").default(0),
-  isComplete: boolean("is_complete").default(false),
-  startedAt: timestamp("started_at"),
-  completedAt: timestamp("completed_at"),
-  workerId: integer("worker_id"),
-  workerName: text("worker_name"),
-});
 
 export const insertStageChecklistSchema = createInsertSchema(stageChecklists)
   .omit({ id: true })
@@ -313,7 +312,6 @@ export type InsertMissingItem = z.infer<typeof insertMissingItemSchema>;
 export type StageChecklist = typeof stageChecklists.$inferSelect;
 export type InsertStageChecklist = z.infer<typeof insertStageChecklistSchema>;
 
-// Explicit API types
 export type ProductResponse = Product;
 export type CreateProductRequest = InsertProduct;
 export type UpdateProductRequest = Partial<InsertProduct>;

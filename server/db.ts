@@ -1,20 +1,9 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
 import * as schema from "@shared/schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-export const db = drizzle(pool, { schema });
-
+const sqlite = new Database("laundry.db");
+export const db = drizzle(sqlite, { schema });
