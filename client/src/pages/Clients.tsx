@@ -523,6 +523,26 @@ export default function Clients() {
     });
   };
 
+  const getItemCount = (itemsString: string | null): number => {
+    if (!itemsString) return 0;
+    const trimmed = itemsString.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+        }
+      } catch (e) {}
+    }
+    return itemsString.split(", ").reduce((count, item) => {
+      const quantityFirstMatch = item.match(/^(\d+)x\s+.+$/);
+      if (quantityFirstMatch) return count + parseInt(quantityFirstMatch[1]);
+      const nameFirstMatch = item.match(/^.+\s+x(\d+)$/);
+      if (nameFirstMatch) return count + parseInt(nameFirstMatch[1]);
+      return count + 1;
+    }, 0);
+  };
+
   const totalAmount =
     clients?.reduce((sum, c) => sum + parseFloat(c.amount || "0"), 0) || 0;
   const totalDeposit =
@@ -1331,7 +1351,7 @@ export default function Clients() {
                 <Button
                   onClick={() => {
                     setViewingClient(null);
-                    navigate(`/products?clientId=${viewingClient.id}&clientName=${encodeURIComponent(viewingClient.name)}`);
+                    navigate(`/products?clientId=${viewingClient.id}`);
                   }}
                   data-testid="button-new-order-for-client"
                 >
@@ -1375,7 +1395,7 @@ export default function Clients() {
                               : "-"}
                           </TableCell>
                           <TableCell>
-                            {order.itemCountAtIntake || "-"} items
+                            {getItemCount(order.items)} items
                           </TableCell>
                           <TableCell className="text-right font-semibold">
                             {parseFloat(order.totalAmount || "0").toFixed(2)} AED

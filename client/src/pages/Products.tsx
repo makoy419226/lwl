@@ -77,7 +77,6 @@ export default function Products() {
   const searchParams = useSearch();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const urlClientId = new URLSearchParams(searchParams).get("clientId");
-  const urlClientName = new URLSearchParams(searchParams).get("clientName");
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [initialClientLoaded, setInitialClientLoaded] = useState(false);
 
@@ -89,16 +88,22 @@ export default function Products() {
     }
   }, [searchParams]);
 
+  const { data: clients } = useClients();
+
   useEffect(() => {
-    if (urlClientId && urlClientName && !initialClientLoaded) {
+    if (urlClientId && clients && !initialClientLoaded) {
       const clientIdNum = parseInt(urlClientId, 10);
       if (!isNaN(clientIdNum)) {
-        setSelectedClientId(clientIdNum);
-        setCustomerName(decodeURIComponent(urlClientName));
-        setInitialClientLoaded(true);
+        const client = clients.find((c) => c.id === clientIdNum);
+        if (client) {
+          setSelectedClientId(client.id);
+          setCustomerName(client.name);
+          setCustomerPhone(client.phone || "");
+        }
       }
+      setInitialClientLoaded(true);
     }
-  }, [urlClientId, urlClientName, initialClientLoaded]);
+  }, [urlClientId, clients, initialClientLoaded]);
 
   const [editingImageId, setEditingImageId] = useState<number | null>(null);
   const [imageUrl, setImageUrl] = useState("");
@@ -191,7 +196,6 @@ export default function Products() {
     queryKey: ["/api/products/allocated-stock"],
     staleTime: 30000, // 30 seconds cache
   });
-  const { data: clients } = useClients();
   const { mutate: createClient, isPending: isCreatingClient } =
     useCreateClient();
   const updateProduct = useUpdateProduct();
