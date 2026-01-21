@@ -234,12 +234,13 @@ export async function registerRoutes(
 
   // Update user
   app.put("/api/users/:id", async (req, res) => {
-    const { password, role, name, email, active } = req.body;
+    const { username, password, role, name, email, active } = req.body;
     const userId = Number(req.params.id);
     if (isNaN(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
     const updates: any = {};
+    if (username) updates.username = username;
     if (password) updates.password = password;
     if (role) updates.role = role;
     if (name !== undefined) updates.name = name;

@@ -491,6 +491,9 @@ export default function Workers() {
   const handleUpdateUser = () => {
     if (!editUser) return;
     const updates: any = {};
+    if (userFormData.username && userFormData.username !== editUser.username) {
+      updates.username = userFormData.username;
+    }
     if (userFormData.name) updates.name = userFormData.name;
     if (userFormData.email) updates.email = userFormData.email;
     if (userFormData.password) updates.password = userFormData.password;
@@ -1226,6 +1229,20 @@ export default function Workers() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <UserCog className="w-3 h-3" />
+                Username
+              </Label>
+              <Input
+                placeholder="Enter username"
+                value={userFormData.username}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, username: e.target.value })
+                }
+                data-testid="input-edit-username"
+              />
+            </div>
             <div className="space-y-2">
               <Label>Display Name</Label>
               <Input
