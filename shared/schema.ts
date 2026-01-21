@@ -1,9 +1,9 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, real, boolean, serial, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const products = sqliteTable("products", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   price: real("price"),
@@ -13,13 +13,13 @@ export const products = sqliteTable("products", {
   imageUrl: text("image_url"),
 });
 
-export const clients = sqliteTable("clients", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email"),
   address: text("address"),
   phone: text("phone"),
-  phoneModified: integer("phone_modified", { mode: "boolean" }).default(false),
+  phoneModified: boolean("phone_modified").default(false),
   amount: real("amount").default(0),
   deposit: real("deposit").default(0),
   balance: real("balance").default(0),
@@ -29,8 +29,8 @@ export const clients = sqliteTable("clients", {
   discountPercent: real("discount_percent").default(0),
 });
 
-export const clientTransactions = sqliteTable("client_transactions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const clientTransactions = pgTable("client_transactions", {
+  id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull(),
   billId: integer("bill_id"),
   type: text("type").notNull(),
@@ -42,8 +42,8 @@ export const clientTransactions = sqliteTable("client_transactions", {
   discount: real("discount").default(0),
 });
 
-export const bills = sqliteTable("bills", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const bills = pgTable("bills", {
+  id: serial("id").primaryKey(),
   clientId: integer("client_id"),
   customerName: text("customer_name"),
   customerPhone: text("customer_phone"),
@@ -52,12 +52,12 @@ export const bills = sqliteTable("bills", {
   description: text("description"),
   billDate: text("bill_date").notNull(),
   referenceNumber: text("reference_number"),
-  isPaid: integer("is_paid", { mode: "boolean" }).default(false),
+  isPaid: boolean("is_paid").default(false),
   createdByWorkerId: integer("created_by_worker_id"),
 });
 
-export const billPayments = sqliteTable("bill_payments", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const billPayments = pgTable("bill_payments", {
+  id: serial("id").primaryKey(),
   billId: integer("bill_id").notNull(),
   clientId: integer("client_id").notNull(),
   amount: real("amount").notNull(),
@@ -66,8 +66,8 @@ export const billPayments = sqliteTable("bill_payments", {
   notes: text("notes"),
 });
 
-export const orders = sqliteTable("orders", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
   clientId: integer("client_id"),
   billId: integer("bill_id"),
   customerName: text("customer_name"),
@@ -86,29 +86,29 @@ export const orders = sqliteTable("orders", {
   expectedDeliveryAt: text("expected_delivery_at"),
   entryDate: text("entry_date").notNull(),
   entryBy: text("entry_by"),
-  tagDone: integer("tag_done", { mode: "boolean" }).default(false),
+  tagDone: boolean("tag_done").default(false),
   tagDate: text("tag_date"),
   tagBy: text("tag_by"),
   tagWorkerId: integer("tag_worker_id"),
-  washingDone: integer("washing_done", { mode: "boolean" }).default(false),
+  washingDone: boolean("washing_done").default(false),
   washingDate: text("washing_date"),
   washingBy: text("washing_by"),
-  packingDone: integer("packing_done", { mode: "boolean" }).default(false),
+  packingDone: boolean("packing_done").default(false),
   packingDate: text("packing_date"),
   packingBy: text("packing_by"),
   packingWorkerId: integer("packing_worker_id"),
-  delivered: integer("delivered", { mode: "boolean" }).default(false),
+  delivered: boolean("delivered").default(false),
   deliveryDate: text("delivery_date"),
   deliveryBy: text("delivery_by"),
   deliveredByWorkerId: integer("delivered_by_worker_id"),
   notes: text("notes"),
-  urgent: integer("urgent", { mode: "boolean" }).default(false),
+  urgent: boolean("urgent").default(false),
   publicViewToken: text("public_view_token"),
   tips: real("tips").default(0),
   deliveryPhoto: text("delivery_photo"),
   deliveryPhotos: text("delivery_photos"),
-  stockDeducted: integer("stock_deducted", { mode: "boolean" }).default(false),
-  itemCountVerified: integer("item_count_verified", { mode: "boolean" }).default(false),
+  stockDeducted: boolean("stock_deducted").default(false),
+  itemCountVerified: boolean("item_count_verified").default(false),
   verifiedAt: text("verified_at"),
   verifiedByWorkerId: integer("verified_by_worker_id"),
   verifiedByWorkerName: text("verified_by_worker_name"),
@@ -116,34 +116,34 @@ export const orders = sqliteTable("orders", {
   itemCountAtRelease: integer("item_count_at_release"),
 });
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   pin: text("pin").notNull().default("12345"),
   role: text("role").notNull().default("cashier"),
   name: text("name"),
   email: text("email"),
-  active: integer("active", { mode: "boolean" }).default(true),
+  active: boolean("active").default(true),
 });
 
-export const passwordResetTokens = sqliteTable("password_reset_tokens", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   token: text("token").notNull(),
   expiresAt: text("expires_at").notNull(),
-  used: integer("used", { mode: "boolean" }).default(false),
+  used: boolean("used").default(false),
 });
 
-export const packingWorkers = sqliteTable("packing_workers", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const packingWorkers = pgTable("packing_workers", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   pin: text("pin").notNull(),
-  active: integer("active", { mode: "boolean" }).default(true),
+  active: boolean("active").default(true),
 });
 
-export const incidents = sqliteTable("incidents", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const incidents = pgTable("incidents", {
+  id: serial("id").primaryKey(),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone"),
   customerAddress: text("customer_address"),
@@ -165,8 +165,8 @@ export const incidents = sqliteTable("incidents", {
   resolution: text("resolution"),
 });
 
-export const missingItems = sqliteTable("missing_items", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const missingItems = pgTable("missing_items", {
+  id: serial("id").primaryKey(),
   orderId: integer("order_id"),
   orderNumber: text("order_number"),
   customerName: text("customer_name"),
@@ -185,14 +185,14 @@ export const missingItems = sqliteTable("missing_items", {
   resolution: text("resolution"),
 });
 
-export const stageChecklists = sqliteTable("stage_checklists", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const stageChecklists = pgTable("stage_checklists", {
+  id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull(),
   stage: text("stage").notNull(),
   checkedItems: text("checked_items"),
   totalItems: integer("total_items").notNull(),
   checkedCount: integer("checked_count").default(0),
-  isComplete: integer("is_complete", { mode: "boolean" }).default(false),
+  isComplete: boolean("is_complete").default(false),
   startedAt: text("started_at"),
   completedAt: text("completed_at"),
   workerId: integer("worker_id"),
