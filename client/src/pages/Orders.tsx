@@ -63,6 +63,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OrderReceipt } from "@/components/OrderReceipt";
+import { StageChecklist } from "@/components/StageChecklist";
 import type { Order, Client, Product, Bill } from "@shared/schema";
 import { format } from "date-fns";
 import html2pdf from "html2pdf.js";
@@ -137,6 +138,11 @@ export default function Orders() {
   const [incidentReason, setIncidentReason] = useState("");
   const [incidentNotes, setIncidentNotes] = useState("");
   const [reporterName, setReporterName] = useState("");
+  
+  const [stageChecklistDialog, setStageChecklistDialog] = useState<{
+    order: Order;
+    stage: "tagging" | "washing" | "sorting" | "folding" | "packing";
+  } | null>(null);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -1434,6 +1440,16 @@ export default function Orders() {
                               </Button>
                               <Button
                                 size="sm"
+                                variant="outline"
+                                className="flex-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                                onClick={() => setStageChecklistDialog({ order, stage: "tagging" })}
+                                data-testid={`button-mobile-checklist-tagging-${order.id}`}
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                Checklist
+                              </Button>
+                              <Button
+                                size="sm"
                                 variant="default"
                                 className="flex-1"
                                 onClick={() => handleTagWithPin(order.id)}
@@ -1456,6 +1472,16 @@ export default function Orders() {
                               >
                                 <Printer className="w-4 h-4 mr-1" />
                                 Washing
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                                onClick={() => setStageChecklistDialog({ order, stage: "packing" })}
+                                data-testid={`button-mobile-checklist-packing-${order.id}`}
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                Checklist
                               </Button>
                               <Button
                                 size="sm"
@@ -1810,6 +1836,18 @@ export default function Orders() {
                                         <Button
                                           size="sm"
                                           variant="outline"
+                                          className="bg-green-100 text-green-700 border-green-300 whitespace-nowrap touch-manipulation"
+                                          onClick={() =>
+                                            setStageChecklistDialog({ order, stage: "tagging" })
+                                          }
+                                          data-testid={`button-checklist-tagging-${order.id}`}
+                                        >
+                                          <CheckCircle2 className="w-3 h-3 sm:mr-1" />
+                                          <span className="hidden sm:inline">Checklist</span>
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
                                           className="whitespace-nowrap touch-manipulation"
                                           onClick={() =>
                                             handleTagWithPin(order.id)
@@ -1834,6 +1872,18 @@ export default function Orders() {
                                         >
                                           <Printer className="w-3 h-3 sm:mr-1" />
                                           <span className="hidden sm:inline">Washing</span>
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="bg-green-100 text-green-700 border-green-300 whitespace-nowrap touch-manipulation"
+                                          onClick={() =>
+                                            setStageChecklistDialog({ order, stage: "packing" })
+                                          }
+                                          data-testid={`button-checklist-packing-${order.id}`}
+                                        >
+                                          <CheckCircle2 className="w-3 h-3 sm:mr-1" />
+                                          <span className="hidden sm:inline">Checklist</span>
                                         </Button>
                                         <Button
                                           size="sm"
@@ -2510,6 +2560,48 @@ export default function Orders() {
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
                 Confirm Tag
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!stageChecklistDialog}
+        onOpenChange={(open) => !open && setStageChecklistDialog(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-blue-500" />
+              Stage Checklist - {stageChecklistDialog?.stage ? stageChecklistDialog.stage.charAt(0).toUpperCase() + stageChecklistDialog.stage.slice(1) : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Please verify all items before marking this stage as complete.
+            </p>
+            {stageChecklistDialog && (
+              <StageChecklist
+                orderId={stageChecklistDialog.order.id}
+                orderNumber={stageChecklistDialog.order.orderNumber}
+                stage={stageChecklistDialog.stage}
+                items={stageChecklistDialog.order.items}
+                onComplete={() => {
+                  toast({
+                    title: "Checklist Complete",
+                    description: `All items verified for ${stageChecklistDialog.stage}`,
+                  });
+                }}
+              />
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setStageChecklistDialog(null)}
+              >
+                Close
               </Button>
             </div>
           </div>
