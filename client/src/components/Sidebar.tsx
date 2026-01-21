@@ -127,7 +127,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
                 <item.icon className="w-5 h-5 flex-shrink-0" />
                 <span className="truncate flex-1 text-left">{item.label}</span>
                 {"experimental" in item && item.experimental && (
-                  <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 shrink-0 text-blue-600 border-blue-600 bg-red-500">
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 shrink-0 text-blue-600 border-blue-600 bg-yellow-500">
                     Beta
                   </Badge>
                 )}
