@@ -94,7 +94,7 @@ export default function TrackOrder() {
           <p className="text-muted-foreground mt-1">Track Your Order Status</p>
           <Badge variant="outline" className="mt-2 gap-1">
             <FlaskConical className="h-3 w-3" />
-            Experimental Feature
+            Beta Feature
           </Badge>
         </div>
 
