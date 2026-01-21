@@ -131,6 +131,23 @@ export default function Bills() {
     queryKey: ["/api/products"],
   });
 
+  const { data: allOrders } = useQuery<Order[]>({
+    queryKey: ["/api/orders"],
+  });
+
+  const getClientTotalBill = (client: Client): number => {
+    const baseBillAmount = parseFloat(client.amount || "0");
+    if (!allOrders) return baseBillAmount;
+    
+    // Find all orders for this client that are linked to bills
+    const clientOrders = allOrders.filter(order => order.clientId === client.id && order.billId);
+    const ordersTotal = clientOrders.reduce((sum, order) => {
+      return sum + parseFloat(order.totalAmount || "0");
+    }, 0);
+    
+    return baseBillAmount + ordersTotal;
+  };
+
   // FIX 1: Ensure data is fresh when component mounts
   useEffect(() => {
     refetch();
@@ -666,6 +683,21 @@ export default function Bills() {
                           <p className="text-lg font-bold text-primary">
                             AED {parseFloat(bill.amount || "0").toFixed(2)}
                           </p>
+                          {bill.clientId && (() => {
+                            const client = clients.find(c => c.id === bill.clientId);
+                            if (client) {
+                              const totalWithOrders = getClientTotalBill(client);
+                              const baseAmount = parseFloat(client.amount || "0");
+                              if (totalWithOrders > baseAmount) {
+                                return (
+                                  <p className="text-xs text-muted-foreground">
+                                    (includes {(totalWithOrders - baseAmount).toFixed(2)} AED from orders)
+                                  </p>
+                                );
+                              }
+                            }
+                            return null;
+                          })()}
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground font-medium">

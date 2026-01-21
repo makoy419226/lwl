@@ -827,6 +827,7 @@ export async function registerRoutes(
       let {
         customerName,
         customerPhone,
+        deliveryAddress,
         createNewBill,
         billId: requestBillId,
       } = req.body;
@@ -865,7 +866,7 @@ export async function registerRoutes(
             name: customerName.trim(),
             phone: customerPhone.trim(),
             email: "",
-            address: "",
+            address: deliveryAddress?.trim() || "",
           });
           clientId = newClient.id;
         }
@@ -970,6 +971,16 @@ export async function registerRoutes(
         // Update order with billId if we assigned one
         if (assignedBillId && assignedBillId !== order.billId) {
           await storage.updateOrder(order.id, { billId: assignedBillId });
+        }
+      }
+
+      // Update client address if delivery address is provided and different
+      if (clientId && deliveryAddress && deliveryAddress.trim()) {
+        const currentClient = await storage.getClient(clientId);
+        if (currentClient && (!currentClient.address || currentClient.address !== deliveryAddress.trim())) {
+          await storage.updateClient(clientId, {
+            address: deliveryAddress.trim()
+          });
         }
       }
 

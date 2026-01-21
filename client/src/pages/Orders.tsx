@@ -1527,7 +1527,7 @@ export default function Orders() {
                             </>
                           )}
                           
-                          {order.packingDone && !order.delivered && (
+                          {order.packingDone && !order.delivered && order.deliveryType === "delivery" && (
                             <Button
                               size="sm"
                               variant="default"
@@ -1537,6 +1537,19 @@ export default function Orders() {
                             >
                               <Truck className="w-4 h-4 mr-1" />
                               Deliver
+                            </Button>
+                          )}
+                          
+                          {order.packingDone && !order.delivered && order.deliveryType !== "delivery" && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="flex-1"
+                              onClick={() => handleDeliveryWithPin(order.id)}
+                              data-testid={`button-mobile-pickup-${order.id}`}
+                            >
+                              <Package className="w-4 h-4 mr-1" />
+                              Ready for Pickup
                             </Button>
                           )}
                           
@@ -1828,13 +1841,31 @@ export default function Orders() {
                                   </TableCell>
                                 )}
                                 <TableCell className="hidden lg:table-cell">
-                                  {order.deliveryType === "delivery" ? (
-                                    <Badge variant="outline" className="gap-1">
-                                      <Truck className="w-3 h-3" /> Delivery
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="secondary">Take Away</Badge>
-                                  )}
+                                  <Select
+                                    value={order.deliveryType}
+                                    onValueChange={(newType) => {
+                                      updateOrderMutation.mutate({
+                                        id: order.id,
+                                        updates: { deliveryType: newType }
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-24 h-8">
+                                      <SelectValue>
+                                        {order.deliveryType === "delivery" ? (
+                                          <div className="flex items-center gap-1">
+                                            <Truck className="w-3 h-3" /> Delivery
+                                          </div>
+                                        ) : (
+                                          "Pickup"
+                                        )}
+                                      </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="pickup">Pickup</SelectItem>
+                                      <SelectItem value="delivery">Delivery</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 </TableCell>
                                 <TableCell className="hidden sm:table-cell">
                                   {getTimeRemaining(order.expectedDeliveryAt)}
@@ -1952,7 +1983,7 @@ export default function Orders() {
                                         </Button>
                                       </>
                                     )}
-                                    {order.packingDone && !order.delivered && (
+                                    {order.packingDone && !order.delivered && order.deliveryType === "delivery" && (
                                       <Button
                                         size="sm"
                                         variant="default"
@@ -1964,6 +1995,20 @@ export default function Orders() {
                                       >
                                         <Truck className="w-3 h-3 sm:mr-1" />
                                         <span className="hidden sm:inline">Deliver</span>
+                                      </Button>
+                                    )}
+                                    {order.packingDone && !order.delivered && order.deliveryType !== "delivery" && (
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        className="whitespace-nowrap touch-manipulation"
+                                        onClick={() =>
+                                          handleDeliveryWithPin(order.id)
+                                        }
+                                        data-testid={`button-pickup-${order.id}`}
+                                      >
+                                        <Package className="w-3 h-3 sm:mr-1" />
+                                        <span className="hidden sm:inline">Ready for Pickup</span>
                                       </Button>
                                     )}
                                     {order.delivered && (
@@ -3396,8 +3441,11 @@ function OrderForm({
 }) {
   const [formData, setFormData] = useState({
     clientId: initialClientId || "",
+    orderType: "regular",
     deliveryType: "pickup",
+    paymentOption: "pay_later",
     expectedDeliveryAt: "",
+    deliveryAddress: "",
     notes: "",
     billOption: (initialBillId ? "existing" : "new") as "new" | "existing",
     selectedBillId: initialBillId || "",
@@ -3497,6 +3545,7 @@ function OrderForm({
       entryDate: new Date().toISOString(),
       customerName: formData.customerName,
       customerPhone: formData.customerPhone,
+      paymentOption: formData.paymentOption,
       expectedDeliveryAt: formData.expectedDeliveryAt || null,
       createNewBill: formData.billOption === "new",
     });
@@ -3511,6 +3560,7 @@ function OrderForm({
       billOption: "new",
       customerName: client?.name || "",
       customerPhone: client?.phone || "",
+      deliveryAddress: client?.address || "",
     });
   }
   useEffect(() => {
@@ -3533,6 +3583,83 @@ function OrderForm({
           </SelectContent>
         </Select>
       </div>
+
+      <div className="space-y-2">
+        <Label>Order Type</Label>
+        <Select
+          value={formData.orderType}
+          onValueChange={(v) => setFormData({ ...formData, orderType: v })}
+        >
+          <SelectTrigger data-testid="select-order-type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="regular">Regular</SelectItem>
+            <SelectItem value="express">Express</SelectItem>
+            <SelectItem value="urgent">Urgent</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Delivery Type</Label>
+        <Select
+          value={formData.deliveryType}
+          onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}
+        >
+          <SelectTrigger data-testid="select-delivery-type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pickup">Pickup</SelectItem>
+            <SelectItem value="delivery">Delivery</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Payment Option</Label>
+        <Select
+          value={formData.paymentOption}
+          onValueChange={(v) => setFormData({ ...formData, paymentOption: v })}
+        >
+          <SelectTrigger data-testid="select-payment-option">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pay_later">Pay Later</SelectItem>
+            <SelectItem value="pay_now">Pay Now</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {formData.deliveryType === "delivery" && (
+        <div className="space-y-2">
+          <Label>Delivery Address *</Label>
+          <Textarea
+            placeholder="Enter delivery address..."
+            value={formData.deliveryAddress}
+            onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
+            data-testid="input-delivery-address"
+            className="min-h-[60px]"
+            required
+          />
+        </div>
+      )}
+
+      {formData.deliveryType === "delivery" && (
+        <div className="space-y-2">
+          <Label>Expected Delivery</Label>
+          <Input
+            type="datetime-local"
+            value={formData.expectedDeliveryAt}
+            onChange={(e) =>
+              setFormData({ ...formData, expectedDeliveryAt: e.target.value })
+            }
+            data-testid="input-delivery-time"
+          />
+        </div>
+      )}
 
       {selectedClient && clientTotalDue > 0 && (
         <div className="p-3 border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
@@ -3718,6 +3845,21 @@ function OrderForm({
               {orderTotal.toFixed(2)} AED
             </span>
           </div>
+          <div className="flex items-center justify-between mb-3 pb-3 border-b">
+            <span className="text-xs font-medium text-muted-foreground">Action:</span>
+            <Select
+              value={formData.deliveryType}
+              onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}
+            >
+              <SelectTrigger className="w-32 h-7">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pickup">for pickup</SelectItem>
+                <SelectItem value="delivery">for delivery</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <p className="text-xs text-muted-foreground">
             {orderItems
               .map((item) => `${item.quantity}x ${item.product.name}`)
@@ -3725,38 +3867,6 @@ function OrderForm({
           </p>
         </div>
       )}
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Delivery Type</Label>
-          <Select
-            value={formData.deliveryType}
-            onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}
-          >
-            <SelectTrigger data-testid="select-delivery-type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pickup">Pickup</SelectItem>
-              <SelectItem value="delivery">Delivery</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {formData.deliveryType === "delivery" && (
-          <div className="space-y-2">
-            <Label>Expected Delivery</Label>
-            <Input
-              type="datetime-local"
-              value={formData.expectedDeliveryAt}
-              onChange={(e) =>
-                setFormData({ ...formData, expectedDeliveryAt: e.target.value })
-              }
-              data-testid="input-delivery-time"
-            />
-          </div>
-        )}
-      </div>
 
       <div className="space-y-2">
         <Label>Notes</Label>
@@ -3775,7 +3885,8 @@ function OrderForm({
           isLoading ||
           !formData.clientId ||
           orderItems.length === 0 ||
-          (formData.billOption === "existing" && !formData.selectedBillId)
+          (formData.billOption === "existing" && !formData.selectedBillId) ||
+          (formData.deliveryType === "delivery" && !formData.deliveryAddress.trim())
         }
         data-testid="button-submit-order"
       >
@@ -3785,6 +3896,11 @@ function OrderForm({
       {formData.billOption === "existing" && !formData.selectedBillId && (
         <p className="text-sm text-orange-600 text-center">
           Please select an existing bill to attach this order to
+        </p>
+      )}
+      {formData.deliveryType === "delivery" && !formData.deliveryAddress.trim() && (
+        <p className="text-sm text-orange-600 text-center">
+          Delivery address is required for delivery orders
         </p>
       )}
     </form>

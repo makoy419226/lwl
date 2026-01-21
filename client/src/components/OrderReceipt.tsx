@@ -290,7 +290,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             Order # {order.orderNumber}
             <div style={{ marginTop: "8px" }}>
               <span className="delivery-badge delivery-type">
-                {order.deliveryType === "delivery" ? "Delivery" : "Take Away"}
+                {order.deliveryType === "delivery" ? "for delivery" : "for pickup"}
               </span>
               {order.urgent && <span className="delivery-badge urgent-badge">URGENT</span>}
             </div>

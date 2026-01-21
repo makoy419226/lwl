@@ -113,6 +113,10 @@ export default function Clients() {
   const { mutate: deleteClient } = useDeleteClient();
   const { toast } = useToast();
 
+  const { data: allOrders } = useQuery<Order[]>({
+    queryKey: ["/api/orders"],
+  });
+
   const { data: transactions } = useQuery<ClientTransaction[]>({
     queryKey: ["/api/clients", transactionClient?.id, "transactions"],
     enabled: !!transactionClient,
@@ -618,8 +622,21 @@ export default function Clients() {
     }, 0);
   };
 
+  const getClientTotalBill = (client: Client): number => {
+    const baseBillAmount = parseFloat(client.amount || "0");
+    if (!allOrders) return baseBillAmount;
+    
+    // Find all orders for this client that are linked to bills
+    const clientOrders = allOrders.filter(order => order.clientId === client.id && order.billId);
+    const ordersTotal = clientOrders.reduce((sum, order) => {
+      return sum + parseFloat(order.totalAmount || "0");
+    }, 0);
+    
+    return baseBillAmount + ordersTotal;
+  };
+
   const totalAmount =
-    clients?.reduce((sum, c) => sum + parseFloat(c.amount || "0"), 0) || 0;
+    clients?.reduce((sum, c) => sum + getClientTotalBill(c), 0) || 0;
   const totalDeposit =
     clients?.reduce((sum, c) => sum + parseFloat(c.deposit || "0"), 0) || 0;
   const totalBalance =
@@ -844,7 +861,7 @@ export default function Clients() {
                       className="text-right font-medium text-blue-600"
                       data-testid={`text-client-amount-${client.id}`}
                     >
-                      {parseFloat(client.amount || "0").toFixed(2)}
+                      {getClientTotalBill(client).toFixed(2)}
                     </TableCell>
                     <TableCell
                       className="text-right font-medium text-green-600"
@@ -1388,7 +1405,7 @@ export default function Clients() {
                   <Receipt className="w-6 h-6 mx-auto mb-2 text-blue-600" />
                   <p className="text-sm text-muted-foreground">Total Bills</p>
                   <p className="text-xl font-bold text-blue-600">
-                    {parseFloat(viewingClient.amount || "0").toFixed(2)} AED
+                    {getClientTotalBill(viewingClient).toFixed(2)} AED
                   </p>
                 </div>
                 <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 text-center">
