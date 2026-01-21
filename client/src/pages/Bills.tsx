@@ -52,7 +52,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Product, Client, Bill } from "@shared/schema";
+import type { Product, Client, Bill, Order } from "@shared/schema";
 import html2pdf from "html2pdf.js";
 
 export default function Bills() {

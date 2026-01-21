@@ -80,7 +80,7 @@ export default function Orders() {
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  
+
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
     const newSearch = params.get("search") || "";
@@ -137,14 +137,16 @@ export default function Orders() {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [deliveryInvoiceOrder, setDeliveryInvoiceOrder] =
     useState<Order | null>(null);
-  
-  const [incidentReportOrder, setIncidentReportOrder] = useState<Order | null>(null);
+
+  const [incidentReportOrder, setIncidentReportOrder] = useState<Order | null>(
+    null,
+  );
   const [incidentType, setIncidentType] = useState("missing_item");
   const [incidentItems, setIncidentItems] = useState<string[]>([]);
   const [incidentReason, setIncidentReason] = useState("");
   const [incidentNotes, setIncidentNotes] = useState("");
   const [reporterName, setReporterName] = useState("");
-  
+
   const [stageChecklistDialog, setStageChecklistDialog] = useState<{
     order: Order;
     stage: "tagging" | "washing" | "sorting" | "folding" | "packing";
@@ -207,40 +209,48 @@ export default function Orders() {
     return getClientBills(clientId).filter((b) => !b.isPaid);
   };
 
-  const parseOrderItems = (itemsString: string | null): Array<{name: string, quantity: number}> => {
+  const parseOrderItems = (
+    itemsString: string | null,
+  ): Array<{ name: string; quantity: number }> => {
     if (!itemsString) return [];
-    
+
     const trimmed = itemsString.trim();
-    
+
     // Try parsing as JSON first (array of objects format)
-    if (trimmed.startsWith('[')) {
+    if (trimmed.startsWith("[")) {
       try {
         const parsed = JSON.parse(trimmed);
         if (Array.isArray(parsed)) {
           return parsed.map((item: any) => ({
-            name: item.name || item.productName || 'Unknown',
-            quantity: item.quantity || item.qty || 1
+            name: item.name || item.productName || "Unknown",
+            quantity: item.quantity || item.qty || 1,
           }));
         }
       } catch (e) {
         // Fall through to string parsing
       }
     }
-    
+
     // String format: "2x Shirt, 3x Pants" (quantity first) or "Shirt x2, Pants x3" (name first)
     return itemsString.split(", ").map((item) => {
       // Try "2x ProductName" format first (current format used in order creation)
       const quantityFirstMatch = item.match(/^(\d+)x\s+(.+)$/);
       if (quantityFirstMatch) {
-        return { name: quantityFirstMatch[2].trim(), quantity: parseInt(quantityFirstMatch[1]) };
+        return {
+          name: quantityFirstMatch[2].trim(),
+          quantity: parseInt(quantityFirstMatch[1]),
+        };
       }
-      
+
       // Try "ProductName x2" format (legacy)
       const nameFirstMatch = item.match(/^(.+)\s+x(\d+)$/);
       if (nameFirstMatch) {
-        return { name: nameFirstMatch[1].trim(), quantity: parseInt(nameFirstMatch[2]) };
+        return {
+          name: nameFirstMatch[1].trim(),
+          quantity: parseInt(nameFirstMatch[2]),
+        };
       }
-      
+
       // No quantity found, assume 1
       return { name: item.trim(), quantity: 1 };
     });
@@ -1036,12 +1046,13 @@ export default function Orders() {
       return;
     }
 
-    const client = incidentReportOrder.clientId 
-      ? clients?.find(c => c.id === incidentReportOrder.clientId) 
+    const client = incidentReportOrder.clientId
+      ? clients?.find((c) => c.id === incidentReportOrder.clientId)
       : null;
 
     createIncidentMutation.mutate({
-      customerName: client?.name || incidentReportOrder.customerName || "Unknown",
+      customerName:
+        client?.name || incidentReportOrder.customerName || "Unknown",
       customerPhone: client?.phone || undefined,
       orderId: incidentReportOrder.id,
       orderNumber: incidentReportOrder.orderNumber,
@@ -1074,11 +1085,28 @@ export default function Orders() {
 
   const getStatusBadge = (order: Order) => {
     if (order.delivered)
-      return <Badge className="bg-green-500 dark:bg-green-600 text-white text-xs sm:text-sm transition-all duration-200">Delivered</Badge>;
+      return (
+        <Badge className="bg-green-500 dark:bg-green-600 text-white text-xs sm:text-sm transition-all duration-200">
+          Delivered
+        </Badge>
+      );
     if (order.packingDone)
-      return <Badge className="bg-purple-500 dark:bg-purple-600 text-white text-xs sm:text-sm transition-all duration-200">Ready</Badge>;
-    if (order.tagDone) return <Badge className="bg-blue-500 dark:bg-blue-600 text-white text-xs sm:text-sm transition-all duration-200">Washing</Badge>;
-    return <Badge className="bg-orange-500 dark:bg-orange-600 text-white text-xs sm:text-sm transition-all duration-200">Pending</Badge>;
+      return (
+        <Badge className="bg-purple-500 dark:bg-purple-600 text-white text-xs sm:text-sm transition-all duration-200">
+          Ready
+        </Badge>
+      );
+    if (order.tagDone)
+      return (
+        <Badge className="bg-blue-500 dark:bg-blue-600 text-white text-xs sm:text-sm transition-all duration-200">
+          Washing
+        </Badge>
+      );
+    return (
+      <Badge className="bg-orange-500 dark:bg-orange-600 text-white text-xs sm:text-sm transition-all duration-200">
+        Pending
+      </Badge>
+    );
   };
 
   const getTimeRemaining = (expectedDeliveryAt: Date | null) => {
@@ -1087,7 +1115,10 @@ export default function Orders() {
     const diff = new Date(expectedDeliveryAt).getTime() - now.getTime();
     if (diff <= 0)
       return (
-        <Badge variant="destructive" className="animate-pulse text-xs sm:text-sm transition-all duration-200 whitespace-nowrap">
+        <Badge
+          variant="destructive"
+          className="animate-pulse text-xs sm:text-sm transition-all duration-200 whitespace-nowrap"
+        >
           Overdue
         </Badge>
       );
@@ -1095,19 +1126,32 @@ export default function Orders() {
     const hours = Math.floor(minutes / 60);
     if (hours > 0) {
       return (
-        <Badge variant="secondary" className="text-xs sm:text-sm transition-all duration-200 whitespace-nowrap">
+        <Badge
+          variant="secondary"
+          className="text-xs sm:text-sm transition-all duration-200 whitespace-nowrap"
+        >
           {hours}h {minutes % 60}m
         </Badge>
       );
     }
     if (minutes <= 30) {
       return (
-        <Badge variant="destructive" className="animate-pulse text-xs sm:text-sm transition-all duration-200 whitespace-nowrap">
+        <Badge
+          variant="destructive"
+          className="animate-pulse text-xs sm:text-sm transition-all duration-200 whitespace-nowrap"
+        >
           {minutes}m
         </Badge>
       );
     }
-    return <Badge variant="secondary" className="text-xs sm:text-sm transition-all duration-200 whitespace-nowrap">{minutes}m</Badge>;
+    return (
+      <Badge
+        variant="secondary"
+        className="text-xs sm:text-sm transition-all duration-200 whitespace-nowrap"
+      >
+        {minutes}m
+      </Badge>
+    );
   };
 
   const handleStatusUpdate = (
@@ -1140,7 +1184,9 @@ export default function Orders() {
                 className="animate-pulse flex items-center gap-1"
               >
                 <Bell className="w-4 h-4" />
-                <span className="hidden sm:inline">{dueSoonOrders.length} Due Soon</span>
+                <span className="hidden sm:inline">
+                  {dueSoonOrders.length} Due Soon
+                </span>
                 <span className="sm:hidden">{dueSoonOrders.length}</span>
               </Badge>
             )}
@@ -1158,7 +1204,10 @@ export default function Orders() {
             </div>
             <Dialog open={isCreateOpen} onOpenChange={handleDialogClose}>
               <DialogTrigger asChild>
-                <Button className="h-11 px-3 lg:px-4 touch-manipulation whitespace-nowrap" data-testid="button-new-order">
+                <Button
+                  className="h-11 px-3 lg:px-4 touch-manipulation whitespace-nowrap"
+                  data-testid="button-new-order"
+                >
                   <Plus className="w-4 h-4 lg:mr-2" />
                   <span className="hidden lg:inline">New Order</span>
                 </Button>
@@ -1191,7 +1240,9 @@ export default function Orders() {
                   <Shirt className="w-5 h-5 lg:w-6 lg:h-6 text-orange-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">Received</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Received
+                  </p>
                   <p
                     className="text-xl lg:text-2xl font-bold"
                     data-testid="text-entry-count"
@@ -1213,7 +1264,9 @@ export default function Orders() {
                   />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">Washing</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Washing
+                  </p>
                   <p
                     className="text-xl lg:text-2xl font-bold"
                     data-testid="text-washing-count"
@@ -1233,7 +1286,9 @@ export default function Orders() {
                   <Package className="w-5 h-5 lg:w-6 lg:h-6 text-purple-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">Ready</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Ready
+                  </p>
                   <p
                     className="text-xl lg:text-2xl font-bold"
                     data-testid="text-packing-count"
@@ -1253,7 +1308,9 @@ export default function Orders() {
                   <CheckCircle2 className="w-5 h-5 lg:w-6 lg:h-6 text-green-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">Released</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Released
+                  </p>
                   <p
                     className="text-xl lg:text-2xl font-bold"
                     data-testid="text-delivered-count"
@@ -1269,7 +1326,12 @@ export default function Orders() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto -mx-4 px-4 mb-4">
             <TabsList className="inline-flex min-w-max h-auto p-1 gap-1">
-              <TabsTrigger value="all" className="h-10 px-3 text-sm touch-manipulation">All</TabsTrigger>
+              <TabsTrigger
+                value="all"
+                className="h-10 px-3 text-sm touch-manipulation"
+              >
+                All
+              </TabsTrigger>
               <TabsTrigger
                 value="create"
                 className="h-10 px-3 text-sm touch-manipulation bg-blue-100 dark:bg-blue-900/30 data-[state=active]:bg-blue-500 data-[state=active]:text-white"
@@ -1298,7 +1360,12 @@ export default function Orders() {
                 <Truck className="w-4 h-4 mr-1" />
                 <span className="hidden sm:inline">4.</span> Deliver
               </TabsTrigger>
-              <TabsTrigger value="item-report" className="h-10 px-3 text-sm touch-manipulation">Report</TabsTrigger>
+              <TabsTrigger
+                value="item-report"
+                className="h-10 px-3 text-sm touch-manipulation"
+              >
+                Report
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -1315,763 +1382,969 @@ export default function Orders() {
                 </div>
               ) : (
                 <>
-                {/* Mobile Card Layout */}
-                <div className="md:hidden space-y-3">
-                  {filteredOrders?.map((order) => {
-                    const client = order.clientId ? clients?.find((c) => c.id === order.clientId) : null;
-                    const displayName = client?.name || order.customerName || "Walk-in";
-                    const items = parseOrderItems(order.items);
-                    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-                    
-                    return (
-                      <Card 
-                        key={order.id} 
-                        className="border shadow-sm"
-                        data-testid={`card-order-${order.id}`}
-                      >
-                        <CardHeader className="flex flex-row items-center justify-between gap-2 p-3 pb-2 bg-muted/30">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-primary">{order.orderNumber}</span>
-                            {order.deliveryType === "delivery" && (
-                              <Truck className="w-4 h-4 text-muted-foreground" />
+                  {/* Mobile Card Layout */}
+                  <div className="md:hidden space-y-3">
+                    {filteredOrders?.map((order) => {
+                      const client = order.clientId
+                        ? clients?.find((c) => c.id === order.clientId)
+                        : null;
+                      const displayName =
+                        client?.name || order.customerName || "Walk-in";
+                      const items = parseOrderItems(order.items);
+                      const totalItems = items.reduce(
+                        (sum, item) => sum + item.quantity,
+                        0,
+                      );
+
+                      return (
+                        <Card
+                          key={order.id}
+                          className="border shadow-sm"
+                          data-testid={`card-order-${order.id}`}
+                        >
+                          <CardHeader className="flex flex-row items-center justify-between gap-2 p-3 pb-2 bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-primary">
+                                {order.orderNumber}
+                              </span>
+                              {order.deliveryType === "delivery" && (
+                                <Truck className="w-4 h-4 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(order)}
+                            </div>
+                          </CardHeader>
+
+                          <CardContent className="p-3 pt-2 space-y-3">
+                            {/* Client Row */}
+                            <div className="flex items-center justify-between gap-2">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="font-medium text-left justify-start gap-2"
+                                    data-testid={`button-mobile-client-${order.id}`}
+                                  >
+                                    <User className="w-4 h-4 text-primary shrink-0" />
+                                    <span className="truncate max-w-[140px]">
+                                      {displayName}
+                                    </span>
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72" align="start">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 border-b pb-2">
+                                      <User className="w-5 h-5 text-primary" />
+                                      <div>
+                                        <p className="font-semibold">
+                                          {client?.name || displayName}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                          {client?.phone || "No phone"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    {client && (
+                                      <div className="flex justify-between items-center gap-2">
+                                        <span className="text-sm">
+                                          Balance:
+                                        </span>
+                                        <span
+                                          className={`font-bold ${parseFloat(client.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                        >
+                                          {parseFloat(
+                                            client.balance || "0",
+                                          ).toFixed(2)}{" "}
+                                          AED
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <span className="font-semibold text-sm">
+                                {order.totalAmount} AED
+                              </span>
+                            </div>
+
+                            {/* Items Row */}
+                            <div className="flex items-center justify-between gap-2">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1.5"
+                                    data-testid={`button-mobile-items-${order.id}`}
+                                  >
+                                    <Package className="w-3.5 h-3.5" />
+                                    <span>{totalItems} items</span>
+                                    <ChevronDown className="w-3 h-3" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-64 p-2"
+                                  align="start"
+                                >
+                                  <ScrollArea className="max-h-48">
+                                    <div className="space-y-1">
+                                      {items.map((item, i) => {
+                                        const imageUrl = getProductImage(
+                                          item.name,
+                                        );
+                                        return (
+                                          <div
+                                            key={i}
+                                            className="flex items-center gap-2 p-1.5 rounded bg-muted/50"
+                                          >
+                                            {imageUrl ? (
+                                              <img
+                                                src={imageUrl}
+                                                alt=""
+                                                className="w-6 h-6 rounded object-cover"
+                                              />
+                                            ) : (
+                                              <Shirt className="w-5 h-5 text-muted-foreground" />
+                                            )}
+                                            <span className="text-sm flex-1 truncate">
+                                              {item.name}
+                                            </span>
+                                            <Badge
+                                              variant="secondary"
+                                              className="text-xs"
+                                            >
+                                              {item.quantity}
+                                            </Badge>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </ScrollArea>
+                                </PopoverContent>
+                              </Popover>
+                              <span className="text-xs text-muted-foreground">
+                                {getTimeRemaining(order.expectedDeliveryAt)}
+                              </span>
+                            </div>
+                          </CardContent>
+
+                          {/* Card Footer - Actions */}
+                          <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setPrintOrder(order)}
+                              data-testid={`button-mobile-print-${order.id}`}
+                            >
+                              <Printer className="w-4 h-4" />
+                            </Button>
+
+                            {!order.tagDone && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800"
+                                  onClick={() => generateTagReceipt(order)}
+                                  data-testid={`button-mobile-print-tag-${order.id}`}
+                                >
+                                  <Tag className="w-4 h-4 mr-1" />
+                                  Print Tag
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                                      data-testid={`button-mobile-checklist-tagging-${order.id}`}
+                                    >
+                                      <CheckCircle2 className="w-4 h-4 mr-1" />
+                                      Checklists
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setStageChecklistDialog({
+                                          order,
+                                          stage: "tagging",
+                                        })
+                                      }
+                                    >
+                                      Tagging Checklist
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="flex-1"
+                                  onClick={() => handleTagWithPin(order.id)}
+                                  data-testid={`button-mobile-tag-done-${order.id}`}
+                                >
+                                  <CheckCircle2 className="w-4 h-4 mr-1" />
+                                  Tag Done
+                                </Button>
+                              </>
+                            )}
+
+                            {order.tagDone && !order.packingDone && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                                  onClick={() => generateWashingReceipt(order)}
+                                  data-testid={`button-mobile-washing-${order.id}`}
+                                >
+                                  <Printer className="w-4 h-4 mr-1" />
+                                  Washing
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                                      data-testid={`button-mobile-checklist-${order.id}`}
+                                    >
+                                      <CheckCircle2 className="w-4 h-4 mr-1" />
+                                      Checklists
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setStageChecklistDialog({
+                                          order,
+                                          stage: "washing",
+                                        })
+                                      }
+                                    >
+                                      Washing Checklist
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setStageChecklistDialog({
+                                          order,
+                                          stage: "sorting",
+                                        })
+                                      }
+                                    >
+                                      Sorting Checklist
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setStageChecklistDialog({
+                                          order,
+                                          stage: "folding",
+                                        })
+                                      }
+                                    >
+                                      Folding Checklist
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setStageChecklistDialog({
+                                          order,
+                                          stage: "packing",
+                                        })
+                                      }
+                                    >
+                                      Packing Checklist
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="flex-1"
+                                  onClick={() => handlePackingWithPin(order.id)}
+                                  data-testid={`button-mobile-packing-${order.id}`}
+                                >
+                                  <Package className="w-4 h-4 mr-1" />
+                                  Pack Done
+                                </Button>
+                              </>
+                            )}
+
+                            {order.packingDone &&
+                              !order.delivered &&
+                              order.deliveryType === "delivery" && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="flex-1"
+                                  onClick={() =>
+                                    handleDeliveryWithPin(order.id)
+                                  }
+                                  data-testid={`button-mobile-deliver-${order.id}`}
+                                >
+                                  <Truck className="w-4 h-4 mr-1" />
+                                  Deliver
+                                </Button>
+                              )}
+
+                            {order.packingDone &&
+                              !order.delivered &&
+                              order.deliveryType !== "delivery" && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="flex-1"
+                                  onClick={() =>
+                                    handleDeliveryWithPin(order.id)
+                                  }
+                                  data-testid={`button-mobile-pickup-${order.id}`}
+                                >
+                                  <Package className="w-4 h-4 mr-1" />
+                                  Ready for Pickup
+                                </Button>
+                              )}
+
+                            {order.delivered && (
+                              <>
+                                <Badge
+                                  variant="outline"
+                                  className="text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30"
+                                >
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Done
+                                </Badge>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => setViewPhotoOrder(order)}
+                                  data-testid={`button-mobile-photo-${order.id}`}
+                                >
+                                  <Camera
+                                    className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-600" : "text-muted-foreground"}`}
+                                  />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => setNewCreatedOrder(order)}
+                                  data-testid={`button-mobile-invoice-${order.id}`}
+                                >
+                                  <Receipt className="w-4 h-4 mr-1" />
+                                  Invoice
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="text-orange-500"
+                                  onClick={() => handleReportIncident(order)}
+                                  data-testid={`button-mobile-report-incident-${order.id}`}
+                                  title="Report Incident"
+                                >
+                                  <AlertTriangle className="w-4 h-4" />
+                                </Button>
+                              </>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
-                            {getStatusBadge(order)}
-                          </div>
-                        </CardHeader>
-                        
-                        <CardContent className="p-3 pt-2 space-y-3">
-                          {/* Client Row */}
-                          <div className="flex items-center justify-between gap-2">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  className="font-medium text-left justify-start gap-2"
-                                  data-testid={`button-mobile-client-${order.id}`}
-                                >
-                                  <User className="w-4 h-4 text-primary shrink-0" />
-                                  <span className="truncate max-w-[140px]">{displayName}</span>
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-72" align="start">
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2 border-b pb-2">
-                                    <User className="w-5 h-5 text-primary" />
-                                    <div>
-                                      <p className="font-semibold">{client?.name || displayName}</p>
-                                      <p className="text-sm text-muted-foreground">{client?.phone || "No phone"}</p>
-                                    </div>
-                                  </div>
-                                  {client && (
-                                    <div className="flex justify-between items-center gap-2">
-                                      <span className="text-sm">Balance:</span>
-                                      <span className={`font-bold ${parseFloat(client.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}>
-                                        {parseFloat(client.balance || "0").toFixed(2)} AED
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                            <span className="font-semibold text-sm">{order.totalAmount} AED</span>
-                          </div>
-                          
-                          {/* Items Row */}
-                          <div className="flex items-center justify-between gap-2">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="gap-1.5"
-                                  data-testid={`button-mobile-items-${order.id}`}
-                                >
-                                  <Package className="w-3.5 h-3.5" />
-                                  <span>{totalItems} items</span>
-                                  <ChevronDown className="w-3 h-3" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-64 p-2" align="start">
-                                <ScrollArea className="max-h-48">
-                                  <div className="space-y-1">
-                                    {items.map((item, i) => {
-                                      const imageUrl = getProductImage(item.name);
-                                      return (
-                                        <div key={i} className="flex items-center gap-2 p-1.5 rounded bg-muted/50">
-                                          {imageUrl ? (
-                                            <img src={imageUrl} alt="" className="w-6 h-6 rounded object-cover" />
-                                          ) : (
-                                            <Shirt className="w-5 h-5 text-muted-foreground" />
-                                          )}
-                                          <span className="text-sm flex-1 truncate">{item.name}</span>
-                                          <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </ScrollArea>
-                              </PopoverContent>
-                            </Popover>
-                            <span className="text-xs text-muted-foreground">
-                              {getTimeRemaining(order.expectedDeliveryAt)}
-                            </span>
-                          </div>
-                        </CardContent>
-                        
-                        {/* Card Footer - Actions */}
-                        <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => setPrintOrder(order)}
-                            data-testid={`button-mobile-print-${order.id}`}
-                          >
-                            <Printer className="w-4 h-4" />
-                          </Button>
-                          
-                          {!order.tagDone && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800"
-                                onClick={() => generateTagReceipt(order)}
-                                data-testid={`button-mobile-print-tag-${order.id}`}
-                              >
-                                <Tag className="w-4 h-4 mr-1" />
-                                Print Tag
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="flex-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                                    data-testid={`button-mobile-checklist-tagging-${order.id}`}
-                                  >
-                                    <CheckCircle2 className="w-4 h-4 mr-1" />
-                                    Checklists
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "tagging" })}>
-                                    Tagging Checklist
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="flex-1"
-                                onClick={() => handleTagWithPin(order.id)}
-                                data-testid={`button-mobile-tag-done-${order.id}`}
-                              >
-                                <CheckCircle2 className="w-4 h-4 mr-1" />
-                                Tag Done
-                              </Button>
-                            </>
-                          )}
-                          
-                          {order.tagDone && !order.packingDone && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                                onClick={() => generateWashingReceipt(order)}
-                                data-testid={`button-mobile-washing-${order.id}`}
-                              >
-                                <Printer className="w-4 h-4 mr-1" />
-                                Washing
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="flex-1 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                                    data-testid={`button-mobile-checklist-${order.id}`}
-                                  >
-                                    <CheckCircle2 className="w-4 h-4 mr-1" />
-                                    Checklists
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "washing" })}>
-                                    Washing Checklist
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "sorting" })}>
-                                    Sorting Checklist
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "folding" })}>
-                                    Folding Checklist
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "packing" })}>
-                                    Packing Checklist
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="flex-1"
-                                onClick={() => handlePackingWithPin(order.id)}
-                                data-testid={`button-mobile-packing-${order.id}`}
-                              >
-                                <Package className="w-4 h-4 mr-1" />
-                                Pack Done
-                              </Button>
-                            </>
-                          )}
-                          
-                          {order.packingDone && !order.delivered && order.deliveryType === "delivery" && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="flex-1"
-                              onClick={() => handleDeliveryWithPin(order.id)}
-                              data-testid={`button-mobile-deliver-${order.id}`}
-                            >
-                              <Truck className="w-4 h-4 mr-1" />
-                              Deliver
-                            </Button>
-                          )}
-                          
-                          {order.packingDone && !order.delivered && order.deliveryType !== "delivery" && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="flex-1"
-                              onClick={() => handleDeliveryWithPin(order.id)}
-                              data-testid={`button-mobile-pickup-${order.id}`}
-                            >
-                              <Package className="w-4 h-4 mr-1" />
-                              Ready for Pickup
-                            </Button>
-                          )}
-                          
-                          {order.delivered && (
-                            <>
-                              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Done
-                              </Badge>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setViewPhotoOrder(order)}
-                                data-testid={`button-mobile-photo-${order.id}`}
-                              >
-                                <Camera className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-600" : "text-muted-foreground"}`} />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => setNewCreatedOrder(order)}
-                                data-testid={`button-mobile-invoice-${order.id}`}
-                              >
-                                <Receipt className="w-4 h-4 mr-1" />
-                                Invoice
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="text-orange-500"
-                                onClick={() => handleReportIncident(order)}
-                                data-testid={`button-mobile-report-incident-${order.id}`}
-                                title="Report Incident"
-                              >
-                                <AlertTriangle className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-                
-                {/* Desktop Table Layout */}
-                <Card className="responsive-card hidden md:block">
-                  <div className="overflow-x-auto scrollbar-always-visible" style={{ scrollbarWidth: 'thin' }}>
-                  <Table className="w-full min-w-[900px]">
-                    <TableHeader>
-                      <TableRow className="transition-all duration-200">
-                        <TableHead className="whitespace-nowrap w-16 sm:w-auto">Order</TableHead>
-                        <TableHead className="whitespace-nowrap hidden lg:table-cell">Bill</TableHead>
-                        <TableHead className="whitespace-nowrap">Client</TableHead>
-                        <TableHead className="whitespace-nowrap hidden xl:table-cell">Due</TableHead>
-                        <TableHead className="whitespace-nowrap">Items</TableHead>
-                        {activeTab !== "create" && (
-                          <TableHead className="whitespace-nowrap hidden sm:table-cell">Amount</TableHead>
-                        )}
-                        <TableHead className="whitespace-nowrap hidden lg:table-cell">Type</TableHead>
-                        <TableHead className="whitespace-nowrap hidden sm:table-cell">Time</TableHead>
-                        <TableHead className="whitespace-nowrap w-20 sm:w-auto">Status</TableHead>
-                        <TableHead className="whitespace-nowrap">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(() => {
-                        const groupedOrders = filteredOrders?.reduce(
-                          (acc, order) => {
-                            const groupKey = order.clientId
-                              ? `client-${order.clientId}`
-                              : `walkin-${order.customerName || "unknown"}`;
-                            if (!acc[groupKey]) {
-                              acc[groupKey] = [];
-                            }
-                            acc[groupKey].push(order);
-                            return acc;
-                          },
-                          {} as Record<string, typeof filteredOrders>,
-                        );
+                        </Card>
+                      );
+                    })}
+                  </div>
 
-                        return Object.entries(groupedOrders || {}).map(
-                          ([groupKey, clientOrders]) => {
-                            const isWalkIn = groupKey.startsWith("walkin-");
-                            const clientId = isWalkIn
-                              ? null
-                              : parseInt(groupKey.replace("client-", ""));
-                            const client = clientId
-                              ? clients?.find((c) => c.id === clientId)
-                              : null;
-                            const orderCount = clientOrders?.length || 0;
-                            const displayName =
-                              client?.name ||
-                              clientOrders?.[0]?.customerName ||
-                              "Walk-in Customer";
+                  {/* Desktop Table Layout */}
+                  <Card className="responsive-card hidden md:block">
+                    <div
+                      className="overflow-x-auto scrollbar-always-visible"
+                      style={{ scrollbarWidth: "thin" }}
+                    >
+                      <Table className="w-full min-w-[900px]">
+                        <TableHeader>
+                          <TableRow className="transition-all duration-200">
+                            <TableHead className="whitespace-nowrap w-16 sm:w-auto">
+                              Order
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap hidden lg:table-cell">
+                              Bill
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap">
+                              Client
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap hidden xl:table-cell">
+                              Due
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap">
+                              Items
+                            </TableHead>
+                            {activeTab !== "create" && (
+                              <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                                Amount
+                              </TableHead>
+                            )}
+                            <TableHead className="whitespace-nowrap hidden lg:table-cell">
+                              Type
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                              Time
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap w-20 sm:w-auto">
+                              Status
+                            </TableHead>
+                            <TableHead className="whitespace-nowrap">
+                              Actions
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(() => {
+                            const groupedOrders = filteredOrders?.reduce(
+                              (acc, order) => {
+                                const groupKey = order.clientId
+                                  ? `client-${order.clientId}`
+                                  : `walkin-${order.customerName || "unknown"}`;
+                                if (!acc[groupKey]) {
+                                  acc[groupKey] = [];
+                                }
+                                acc[groupKey].push(order);
+                                return acc;
+                              },
+                              {} as Record<string, typeof filteredOrders>,
+                            );
 
-                            return clientOrders?.map((order, idx) => (
-                              <TableRow
-                                key={order.id}
-                                data-testid={`row-order-${order.id}`}
-                              >
-                                <TableCell className="font-mono font-bold text-sm">
-                                  {order.orderNumber}
-                                </TableCell>
-                                <TableCell className="hidden lg:table-cell">
-                                  {order.billId ? (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="font-mono text-primary h-auto py-1 px-2"
-                                      onClick={() => {
-                                        const bill = bills?.find(
-                                          (b) => b.id === order.billId,
-                                        );
-                                        if (bill) {
-                                          setSelectedBill(bill);
-                                          setShowBillDialog(true);
-                                        }
-                                      }}
-                                      data-testid={`button-bill-${order.billId}`}
-                                    >
-                                      <Receipt className="w-3 h-3 mr-1" />#
-                                      {order.billId}
-                                    </Button>
-                                  ) : (
-                                    <span className="text-muted-foreground text-sm">
-                                      -
-                                    </span>
-                                  )}
-                                </TableCell>
-                                {idx === 0 ? (
-                                  <>
-                                    <TableCell
-                                      rowSpan={orderCount}
-                                      className="align-top border-r p-0 w-20 sm:w-28 md:w-32 lg:w-40"
-                                    >
+                            return Object.entries(groupedOrders || {}).map(
+                              ([groupKey, clientOrders]) => {
+                                const isWalkIn = groupKey.startsWith("walkin-");
+                                const clientId = isWalkIn
+                                  ? null
+                                  : parseInt(groupKey.replace("client-", ""));
+                                const client = clientId
+                                  ? clients?.find((c) => c.id === clientId)
+                                  : null;
+                                const orderCount = clientOrders?.length || 0;
+                                const displayName =
+                                  client?.name ||
+                                  clientOrders?.[0]?.customerName ||
+                                  "Walk-in Customer";
+
+                                return clientOrders?.map((order, idx) => (
+                                  <TableRow
+                                    key={order.id}
+                                    data-testid={`row-order-${order.id}`}
+                                  >
+                                    <TableCell className="font-mono font-bold text-sm">
+                                      {order.orderNumber}
+                                    </TableCell>
+                                    <TableCell className="hidden lg:table-cell">
+                                      {order.billId ? (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="font-mono text-primary h-auto py-1 px-2"
+                                          onClick={() => {
+                                            const bill = bills?.find(
+                                              (b) => b.id === order.billId,
+                                            );
+                                            if (bill) {
+                                              setSelectedBill(bill);
+                                              setShowBillDialog(true);
+                                            }
+                                          }}
+                                          data-testid={`button-bill-${order.billId}`}
+                                        >
+                                          <Receipt className="w-3 h-3 mr-1" />#
+                                          {order.billId}
+                                        </Button>
+                                      ) : (
+                                        <span className="text-muted-foreground text-sm">
+                                          -
+                                        </span>
+                                      )}
+                                    </TableCell>
+                                    {idx === 0 ? (
+                                      <>
+                                        <TableCell
+                                          rowSpan={orderCount}
+                                          className="align-top border-r p-0 w-20 sm:w-28 md:w-32 lg:w-40"
+                                        >
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                className="w-full h-full justify-start px-2 sm:px-3 py-2 font-semibold hover-elevate touch-manipulation"
+                                                data-testid={`button-client-${client?.id || "walkin"}`}
+                                              >
+                                                <User className="w-4 h-4 mr-1 sm:mr-2 shrink-0" />
+                                                <span className="truncate text-xs sm:text-sm">
+                                                  {displayName}
+                                                </span>
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent
+                                              className="w-80"
+                                              align="start"
+                                            >
+                                              <div className="space-y-3">
+                                                <div className="flex items-center gap-2 border-b pb-2">
+                                                  <User className="w-5 h-5 text-primary" />
+                                                  <div>
+                                                    <p className="font-semibold">
+                                                      {client?.name}
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                      {client?.phone}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="flex justify-between items-center gap-2">
+                                                  <span className="text-sm">
+                                                    Total Due:
+                                                  </span>
+                                                  <span
+                                                    className={`font-bold ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                                  >
+                                                    {parseFloat(
+                                                      client?.balance || "0",
+                                                    ).toFixed(2)}{" "}
+                                                    AED
+                                                  </span>
+                                                </div>
+                                                {client &&
+                                                  getClientUnpaidBills(
+                                                    client.id,
+                                                  ).length > 0 && (
+                                                    <div className="space-y-2">
+                                                      <p className="text-sm font-medium flex items-center gap-1">
+                                                        <Receipt className="w-4 h-4" />{" "}
+                                                        Unpaid Bills:
+                                                      </p>
+                                                      <ScrollArea className="h-32">
+                                                        <div className="space-y-1">
+                                                          {getClientUnpaidBills(
+                                                            client.id,
+                                                          ).map((bill) => (
+                                                            <div
+                                                              key={bill.id}
+                                                              className="flex justify-between items-center gap-2 text-sm bg-muted/50 rounded px-2 py-1"
+                                                            >
+                                                              <span className="text-muted-foreground">
+                                                                {format(
+                                                                  new Date(
+                                                                    bill.billDate,
+                                                                  ),
+                                                                  "dd/MM/yy",
+                                                                )}
+                                                              </span>
+                                                              <span className="font-medium text-destructive">
+                                                                {parseFloat(
+                                                                  bill.amount,
+                                                                ).toFixed(
+                                                                  2,
+                                                                )}{" "}
+                                                                AED
+                                                              </span>
+                                                            </div>
+                                                          ))}
+                                                        </div>
+                                                      </ScrollArea>
+                                                    </div>
+                                                  )}
+                                                {client &&
+                                                  getClientUnpaidBills(
+                                                    client.id,
+                                                  ).length === 0 && (
+                                                    <p className="text-sm text-muted-foreground text-center py-2">
+                                                      No unpaid bills
+                                                    </p>
+                                                  )}
+                                              </div>
+                                            </PopoverContent>
+                                          </Popover>
+                                        </TableCell>
+                                        <TableCell
+                                          rowSpan={orderCount}
+                                          className={`align-top font-semibold border-r hidden xl:table-cell ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                          data-testid={`text-client-due-${order.id}`}
+                                        >
+                                          {parseFloat(
+                                            client?.balance || "0",
+                                          ).toFixed(2)}{" "}
+                                          AED
+                                        </TableCell>
+                                      </>
+                                    ) : null}
+                                    <TableCell>
                                       <Popover>
                                         <PopoverTrigger asChild>
                                           <Button
-                                            variant="ghost"
-                                            className="w-full h-full justify-start px-2 sm:px-3 py-2 font-semibold hover-elevate touch-manipulation"
-                                            data-testid={`button-client-${client?.id || "walkin"}`}
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-1 touch-manipulation text-xs sm:text-sm"
+                                            data-testid={`button-view-items-${order.id}`}
                                           >
-                                            <User className="w-4 h-4 mr-1 sm:mr-2 shrink-0" />
-                                            <span className="truncate text-xs sm:text-sm">{displayName}</span>
+                                            <Package className="w-3 h-3" />
+                                            <span className="font-medium">
+                                              {parseOrderItems(
+                                                order.items,
+                                              ).reduce(
+                                                (sum, item) =>
+                                                  sum + item.quantity,
+                                                0,
+                                              )}
+                                            </span>
+                                            <ChevronDown className="w-3 h-3" />
                                           </Button>
                                         </PopoverTrigger>
                                         <PopoverContent
-                                          className="w-80"
+                                          className="w-64 p-2"
                                           align="start"
                                         >
-                                          <div className="space-y-3">
-                                            <div className="flex items-center gap-2 border-b pb-2">
-                                              <User className="w-5 h-5 text-primary" />
-                                              <div>
-                                                <p className="font-semibold">
-                                                  {client?.name}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                  {client?.phone}
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <div className="flex justify-between items-center gap-2">
-                                              <span className="text-sm">
-                                                Total Due:
-                                              </span>
-                                              <span
-                                                className={`font-bold ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
-                                              >
-                                                {parseFloat(
-                                                  client?.balance || "0",
-                                                ).toFixed(2)}{" "}
-                                                AED
-                                              </span>
-                                            </div>
-                                            {client &&
-                                              getClientUnpaidBills(client.id)
-                                                .length > 0 && (
-                                                <div className="space-y-2">
-                                                  <p className="text-sm font-medium flex items-center gap-1">
-                                                    <Receipt className="w-4 h-4" />{" "}
-                                                    Unpaid Bills:
-                                                  </p>
-                                                  <ScrollArea className="h-32">
-                                                    <div className="space-y-1">
-                                                      {getClientUnpaidBills(
-                                                        client.id,
-                                                      ).map((bill) => (
-                                                        <div
-                                                          key={bill.id}
-                                                          className="flex justify-between items-center gap-2 text-sm bg-muted/50 rounded px-2 py-1"
-                                                        >
-                                                          <span className="text-muted-foreground">
-                                                            {format(
-                                                              new Date(
-                                                                bill.billDate,
-                                                              ),
-                                                              "dd/MM/yy",
-                                                            )}
-                                                          </span>
-                                                          <span className="font-medium text-destructive">
-                                                            {parseFloat(
-                                                              bill.amount,
-                                                            ).toFixed(2)}{" "}
-                                                            AED
-                                                          </span>
-                                                        </div>
-                                                      ))}
-                                                    </div>
-                                                  </ScrollArea>
-                                                </div>
-                                              )}
-                                            {client &&
-                                              getClientUnpaidBills(client.id)
-                                                .length === 0 && (
-                                                <p className="text-sm text-muted-foreground text-center py-2">
-                                                  No unpaid bills
-                                                </p>
-                                              )}
+                                          <div className="space-y-1 max-h-48 overflow-y-auto">
+                                            {parseOrderItems(order.items).map(
+                                              (item, i) => {
+                                                const imageUrl =
+                                                  getProductImage(item.name);
+                                                return (
+                                                  <div
+                                                    key={i}
+                                                    className="flex items-center gap-2 bg-muted/50 rounded-md px-2 py-1.5"
+                                                  >
+                                                    {imageUrl ? (
+                                                      <img
+                                                        src={imageUrl}
+                                                        alt={item.name}
+                                                        className="w-5 h-5 object-contain"
+                                                      />
+                                                    ) : (
+                                                      <Shirt className="w-5 h-5 text-muted-foreground" />
+                                                    )}
+                                                    <span className="text-sm flex-1 truncate">
+                                                      {item.name}
+                                                    </span>
+                                                    <Badge
+                                                      variant="secondary"
+                                                      className="text-xs"
+                                                    >
+                                                      {item.quantity}
+                                                    </Badge>
+                                                  </div>
+                                                );
+                                              },
+                                            )}
                                           </div>
                                         </PopoverContent>
                                       </Popover>
                                     </TableCell>
-                                    <TableCell
-                                      rowSpan={orderCount}
-                                      className={`align-top font-semibold border-r hidden xl:table-cell ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
-                                      data-testid={`text-client-due-${order.id}`}
-                                    >
-                                      {parseFloat(
-                                        client?.balance || "0",
-                                      ).toFixed(2)}{" "}
-                                      AED
-                                    </TableCell>
-                                  </>
-                                ) : null}
-                                <TableCell>
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="gap-1 touch-manipulation text-xs sm:text-sm"
-                                        data-testid={`button-view-items-${order.id}`}
+                                    {activeTab !== "create" && (
+                                      <TableCell className="font-semibold hidden sm:table-cell">
+                                        {order.totalAmount} AED
+                                      </TableCell>
+                                    )}
+                                    <TableCell className="hidden lg:table-cell">
+                                      <Select
+                                        value={order.deliveryType || ""}
+                                        onValueChange={(newType) => {
+                                          updateOrderMutation.mutate({
+                                            id: order.id,
+                                            updates: { deliveryType: newType },
+                                          });
+                                        }}
                                       >
-                                        <Package className="w-3 h-3" />
-                                        <span className="font-medium">
-                                          {parseOrderItems(order.items).reduce((sum, item) => sum + item.quantity, 0)}
-                                        </span>
-                                        <ChevronDown className="w-3 h-3" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-64 p-2" align="start">
-                                      <div className="space-y-1 max-h-48 overflow-y-auto">
-                                        {parseOrderItems(order.items).map(
-                                          (item, i) => {
-                                            const imageUrl = getProductImage(item.name);
-                                            return (
-                                              <div
-                                                key={i}
-                                                className="flex items-center gap-2 bg-muted/50 rounded-md px-2 py-1.5"
-                                              >
-                                                {imageUrl ? (
-                                                  <img
-                                                    src={imageUrl}
-                                                    alt={item.name}
-                                                    className="w-5 h-5 object-contain"
-                                                  />
-                                                ) : (
-                                                  <Shirt className="w-5 h-5 text-muted-foreground" />
-                                                )}
-                                                <span className="text-sm flex-1 truncate">
-                                                  {item.name}
-                                                </span>
-                                                <Badge variant="secondary" className="text-xs">
-                                                  {item.quantity}
-                                                </Badge>
+                                        <SelectTrigger className="w-24 h-8">
+                                          <SelectValue>
+                                            {order.deliveryType ===
+                                            "delivery" ? (
+                                              <div className="flex items-center gap-1">
+                                                <Truck className="w-3 h-3" />{" "}
+                                                Delivery
                                               </div>
-                                            );
-                                          },
-                                        )}
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                </TableCell>
-                                {activeTab !== "create" && (
-                                  <TableCell className="font-semibold hidden sm:table-cell">
-                                    {order.totalAmount} AED
-                                  </TableCell>
-                                )}
-                                <TableCell className="hidden lg:table-cell">
-                                  <Select
-                                    value={order.deliveryType}
-                                    onValueChange={(newType) => {
-                                      updateOrderMutation.mutate({
-                                        id: order.id,
-                                        updates: { deliveryType: newType }
-                                      });
-                                    }}
-                                  >
-                                    <SelectTrigger className="w-24 h-8">
-                                      <SelectValue>
-                                        {order.deliveryType === "delivery" ? (
-                                          <div className="flex items-center gap-1">
-                                            <Truck className="w-3 h-3" /> Delivery
-                                          </div>
-                                        ) : (
-                                          "Pickup"
-                                        )}
-                                      </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="pickup">Pickup</SelectItem>
-                                      <SelectItem value="delivery">Delivery</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell className="hidden sm:table-cell">
-                                  {getTimeRemaining(order.expectedDeliveryAt)}
-                                </TableCell>
-                                <TableCell>{getStatusBadge(order)}</TableCell>
-                                <TableCell className="p-2 sm:p-3 lg:p-4">
-                                  <div className="action-buttons">
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="shrink-0 touch-manipulation"
-                                      onClick={() => setPrintOrder(order)}
-                                      data-testid={`button-print-${order.id}`}
-                                    >
-                                      <Printer className="w-4 h-4" />
-                                    </Button>
-                                    {!order.tagDone && (
-                                      <>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="bg-orange-100 text-orange-700 border-orange-300 whitespace-nowrap touch-manipulation"
-                                          onClick={() =>
-                                            generateTagReceipt(order)
-                                          }
-                                          data-testid={`button-print-tag-${order.id}`}
-                                        >
-                                          <Tag className="w-3 h-3 sm:mr-1" />
-                                          <span className="hidden sm:inline">Print Tag</span>
-                                        </Button>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="bg-green-100 text-green-700 border-green-300 whitespace-nowrap touch-manipulation"
-                                              data-testid={`button-checklist-tagging-${order.id}`}
-                                            >
-                                              <CheckCircle2 className="w-3 h-3 sm:mr-1" />
-                                              <span className="hidden sm:inline">Checklists</span>
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "tagging" })}>
-                                              Tagging Checklist
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="whitespace-nowrap touch-manipulation"
-                                          onClick={() =>
-                                            handleTagWithPin(order.id)
-                                          }
-                                          data-testid={`button-tag-done-${order.id}`}
-                                        >
-                                          <span className="sm:hidden">Tag</span>
-                                          <span className="hidden sm:inline">Tag Done</span>
-                                        </Button>
-                                      </>
-                                    )}
-                                    {order.tagDone && !order.packingDone && (
-                                      <>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="bg-blue-100 text-blue-700 border-blue-300 whitespace-nowrap touch-manipulation"
-                                          onClick={() =>
-                                            generateWashingReceipt(order)
-                                          }
-                                          data-testid={`button-washing-receipt-${order.id}`}
-                                        >
-                                          <Printer className="w-3 h-3 sm:mr-1" />
-                                          <span className="hidden sm:inline">Washing</span>
-                                        </Button>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="bg-green-100 text-green-700 border-green-300 whitespace-nowrap touch-manipulation"
-                                              data-testid={`button-checklist-${order.id}`}
-                                            >
-                                              <CheckCircle2 className="w-3 h-3 sm:mr-1" />
-                                              <span className="hidden sm:inline">Checklists</span>
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "washing" })}>
-                                              Washing Checklist
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "sorting" })}>
-                                              Sorting Checklist
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "folding" })}>
-                                              Folding Checklist
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setStageChecklistDialog({ order, stage: "packing" })}>
-                                              Packing Checklist
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="whitespace-nowrap touch-manipulation"
-                                          onClick={() =>
-                                            handlePackingWithPin(order.id)
-                                          }
-                                          data-testid={`button-packing-${order.id}`}
-                                        >
-                                          <span className="sm:hidden">Pack</span>
-                                          <span className="hidden sm:inline">Packing Done</span>
-                                        </Button>
-                                      </>
-                                    )}
-                                    {order.packingDone && !order.delivered && order.deliveryType === "delivery" && (
-                                      <Button
-                                        size="sm"
-                                        variant="default"
-                                        className="whitespace-nowrap touch-manipulation"
-                                        onClick={() =>
-                                          handleDeliveryWithPin(order.id)
-                                        }
-                                        data-testid={`button-deliver-${order.id}`}
-                                      >
-                                        <Truck className="w-3 h-3 sm:mr-1" />
-                                        <span className="hidden sm:inline">Deliver</span>
-                                      </Button>
-                                    )}
-                                    {order.packingDone && !order.delivered && order.deliveryType !== "delivery" && (
-                                      <Button
-                                        size="sm"
-                                        variant="default"
-                                        className="whitespace-nowrap touch-manipulation"
-                                        onClick={() =>
-                                          handleDeliveryWithPin(order.id)
-                                        }
-                                        data-testid={`button-pickup-${order.id}`}
-                                      >
-                                        <Package className="w-3 h-3 sm:mr-1" />
-                                        <span className="hidden sm:inline">Ready for Pickup</span>
-                                      </Button>
-                                    )}
-                                    {order.delivered && (
-                                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                                        <Badge
-                                          variant="outline"
-                                          className="text-green-600 hidden sm:inline-flex"
-                                        >
-                                          Completed
-                                        </Badge>
+                                            ) : (
+                                              "Pickup"
+                                            )}
+                                          </SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="pickup">
+                                            Pickup
+                                          </SelectItem>
+                                          <SelectItem value="delivery">
+                                            Delivery
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                    <TableCell className="hidden sm:table-cell">
+                                      {getTimeRemaining(
+                                        order.expectedDeliveryAt,
+                                      )}
+                                    </TableCell>
+                                    <TableCell>
+                                      {getStatusBadge(order)}
+                                    </TableCell>
+                                    <TableCell className="p-2 sm:p-3 lg:p-4">
+                                      <div className="action-buttons">
                                         <Button
                                           size="icon"
                                           variant="ghost"
                                           className="shrink-0 touch-manipulation"
-                                          onClick={() =>
-                                            setViewPhotoOrder(order)
-                                          }
-                                          data-testid={`button-view-photo-${order.id}`}
-                                          title={
-                                            order.deliveryPhoto
-                                              ? "View Delivery Photo"
-                                              : "No photo available"
-                                          }
+                                          onClick={() => setPrintOrder(order)}
+                                          data-testid={`button-print-${order.id}`}
                                         >
-                                          <Camera
-                                            className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-900 dark:text-blue-400" : "text-red-500"}`}
-                                          />
+                                          <Printer className="w-4 h-4" />
                                         </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="whitespace-nowrap touch-manipulation"
-                                          onClick={() => {
-                                            setNewCreatedOrder(order);
-                                          }}
-                                          data-testid={`button-invoice-${order.id}`}
-                                        >
-                                          <Receipt className="w-3 h-3 sm:mr-1" />
-                                          <span className="hidden sm:inline">Invoice</span>
-                                        </Button>
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="shrink-0 touch-manipulation text-orange-500"
-                                          onClick={() => handleReportIncident(order)}
-                                          data-testid={`button-report-incident-${order.id}`}
-                                          title="Report Incident"
-                                        >
-                                          <AlertTriangle className="w-4 h-4" />
-                                        </Button>
+                                        {!order.tagDone && (
+                                          <>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="bg-orange-100 text-orange-700 border-orange-300 whitespace-nowrap touch-manipulation"
+                                              onClick={() =>
+                                                generateTagReceipt(order)
+                                              }
+                                              data-testid={`button-print-tag-${order.id}`}
+                                            >
+                                              <Tag className="w-3 h-3 sm:mr-1" />
+                                              <span className="hidden sm:inline">
+                                                Print Tag
+                                              </span>
+                                            </Button>
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  className="bg-green-100 text-green-700 border-green-300 whitespace-nowrap touch-manipulation"
+                                                  data-testid={`button-checklist-tagging-${order.id}`}
+                                                >
+                                                  <CheckCircle2 className="w-3 h-3 sm:mr-1" />
+                                                  <span className="hidden sm:inline">
+                                                    Checklists
+                                                  </span>
+                                                </Button>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end">
+                                                <DropdownMenuItem
+                                                  onClick={() =>
+                                                    setStageChecklistDialog({
+                                                      order,
+                                                      stage: "tagging",
+                                                    })
+                                                  }
+                                                >
+                                                  Tagging Checklist
+                                                </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="whitespace-nowrap touch-manipulation"
+                                              onClick={() =>
+                                                handleTagWithPin(order.id)
+                                              }
+                                              data-testid={`button-tag-done-${order.id}`}
+                                            >
+                                              <span className="sm:hidden">
+                                                Tag
+                                              </span>
+                                              <span className="hidden sm:inline">
+                                                Tag Done
+                                              </span>
+                                            </Button>
+                                          </>
+                                        )}
+                                        {order.tagDone &&
+                                          !order.packingDone && (
+                                            <>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="bg-blue-100 text-blue-700 border-blue-300 whitespace-nowrap touch-manipulation"
+                                                onClick={() =>
+                                                  generateWashingReceipt(order)
+                                                }
+                                                data-testid={`button-washing-receipt-${order.id}`}
+                                              >
+                                                <Printer className="w-3 h-3 sm:mr-1" />
+                                                <span className="hidden sm:inline">
+                                                  Washing
+                                                </span>
+                                              </Button>
+                                              <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="bg-green-100 text-green-700 border-green-300 whitespace-nowrap touch-manipulation"
+                                                    data-testid={`button-checklist-${order.id}`}
+                                                  >
+                                                    <CheckCircle2 className="w-3 h-3 sm:mr-1" />
+                                                    <span className="hidden sm:inline">
+                                                      Checklists
+                                                    </span>
+                                                  </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                  <DropdownMenuItem
+                                                    onClick={() =>
+                                                      setStageChecklistDialog({
+                                                        order,
+                                                        stage: "washing",
+                                                      })
+                                                    }
+                                                  >
+                                                    Washing Checklist
+                                                  </DropdownMenuItem>
+                                                  <DropdownMenuItem
+                                                    onClick={() =>
+                                                      setStageChecklistDialog({
+                                                        order,
+                                                        stage: "sorting",
+                                                      })
+                                                    }
+                                                  >
+                                                    Sorting Checklist
+                                                  </DropdownMenuItem>
+                                                  <DropdownMenuItem
+                                                    onClick={() =>
+                                                      setStageChecklistDialog({
+                                                        order,
+                                                        stage: "folding",
+                                                      })
+                                                    }
+                                                  >
+                                                    Folding Checklist
+                                                  </DropdownMenuItem>
+                                                  <DropdownMenuItem
+                                                    onClick={() =>
+                                                      setStageChecklistDialog({
+                                                        order,
+                                                        stage: "packing",
+                                                      })
+                                                    }
+                                                  >
+                                                    Packing Checklist
+                                                  </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                              </DropdownMenu>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="whitespace-nowrap touch-manipulation"
+                                                onClick={() =>
+                                                  handlePackingWithPin(order.id)
+                                                }
+                                                data-testid={`button-packing-${order.id}`}
+                                              >
+                                                <span className="sm:hidden">
+                                                  Pack
+                                                </span>
+                                                <span className="hidden sm:inline">
+                                                  Packing Done
+                                                </span>
+                                              </Button>
+                                            </>
+                                          )}
+                                        {order.packingDone &&
+                                          !order.delivered &&
+                                          order.deliveryType === "delivery" && (
+                                            <Button
+                                              size="sm"
+                                              variant="default"
+                                              className="whitespace-nowrap touch-manipulation"
+                                              onClick={() =>
+                                                handleDeliveryWithPin(order.id)
+                                              }
+                                              data-testid={`button-deliver-${order.id}`}
+                                            >
+                                              <Truck className="w-3 h-3 sm:mr-1" />
+                                              <span className="hidden sm:inline">
+                                                Deliver
+                                              </span>
+                                            </Button>
+                                          )}
+                                        {order.packingDone &&
+                                          !order.delivered &&
+                                          order.deliveryType !== "delivery" && (
+                                            <Button
+                                              size="sm"
+                                              variant="default"
+                                              className="whitespace-nowrap touch-manipulation"
+                                              onClick={() =>
+                                                handleDeliveryWithPin(order.id)
+                                              }
+                                              data-testid={`button-pickup-${order.id}`}
+                                            >
+                                              <Package className="w-3 h-3 sm:mr-1" />
+                                              <span className="hidden sm:inline">
+                                                Ready for Pickup
+                                              </span>
+                                            </Button>
+                                          )}
+                                        {order.delivered && (
+                                          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                            <Badge
+                                              variant="outline"
+                                              className="text-green-600 hidden sm:inline-flex"
+                                            >
+                                              Completed
+                                            </Badge>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="shrink-0 touch-manipulation"
+                                              onClick={() =>
+                                                setViewPhotoOrder(order)
+                                              }
+                                              data-testid={`button-view-photo-${order.id}`}
+                                              title={
+                                                order.deliveryPhoto
+                                                  ? "View Delivery Photo"
+                                                  : "No photo available"
+                                              }
+                                            >
+                                              <Camera
+                                                className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-900 dark:text-blue-400" : "text-red-500"}`}
+                                              />
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="whitespace-nowrap touch-manipulation"
+                                              onClick={() => {
+                                                setNewCreatedOrder(order);
+                                              }}
+                                              data-testid={`button-invoice-${order.id}`}
+                                            >
+                                              <Receipt className="w-3 h-3 sm:mr-1" />
+                                              <span className="hidden sm:inline">
+                                                Invoice
+                                              </span>
+                                            </Button>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="shrink-0 touch-manipulation text-orange-500"
+                                              onClick={() =>
+                                                handleReportIncident(order)
+                                              }
+                                              data-testid={`button-report-incident-${order.id}`}
+                                              title="Report Incident"
+                                            >
+                                              <AlertTriangle className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ));
-                          },
-                        );
-                      })()}
-                    </TableBody>
-                  </Table>
-                  </div>
-                </Card>
+                                    </TableCell>
+                                  </TableRow>
+                                ));
+                              },
+                            );
+                          })()}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </Card>
                 </>
               )}
             </TabsContent>
@@ -2089,7 +2362,12 @@ export default function Orders() {
                 <CardContent>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6">
                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <Label htmlFor="report-start" className="whitespace-nowrap">From:</Label>
+                      <Label
+                        htmlFor="report-start"
+                        className="whitespace-nowrap"
+                      >
+                        From:
+                      </Label>
                       <Input
                         id="report-start"
                         type="date"
@@ -2100,7 +2378,9 @@ export default function Orders() {
                       />
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <Label htmlFor="report-end" className="whitespace-nowrap">To:</Label>
+                      <Label htmlFor="report-end" className="whitespace-nowrap">
+                        To:
+                      </Label>
                       <Input
                         id="report-end"
                         type="date"
@@ -2673,7 +2953,11 @@ export default function Orders() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-blue-500" />
-              Stage Checklist - {stageChecklistDialog?.stage ? stageChecklistDialog.stage.charAt(0).toUpperCase() + stageChecklistDialog.stage.slice(1) : ""}
+              Stage Checklist -{" "}
+              {stageChecklistDialog?.stage
+                ? stageChecklistDialog.stage.charAt(0).toUpperCase() +
+                  stageChecklistDialog.stage.slice(1)
+                : ""}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -2765,33 +3049,51 @@ export default function Orders() {
             </div>
 
             {/* Item Count Verification Section */}
-            {deliveryPinDialog && (() => {
-              const order = orders?.find(o => o.id === deliveryPinDialog.orderId);
-              const itemCount = order?.items ? 
-                JSON.parse(order.items).reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) : 0;
-              return (
-                <div className="p-3 bg-muted rounded-lg space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Item Count at Intake</span>
-                    <Badge variant="outline" className="text-lg font-bold" data-testid="text-item-count">{itemCount} items</Badge>
+            {deliveryPinDialog &&
+              (() => {
+                const order = orders?.find(
+                  (o) => o.id === deliveryPinDialog.orderId,
+                );
+                const itemCount = order?.items
+                  ? JSON.parse(order.items).reduce(
+                      (sum: number, item: any) => sum + (item.quantity || 1),
+                      0,
+                    )
+                  : 0;
+                return (
+                  <div className="p-3 bg-muted rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Item Count at Intake
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="text-lg font-bold"
+                        data-testid="text-item-count"
+                      >
+                        {itemCount} items
+                      </Badge>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="itemVerified"
+                        checked={itemCountVerified}
+                        onCheckedChange={(checked) =>
+                          setItemCountVerified(checked === true)
+                        }
+                        data-testid="checkbox-item-verified"
+                      />
+                      <label
+                        htmlFor="itemVerified"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        I confirm all {itemCount} items are present and match
+                        intake
+                      </label>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="itemVerified" 
-                      checked={itemCountVerified}
-                      onCheckedChange={(checked) => setItemCountVerified(checked === true)}
-                      data-testid="checkbox-item-verified"
-                    />
-                    <label 
-                      htmlFor="itemVerified" 
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      I confirm all {itemCount} items are present and match intake
-                    </label>
-                  </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Enter Staff PIN</Label>
@@ -3000,8 +3302,8 @@ export default function Orders() {
       </Dialog>
 
       {/* Incident Report Dialog */}
-      <Dialog 
-        open={!!incidentReportOrder} 
+      <Dialog
+        open={!!incidentReportOrder}
         onOpenChange={(open) => !open && resetIncidentForm()}
       >
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -3019,16 +3321,23 @@ export default function Orders() {
               <div className="p-3 bg-muted rounded-lg space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Order:</span>
-                  <span className="font-medium">{incidentReportOrder.orderNumber}</span>
+                  <span className="font-medium">
+                    {incidentReportOrder.orderNumber}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Customer:</span>
                   <span className="font-medium">
-                    {clients?.find(c => c.id === incidentReportOrder.clientId)?.name || incidentReportOrder.customerName || "Walk-in"}
+                    {clients?.find((c) => c.id === incidentReportOrder.clientId)
+                      ?.name ||
+                      incidentReportOrder.customerName ||
+                      "Walk-in"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Responsible Staff:</span>
+                  <span className="text-muted-foreground">
+                    Responsible Staff:
+                  </span>
                   <span className="font-medium">
                     {incidentReportOrder.packingBy || "Not assigned"}
                   </span>
@@ -3044,7 +3353,9 @@ export default function Orders() {
                   <SelectContent>
                     <SelectItem value="missing_item">Missing Item</SelectItem>
                     <SelectItem value="damage">Damage</SelectItem>
-                    <SelectItem value="complaint">Customer Complaint</SelectItem>
+                    <SelectItem value="complaint">
+                      Customer Complaint
+                    </SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -3053,26 +3364,35 @@ export default function Orders() {
               <div className="space-y-2">
                 <Label>Select Item(s)</Label>
                 <div className="border rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
-                  {parseOrderItems(incidentReportOrder.items).map((item, idx) => (
-                    <div key={idx} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`item-${idx}`}
-                        checked={incidentItems.includes(`${item.name} x${item.quantity}`)}
-                        onCheckedChange={(checked) => {
-                          const itemStr = `${item.name} x${item.quantity}`;
-                          if (checked) {
-                            setIncidentItems([...incidentItems, itemStr]);
-                          } else {
-                            setIncidentItems(incidentItems.filter(i => i !== itemStr));
-                          }
-                        }}
-                        data-testid={`checkbox-item-${idx}`}
-                      />
-                      <label htmlFor={`item-${idx}`} className="text-sm flex-1">
-                        {item.name} x{item.quantity}
-                      </label>
-                    </div>
-                  ))}
+                  {parseOrderItems(incidentReportOrder.items).map(
+                    (item, idx) => (
+                      <div key={idx} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`item-${idx}`}
+                          checked={incidentItems.includes(
+                            `${item.name} x${item.quantity}`,
+                          )}
+                          onCheckedChange={(checked) => {
+                            const itemStr = `${item.name} x${item.quantity}`;
+                            if (checked) {
+                              setIncidentItems([...incidentItems, itemStr]);
+                            } else {
+                              setIncidentItems(
+                                incidentItems.filter((i) => i !== itemStr),
+                              );
+                            }
+                          }}
+                          data-testid={`checkbox-item-${idx}`}
+                        />
+                        <label
+                          htmlFor={`item-${idx}`}
+                          className="text-sm flex-1"
+                        >
+                          {item.name} x{item.quantity}
+                        </label>
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
 
@@ -3639,7 +3959,9 @@ function OrderForm({
           <Textarea
             placeholder="Enter delivery address..."
             value={formData.deliveryAddress}
-            onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, deliveryAddress: e.target.value })
+            }
             data-testid="input-delivery-address"
             className="min-h-[60px]"
             required
@@ -3846,10 +4168,14 @@ function OrderForm({
             </span>
           </div>
           <div className="flex items-center justify-between mb-3 pb-3 border-b">
-            <span className="text-xs font-medium text-muted-foreground">Action:</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Action:
+            </span>
             <Select
               value={formData.deliveryType}
-              onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}
+              onValueChange={(v) =>
+                setFormData({ ...formData, deliveryType: v })
+              }
             >
               <SelectTrigger className="w-32 h-7">
                 <SelectValue />
@@ -3886,7 +4212,8 @@ function OrderForm({
           !formData.clientId ||
           orderItems.length === 0 ||
           (formData.billOption === "existing" && !formData.selectedBillId) ||
-          (formData.deliveryType === "delivery" && !formData.deliveryAddress.trim())
+          (formData.deliveryType === "delivery" &&
+            !formData.deliveryAddress.trim())
         }
         data-testid="button-submit-order"
       >
@@ -3898,11 +4225,12 @@ function OrderForm({
           Please select an existing bill to attach this order to
         </p>
       )}
-      {formData.deliveryType === "delivery" && !formData.deliveryAddress.trim() && (
-        <p className="text-sm text-orange-600 text-center">
-          Delivery address is required for delivery orders
-        </p>
-      )}
+      {formData.deliveryType === "delivery" &&
+        !formData.deliveryAddress.trim() && (
+          <p className="text-sm text-orange-600 text-center">
+            Delivery address is required for delivery orders
+          </p>
+        )}
     </form>
   );
 }

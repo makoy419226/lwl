@@ -10,6 +10,7 @@ import {
   packingWorkers,
   incidents,
   missingItems,
+  users,
   type Product,
   type Client,
   type Bill,
@@ -31,6 +32,7 @@ import {
   type UpdateProductRequest,
   type UpdateClientRequest,
   type UpdateOrderRequest,
+  type User,
 } from "@shared/schema";
 import { eq, ilike, or, desc, and, inArray, sql } from "drizzle-orm";
 
@@ -88,7 +90,10 @@ export interface IStorage {
   ): Promise<{ bill: Bill; payment: BillPayment }>;
   getClientTransactions(clientId: number): Promise<ClientTransaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<ClientTransaction>;
-  updateClientTransaction(transactionId: number, data: { amount: string; description: string }): Promise<ClientTransaction>;
+  updateClientTransaction(
+    transactionId: number,
+    data: { amount: string; description: string },
+  ): Promise<ClientTransaction>;
   addClientBill(
     clientId: number,
     amount: string,
@@ -134,7 +139,10 @@ export interface IStorage {
   getMissingItems(search?: string): Promise<MissingItem[]>;
   getMissingItem(id: number): Promise<MissingItem | undefined>;
   createMissingItem(item: InsertMissingItem): Promise<MissingItem>;
-  updateMissingItem(id: number, updates: Partial<InsertMissingItem>): Promise<MissingItem>;
+  updateMissingItem(
+    id: number,
+    updates: Partial<InsertMissingItem>,
+  ): Promise<MissingItem>;
   deleteMissingItem(id: number): Promise<void>;
 }
 
@@ -304,10 +312,10 @@ export class DatabaseStorage implements IStorage {
       balance: insertClient.balance?.toString(),
     };
     const [client] = await db.insert(clients).values(clientData).returning();
-    
+
     // Auto-generate account number if not provided
     if (!client.billNumber) {
-      const accountNumber = `ACC-${client.id.toString().padStart(4, '0')}`;
+      const accountNumber = `ACC-${client.id.toString().padStart(4, "0")}`;
       const [updated] = await db
         .update(clients)
         .set({ billNumber: accountNumber })
@@ -627,8 +635,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(clientTransactions)
       .where(eq(clientTransactions.id, transactionId))
-      .then(rows => rows[0]);
-    
+      .then((rows) => rows[0]);
+
     if (!transaction) throw new Error("Transaction not found");
 
     const client = await this.getClient(transaction.clientId);
@@ -654,19 +662,21 @@ export class DatabaseStorage implements IStorage {
       });
     }
 
-    await db.delete(clientTransactions).where(eq(clientTransactions.id, transactionId));
+    await db
+      .delete(clientTransactions)
+      .where(eq(clientTransactions.id, transactionId));
   }
 
   async updateClientTransaction(
     transactionId: number,
-    data: { amount: string; description: string }
+    data: { amount: string; description: string },
   ): Promise<ClientTransaction> {
     const transaction = await db
       .select()
       .from(clientTransactions)
       .where(eq(clientTransactions.id, transactionId))
-      .then(rows => rows[0]);
-    
+      .then((rows) => rows[0]);
+
     if (!transaction) throw new Error("Transaction not found");
 
     const client = await this.getClient(transaction.clientId);
@@ -747,11 +757,15 @@ export class DatabaseStorage implements IStorage {
     return order;
   }
 
-  async getDeliveredOrderByNumber(orderNumber: string): Promise<Order | undefined> {
+  async getDeliveredOrderByNumber(
+    orderNumber: string,
+  ): Promise<Order | undefined> {
     const [order] = await db
       .select()
       .from(orders)
-      .where(and(eq(orders.orderNumber, orderNumber), eq(orders.delivered, true)));
+      .where(
+        and(eq(orders.orderNumber, orderNumber), eq(orders.delivered, true)),
+      );
     return order;
   }
 
@@ -1215,7 +1229,10 @@ export class DatabaseStorage implements IStorage {
         )
         .orderBy(desc(missingItems.reportedAt));
     }
-    return await db.select().from(missingItems).orderBy(desc(missingItems.reportedAt));
+    return await db
+      .select()
+      .from(missingItems)
+      .orderBy(desc(missingItems.reportedAt));
   }
 
   async getMissingItem(id: number): Promise<MissingItem | undefined> {
@@ -1227,7 +1244,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMissingItem(item: InsertMissingItem): Promise<MissingItem> {
-    const [created] = await db.insert(missingItems).values(item).returning();
+    const dbItem = {
+      orderId: item.orderId,
+      orderNumber: item.orderNumber,
+      customerName: item.customerName,
+      itemName: item.itemName,
+      quantity: item.quantity,
+      stage: item.stage,
+      responsibleWorkerId: item.responsibleWorkerId,
+      responsibleWorkerName: item.responsibleWorkerName,
+      reportedByWorkerId: item.reportedByWorkerId,
+      reportedByWorkerName: item.reportedByWorkerName,
+      notes: item.notes,
+      status: item.status,
+      resolution: item.resolution,
+
+      itemValue: item.itemValue != null ? String(item.itemValue) : undefined,
+
+      reportedAt: new Date(item.reportedAt),
+
+      resolvedAt:
+        item.resolvedAt === null
+          ? null
+          : item.resolvedAt
+            ? new Date(item.resolvedAt)
+            : undefined,
+    };
+
+    const [created] = await db.insert(missingItems).values(dbItem).returning();
+
     return created;
   }
 
@@ -1235,11 +1280,35 @@ export class DatabaseStorage implements IStorage {
     id: number,
     updates: Partial<InsertMissingItem>,
   ): Promise<MissingItem> {
+    const dbUpdates = {
+      itemName: updates.itemName,
+      stage: updates.stage,
+      status: updates.status,
+      notes: updates.notes,
+      customerName: updates.customerName,
+      quantity: updates.quantity,
+      resolution: updates.resolution,
+
+      itemValue:
+        updates.itemValue != null ? String(updates.itemValue) : undefined,
+
+      reportedAt:
+        updates.reportedAt != null ? new Date(updates.reportedAt) : undefined,
+
+      resolvedAt:
+        updates.resolvedAt === null
+          ? null
+          : updates.resolvedAt
+            ? new Date(updates.resolvedAt)
+            : undefined,
+    };
+
     const [updated] = await db
       .update(missingItems)
-      .set(updates)
+      .set(dbUpdates)
       .where(eq(missingItems.id, id))
       .returning();
+
     return updated;
   }
 

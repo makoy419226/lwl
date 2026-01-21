@@ -24,6 +24,7 @@ export const products = pgTable("products", {
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  contact: text("contact"),
   email: text("email"),
   address: text("address"),
   phone: text("phone"),
@@ -192,6 +193,7 @@ export const insertClientSchema = createInsertSchema(clients)
   .omit({ id: true })
   .extend({
     name: z.string().min(1, "Client name is required"),
+    contact: z.string().optional(),
     phone: z.string().min(1, "Phone number is required"),
     address: z.string().min(1, "Address is required"),
     amount: z.union([z.string(), z.number()]).optional(),
