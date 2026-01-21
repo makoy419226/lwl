@@ -45,8 +45,8 @@ export function QuickSearch() {
         e.preventDefault();
         setIsOpen(true);
       }
-      // Windows+S (Meta+S) - prevent default Windows search
-      if (e.metaKey && e.key === "s") {
+      // Windows+F (Meta+F) - prevent default Windows search
+      if (e.metaKey && e.key === "f") {
         e.preventDefault();
         setIsOpen(true);
       }
@@ -139,7 +139,7 @@ export function QuickSearch() {
         <Search className="w-4 h-4" />
         <span className="hidden sm:inline">Search...</span>
         <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-          <span className="text-xs">⊞</span>S
+          <span className="text-xs">Ctrl</span>K
         </kbd>
       </Button>
     );
