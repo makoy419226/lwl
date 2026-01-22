@@ -21,6 +21,7 @@ import {
   Zap,
   UserPlus,
   Lock,
+  AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -142,6 +143,12 @@ export default function Products() {
   const [newClientContact, setNewClientContact] = useState("");
   const [newClientPaymentMethod, setNewClientPaymentMethod] = useState("cash");
   const [newClientDiscount, setNewClientDiscount] = useState("");
+  const [suggestedExistingClient, setSuggestedExistingClient] = useState<{
+    id: number;
+    name: string;
+    phone: string;
+    address: string | null;
+  } | null>(null);
   const [customItems, setCustomItems] = useState<
     { name: string; price: number; quantity: number }[]
   >([]);
@@ -726,7 +733,21 @@ export default function Products() {
             description: `${client.name} has been added.`,
           });
         },
-        onError: () => {
+        onError: (error: Error & { existingClient?: { id: number; name: string; phone: string; address: string | null } }) => {
+          try {
+            const errorData = JSON.parse(error.message);
+            if (errorData.existingClient) {
+              setSuggestedExistingClient(errorData.existingClient);
+              toast({
+                title: "Phone number exists",
+                description: `This number belongs to "${errorData.existingClient.name}". Use existing client or enter a different number.`,
+                variant: "destructive",
+              });
+              return;
+            }
+          } catch {
+            // Not a JSON error, continue with default
+          }
           toast({
             title: "Error",
             description: "Failed to create client.",
@@ -1650,11 +1671,60 @@ export default function Products() {
                 <Input
                   placeholder="Phone number"
                   value={newClientPhone}
-                  onChange={(e) => setNewClientPhone(e.target.value)}
+                  onChange={(e) => {
+                    setNewClientPhone(e.target.value);
+                    setSuggestedExistingClient(null);
+                  }}
                   data-testid="input-new-client-phone"
                 />
               </div>
             </div>
+            {suggestedExistingClient && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-md">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      Phone number already exists
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      This number belongs to: <strong>{suggestedExistingClient.name}</strong>
+                      {suggestedExistingClient.address && (
+                        <span className="block text-muted-foreground">{suggestedExistingClient.address}</span>
+                      )}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-2"
+                      onClick={() => {
+                        setSelectedClientId(suggestedExistingClient.id);
+                        setCustomerName(suggestedExistingClient.name);
+                        setCustomerPhone(suggestedExistingClient.phone || "");
+                        setWalkInAddress(suggestedExistingClient.address || "");
+                        setIsWalkIn(false);
+                        setShowNewClientDialog(false);
+                        setSuggestedExistingClient(null);
+                        setNewClientName("");
+                        setNewClientPhone("");
+                        setNewClientAddress("");
+                        setNewClientEmail("");
+                        setNewClientContact("");
+                        setNewClientPaymentMethod("cash");
+                        setNewClientDiscount("");
+                        toast({
+                          title: "Client selected",
+                          description: `Using existing client: ${suggestedExistingClient.name}`,
+                        });
+                      }}
+                      data-testid="button-use-existing-client"
+                    >
+                      Use This Client
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Email</Label>
               <Input
@@ -1719,6 +1789,7 @@ export default function Products() {
                 className="flex-1"
                 onClick={() => {
                   setShowNewClientDialog(false);
+                  setSuggestedExistingClient(null);
                   setNewClientName("");
                   setNewClientPhone("");
                   setNewClientAddress("");

@@ -345,8 +345,14 @@ export async function registerRoutes(
         const existingClientByPhone = await storage.findClientByPhone(input.phone);
         if (existingClientByPhone) {
           return res.status(409).json({
-            message: `A client with phone number "${input.phone}" already exists`,
+            message: `This phone number already exists in the system`,
             field: "phone",
+            existingClient: {
+              id: existingClientByPhone.id,
+              name: existingClientByPhone.name,
+              phone: existingClientByPhone.phone,
+              address: existingClientByPhone.address,
+            },
           });
         }
       }
