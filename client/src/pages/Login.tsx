@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, Lock, User, Mail, KeyRound } from "lucide-react";
+import { Loader2, Lock, User, Mail, KeyRound, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import logoImage from "@assets/image_1767220512226.png";
+import { getProductImage } from "@/lib/productImages";
 
 export interface UserInfo {
   id: number;
@@ -35,6 +36,7 @@ export default function Login({ onLogin }: LoginProps) {
   
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetStep, setResetStep] = useState<"email" | "code" | "newPassword">("email");
+  const [selectedService, setSelectedService] = useState<string | null>(null);
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -288,16 +290,33 @@ export default function Login({ onLogin }: LoginProps) {
               {services.map((service, index) => (
                 <div
                   key={index}
-                  className={`${service.color} text-white rounded-lg p-4 text-center font-semibold shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
+                  className={`${service.color} text-white rounded-lg p-4 text-center font-semibold shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer relative overflow-hidden`}
                   style={{ animationDelay: `${index * 100}ms` }}
+                  onClick={() => setSelectedService(selectedService === service.name ? null : service.name)}
                   data-testid={`service-box-${index}`}
                 >
-                  {service.name}
+                  {selectedService === service.name ? (
+                    <div className="absolute inset-0 bg-white rounded-lg flex items-center justify-center">
+                      <img 
+                        src={getProductImage(service.name) || ""} 
+                        alt={service.name}
+                        className="w-full h-full object-contain p-1"
+                      />
+                      <div className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5">
+                        <X className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    service.name
+                  )}
                 </div>
               ))}
             </div>
             <p className="text-center mt-6 text-muted-foreground text-sm">
               Professional cleaning for 43+ laundry items
+            </p>
+            <p className="text-center text-xs text-muted-foreground">
+              Click on any item to see image
             </p>
           </div>
         </div>
