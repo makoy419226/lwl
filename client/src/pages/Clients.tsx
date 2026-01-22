@@ -155,6 +155,7 @@ export default function Clients() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/clients", transactionClient?.id, "transactions"],
       });
@@ -1252,32 +1253,45 @@ export default function Clients() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.map((tx) => (
-                          <TableRow key={tx.id}>
-                            <TableCell className="text-sm">
-                              {format(new Date(tx.date), "dd/MM/yyyy HH:mm")}
-                            </TableCell>
-                            <TableCell>
-                              <span
-                                className={`text-xs font-semibold px-2 py-1 rounded ${tx.type === "bill" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}
-                              >
-                                {tx.type === "bill" ? "Bill" : "Deposit"}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                              {tx.description}
-                            </TableCell>
-                            <TableCell
-                              className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}
-                            >
-                              {tx.type === "deposit" ? "+" : ""}
-                              {parseFloat(tx.amount).toFixed(2)}
-                            </TableCell>
-                            <TableCell className="text-right font-bold text-red-600">
-                              {getClientBalanceDue(transactionClient!).toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {(() => {
+                          const sortedTx = [...transactions].sort(
+                            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+                          );
+                          let runningBalance = 0;
+                          return sortedTx.map((tx) => {
+                            if (tx.type === "bill") {
+                              runningBalance += parseFloat(tx.amount);
+                            } else {
+                              runningBalance -= parseFloat(tx.amount);
+                            }
+                            return (
+                              <TableRow key={tx.id}>
+                                <TableCell className="text-sm">
+                                  {format(new Date(tx.date), "dd/MM/yyyy HH:mm")}
+                                </TableCell>
+                                <TableCell>
+                                  <span
+                                    className={`text-xs font-semibold px-2 py-1 rounded ${tx.type === "bill" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}
+                                  >
+                                    {tx.type === "bill" ? "Bill" : "Deposit"}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {tx.description}
+                                </TableCell>
+                                <TableCell
+                                  className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}
+                                >
+                                  {tx.type === "deposit" ? "+" : ""}
+                                  {parseFloat(tx.amount).toFixed(2)}
+                                </TableCell>
+                                <TableCell className={`text-right font-bold ${runningBalance > 0 ? "text-red-600" : "text-green-600"}`}>
+                                  {runningBalance.toFixed(2)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          });
+                        })()}
                       </TableBody>
                     </Table>
                   </div>
@@ -1549,7 +1563,19 @@ export default function Clients() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {viewingClientTransactions.map((tx) => (
+                        {(() => {
+                          const sortedTx = [...viewingClientTransactions].sort(
+                            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+                          );
+                          let runningBalance = 0;
+                          return sortedTx.map((tx) => {
+                            if (tx.type === "bill") {
+                              runningBalance += parseFloat(tx.amount);
+                            } else {
+                              runningBalance -= parseFloat(tx.amount);
+                            }
+                            const currentBalance = runningBalance;
+                            return (
                           <TableRow key={tx.id}>
                             <TableCell className="text-sm">
                               {format(new Date(tx.date), "dd/MM/yyyy HH:mm")}
@@ -1578,7 +1604,7 @@ export default function Clients() {
                                 tx.description
                               )}
                             </TableCell>
-                            <TableCell className={`text-right font-medium ${tx.type === "bill" ? "text-blue-600" : "text-green-600"}`}>
+                            <TableCell className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}>
                               {editingTransaction?.id === tx.id ? (
                                 <Input
                                   type="number"
@@ -1592,8 +1618,8 @@ export default function Clients() {
                                 <>{tx.type === "deposit" ? "+" : ""}{parseFloat(tx.amount).toFixed(2)} AED</>
                               )}
                             </TableCell>
-                            <TableCell className="text-right font-bold text-red-600">
-                              {getClientBalanceDue(viewingClient).toFixed(2)} AED
+                            <TableCell className={`text-right font-bold ${currentBalance > 0 ? "text-red-600" : "text-green-600"}`}>
+                              {currentBalance.toFixed(2)} AED
                             </TableCell>
                             <TableCell className="text-center">
                               {editingTransaction?.id === tx.id ? (
@@ -1647,7 +1673,9 @@ export default function Clients() {
                               )}
                             </TableCell>
                           </TableRow>
-                        ))}
+                            );
+                          });
+                        })()}
                       </TableBody>
                     </Table>
                   </div>
