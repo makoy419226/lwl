@@ -39,6 +39,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import type { Client } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -121,6 +134,7 @@ export default function Products() {
   const [tips, setTips] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientAddress, setNewClientAddress] = useState("");
@@ -1137,63 +1151,80 @@ export default function Products() {
               </div>
               <div className="mt-2 space-y-2">
                 <Label className="text-xs font-semibold">Select Client</Label>
-                <Select
-                  value={isWalkIn ? "walkin" : (selectedClientId?.toString() || "")}
-                  onValueChange={(value) => {
-                    if (value === "walkin") {
-                      setSelectedClientId(null);
-                      setIsWalkIn(true);
-                      setCustomerName("Walk-in Customer");
-                      setCustomerPhone("");
-                      setWalkInName("");
-                      setWalkInPhone("");
-                      setWalkInAddress("");
-                    } else {
-                      setIsWalkIn(false);
-                      const client = clients?.find(
-                        (c) => c.id.toString() === value,
-                      );
-                      if (client) {
-                        setSelectedClientId(client.id);
-                        setCustomerName(client.name);
-                        setCustomerPhone(client.phone || "");
-                        setWalkInAddress(client.address || "");
-                        if (client.discountPercent) {
-                          setDiscountPercent(client.discountPercent);
-                        }
-                      }
-                    }
-                  }}
-                >
-                  <SelectTrigger
-                    className="h-8 text-xs"
-                    data-testid="select-order-client"
-                  >
-                    <SelectValue placeholder="Choose client..." />
-                  </SelectTrigger>
-                  <SelectContent className="z-[100] bg-background border shadow-lg max-h-[300px]">
-                    <SelectItem
-                      value="walkin"
-                      className="font-medium text-primary"
+                <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={clientDropdownOpen}
+                      className="h-8 text-xs w-full justify-between font-normal"
+                      data-testid="select-order-client"
                     >
-                      Walk-in Customer
-                    </SelectItem>
-                    {clients?.map((client) => (
-                      <SelectItem
-                        key={client.id}
-                        value={client.id.toString()}
-                        className="py-2"
-                      >
-                        <span className="font-medium">{client.name}</span>
-                        {client.phone && (
-                          <span className="text-muted-foreground ml-2">
-                            ({client.phone})
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      {isWalkIn
+                        ? "Walk-in Customer"
+                        : selectedClientId
+                          ? clients?.find((c) => c.id === selectedClientId)?.name || "Choose client..."
+                          : "Choose client..."}
+                      <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0 z-[100]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search clients..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>No client found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="walk-in-customer"
+                            onSelect={() => {
+                              setSelectedClientId(null);
+                              setIsWalkIn(true);
+                              setCustomerName("Walk-in Customer");
+                              setCustomerPhone("");
+                              setWalkInName("");
+                              setWalkInPhone("");
+                              setWalkInAddress("");
+                              setClientDropdownOpen(false);
+                            }}
+                            className="font-medium text-primary"
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${isWalkIn ? "opacity-100" : "opacity-0"}`}
+                            />
+                            Walk-in Customer
+                          </CommandItem>
+                          {clients?.map((client) => (
+                            <CommandItem
+                              key={client.id}
+                              value={`${client.name} ${client.phone || ""}`}
+                              onSelect={() => {
+                                setIsWalkIn(false);
+                                setSelectedClientId(client.id);
+                                setCustomerName(client.name);
+                                setCustomerPhone(client.phone || "");
+                                setWalkInAddress(client.address || "");
+                                if (client.discountPercent) {
+                                  setDiscountPercent(client.discountPercent);
+                                }
+                                setClientDropdownOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${selectedClientId === client.id ? "opacity-100" : "opacity-0"}`}
+                              />
+                              <span className="font-medium">{client.name}</span>
+                              {client.phone && (
+                                <span className="text-muted-foreground ml-2 text-xs">
+                                  ({client.phone})
+                                </span>
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {isWalkIn && (
                   <>
                     <Label className="text-xs font-semibold mt-2">Customer Name <span className="text-destructive">*</span></Label>
