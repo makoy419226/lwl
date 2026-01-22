@@ -3587,12 +3587,51 @@ function OrderForm({
     }, 0);
   }, [orderItems]);
 
+  // Check if entered info matches an existing client (moved before handleSubmit)
+  const clientMatch = useMemo(() => {
+    if (formData.clientId !== "walkin") return null;
+    
+    const normalizedPhone = formData.customerPhone?.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '') || '';
+    const enteredName = formData.customerName?.trim().toLowerCase() || '';
+    const enteredAddress = formData.deliveryAddress?.trim().toLowerCase() || '';
+    
+    for (const client of clients) {
+      const clientPhone = client.phone?.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '') || '';
+      const clientName = client.name?.trim().toLowerCase() || '';
+      const clientAddress = client.address?.trim().toLowerCase() || '';
+      
+      const phoneMatches = clientPhone && normalizedPhone && clientPhone === normalizedPhone && normalizedPhone.length >= 7;
+      const nameMatches = clientName && enteredName && clientName === enteredName;
+      const addressMatches = clientAddress && enteredAddress && clientAddress === enteredAddress;
+      
+      if (phoneMatches) {
+        if (nameMatches && addressMatches) {
+          return { client, matchType: 'full', message: 'Name, phone number, and address match an existing client' };
+        } else if (nameMatches) {
+          return { client, matchType: 'name_phone', message: 'Name and phone number match an existing client' };
+        } else {
+          return { client, matchType: 'phone', message: 'Phone number matches an existing client' };
+        }
+      }
+    }
+    return null;
+  }, [formData.customerPhone, formData.customerName, formData.deliveryAddress, formData.clientId, clients]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (orderItems.length === 0) return;
     // For walk-in, require customer name
     if (formData.clientId === "walkin" && !formData.customerName.trim()) {
       toast({ title: "Please enter customer name", variant: "destructive" });
+      return;
+    }
+    // If walk-in matches existing client, block submission and prompt to use existing
+    if (formData.clientId === "walkin" && clientMatch) {
+      toast({ 
+        title: "This client is already in the system!", 
+        description: `Please use the existing client: ${clientMatch.client.name}`,
+        variant: "destructive" 
+      });
       return;
     }
     // For regular clients, require clientId
@@ -3654,36 +3693,6 @@ function OrderForm({
   useEffect(() => {
     console.log("Form Data Updated:", formData);
   }, [formData]); // This runs every time formData changes
-
-  // Check if entered info matches an existing client
-  const clientMatch = useMemo(() => {
-    if (formData.clientId !== "walkin") return null;
-    
-    const normalizedPhone = formData.customerPhone?.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '') || '';
-    const enteredName = formData.customerName?.trim().toLowerCase() || '';
-    const enteredAddress = formData.deliveryAddress?.trim().toLowerCase() || '';
-    
-    for (const client of clients) {
-      const clientPhone = client.phone?.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '') || '';
-      const clientName = client.name?.trim().toLowerCase() || '';
-      const clientAddress = client.address?.trim().toLowerCase() || '';
-      
-      const phoneMatches = clientPhone && normalizedPhone && clientPhone === normalizedPhone && normalizedPhone.length >= 7;
-      const nameMatches = clientName && enteredName && clientName === enteredName;
-      const addressMatches = clientAddress && enteredAddress && clientAddress === enteredAddress;
-      
-      if (phoneMatches) {
-        if (nameMatches && addressMatches) {
-          return { client, matchType: 'full', message: 'Name, phone number, and address match an existing client' };
-        } else if (nameMatches) {
-          return { client, matchType: 'name_phone', message: 'Name and phone number match an existing client' };
-        } else {
-          return { client, matchType: 'phone', message: 'Phone number matches an existing client' };
-        }
-      }
-    }
-    return null;
-  }, [formData.customerPhone, formData.customerName, formData.deliveryAddress, formData.clientId, clients]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
