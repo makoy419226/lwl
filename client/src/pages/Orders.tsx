@@ -2067,8 +2067,9 @@ export default function Orders() {
                                             updates: { deliveryType: newType },
                                           });
                                         }}
+                                        disabled={order.delivered}
                                       >
-                                        <SelectTrigger className="w-24 h-8">
+                                        <SelectTrigger className={`w-24 h-8 ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}>
                                           <SelectValue>
                                             {order.deliveryType ===
                                             "delivery" ? (
