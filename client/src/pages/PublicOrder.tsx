@@ -156,6 +156,7 @@ export default function PublicOrder() {
         <div className="text-center text-xs text-muted-foreground py-4">
           <p>Centra Market D/109, Al Dhanna City, Al Ruwais</p>
           <p>Abu Dhabi, UAE</p>
+          <p className="mt-2 font-medium">+971 2 681 5824 | +971 56 338 000</p>
         </div>
       </div>
     </div>
