@@ -3777,7 +3777,7 @@ function OrderForm({
 }) {
   const [formData, setFormData] = useState({
     clientId: initialClientId || "",
-    orderType: "regular",
+    orderType: "normal",
     deliveryType: "pickup",
     paymentOption: "pay_later",
     expectedDeliveryAt: "",
@@ -3967,8 +3967,7 @@ function OrderForm({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="regular">Regular</SelectItem>
-            <SelectItem value="express">Express</SelectItem>
+            <SelectItem value="normal">Normal</SelectItem>
             <SelectItem value="urgent">Urgent</SelectItem>
           </SelectContent>
         </Select>
