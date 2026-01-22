@@ -3467,6 +3467,7 @@ function OrderForm({
   initialClientId?: string;
   initialBillId?: string;
 }) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     clientId: initialClientId || "",
     orderType: "normal",
@@ -3588,7 +3589,14 @@ function OrderForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.clientId || orderItems.length === 0) return;
+    if (orderItems.length === 0) return;
+    // For walk-in, require customer name
+    if (formData.clientId === "walkin" && !formData.customerName.trim()) {
+      toast({ title: "Please enter customer name", variant: "destructive" });
+      return;
+    }
+    // For regular clients, require clientId
+    if (!formData.clientId) return;
 
     const itemsText = orderItems
       .map((item) => `${item.quantity}x ${item.product.name}`)
@@ -3600,9 +3608,11 @@ function OrderForm({
         ? parseInt(formData.selectedBillId)
         : null;
 
+    const isWalkIn = formData.clientId === "walkin";
+
     onSubmit({
       ...formData,
-      clientId: parseInt(formData.clientId),
+      clientId: isWalkIn ? null : parseInt(formData.clientId),
       billId,
       orderNumber,
       items: itemsText,
@@ -3631,6 +3641,17 @@ function OrderForm({
   useEffect(() => {
     console.log("Form Data Updated:", formData);
   }, [formData]); // This runs every time formData changes
+
+  // Check if entered phone matches an existing client
+  const matchingClient = useMemo(() => {
+    if (!formData.customerPhone || formData.clientId !== "walkin") return null;
+    const normalizedPhone = formData.customerPhone.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '');
+    return clients.find((c) => {
+      const clientPhone = c.phone?.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '');
+      return clientPhone && clientPhone === normalizedPhone && normalizedPhone.length >= 7;
+    });
+  }, [formData.customerPhone, formData.clientId, clients]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -3640,6 +3661,7 @@ function OrderForm({
             <SelectValue placeholder="Select client" />
           </SelectTrigger>
           <SelectContent className="z-[100] max-h-[300px]">
+            <SelectItem value="walkin">Walk-in Customer</SelectItem>
             {clients.map((client) => (
               <SelectItem key={client.id} value={client.id.toString()}>
                 {client.name} - {client.phone}
@@ -3648,6 +3670,52 @@ function OrderForm({
           </SelectContent>
         </Select>
       </div>
+
+      {formData.clientId === "walkin" && (
+        <>
+          <div className="space-y-2">
+            <Label>Customer Name</Label>
+            <Input
+              placeholder="Enter customer name"
+              value={formData.customerName}
+              onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+              data-testid="input-customer-name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Phone Number</Label>
+            <Input
+              placeholder="Enter phone number"
+              value={formData.customerPhone}
+              onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+              data-testid="input-customer-phone"
+            />
+            {matchingClient && (
+              <div className="p-3 border border-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg mt-2">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <span className="font-medium text-amber-700 dark:text-amber-400">
+                    Client already exists!
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  This phone number belongs to <strong>{matchingClient.name}</strong>
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => handleClientChange(matchingClient.id.toString())}
+                  data-testid="button-use-existing-client"
+                >
+                  Use existing client
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       <div className="space-y-2">
         <Label>Order Type</Label>
