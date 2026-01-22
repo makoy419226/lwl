@@ -602,6 +602,43 @@ export async function registerRoutes(
     res.json(clientOrders);
   });
 
+  // Delete all orders for a client
+  app.delete("/api/clients/:id/orders", async (req, res) => {
+    const clientId = Number(req.params.id);
+    if (isNaN(clientId)) {
+      return res.status(400).json({ message: "Invalid client ID" });
+    }
+    
+    // Get all orders for this client
+    const clientOrders = await storage.getClientOrders(clientId);
+    
+    // Delete each order
+    for (const order of clientOrders) {
+      await storage.deleteOrder(order.id);
+    }
+    
+    // Also delete related bills for this client
+    const clientBills = await storage.getClientBills(clientId);
+    for (const bill of clientBills) {
+      await storage.deleteBill(bill.id);
+    }
+    
+    // Delete transactions for this client
+    const transactions = await storage.getClientTransactions(clientId);
+    for (const tx of transactions) {
+      await storage.deleteClientTransaction(tx.id);
+    }
+    
+    // Reset client balance
+    await storage.updateClient(clientId, {
+      amount: "0.00",
+      deposit: "0.00",
+      balance: "0.00",
+    });
+    
+    res.json({ message: "All orders, bills, and transactions deleted for client" });
+  });
+
   // Bill payments routes
   app.get("/api/bills/:id/payments", async (req, res) => {
     const billId = Number(req.params.id);

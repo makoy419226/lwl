@@ -334,12 +334,38 @@ export default function Clients() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/clients", viewingClient?.id, "transactions"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", viewingClient?.id, "orders"],
       });
       toast({
         title: "Transaction deleted",
         description: "Transaction has been removed and balance updated.",
+      });
+    },
+  });
+
+  const deleteClientOrdersMutation = useMutation({
+    mutationFn: async (clientId: number) => {
+      return apiRequest("DELETE", `/api/clients/${clientId}/orders`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", viewingClient?.id, "orders"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", viewingClient?.id, "transactions"],
+      });
+      toast({
+        title: "Orders deleted",
+        description: "All order history for this client has been removed.",
       });
     },
   });
@@ -1697,6 +1723,19 @@ export default function Clients() {
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download Summary
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ALL orders, bills, and transactions for ${viewingClient.name}? This cannot be undone.`)) {
+                      deleteClientOrdersMutation.mutate(viewingClient.id);
+                    }
+                  }}
+                  disabled={deleteClientOrdersMutation.isPending}
+                  data-testid="button-delete-client-orders"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {deleteClientOrdersMutation.isPending ? "Deleting..." : "Delete All History"}
                 </Button>
               </div>
             </div>
