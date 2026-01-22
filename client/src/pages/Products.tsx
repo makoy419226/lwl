@@ -1213,37 +1213,6 @@ export default function Products() {
                   <UserPlus className="w-3 h-3 mr-1" />
                   Add New Client
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={() => setShowOtherItemDialog(true)}
-                  data-testid="button-add-other-item"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add Other Item
-                </Button>
-                <div className="flex gap-1">
-                  <Input
-                    className="flex-1 h-8 text-xs"
-                    placeholder="Discount %"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discountPercent}
-                    onChange={(e) => setDiscountPercent(e.target.value)}
-                    data-testid="input-discount-percent"
-                  />
-                  <Input
-                    className="flex-1 h-8 text-xs"
-                    placeholder="Tips"
-                    type="number"
-                    min="0"
-                    value={tips}
-                    onChange={(e) => setTips(e.target.value)}
-                    data-testid="input-tips"
-                  />
-                </div>
                 <div className="flex gap-1">
                   <Button
                     variant="outline"
