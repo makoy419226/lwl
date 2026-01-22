@@ -525,28 +525,6 @@ export default function Orders() {
         </div>
         
         ${
-          order.discountPercent && parseFloat(order.discountPercent) > 0
-            ? `
-        <div style="text-align: right; margin-bottom: 5px;">
-          <span style="font-size: 10px; color: #666;">Discount: </span>
-          <span style="font-size: 11px; font-weight: bold; color: #16a34a;">${order.discountPercent}%</span>
-        </div>
-        `
-            : ""
-        }
-        
-        ${
-          order.tips && parseFloat(order.tips) > 0
-            ? `
-        <div style="text-align: right; margin-bottom: 5px;">
-          <span style="font-size: 10px; color: #666;">Tips: </span>
-          <span style="font-size: 11px; font-weight: bold;">AED ${parseFloat(order.tips).toFixed(2)}</span>
-        </div>
-        `
-            : ""
-        }
-        
-        ${
           totalPreviousDue > 0
             ? `
         <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 8px; margin-bottom: 10px;">
