@@ -737,7 +737,7 @@ export default function Products() {
                         {categoryProducts?.length || 0}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                       {categoryProducts?.map((product) => (
                         <div
                           key={product.id}
@@ -750,7 +750,7 @@ export default function Products() {
                           data-testid={`box-product-${product.id}`}
                         >
                           <div
-                            className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm"
+                            className="w-14 h-14 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditImage(product.id, product.imageUrl);
@@ -812,7 +812,7 @@ export default function Products() {
                                 </span>
                               </div>
                               <div
-                                className="flex gap-1 mt-2 w-full"
+                                className="flex gap-2 mt-3 w-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Button
@@ -822,7 +822,7 @@ export default function Products() {
                                       ? "default"
                                       : "outline"
                                   }
-                                  className="flex-1 h-6 text-[10px] px-1"
+                                  className="flex-1 h-7 text-xs px-2"
                                   onClick={() =>
                                     handlePackingTypeChange(product.id, "hanging")
                                   }
@@ -838,7 +838,7 @@ export default function Products() {
                                       ? "default"
                                       : "outline"
                                   }
-                                  className="flex-1 h-6 text-[10px] px-1"
+                                  className="flex-1 h-7 text-xs px-2"
                                   onClick={() =>
                                     handlePackingTypeChange(product.id, "folding")
                                   }
