@@ -45,6 +45,12 @@ import {
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Loader2,
   Package,
   Shirt,
@@ -3801,6 +3807,43 @@ function OrderForm({
     p.name.toLowerCase().includes(productSearch.toLowerCase()),
   );
 
+  const groupedProducts = useMemo(() => {
+    if (!filteredProducts) return {};
+    const groups: Record<string, typeof filteredProducts> = {};
+    const categoryOrder = [
+      "Arabic Clothes",
+      "Men's Clothes",
+      "Ladies' Clothes",
+      "Baby Clothes",
+      "Linens",
+      "Shop Items",
+      "General Items",
+      "Shoes, Carpets & More",
+    ];
+    
+    filteredProducts.forEach((product) => {
+      const category = product.category || "Other";
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(product);
+    });
+    
+    const sortedGroups: Record<string, typeof filteredProducts> = {};
+    categoryOrder.forEach((cat) => {
+      if (groups[cat]) {
+        sortedGroups[cat] = groups[cat];
+      }
+    });
+    Object.keys(groups).forEach((cat) => {
+      if (!sortedGroups[cat]) {
+        sortedGroups[cat] = groups[cat];
+      }
+    });
+    
+    return sortedGroups;
+  }, [filteredProducts]);
+
   const handleQuantityChange = (productId: number, delta: number) => {
     setQuantities((prev) => {
       const current = prev[productId] || 0;
@@ -4093,67 +4136,76 @@ function OrderForm({
           className="mb-2"
           data-testid="input-product-search"
         />
-        <ScrollArea className="h-64 border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-1/2">Item</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-center w-32">Qty</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts?.map((product) => (
-                <TableRow
-                  key={product.id}
-                  className={quantities[product.id] ? "bg-primary/5" : ""}
-                >
-                  <TableCell className="font-medium text-sm">
-                    {product.name}
-                  </TableCell>
-                  <TableCell className="text-right text-sm text-primary font-semibold">
-                    {product.price
-                      ? `${parseFloat(product.price).toFixed(0)}`
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center gap-1">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className="h-7 w-7"
-                        onClick={() => handleQuantityChange(product.id, -1)}
-                        disabled={!quantities[product.id]}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={quantities[product.id] || ""}
-                        onChange={(e) =>
-                          handleManualQuantity(product.id, e.target.value)
-                        }
-                        className="w-12 h-7 text-center text-sm font-bold p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        placeholder="0"
-                        data-testid={`input-qty-${product.id}`}
-                      />
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        className="h-7 w-7"
-                        onClick={() => handleQuantityChange(product.id, 1)}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <ScrollArea className="h-80 border rounded-lg">
+          <Accordion type="multiple" defaultValue={Object.keys(groupedProducts)} className="w-full">
+            {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+              <AccordionItem key={category} value={category}>
+                <AccordionTrigger className="px-3 py-2 text-sm font-semibold bg-muted/30 hover:bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <span>{category}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {categoryProducts?.length || 0}
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pb-0">
+                  <Table>
+                    <TableBody>
+                      {categoryProducts?.map((product) => (
+                        <TableRow
+                          key={product.id}
+                          className={quantities[product.id] ? "bg-primary/5" : ""}
+                        >
+                          <TableCell className="font-medium text-sm py-2">
+                            {product.name}
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-primary font-semibold w-16 py-2">
+                            {product.price
+                              ? `${parseFloat(product.price).toFixed(0)}`
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="w-32 py-2">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                className="h-7 w-7"
+                                onClick={() => handleQuantityChange(product.id, -1)}
+                                disabled={!quantities[product.id]}
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={quantities[product.id] || ""}
+                                onChange={(e) =>
+                                  handleManualQuantity(product.id, e.target.value)
+                                }
+                                className="w-12 h-7 text-center text-sm font-bold p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="0"
+                                data-testid={`input-qty-${product.id}`}
+                              />
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                className="h-7 w-7"
+                                onClick={() => handleQuantityChange(product.id, 1)}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </ScrollArea>
       </div>
 
