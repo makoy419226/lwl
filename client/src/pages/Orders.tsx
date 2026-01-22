@@ -1188,8 +1188,8 @@ export default function Orders() {
           <div className="flex items-center justify-between lg:justify-start gap-2">
             <h1 className="text-lg lg:text-2xl font-display font-bold text-foreground flex items-center gap-2">
               <Package className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />
-              <span className="hidden sm:inline">Order Tracking</span>
-              <span className="sm:hidden">Orders</span>
+              <span className="hidden sm:inline">System Order Tracking</span>
+              <span className="sm:hidden">Tracking</span>
             </h1>
             {dueSoonOrders && dueSoonOrders.length > 0 && (
               <Badge

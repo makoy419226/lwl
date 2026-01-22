@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, Search, ArrowLeft, AlertCircle, FlaskConical } from "lucide-react";
+import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, Search, ArrowLeft, AlertCircle } from "lucide-react";
 import logoImage from "@assets/image_1767220512226.png";
 
 interface TrackOrderData {
@@ -91,11 +91,7 @@ export default function TrackOrder() {
         <div className="text-center py-6">
           <img src={logoImage} alt="Liquid Washes" className="h-20 mx-auto mb-3" data-testid="img-track-logo" />
           <h1 className="text-2xl font-bold text-blue-800 dark:text-blue-300">Liquid Washes Laundry</h1>
-          <p className="text-muted-foreground mt-1">Track Your Order Status</p>
-          <Badge variant="outline" className="mt-2 gap-1 text-blue-600 border-blue-600">
-            <FlaskConical className="h-3 w-3" />
-            Beta Feature
-          </Badge>
+          <p className="text-muted-foreground mt-1">Customer Order Tracking</p>
         </div>
 
         <Card>
