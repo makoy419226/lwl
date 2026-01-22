@@ -3076,19 +3076,22 @@ export default function Orders() {
                 );
               })()}
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Delivery Address
-              </Label>
-              <Textarea
-                placeholder="Enter delivery address..."
-                value={deliveryAddress}
-                onChange={(e) => setDeliveryAddress(e.target.value)}
-                className="min-h-[80px] resize-none"
-                data-testid="input-delivery-address"
-              />
-            </div>
+            {/* Delivery Address - only shown for delivery orders, not pickup */}
+            {deliveryPinDialog && orders?.find(o => o.id === deliveryPinDialog.orderId)?.deliveryType === "delivery" && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Delivery Address
+                </Label>
+                <Textarea
+                  placeholder="Enter delivery address..."
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  className="min-h-[80px] resize-none"
+                  data-testid="input-delivery-address"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Enter Staff PIN</Label>
