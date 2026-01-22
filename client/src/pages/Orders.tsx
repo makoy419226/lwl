@@ -211,6 +211,17 @@ export default function Orders() {
     queryKey: ["/api/bills"],
   });
 
+  // Calculate client's due balance from actual orders (unpaid amounts)
+  const getClientDueBalance = (clientId: number): number => {
+    if (!orders) return 0;
+    const clientOrders = orders.filter(order => order.clientId === clientId);
+    return clientOrders.reduce((sum, order) => {
+      const total = parseFloat(order.totalAmount || "0");
+      const paid = parseFloat(order.paidAmount || "0");
+      return sum + (total - paid);
+    }, 0);
+  };
+
   useEffect(() => {
     if (urlBillId && urlClientId && bills) {
       const bill = bills.find((b) => b.id === parseInt(urlBillId));
@@ -1487,14 +1498,12 @@ export default function Orders() {
                                     {client && (
                                       <div className="flex justify-between items-center gap-2">
                                         <span className="text-sm">
-                                          Balance:
+                                          Due Balance:
                                         </span>
                                         <span
-                                          className={`font-bold ${parseFloat(client.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                          className="font-bold text-red-600"
                                         >
-                                          {parseFloat(
-                                            client.balance || "0",
-                                          ).toFixed(2)}{" "}
+                                          {getClientDueBalance(client.id).toFixed(2)}{" "}
                                           AED
                                         </span>
                                       </div>
@@ -1914,14 +1923,12 @@ export default function Orders() {
                                                 </div>
                                                 <div className="flex justify-between items-center gap-2">
                                                   <span className="text-sm">
-                                                    Total Due:
+                                                    Due Balance:
                                                   </span>
                                                   <span
-                                                    className={`font-bold ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                                    className="font-bold text-red-600"
                                                   >
-                                                    {parseFloat(
-                                                      client?.balance || "0",
-                                                    ).toFixed(2)}{" "}
+                                                    {client ? getClientDueBalance(client.id).toFixed(2) : "0.00"}{" "}
                                                     AED
                                                   </span>
                                                 </div>
@@ -1979,12 +1986,10 @@ export default function Orders() {
                                         </TableCell>
                                         <TableCell
                                           rowSpan={orderCount}
-                                          className={`align-top font-semibold border-r hidden 2xl:table-cell text-xs ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                          className="align-top font-semibold border-r hidden 2xl:table-cell text-xs text-red-600"
                                           data-testid={`text-client-due-${order.id}`}
                                         >
-                                          {parseFloat(
-                                            client?.balance || "0",
-                                          ).toFixed(0)} AED
+                                          {client ? getClientDueBalance(client.id).toFixed(0) : "0"} AED
                                         </TableCell>
                                       </>
                                     ) : null}
@@ -3472,8 +3477,8 @@ export default function Orders() {
             bills?.filter(
               (b) => b.clientId === deliveryInvoiceOrder.clientId && !b.isPaid,
             ) || [];
-          const clientPreviousBalance = invoiceClient?.balance
-            ? parseFloat(invoiceClient.balance)
+          const clientPreviousBalance = invoiceClient 
+            ? getClientDueBalance(invoiceClient.id)
             : 0;
           const clientPendingBillsTotal = clientUnpaidBills.reduce((sum, b) => {
             const billAmount = parseFloat(b.amount) || 0;
