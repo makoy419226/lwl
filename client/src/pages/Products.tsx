@@ -812,7 +812,7 @@ export default function Products() {
                                 </span>
                               </div>
                               <div
-                                className="flex gap-2 mt-3 w-full"
+                                className="flex flex-col gap-1.5 mt-3 w-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Button
@@ -822,7 +822,7 @@ export default function Products() {
                                       ? "default"
                                       : "outline"
                                   }
-                                  className="flex-1 h-7 text-xs px-2"
+                                  className="w-full h-7 text-xs"
                                   onClick={() =>
                                     handlePackingTypeChange(product.id, "hanging")
                                   }
@@ -838,7 +838,7 @@ export default function Products() {
                                       ? "default"
                                       : "outline"
                                   }
-                                  className="flex-1 h-7 text-xs px-2"
+                                  className="w-full h-7 text-xs"
                                   onClick={() =>
                                     handlePackingTypeChange(product.id, "folding")
                                   }
