@@ -19,6 +19,7 @@ import Contact from "@/pages/Contact";
 import Login, { type UserInfo } from "@/pages/Login";
 import PublicOrder from "@/pages/PublicOrder";
 import TrackOrder from "@/pages/TrackOrder";
+import AdminSettings from "@/pages/AdminSettings";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect, createContext, useContext } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -38,6 +39,7 @@ const rolePermissions: Record<string, string[]> = {
   "/due-customers": ["admin", "manager"],
   "/contact": ["admin", "manager", "cashier"],
   "/track": ["admin", "manager"],
+  "/admin-settings": ["admin"],
 };
 
 function ProtectedRoute({ path, component: Component, allowedRoles }: { 
@@ -74,6 +76,7 @@ function Router() {
       {rolePermissions["/due-customers"].includes(userRole) && <Route path="/due-customers" component={DueCustomers} />}
       <Route path="/contact" component={Contact} />
       {rolePermissions["/track"].includes(userRole) && <Route path="/track" component={TrackOrder} />}
+      {rolePermissions["/admin-settings"].includes(userRole) && <Route path="/admin-settings" component={AdminSettings} />}
       <Route component={NotFound} />
     </Switch>
   );

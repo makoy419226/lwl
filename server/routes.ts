@@ -1112,6 +1112,23 @@ export async function registerRoutes(
     }
   });
 
+  // Reset all clients (admin password protected)
+  app.post("/api/clients/reset-all", async (req, res) => {
+    const { adminPassword } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ message: "Invalid admin password" });
+    }
+    
+    try {
+      await storage.deleteAllClients();
+      res.json({ success: true, message: "All clients have been reset" });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to reset clients: " + err.message });
+    }
+  });
+
   // Verify admin password
   app.post("/api/admin/verify", async (req, res) => {
     const { adminPassword } = req.body;

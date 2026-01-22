@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, Search, FlaskConical } from "lucide-react";
+import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, Search, FlaskConical, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -54,6 +54,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isDueCustomers = location === "/due-customers";
   const isContact = location === "/contact";
   const isTrackOrder = location === "/track";
+  const isAdminSettings = location === "/admin-settings";
 
   const userRole = user?.role || "cashier";
   const isAdmin = userRole === "admin";
@@ -72,6 +73,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "manager"] },
     { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "manager", "cashier"] },
     { href: "/track", icon: FlaskConical, label: "Track Order", active: isTrackOrder, testId: "nav-track-order", experimental: true, roles: ["admin", "manager"] },
+    { href: "/admin-settings", icon: Settings, label: "Admin Settings", active: isAdminSettings, testId: "nav-admin-settings", roles: ["admin"] },
   ];
 
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
