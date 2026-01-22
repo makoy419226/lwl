@@ -891,21 +891,31 @@ export default function Products() {
 
         {/* Order Summary Bar - Highlighted */}
         {hasOrderItems && (
-          <div className="sticky bottom-0 z-40 mx-2 mb-2 p-3 border-2 border-primary shadow-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl backdrop-blur-sm">
+          <div className={`sticky bottom-0 z-40 mx-2 mb-2 p-3 border-2 shadow-2xl rounded-xl backdrop-blur-sm ${
+            orderType === "urgent" 
+              ? "border-orange-500 bg-gradient-to-r from-orange-500/20 via-red-500/15 to-orange-500/20" 
+              : "border-primary bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10"
+          }`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${
+                  orderType === "urgent"
+                    ? "bg-gradient-to-br from-orange-500 to-red-500"
+                    : "bg-gradient-to-br from-primary to-primary/80"
+                }`}>
                   <ShoppingCart className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground font-medium">
                     {orderItems.length + customItems.length} items selected
+                    {orderType === "urgent" && <span className="ml-1 text-orange-600 font-bold">(URGENT 2x)</span>}
                   </p>
                   <p
-                    className="text-xl font-black text-primary"
+                    className={`text-xl font-black ${orderType === "urgent" ? "text-orange-600" : "text-primary"}`}
                     data-testid="text-order-total"
                   >
-                    {orderTotal.toFixed(2)} AED
+                    {orderType === "urgent" ? (orderTotal * 2).toFixed(2) : orderTotal.toFixed(2)} AED
+                    {orderType === "urgent" && <span className="text-sm ml-1 line-through text-muted-foreground">{orderTotal.toFixed(2)}</span>}
                   </p>
                 </div>
               </div>
@@ -928,7 +938,11 @@ export default function Products() {
 
                 <Button
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold px-3 text-xs"
+                  className={`font-bold px-3 text-xs ${
+                    orderType === "urgent"
+                      ? "bg-orange-600 hover:bg-orange-700 text-white"
+                      : "bg-green-600 hover:bg-green-700 text-white"
+                  }`}
                   onClick={handleCreateOrder}
                   disabled={
                     createOrderMutation.isPending ||
@@ -941,7 +955,9 @@ export default function Products() {
               </div>
             </div>
 
-            <div className="mt-1 pt-1 border-t border-primary/20 text-[10px] text-muted-foreground line-clamp-1">
+            <div className={`mt-1 pt-1 border-t text-[10px] text-muted-foreground line-clamp-1 ${
+              orderType === "urgent" ? "border-orange-500/20" : "border-primary/20"
+            }`}>
               {orderItems.map((item, idx) => (
                 <span key={item.product.id} className="font-medium">
                   {item.quantity}x {item.product.name}
