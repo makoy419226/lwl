@@ -340,15 +340,12 @@ export async function registerRoutes(
     try {
       const input = api.clients.create.input.parse(req.body);
 
-      // Check for duplicate name + phone combination
-      if (input.name && input.phone) {
-        const existingClient = await storage.findClientByNameAndPhone(
-          input.name,
-          input.phone,
-        );
-        if (existingClient) {
+      // Check if phone number already exists (phone must be unique)
+      if (input.phone) {
+        const existingClientByPhone = await storage.findClientByPhone(input.phone);
+        if (existingClientByPhone) {
           return res.status(409).json({
-            message: `A client with name "${input.name}" and phone "${input.phone}" already exists`,
+            message: `A client with phone number "${input.phone}" already exists`,
             field: "phone",
           });
         }
