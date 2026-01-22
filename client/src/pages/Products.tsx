@@ -457,6 +457,8 @@ export default function Products() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] }); // Refresh clients for walk-in auto-created clients
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] }); // Refresh bills for auto-created bills
       queryClient.invalidateQueries({
         queryKey: ["/api/products/allocated-stock"],
       });
