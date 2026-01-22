@@ -76,7 +76,7 @@ export default function Dashboard() {
 
       <main className="flex-1 container mx-auto px-4 py-8 overflow-auto">
         <div className="mb-8">
-          <p className="text-muted-foreground">Manage your laundry products and stock levels.</p>
+          <p className="text-muted-foreground">Monitor your stock levels.</p>
           <div className="mt-4 text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full inline-block">
             Total Items: <span className="text-primary">{products?.length || 0}</span>
           </div>
