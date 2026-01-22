@@ -478,6 +478,7 @@ export class DatabaseStorage implements IStorage {
     const updatedBill = await this.updateBill(billId, {
       paidAmount: newPaidAmount.toFixed(2),
       isPaid,
+      ...(isPaid && { paymentMethod: paymentMethod || "cash" }),
     });
 
     // If bill is fully paid, also mark corresponding orders as paid

@@ -926,11 +926,10 @@ export default function Bills() {
           >
             <div className="text-center border-b pb-3 mb-3">
               <img 
-                src="/assets/generated_images/lwl_laundry_logo_favicon.png" 
+                src="/assets/company_logo.png" 
                 alt="Liquid Washes Laundry" 
-                style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto 10px' }}
+                style={{ width: '120px', height: 'auto', objectFit: 'contain', margin: '0 auto 10px' }}
               />
-              <div className="font-bold text-lg">LIQUID WASHES LAUNDRY</div>
               <div className="text-sm">Centra Market D/109, Al Dhanna City</div>
               <div className="text-sm">Al Ruwais, Abu Dhabi-UAE</div>
               <div className="text-sm mt-2">
@@ -973,13 +972,37 @@ export default function Bills() {
                 ))}
               </tbody>
             </table>
-            <div className="flex justify-between font-bold">
+            <div className="flex justify-between font-bold text-base border-t pt-2">
               <span>TOTAL:</span>
               <span>
                 AED {parseFloat(createdBill?.bill.amount || "0").toFixed(2)}
               </span>
             </div>
-            <div className="text-center mt-3 text-xs">
+            
+            {createdBill?.bill.isPaid && (
+              <div className="text-center mt-4">
+                <div 
+                  style={{
+                    display: 'inline-block',
+                    border: '3px solid #22c55e',
+                    borderRadius: '8px',
+                    padding: '8px 20px',
+                    color: '#22c55e',
+                    fontWeight: 'bold',
+                    fontSize: '18px',
+                    transform: 'rotate(-5deg)',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  PAID
+                </div>
+                <div className="text-sm mt-2 text-gray-600">
+                  Payment Method: {createdBill.bill.paymentMethod?.toUpperCase() || 'CASH'}
+                </div>
+              </div>
+            )}
+            
+            <div className="text-center mt-4 text-xs">
               Thank you for your business!
             </div>
           </div>
@@ -1026,11 +1049,10 @@ export default function Bills() {
           >
             <div className="text-center border-b pb-3 mb-3">
               <img 
-                src="/assets/generated_images/lwl_laundry_logo_favicon.png" 
+                src="/assets/company_logo.png" 
                 alt="Liquid Washes Laundry" 
-                style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto 10px' }}
+                style={{ width: '120px', height: 'auto', objectFit: 'contain', margin: '0 auto 10px' }}
               />
-              <div className="font-bold text-lg">LIQUID WASHES LAUNDRY</div>
               <div className="text-sm">Centra Market D/109, Al Dhanna City</div>
               <div className="text-sm">Al Ruwais, Abu Dhabi-UAE</div>
               <div className="text-sm mt-2">
@@ -1060,13 +1082,37 @@ export default function Bills() {
             <div className="border-t border-b py-2 mb-2">
               <div className="text-xs whitespace-pre-wrap">{viewBillPDF.description}</div>
             </div>
-            <div className="flex justify-between font-bold">
+            <div className="flex justify-between font-bold text-base border-t pt-2">
               <span>TOTAL:</span>
               <span>
                 AED {parseFloat(viewBillPDF.amount || "0").toFixed(2)}
               </span>
             </div>
-            <div className="text-center mt-3 text-xs">
+            
+            {viewBillPDF.isPaid && (
+              <div className="text-center mt-4">
+                <div 
+                  style={{
+                    display: 'inline-block',
+                    border: '3px solid #22c55e',
+                    borderRadius: '8px',
+                    padding: '8px 20px',
+                    color: '#22c55e',
+                    fontWeight: 'bold',
+                    fontSize: '18px',
+                    transform: 'rotate(-5deg)',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  PAID
+                </div>
+                <div className="text-sm mt-2 text-gray-600">
+                  Payment Method: {viewBillPDF.paymentMethod?.toUpperCase() || 'CASH'}
+                </div>
+              </div>
+            )}
+            
+            <div className="text-center mt-4 text-xs">
               Thank you for your business!
             </div>
           </div>
