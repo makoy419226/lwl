@@ -194,6 +194,43 @@ export default function Products() {
     );
   };
 
+  const normalizePhone = (phone: string): string => {
+    const cleaned = phone.replace(/[\s\-\(\)]/g, "");
+    if (cleaned.startsWith("+971")) {
+      return "0" + cleaned.slice(4);
+    }
+    if (cleaned.startsWith("971") && cleaned.length > 9) {
+      return "0" + cleaned.slice(3);
+    }
+    if (cleaned.startsWith("00971")) {
+      return "0" + cleaned.slice(5);
+    }
+    return cleaned;
+  };
+
+  const checkExistingClientByPhone = (phone: string) => {
+    if (!phone || phone.length < 9 || !clients) return;
+    
+    const normalizedInput = normalizePhone(phone);
+    
+    const matchingClient = clients.find((client) => {
+      if (!client.phone) return false;
+      const normalizedClientPhone = normalizePhone(client.phone);
+      return normalizedClientPhone === normalizedInput;
+    });
+    
+    if (matchingClient) {
+      setSuggestedExistingClient({
+        id: matchingClient.id,
+        name: matchingClient.name,
+        phone: matchingClient.phone || "",
+        address: matchingClient.address,
+      });
+    } else {
+      setSuggestedExistingClient(null);
+    }
+  };
+
   const [showGutraDialog, setShowGutraDialog] = useState(false);
   const [gutraDialogProduct, setGutraDialogProduct] = useState<{
     id: number;
@@ -1669,11 +1706,12 @@ export default function Products() {
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Phone *</Label>
                 <Input
-                  placeholder="Phone number"
+                  placeholder="Phone number (e.g. 0501234567 or +971501234567)"
                   value={newClientPhone}
                   onChange={(e) => {
-                    setNewClientPhone(e.target.value);
-                    setSuggestedExistingClient(null);
+                    const value = e.target.value;
+                    setNewClientPhone(value);
+                    checkExistingClientByPhone(value);
                   }}
                   data-testid="input-new-client-phone"
                 />
