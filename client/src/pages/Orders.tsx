@@ -1690,7 +1690,7 @@ export default function Orders() {
                                 <Button
                                   size="sm"
                                   variant="default"
-                                  className="flex-1"
+                                  className="flex-1 bg-green-600 hover:bg-green-700"
                                   onClick={() =>
                                     handleDeliveryWithPin(order.id)
                                   }
@@ -1707,7 +1707,7 @@ export default function Orders() {
                                 <Button
                                   size="sm"
                                   variant="default"
-                                  className="flex-1"
+                                  className="flex-1 bg-green-600 hover:bg-green-700"
                                   onClick={() =>
                                     handleDeliveryWithPin(order.id)
                                   }
@@ -2243,7 +2243,7 @@ export default function Orders() {
                                             <Button
                                               size="sm"
                                               variant="default"
-                                              className="whitespace-nowrap touch-manipulation"
+                                              className="whitespace-nowrap touch-manipulation bg-green-600 hover:bg-green-700"
                                               onClick={() =>
                                                 handleDeliveryWithPin(order.id)
                                               }
@@ -2261,7 +2261,7 @@ export default function Orders() {
                                             <Button
                                               size="sm"
                                               variant="default"
-                                              className="whitespace-nowrap touch-manipulation"
+                                              className="whitespace-nowrap touch-manipulation bg-green-600 hover:bg-green-700"
                                               onClick={() =>
                                                 handleDeliveryWithPin(order.id)
                                               }
@@ -3048,7 +3048,7 @@ export default function Orders() {
                   (o) => o.id === deliveryPinDialog.orderId,
                 );
                 const itemCount = order?.items
-                  ? JSON.parse(order.items).reduce(
+                  ? parseItems(order.items).reduce(
                       (sum: number, item: any) => sum + (item.quantity || 1),
                       0,
                     )
