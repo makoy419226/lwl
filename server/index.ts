@@ -120,7 +120,7 @@ app.use((req, res, next) => {
     
     const itemCounts: Record<string, number> = {};
     todaysOrders.forEach(order => {
-      const itemsMatch = order.items.match(/(\d+)x\s+([^,()]+)/g);
+      const itemsMatch = (order.items || '').match(/(\d+)x\s+([^,()]+)/g);
       if (itemsMatch) {
         itemsMatch.forEach(item => {
           const match = item.match(/(\d+)x\s+(.+)/);

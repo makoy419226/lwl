@@ -4079,12 +4079,13 @@ function OrderForm({
           orderItems.length === 0 ||
           (formData.billOption === "existing" && !formData.selectedBillId) ||
           (formData.deliveryType === "delivery" &&
-            !formData.deliveryAddress.trim())
+            !formData.deliveryAddress.trim()) ||
+          !!clientMatch
         }
         data-testid="button-submit-order"
       >
         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        Create Order ({orderTotal.toFixed(2)} AED)
+        {clientMatch ? "Use existing client above" : `Create Order (${orderTotal.toFixed(2)} AED)`}
       </Button>
       {formData.billOption === "existing" && !formData.selectedBillId && (
         <p className="text-sm text-orange-600 text-center">
