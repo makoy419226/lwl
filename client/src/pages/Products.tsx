@@ -111,6 +111,9 @@ export default function Products() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [isWalkIn, setIsWalkIn] = useState(false);
+  const [walkInName, setWalkInName] = useState("");
+  const [walkInAddress, setWalkInAddress] = useState("");
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
   const [discountPercent, setDiscountPercent] = useState("");
   const [tips, setTips] = useState("");
@@ -474,7 +477,7 @@ export default function Products() {
   });
 
   const handleCreateOrder = () => {
-    if (!selectedClientId && customerName !== "Walk-in Customer") {
+    if (!selectedClientId && !isWalkIn) {
       toast({
         title: "Select a client",
         description: "Please select a client from the dropdown.",
@@ -547,8 +550,8 @@ export default function Products() {
 
       createOrderMutation.mutate({
         clientId: selectedClientId,
-        customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
+        customerName: customerName.trim() || "Walk-in Customer",
+        customerPhone: isWalkIn ? walkInAddress : customerPhone.trim(),
         orderNumber,
         items: itemsText,
         totalAmount: subtotal.toFixed(2),
@@ -560,6 +563,7 @@ export default function Products() {
         deliveryType: "pickup",
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
+        notes: isWalkIn && walkInAddress ? `Address: ${walkInAddress}` : undefined,
       });
 
       setShowPinDialog(false);
@@ -578,8 +582,12 @@ export default function Products() {
     setCustomerName("");
     setCustomerPhone("");
     setSelectedClientId(null);
+    setIsWalkIn(false);
+    setWalkInName("");
+    setWalkInAddress("");
     setDiscountPercent("");
     setTips("");
+    setOrderType("normal");
   };
 
   const handleAddOtherItem = () => {
@@ -946,7 +954,7 @@ export default function Products() {
                   onClick={handleCreateOrder}
                   disabled={
                     createOrderMutation.isPending ||
-                    (!selectedClientId && customerName !== "Walk-in Customer")
+                    (!selectedClientId && !isWalkIn)
                   }
                   data-testid="button-create-order"
                 >
@@ -1135,15 +1143,17 @@ export default function Products() {
               <div className="mt-2 space-y-2">
                 <Label className="text-xs font-semibold">Select Client</Label>
                 <Select
-                  value={selectedClientId?.toString() || ""}
+                  value={isWalkIn ? "walkin" : (selectedClientId?.toString() || "")}
                   onValueChange={(value) => {
                     if (value === "walkin") {
                       setSelectedClientId(null);
+                      setIsWalkIn(true);
                       setCustomerName("Walk-in Customer");
                       setCustomerPhone("");
-                    } else if (value === "new") {
-                      setShowNewClientDialog(true);
+                      setWalkInName("");
+                      setWalkInAddress("");
                     } else {
+                      setIsWalkIn(false);
                       const client = clients?.find(
                         (c) => c.id.toString() === value,
                       );
@@ -1187,6 +1197,29 @@ export default function Products() {
                     ))}
                   </SelectContent>
                 </Select>
+                {isWalkIn && (
+                  <>
+                    <Label className="text-xs font-semibold mt-2">Customer Name</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      placeholder="Enter name..."
+                      value={walkInName}
+                      onChange={(e) => {
+                        setWalkInName(e.target.value);
+                        setCustomerName(e.target.value || "Walk-in Customer");
+                      }}
+                      data-testid="input-walkin-name"
+                    />
+                    <Label className="text-xs font-semibold mt-2">Address</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      placeholder="Enter address..."
+                      value={walkInAddress}
+                      onChange={(e) => setWalkInAddress(e.target.value)}
+                      data-testid="input-walkin-address"
+                    />
+                  </>
+                )}
                 <Label className="text-xs font-semibold mt-2">Order Type</Label>
                 <Select
                   value={orderType}
@@ -1203,16 +1236,6 @@ export default function Products() {
                     <SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={() => setShowNewClientDialog(true)}
-                  data-testid="button-add-client-quick"
-                >
-                  <UserPlus className="w-3 h-3 mr-1" />
-                  Add New Client
-                </Button>
                 <div className="flex gap-1">
                   <Button
                     variant="outline"
@@ -1230,7 +1253,7 @@ export default function Products() {
                     onClick={handleCreateOrder}
                     disabled={
                       createOrderMutation.isPending ||
-                      (!selectedClientId && customerName !== "Walk-in Customer")
+                      (!selectedClientId && !isWalkIn)
                     }
                     data-testid="button-create-order-panel"
                   >
