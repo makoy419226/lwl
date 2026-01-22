@@ -67,7 +67,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "manager", "cashier"] },
     { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "manager", "cashier"] },
     { href: "/orders", icon: ClipboardList, label: "Orders", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "cashier"] },
-    { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers", roles: ["admin", "manager"] },
+    { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
     { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
     { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "manager"] },
     { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "manager"] },
