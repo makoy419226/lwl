@@ -363,40 +363,36 @@ export default function Orders() {
         description: "New order has been created. Generating PDF...",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      let cleanMessage = "Failed to create order";
+      let isCustomerExists = false;
+      
       try {
-        const errorMsg = error.message; // e.g., '400: {"message":"Customer name is required"}'
-
-        // 1. Split the string at the first colon
-        const firstColonIndex = errorMsg.indexOf(":");
-
-        if (firstColonIndex !== -1) {
-          const jsonString = errorMsg.substring(firstColonIndex + 1).trim();
-
-          // 2. Parse the JSON part
-          const parsedBody = JSON.parse(jsonString);
-          const cleanMessage = parsedBody.message || "An error occurred";
-
-          // Check if it's a duplicate customer error
-          const isCustomerExists = cleanMessage.toLowerCase().includes("customer details already exist");
-
-          toast({
-            title: isCustomerExists ? "Customer Already Exists" : "Order Error",
-            description: cleanMessage,
-            variant: "destructive",
-          });
+        const errorMsg = error.message || "";
+        
+        // Try to extract JSON from "400: {...}" format
+        const jsonMatch = errorMsg.match(/\{.*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          cleanMessage = parsed.message || cleanMessage;
+        } else if (errorMsg.includes(":")) {
+          // Try to get text after status code
+          cleanMessage = errorMsg.split(":").slice(1).join(":").trim() || cleanMessage;
         } else {
-          // Fallback if the format doesn't match the "400: {}" pattern
-          throw new Error("Standard format not found");
+          cleanMessage = errorMsg || cleanMessage;
         }
+        
+        isCustomerExists = cleanMessage.toLowerCase().includes("customer details already exist") ||
+                          cleanMessage.toLowerCase().includes("customer already exists");
       } catch (err) {
-        // If JSON parsing fails or the string is malformed
-        toast({
-          title: "Order Error",
-          description: error.message || "Failed to create order",
-          variant: "destructive",
-        });
+        // Keep default message
       }
+      
+      toast({
+        title: isCustomerExists ? "Customer Already Exists" : "Order Error",
+        description: cleanMessage,
+        variant: "destructive",
+      });
     },
   });
 
@@ -2059,7 +2055,7 @@ export default function Orders() {
                                             updates: { deliveryType: newType },
                                           });
                                         }}
-                                        disabled={order.delivered}
+                                        disabled={order.delivered === true}
                                       >
                                         <SelectTrigger className={`w-20 h-7 text-xs ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}>
                                           <SelectValue>
