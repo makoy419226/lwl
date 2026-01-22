@@ -469,6 +469,7 @@ export default function Bills() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", selectedBill?.clientId, "transactions"] });
       setShowPaymentDialog(false);
       setSelectedBill(null);
       toast({
