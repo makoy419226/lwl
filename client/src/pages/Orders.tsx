@@ -1518,15 +1518,6 @@ export default function Orders() {
 
                           {/* Card Footer - Actions */}
                           <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setPrintOrder(order)}
-                              data-testid={`button-mobile-print-${order.id}`}
-                            >
-                              <Printer className="w-4 h-4" />
-                            </Button>
-
                             {!order.tagDone && (
                               <>
                                 <Button
@@ -2043,15 +2034,6 @@ export default function Orders() {
                                     </TableCell>
                                     <TableCell className="p-2 sm:p-3 lg:p-4">
                                       <div className="action-buttons">
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="shrink-0 touch-manipulation"
-                                          onClick={() => setPrintOrder(order)}
-                                          data-testid={`button-print-${order.id}`}
-                                        >
-                                          <Printer className="w-4 h-4" />
-                                        </Button>
                                         {!order.tagDone && (
                                           <>
                                             <Button
