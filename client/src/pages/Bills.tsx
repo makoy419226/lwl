@@ -463,6 +463,7 @@ export default function Bills() {
       `*LIQUID WASHES LAUNDRY*%0A` +
       `Centra Market D/109, Al Dhanna City%0A` +
       `Al Ruwais, Abu Dhabi-UAE%0A` +
+      `Tel: 026 815 824 | Mobile: +971 56 338 0001%0A` +
       `--------------------------------%0A` +
       `*INVOICE*%0A` +
       `--------------------------------%0A` +
@@ -920,16 +921,26 @@ export default function Bills() {
 
           <div
             ref={invoiceRef}
-            className="bg-white p-4 rounded-lg border text-black"
-            style={{ fontFamily: "Courier New, monospace", fontSize: "11px" }}
+            className="bg-white p-6 rounded-lg border text-black"
+            style={{ fontFamily: "Arial, sans-serif", fontSize: "12px" }}
           >
-            <div className="text-center border-b pb-2 mb-2">
-              <div className="font-bold text-sm">LIQUID WASHES LAUNDRY</div>
-              <div className="text-xs">Centra Market D/109, Al Dhanna City</div>
-              <div className="text-xs">Al Ruwais, Abu Dhabi-UAE</div>
+            <div className="text-center border-b pb-3 mb-3">
+              <img 
+                src="/assets/generated_images/lwl_laundry_logo_favicon.png" 
+                alt="Liquid Washes Laundry" 
+                style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto 10px' }}
+              />
+              <div className="font-bold text-lg">LIQUID WASHES LAUNDRY</div>
+              <div className="text-sm">Centra Market D/109, Al Dhanna City</div>
+              <div className="text-sm">Al Ruwais, Abu Dhabi-UAE</div>
+              <div className="text-sm mt-2">
+                <span>Tel: 026 815 824</span>
+                <span className="mx-2">|</span>
+                <span>Mobile: +971 56 338 0001</span>
+              </div>
             </div>
-            <div className="text-center font-bold mb-2">INVOICE</div>
-            <div className="text-xs mb-2">
+            <div className="text-center font-bold text-lg mb-3">INVOICE</div>
+            <div className="text-sm mb-3">
               <div>Ref: {createdBill?.bill.referenceNumber}</div>
               <div>
                 Date:{" "}
@@ -1015,13 +1026,23 @@ export default function Bills() {
               width: "70mm",
             }}
           >
-            <div className="text-center border-b pb-2 mb-2">
-              <div className="font-bold text-sm">LIQUID WASHES LAUNDRY</div>
-              <div className="text-xs">Centra Market D/109, Al Dhanna City</div>
-              <div className="text-xs">Al Ruwais, Abu Dhabi-UAE</div>
+            <div className="text-center border-b pb-3 mb-3">
+              <img 
+                src="/assets/generated_images/lwl_laundry_logo_favicon.png" 
+                alt="Liquid Washes Laundry" 
+                style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto 10px' }}
+              />
+              <div className="font-bold text-lg">LIQUID WASHES LAUNDRY</div>
+              <div className="text-sm">Centra Market D/109, Al Dhanna City</div>
+              <div className="text-sm">Al Ruwais, Abu Dhabi-UAE</div>
+              <div className="text-sm mt-2">
+                <span>Tel: 026 815 824</span>
+                <span className="mx-2">|</span>
+                <span>Mobile: +971 56 338 0001</span>
+              </div>
             </div>
-            <div className="text-center font-bold mb-2">INVOICE</div>
-            <div className="text-xs mb-2">
+            <div className="text-center font-bold text-lg mb-3">INVOICE</div>
+            <div className="text-sm mb-3">
               <div>Ref: {viewBillPDF.referenceNumber || viewBillPDF.id}</div>
               <div>
                 Date:{" "}
