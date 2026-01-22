@@ -1653,31 +1653,11 @@ export default function Orders() {
                                       onClick={() =>
                                         setStageChecklistDialog({
                                           order,
-                                          stage: "washing",
+                                          stage: "tagging",
                                         })
                                       }
                                     >
-                                      Washing Checklist
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        setStageChecklistDialog({
-                                          order,
-                                          stage: "sorting",
-                                        })
-                                      }
-                                    >
-                                      Sorting Checklist
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        setStageChecklistDialog({
-                                          order,
-                                          stage: "folding",
-                                        })
-                                      }
-                                    >
-                                      Folding Checklist
+                                      Tagging Checklist
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() =>
@@ -2221,31 +2201,11 @@ export default function Orders() {
                                                     onClick={() =>
                                                       setStageChecklistDialog({
                                                         order,
-                                                        stage: "washing",
+                                                        stage: "tagging",
                                                       })
                                                     }
                                                   >
-                                                    Washing Checklist
-                                                  </DropdownMenuItem>
-                                                  <DropdownMenuItem
-                                                    onClick={() =>
-                                                      setStageChecklistDialog({
-                                                        order,
-                                                        stage: "sorting",
-                                                      })
-                                                    }
-                                                  >
-                                                    Sorting Checklist
-                                                  </DropdownMenuItem>
-                                                  <DropdownMenuItem
-                                                    onClick={() =>
-                                                      setStageChecklistDialog({
-                                                        order,
-                                                        stage: "folding",
-                                                      })
-                                                    }
-                                                  >
-                                                    Folding Checklist
+                                                    Tagging Checklist
                                                   </DropdownMenuItem>
                                                   <DropdownMenuItem
                                                     onClick={() =>
