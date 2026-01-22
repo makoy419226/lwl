@@ -126,7 +126,13 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
       if (match) {
         const qty = parseInt(match[1]);
         const name = match[2].trim();
-        const product = products?.find(p => p.name.toLowerCase() === name.toLowerCase());
+        // Extract base product name (remove variations like "(folding)", "(hanging)")
+        const baseName = name.replace(/\s*\([^)]*\)\s*$/, "").trim();
+        // Try exact match first, then base name match
+        let product = products?.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if (!product) {
+          product = products?.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+        }
         const price = product ? parseFloat(product.price || "0") : 0;
         return { name, qty, price, total: qty * price };
       }
