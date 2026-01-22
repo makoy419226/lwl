@@ -399,22 +399,35 @@ export default function Bills() {
             <head>
               <title>Invoice - ${createdBill?.bill.referenceNumber}</title>
               <style>
+                @page {
+                  size: A4;
+                  margin: 20mm;
+                }
                 body {
-                  font-family: 'Courier New', monospace;
-                  font-size: 11px;
-                  padding: 10px;
-                  max-width: 80mm;
+                  font-family: Arial, sans-serif;
+                  font-size: 14px;
+                  padding: 20px;
+                  max-width: 210mm;
                   margin: 0 auto;
+                  line-height: 1.5;
                 }
                 .text-center { text-align: center; }
                 .text-right { text-align: right; }
                 .font-bold { font-weight: bold; }
-                .border-b { border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
-                .border-t { border-top: 1px dashed #000; padding-top: 8px; margin-top: 8px; }
-                .item-row { display: flex; justify-content: space-between; padding: 2px 0; }
-                .item-detail { font-size: 10px; color: #666; }
+                .text-sm { font-size: 12px; }
+                .text-xs { font-size: 11px; }
+                .border-b { border-bottom: 1px solid #000; padding-bottom: 12px; margin-bottom: 12px; }
+                .border-t { border-top: 1px solid #000; padding-top: 12px; margin-top: 12px; }
+                .py-1 { padding: 8px 0; }
+                .py-2 { padding: 12px 0; }
+                .mb-2 { margin-bottom: 12px; }
+                .pb-1 { padding-bottom: 8px; }
+                .mb-1 { margin-bottom: 8px; }
+                .border-dotted { border-bottom: 1px dotted #ccc; }
+                .last\\:border-0:last-child { border: none; }
+                .text-gray-600 { color: #666; }
                 @media print {
-                  body { margin: 0; padding: 5px; }
+                  body { margin: 0; padding: 20mm; }
                 }
               </style>
             </head>
@@ -568,18 +581,23 @@ export default function Bills() {
               <head>
                 <title>Bill - ${bill.referenceNumber || bill.id}</title>
                 <style>
+                  @page {
+                    size: A4;
+                    margin: 20mm;
+                  }
                   body {
-                    font-family: 'Courier New', monospace;
-                    font-size: 11px;
-                    padding: 10px;
-                    max-width: 80mm;
+                    font-family: Arial, sans-serif;
+                    font-size: 14px;
+                    padding: 20px;
+                    max-width: 210mm;
                     margin: 0 auto;
+                    line-height: 1.5;
                   }
                   .text-center { text-align: center; }
                   .font-bold { font-weight: bold; }
-                  .border-b { border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+                  .border-b { border-bottom: 1px solid #000; padding-bottom: 12px; margin-bottom: 12px; }
                   @media print {
-                    body { margin: 0; padding: 5px; }
+                    body { margin: 0; padding: 20mm; }
                   }
                 </style>
               </head>
