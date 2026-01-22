@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { users, passwordResetTokens, stageChecklists } from "@shared/schema";
 import { eq, and, gt } from "drizzle-orm";
-import { sendPasswordResetEmail } from "./resend";
+import { sendPasswordResetEmail, sendDailySalesReportEmail, type DailySalesData } from "./resend";
 import PDFDocument from "pdfkit";
 
 import { seedDatabase } from "./seed";
@@ -1139,6 +1139,103 @@ export async function registerRoutes(
     }
     
     res.json({ success: true, message: "Admin verified" });
+  });
+
+  // Admin email for daily reports
+  const ADMIN_REPORT_EMAIL = process.env.ADMIN_REPORT_EMAIL || "idusma0010@gmail.com";
+
+  // Generate daily sales data
+  async function generateDailySalesData(date: Date): Promise<DailySalesData> {
+    const orders = await storage.getOrders();
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const todaysOrders = orders.filter(order => {
+      const orderDate = new Date(order.entryDate);
+      return orderDate >= startOfDay && orderDate <= endOfDay;
+    });
+    
+    const totalOrders = todaysOrders.length;
+    const totalRevenue = todaysOrders.reduce((sum, o) => sum + parseFloat(o.finalAmount || "0"), 0);
+    const paidAmount = todaysOrders.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
+    const pendingAmount = totalRevenue - paidAmount;
+    const normalOrders = todaysOrders.filter(o => !o.urgent).length;
+    const urgentOrders = todaysOrders.filter(o => o.urgent).length;
+    const pickupOrders = todaysOrders.filter(o => o.deliveryType === "pickup").length;
+    const deliveryOrders = todaysOrders.filter(o => o.deliveryType === "delivery").length;
+    
+    const itemCounts: Record<string, number> = {};
+    todaysOrders.forEach(order => {
+      const itemsMatch = order.items.match(/(\d+)x\s+([^,()]+)/g);
+      if (itemsMatch) {
+        itemsMatch.forEach(item => {
+          const match = item.match(/(\d+)x\s+(.+)/);
+          if (match) {
+            const count = parseInt(match[1]);
+            const name = match[2].trim();
+            itemCounts[name] = (itemCounts[name] || 0) + count;
+          }
+        });
+      }
+    });
+    
+    const topItems = Object.entries(itemCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, count }));
+    
+    return {
+      date: date.toLocaleDateString('en-GB', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }),
+      totalOrders,
+      totalRevenue,
+      paidAmount,
+      pendingAmount,
+      normalOrders,
+      urgentOrders,
+      pickupOrders,
+      deliveryOrders,
+      topItems
+    };
+  }
+
+  // Send daily sales report (admin protected)
+  app.post("/api/admin/send-daily-report", async (req, res) => {
+    const { adminPassword, date } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ success: false, message: "Invalid admin password" });
+    }
+    
+    try {
+      const reportDate = date ? new Date(date) : new Date();
+      const salesData = await generateDailySalesData(reportDate);
+      await sendDailySalesReportEmail(ADMIN_REPORT_EMAIL, salesData);
+      
+      res.json({ 
+        success: true, 
+        message: `Daily sales report sent to ${ADMIN_REPORT_EMAIL}`,
+        data: salesData
+      });
+    } catch (err: any) {
+      console.error("Failed to send daily report:", err);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to send daily report: " + err.message 
+      });
+    }
+  });
+
+  // Get admin report email setting
+  app.get("/api/admin/report-email", async (req, res) => {
+    res.json({ email: ADMIN_REPORT_EMAIL });
   });
 
   // Packing Workers routes

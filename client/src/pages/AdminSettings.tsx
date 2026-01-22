@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Settings, AlertTriangle, RotateCcw, ClipboardList, FileText, Users, Loader2 } from "lucide-react";
+import { Settings, AlertTriangle, RotateCcw, ClipboardList, FileText, Users, Loader2, Mail, Send } from "lucide-react";
 
 type ResetType = "orders" | "bills" | "clients" | null;
 
@@ -15,6 +15,9 @@ export default function AdminSettings() {
   const [resetType, setResetType] = useState<ResetType>(null);
   const [adminPassword, setAdminPassword] = useState("");
   const [resetError, setResetError] = useState("");
+  const [showSendReportDialog, setShowSendReportDialog] = useState(false);
+  const [reportPassword, setReportPassword] = useState("");
+  const [reportError, setReportError] = useState("");
   const { toast } = useToast();
 
   const resetMutation = useMutation({
@@ -55,6 +58,25 @@ export default function AdminSettings() {
     },
     onError: (error: any) => {
       setResetError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to reset data");
+    },
+  });
+
+  const sendReportMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await apiRequest("POST", "/api/admin/send-daily-report", { adminPassword: password });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setShowSendReportDialog(false);
+      setReportPassword("");
+      setReportError("");
+      toast({
+        title: "Report Sent",
+        description: data.message || "Daily sales report sent successfully!",
+      });
+    },
+    onError: (error: any) => {
+      setReportError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to send report");
     },
   });
 
@@ -179,6 +201,99 @@ export default function AdminSettings() {
                     <span className="text-xs text-muted-foreground">Clear all clients</span>
                   </Button>
                 </DialogTrigger>
+              </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Mail className="w-5 h-5" />
+              Daily Sales Report
+            </CardTitle>
+            <CardDescription>
+              Daily sales reports are automatically sent to idusma0010@gmail.com at 6:00 AM UAE time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">
+                  Click the button to manually send today's sales report to the admin email.
+                </p>
+              </div>
+              <Dialog open={showSendReportDialog} onOpenChange={(open) => {
+                setShowSendReportDialog(open);
+                if (!open) {
+                  setReportPassword("");
+                  setReportError("");
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="default"
+                    className="gap-2"
+                    data-testid="button-send-report"
+                  >
+                    <Send className="w-4 h-4" />
+                    Send Report Now
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Mail className="w-5 h-5 text-primary" />
+                      Send Daily Sales Report
+                    </DialogTitle>
+                    <DialogDescription>
+                      This will send today's sales report to idusma0010@gmail.com. Enter the admin password to confirm.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="report-password">Admin Password</Label>
+                      <Input
+                        id="report-password"
+                        type="password"
+                        placeholder="Enter admin password..."
+                        value={reportPassword}
+                        onChange={(e) => {
+                          setReportPassword(e.target.value);
+                          setReportError("");
+                        }}
+                        data-testid="input-report-password"
+                      />
+                      {reportError && (
+                        <p className="text-sm text-destructive">{reportError}</p>
+                      )}
+                    </div>
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowSendReportDialog(false);
+                        setReportPassword("");
+                        setReportError("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => sendReportMutation.mutate(reportPassword)}
+                      disabled={!reportPassword || sendReportMutation.isPending}
+                      data-testid="button-confirm-send-report"
+                    >
+                      {sendReportMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4 mr-2" />
+                      )}
+                      Send Report
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
               </Dialog>
             </div>
           </CardContent>
