@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearch } from "wouter";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients, useCreateClient } from "@/hooks/use-clients";
+import { getProductImage } from "@/lib/productImages";
 import {
   Loader2,
   Search,
@@ -757,9 +758,9 @@ export default function Products() {
                             }}
                             title="Click to edit image"
                           >
-                            {product.imageUrl ? (
+                            {(product.imageUrl || getProductImage(product.name)) ? (
                               <img
-                                src={product.imageUrl}
+                                src={product.imageUrl || getProductImage(product.name) || ''}
                                 alt={product.name}
                                 className="w-full h-full object-cover"
                               />

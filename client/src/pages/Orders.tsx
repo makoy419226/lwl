@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearch, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { getProductImage as getStockProductImage } from "@/lib/productImages";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -297,7 +298,7 @@ export default function Orders() {
     const product = products?.find(
       (p) => p.name.toLowerCase() === productName.toLowerCase(),
     );
-    return product?.imageUrl;
+    return product?.imageUrl || getStockProductImage(productName);
   };
 
   useEffect(() => {
