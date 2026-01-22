@@ -133,23 +133,13 @@ export default function PublicOrder() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Payment Summary</CardTitle>
+            <CardTitle className="text-base">Amount Due</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span>AED {parseFloat(order.finalAmount).toFixed(2)}</span>
+          <CardContent>
+            <div className={`flex justify-between text-lg font-bold ${balance > 0 ? "text-red-600" : "text-green-600"}`}>
+              <span>{balance > 0 ? "To Pay" : "Fully Paid"}</span>
+              <span>AED {balance.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Paid</span>
-              <span>AED {parseFloat(order.paidAmount || "0").toFixed(2)}</span>
-            </div>
-            {balance > 0 && (
-              <div className="flex justify-between text-sm font-medium text-red-600 border-t pt-2">
-                <span>Balance Due</span>
-                <span>AED {balance.toFixed(2)}</span>
-              </div>
-            )}
           </CardContent>
         </Card>
 

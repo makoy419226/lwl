@@ -352,80 +352,13 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             </div>
           )}
 
-          <div className="status-section">
-            <div className="items-title" style={{ marginBottom: "10px" }}>Order Status</div>
-            <div className="status-row">
-              <span className="status-label">Entry</span>
-              <span className="status-done">Completed - {formatDate(order.entryDate)}</span>
-            </div>
-            <div className="status-row">
-              <span className="status-label">Washing</span>
-              <span className={order.washingDone ? "status-done" : "status-pending"}>
-                {order.washingDone ? `Completed - ${formatDate(order.washingDate)}` : "Pending"}
-              </span>
-            </div>
-            <div className="status-row">
-              <span className="status-label">Packing</span>
-              <span className={order.packingDone ? "status-done" : "status-pending"}>
-                {order.packingDone ? `Completed - ${formatDate(order.packingDate)}${order.packingBy ? ` by ${order.packingBy}` : ''}` : "Pending"}
-              </span>
-            </div>
-            <div className="status-row">
-              <span className="status-label">Delivery</span>
-              <span className={order.delivered ? "status-done" : "status-pending"}>
-                {order.delivered ? `Completed - ${formatDate(order.deliveryDate)}${order.deliveryBy ? ` by ${order.deliveryBy}` : ''}` : "Pending"}
-              </span>
-            </div>
-          </div>
-
-          {order.notes && (
-            <div className="items-section">
-              <div className="items-title">Notes</div>
-              <div className="items-list">{order.notes}</div>
-            </div>
-          )}
-
           <div className="totals">
-            <div className="total-row">
-              <span>Subtotal:</span>
-              <span>{totalAmount.toFixed(2)} AED</span>
-            </div>
-            {(discountPercent > 0 || discountAmount > 0) && (
-              <div className="total-row" style={{ color: "#f59e0b" }}>
-                <span>Discount {discountPercent > 0 ? `(${discountPercent}%)` : ''}:</span>
-                <span>-{discountAmount.toFixed(2)} AED</span>
-              </div>
-            )}
-            {(discountPercent > 0 || discountAmount > 0) && (
-              <div className="total-row" style={{ fontWeight: 600 }}>
-                <span>Total After Discount:</span>
-                <span>{finalAmount.toFixed(2)} AED</span>
-              </div>
-            )}
-            <div className="total-row" style={{ color: "#16a34a" }}>
-              <span>Paid Amount:</span>
-              <span>{paidAmount.toFixed(2)} AED</span>
-            </div>
-            <div className="total-row">
-              <span>Order Balance:</span>
+            <div className="total-row grand-total" style={{ fontSize: "16px" }}>
+              <span>Amount Due:</span>
               <span style={{ color: balance > 0 ? "#dc2626" : "#16a34a" }}>
                 {balance.toFixed(2)} AED
               </span>
             </div>
-            {order.paymentMethod && (
-              <div className="total-row" style={{ fontSize: "12px", color: "#666" }}>
-                <span>Payment Method:</span>
-                <span style={{ textTransform: "capitalize" }}>{order.paymentMethod}</span>
-              </div>
-            )}
-            {client && (
-              <div className="total-row grand-total">
-                <span>Client Total Due:</span>
-                <span style={{ color: parseFloat(client.balance || "0") > 0 ? "#dc2626" : "#16a34a" }}>
-                  {parseFloat(client.balance || "0").toFixed(2)} AED
-                </span>
-              </div>
-            )}
           </div>
 
           {balance <= 0 && paidAmount > 0 && (
