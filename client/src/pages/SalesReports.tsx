@@ -357,15 +357,18 @@ export default function SalesReports() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orderData.deliveryOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono">{order.orderNumber}</TableCell>
-                    <TableCell>{order.customerName || 'Walk-in'}</TableCell>
-                    <TableCell className="text-right font-semibold text-orange-600">
-                      {parseFloat(order.totalAmount || "0").toFixed(2)} AED
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {orderData.deliveryOrders.map((order) => {
+                  const client = allClients?.find(c => c.id === order.clientId);
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono">{order.orderNumber}</TableCell>
+                      <TableCell>{client?.name || order.customerName || 'Walk-in'}</TableCell>
+                      <TableCell className="text-right font-semibold text-orange-600">
+                        {parseFloat(order.totalAmount || "0").toFixed(2)} AED
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -392,15 +395,18 @@ export default function SalesReports() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orderData.takeawayOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono">{order.orderNumber}</TableCell>
-                    <TableCell>{order.customerName || 'Walk-in'}</TableCell>
-                    <TableCell className="text-right font-semibold text-cyan-600">
-                      {parseFloat(order.totalAmount || "0").toFixed(2)} AED
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {orderData.takeawayOrders.map((order) => {
+                  const client = allClients?.find(c => c.id === order.clientId);
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono">{order.orderNumber}</TableCell>
+                      <TableCell>{client?.name || order.customerName || 'Walk-in'}</TableCell>
+                      <TableCell className="text-right font-semibold text-cyan-600">
+                        {parseFloat(order.totalAmount || "0").toFixed(2)} AED
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
