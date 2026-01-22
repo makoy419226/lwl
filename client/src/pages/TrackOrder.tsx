@@ -246,7 +246,7 @@ export default function TrackOrder() {
 
         <div className="text-center text-sm text-muted-foreground pb-4">
           <p>Questions? Contact us at</p>
-          <p className="font-medium">+971 2 681 5824 | +971 56 338 0001</p>
+          <p className="font-medium">+97126815824 | +971563380001</p>
         </div>
       </div>
     </div>
