@@ -477,9 +477,9 @@ export default function Clients() {
             <p style="margin: 0; font-size: 12px; color: #2e7d32;">Total Deposits</p>
             <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #4caf50;">${totalDeposit.toFixed(2)} AED</p>
           </div>
-          <div style="flex: 1; background: ${balance > 0 ? "#ffebee" : "#e8f5e9"}; padding: 15px; border-radius: 8px; text-align: center;">
-            <p style="margin: 0; font-size: 12px; color: ${balance > 0 ? "#c62828" : "#2e7d32"};">Balance Due</p>
-            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: ${balance > 0 ? "#f44336" : "#4caf50"};">${balance.toFixed(2)} AED</p>
+          <div style="flex: 1; background: #ffebee; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: #c62828;">Due Balance</p>
+            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #f44336;">${balance.toFixed(2)} AED</p>
           </div>
         </div>
 
@@ -574,7 +574,7 @@ export default function Clients() {
       ["Financial Summary"],
       ["Total Bills", `${totalBill.toFixed(2)} AED`],
       ["Total Deposits", `${totalDeposit.toFixed(2)} AED`],
-      ["Balance Due", `${balance.toFixed(2)} AED`],
+      ["Due Balance", `${balance.toFixed(2)} AED`],
       [],
       ["TRANSACTION HISTORY"],
       ["#", "Date", "Time", "Type", "Description", "Amount", "Balance"],
@@ -1427,10 +1427,10 @@ export default function Clients() {
                     {getClientTotalDeposits(viewingClient).toFixed(2)} AED
                   </p>
                 </div>
-                <div className={`rounded-lg p-4 text-center ${getClientBalanceDue(viewingClient) > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-green-50 dark:bg-green-950/30"}`}>
-                  <Wallet className={`w-6 h-6 mx-auto mb-2 ${getClientBalanceDue(viewingClient) > 0 ? "text-red-600" : "text-green-600"}`} />
-                  <p className="text-sm text-muted-foreground">Balance Due</p>
-                  <p className={`text-xl font-bold ${getClientBalanceDue(viewingClient) > 0 ? "text-red-600" : "text-green-600"}`}>
+                <div className="rounded-lg p-4 text-center bg-red-50 dark:bg-red-950/30">
+                  <Wallet className="w-6 h-6 mx-auto mb-2 text-red-600" />
+                  <p className="text-sm text-muted-foreground">Due Balance</p>
+                  <p className="text-xl font-bold text-red-600">
                     {getClientBalanceDue(viewingClient).toFixed(2)} AED
                   </p>
                 </div>
