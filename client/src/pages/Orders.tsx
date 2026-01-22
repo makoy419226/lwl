@@ -1772,44 +1772,41 @@ export default function Orders() {
                   </div>
 
                   {/* Desktop Table Layout */}
-                  <Card className="responsive-card hidden md:block">
-                    <div
-                      className="overflow-x-auto scrollbar-always-visible"
-                      style={{ scrollbarWidth: "thin" }}
-                    >
-                      <Table className="w-full min-w-[900px]">
+                  <Card className="responsive-card hidden md:block overflow-hidden">
+                    <div className="overflow-x-hidden">
+                      <Table className="w-full table-fixed">
                         <TableHeader>
                           <TableRow className="transition-all duration-200">
-                            <TableHead className="whitespace-nowrap w-16 sm:w-auto">
+                            <TableHead className="w-[70px] lg:w-[90px]">
                               Order
                             </TableHead>
-                            <TableHead className="whitespace-nowrap hidden lg:table-cell">
+                            <TableHead className="hidden xl:table-cell w-[80px]">
                               Bill
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="w-[100px] lg:w-[140px]">
                               Client
                             </TableHead>
-                            <TableHead className="whitespace-nowrap hidden xl:table-cell">
+                            <TableHead className="hidden 2xl:table-cell w-[80px]">
                               Due
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="w-[60px]">
                               Items
                             </TableHead>
                             {activeTab !== "create" && (
-                              <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                              <TableHead className="hidden lg:table-cell w-[80px]">
                                 Amount
                               </TableHead>
                             )}
-                            <TableHead className="whitespace-nowrap hidden lg:table-cell">
+                            <TableHead className="hidden xl:table-cell w-[90px]">
                               Type
                             </TableHead>
-                            <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                            <TableHead className="hidden lg:table-cell w-[70px]">
                               Time
                             </TableHead>
-                            <TableHead className="whitespace-nowrap w-20 sm:w-auto">
+                            <TableHead className="w-[80px] lg:w-[100px]">
                               Status
                             </TableHead>
-                            <TableHead className="whitespace-nowrap">
+                            <TableHead className="w-[100px] lg:w-[140px]">
                               Actions
                             </TableHead>
                           </TableRow>
@@ -1850,15 +1847,15 @@ export default function Orders() {
                                     key={order.id}
                                     data-testid={`row-order-${order.id}`}
                                   >
-                                    <TableCell className="font-mono font-bold text-sm">
-                                      {order.orderNumber}
+                                    <TableCell className="font-mono font-bold text-xs lg:text-sm truncate">
+                                      {order.orderNumber.replace("ORD-", "")}
                                     </TableCell>
-                                    <TableCell className="hidden lg:table-cell">
+                                    <TableCell className="hidden xl:table-cell">
                                       {order.billId ? (
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="font-mono text-primary h-auto py-1 px-2"
+                                          className="font-mono text-primary h-auto py-1 px-1 text-xs"
                                           onClick={() => {
                                             const bill = bills?.find(
                                               (b) => b.id === order.billId,
@@ -1870,11 +1867,11 @@ export default function Orders() {
                                           }}
                                           data-testid={`button-bill-${order.billId}`}
                                         >
-                                          <Receipt className="w-3 h-3 mr-1" />#
-                                          {order.billId}
+                                          <Receipt className="w-3 h-3" />
+                                          #{order.billId}
                                         </Button>
                                       ) : (
-                                        <span className="text-muted-foreground text-sm">
+                                        <span className="text-muted-foreground text-xs">
                                           -
                                         </span>
                                       )}
@@ -1883,17 +1880,17 @@ export default function Orders() {
                                       <>
                                         <TableCell
                                           rowSpan={orderCount}
-                                          className="align-top border-r p-0 w-20 sm:w-28 md:w-32 lg:w-40"
+                                          className="align-top border-r p-0"
                                         >
                                           <Popover>
                                             <PopoverTrigger asChild>
                                               <Button
                                                 variant="ghost"
-                                                className="w-full h-full justify-start px-2 sm:px-3 py-2 font-semibold hover-elevate touch-manipulation"
+                                                className="w-full h-full justify-start px-1 lg:px-2 py-2 font-semibold hover-elevate touch-manipulation"
                                                 data-testid={`button-client-${client?.id || "walkin"}`}
                                               >
-                                                <User className="w-4 h-4 mr-1 sm:mr-2 shrink-0" />
-                                                <span className="truncate text-xs sm:text-sm">
+                                                <User className="w-3 h-3 lg:w-4 lg:h-4 mr-1 shrink-0" />
+                                                <span className="truncate text-xs lg:text-sm max-w-[80px] lg:max-w-[120px]">
                                                   {displayName}
                                                 </span>
                                               </Button>
@@ -1981,13 +1978,12 @@ export default function Orders() {
                                         </TableCell>
                                         <TableCell
                                           rowSpan={orderCount}
-                                          className={`align-top font-semibold border-r hidden xl:table-cell ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
+                                          className={`align-top font-semibold border-r hidden 2xl:table-cell text-xs ${parseFloat(client?.balance || "0") > 0 ? "text-destructive" : "text-green-600"}`}
                                           data-testid={`text-client-due-${order.id}`}
                                         >
                                           {parseFloat(
                                             client?.balance || "0",
-                                          ).toFixed(2)}{" "}
-                                          AED
+                                          ).toFixed(0)} AED
                                         </TableCell>
                                       </>
                                     ) : null}
@@ -2054,11 +2050,11 @@ export default function Orders() {
                                       </Popover>
                                     </TableCell>
                                     {activeTab !== "create" && (
-                                      <TableCell className="font-semibold hidden sm:table-cell">
+                                      <TableCell className="font-semibold hidden lg:table-cell text-xs">
                                         {order.totalAmount} AED
                                       </TableCell>
                                     )}
-                                    <TableCell className="hidden lg:table-cell">
+                                    <TableCell className="hidden xl:table-cell">
                                       <Select
                                         value={order.deliveryType || ""}
                                         onValueChange={(newType) => {
@@ -2069,16 +2065,16 @@ export default function Orders() {
                                         }}
                                         disabled={order.delivered}
                                       >
-                                        <SelectTrigger className={`w-24 h-8 ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}>
+                                        <SelectTrigger className={`w-20 h-7 text-xs ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}>
                                           <SelectValue>
                                             {order.deliveryType ===
                                             "delivery" ? (
                                               <div className="flex items-center gap-1">
-                                                <Truck className="w-3 h-3" />{" "}
-                                                Delivery
+                                                <Truck className="w-3 h-3" />
+                                                Del
                                               </div>
                                             ) : (
-                                              "Pickup"
+                                              "Pick"
                                             )}
                                           </SelectValue>
                                         </SelectTrigger>
@@ -2092,7 +2088,7 @@ export default function Orders() {
                                         </SelectContent>
                                       </Select>
                                     </TableCell>
-                                    <TableCell className="hidden sm:table-cell">
+                                    <TableCell className="hidden lg:table-cell text-xs">
                                       {getTimeRemaining(
                                         order.expectedDeliveryAt,
                                       )}
