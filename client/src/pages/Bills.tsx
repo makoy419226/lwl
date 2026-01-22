@@ -12,7 +12,7 @@ import {
   Plus,
   Minus,
   Receipt,
-  Download,
+  Printer,
   Package,
   User,
   PlusCircle,
@@ -389,20 +389,47 @@ export default function Bills() {
     verifyCreatorPinMutation.mutate(creatorPin);
   };
 
-  const generatePDF = async () => {
+  const printInvoice = () => {
     if (invoiceRef.current) {
-      const opt = {
-        margin: 5,
-        filename: `invoice-${createdBill?.bill.referenceNumber}.pdf`,
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: {
-          unit: "mm",
-          format: [80, 150] as [number, number],
-          orientation: "portrait" as const,
-        },
-      };
-      html2pdf().set(opt).from(invoiceRef.current).save();
+      const printContent = invoiceRef.current.innerHTML;
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Invoice - ${createdBill?.bill.referenceNumber}</title>
+              <style>
+                body {
+                  font-family: 'Courier New', monospace;
+                  font-size: 11px;
+                  padding: 10px;
+                  max-width: 80mm;
+                  margin: 0 auto;
+                }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .font-bold { font-weight: bold; }
+                .border-b { border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+                .border-t { border-top: 1px dashed #000; padding-top: 8px; margin-top: 8px; }
+                .item-row { display: flex; justify-content: space-between; padding: 2px 0; }
+                .item-detail { font-size: 10px; color: #666; }
+                @media print {
+                  body { margin: 0; padding: 5px; }
+                }
+              </style>
+            </head>
+            <body>
+              ${printContent}
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 250);
+      }
     }
   };
 
@@ -851,7 +878,7 @@ export default function Bills() {
               Bill Created Successfully
             </DialogTitle>
             <DialogDescription>
-              Invoice generated - download or share
+              Invoice ready to print
             </DialogDescription>
           </DialogHeader>
 
@@ -879,13 +906,22 @@ export default function Bills() {
               </div>
               <div>Customer: {createdBill?.bill.customerName}</div>
             </div>
-            <div className="border-t border-b py-1 mb-2">
+            <div className="border-t border-b py-2 mb-2">
+              <div className="flex justify-between text-xs font-bold border-b pb-1 mb-1">
+                <span>Item</span>
+                <span>Price x Qty = Total</span>
+              </div>
               {createdBill?.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between">
-                  <span>
-                    {item.name} x{item.qty}
-                  </span>
-                  <span>{(item.price * item.qty).toFixed(2)}</span>
+                <div key={idx} className="py-1 border-b border-dotted last:border-0">
+                  <div className="font-medium text-xs">{item.name}</div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-600">
+                      {item.price.toFixed(2)} x {item.qty}
+                    </span>
+                    <span className="font-medium">
+                      {(item.price * item.qty).toFixed(2)} AED
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -905,12 +941,12 @@ export default function Bills() {
 
           <div className="flex gap-2 mt-4">
             <Button
-              onClick={generatePDF}
+              onClick={printInvoice}
               className="flex-1"
-              data-testid="button-download-invoice"
+              data-testid="button-print-invoice"
             >
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
+              <Printer className="w-4 h-4 mr-2" />
+              Print Invoice
             </Button>
             <Button
               onClick={shareWhatsApp}
