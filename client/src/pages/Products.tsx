@@ -111,6 +111,7 @@ export default function Products() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
   const [discountPercent, setDiscountPercent] = useState("");
   const [tips, setTips] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
@@ -489,7 +490,11 @@ export default function Products() {
       });
       return;
     }
-    setShowUrgentDialog(true);
+    // Use the selected order type directly
+    setPendingUrgent(orderType === "urgent");
+    setShowPinDialog(true);
+    setStaffPin("");
+    setPinError("");
   };
 
   const submitOrder = (isUrgent: boolean) => {
@@ -1164,6 +1169,22 @@ export default function Products() {
                         )}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                <Label className="text-xs font-semibold mt-2">Order Type</Label>
+                <Select
+                  value={orderType}
+                  onValueChange={(value: "normal" | "urgent") => setOrderType(value)}
+                >
+                  <SelectTrigger
+                    className="h-8 text-xs"
+                    data-testid="select-order-type"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-[100] bg-background border shadow-lg">
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button
