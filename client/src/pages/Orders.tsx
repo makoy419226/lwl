@@ -132,6 +132,9 @@ export default function Orders() {
   const [deliveryPinDialog, setDeliveryPinDialog] = useState<{
     orderId: number;
   } | null>(null);
+  const [deliveryConfirmDialog, setDeliveryConfirmDialog] = useState<{
+    orderId: number;
+  } | null>(null);
   const [deliveryPin, setDeliveryPin] = useState("");
   const [deliveryPinError, setDeliveryPinError] = useState("");
   const [itemCountVerified, setItemCountVerified] = useState(false);
@@ -914,10 +917,17 @@ export default function Orders() {
   };
 
   const handleDeliveryWithPin = (orderId: number) => {
-    setDeliveryPinDialog({ orderId });
-    setDeliveryPin("");
-    setDeliveryPinError("");
-    setItemCountVerified(false);
+    setDeliveryConfirmDialog({ orderId });
+  };
+
+  const confirmDeliveryAndProceed = () => {
+    if (deliveryConfirmDialog) {
+      setDeliveryPinDialog({ orderId: deliveryConfirmDialog.orderId });
+      setDeliveryPin("");
+      setDeliveryPinError("");
+      setItemCountVerified(false);
+      setDeliveryConfirmDialog(null);
+    }
   };
 
   const submitDeliveryPin = () => {
@@ -2981,6 +2991,52 @@ export default function Orders() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delivery Confirmation Dialog */}
+      <Dialog
+        open={!!deliveryConfirmDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeliveryConfirmDialog(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-5 h-5" />
+              Confirm Order Completion
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure this order is correct and ready to be marked as delivered/picked up?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+              This action cannot be undone. Once marked as delivered or picked up:
+            </p>
+            <ul className="mt-2 text-sm text-amber-700 dark:text-amber-300 list-disc pl-5 space-y-1">
+              <li>The order status cannot be changed</li>
+              <li>The delivery type cannot be modified</li>
+              <li>All items will be considered released</li>
+            </ul>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setDeliveryConfirmDialog(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={confirmDeliveryAndProceed}
+            >
+              Yes, Proceed
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
