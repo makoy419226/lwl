@@ -1181,6 +1181,28 @@ export default function Bills() {
                 </p>
               )}
             </div>
+            {(() => {
+              const client = clients.find(c => c.id === selectedBill?.clientId);
+              const clientDeposit = parseFloat(client?.deposit || "0");
+              return (
+                <>
+                  {clientDeposit > 0 && (
+                    <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                      <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                        Customer has AED {clientDeposit.toFixed(2)} deposit balance available
+                      </p>
+                    </div>
+                  )}
+                  {paymentMethod === "cash" && clientDeposit > 0 && (
+                    <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                        Reminder: Customer still has deposit balance. Consider using "Deduct from Deposit" instead.
+                      </p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
             <div>
               <Label htmlFor="paymentMethod">Payment Method</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -1188,6 +1210,7 @@ export default function Bills() {
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="deposit">Deduct from Deposit</SelectItem>
                   <SelectItem value="cash">Cash</SelectItem>
                   <SelectItem value="card">Card</SelectItem>
                   <SelectItem value="bank">Bank Transfer</SelectItem>

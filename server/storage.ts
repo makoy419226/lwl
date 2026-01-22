@@ -509,7 +509,23 @@ export class DatabaseStorage implements IStorage {
       if (client && paymentAmount > 0) {
         const currentDeposit = parseFloat(client.deposit || "0");
         const currentAmount = parseFloat(client.amount || "0");
-        const newDeposit = currentDeposit + paymentAmount;
+        
+        let newDeposit: number;
+        let transactionType: string;
+        let transactionDescription: string;
+        
+        if (paymentMethod === "deposit") {
+          // Deduct from existing deposit - customer is using their pre-paid balance
+          newDeposit = Math.max(0, currentDeposit - paymentAmount);
+          transactionType = "deposit_used";
+          transactionDescription = `Deposit used for Bill #${bill.id}: ${bill.description || "N/A"}`;
+        } else {
+          // Cash/Card/Bank - add to deposit as normal payment
+          newDeposit = currentDeposit + paymentAmount;
+          transactionType = "deposit";
+          transactionDescription = `Payment for Bill #${bill.id}: ${bill.description || "N/A"}`;
+        }
+        
         const newBalance = currentAmount - newDeposit;
 
         await this.updateClient(bill.clientId, {
@@ -520,9 +536,9 @@ export class DatabaseStorage implements IStorage {
         // Record the transaction for history without triggering balance changes again
         await this.createTransaction({
           clientId: bill.clientId,
-          type: "deposit",
+          type: transactionType,
           amount: paymentAmount.toFixed(2),
-          description: `Payment for Bill #${bill.id}: ${bill.description || "N/A"}`,
+          description: transactionDescription,
           date: new Date(),
           runningBalance: newBalance.toFixed(2),
           paymentMethod: paymentMethod || "cash",
