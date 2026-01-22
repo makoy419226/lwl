@@ -949,39 +949,11 @@ export default function Products() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 flex-wrap">
-                {customerName && (
-                  <span className="text-xs font-semibold text-muted-foreground px-2">
-                    {customerName}
-                  </span>
-                )}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearOrder}
-                  data-testid="button-clear-order"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-
-                <Button
-                  size="sm"
-                  className={`font-bold px-3 text-xs ${
-                    orderType === "urgent"
-                      ? "bg-orange-600 hover:bg-orange-700 text-white"
-                      : "bg-green-600 hover:bg-green-700 text-white"
-                  }`}
-                  onClick={handleCreateOrder}
-                  disabled={
-                    createOrderMutation.isPending ||
-                    (!selectedClientId && !isWalkIn)
-                  }
-                  data-testid="button-create-order"
-                >
-                  {createOrderMutation.isPending ? "..." : "CREATE"}
-                </Button>
-              </div>
+              {customerName && (
+                <span className="text-xs font-semibold text-muted-foreground px-2">
+                  {customerName}
+                </span>
+              )}
             </div>
 
             <div className={`mt-1 pt-1 border-t text-[10px] text-muted-foreground line-clamp-1 ${
