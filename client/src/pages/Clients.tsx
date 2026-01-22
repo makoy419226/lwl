@@ -1211,8 +1211,8 @@ export default function Clients() {
                               variant="outline"
                               className="ml-4"
                               onClick={() => {
-                                setPayingBillId(bill.id);
-                                setBillPaymentAmount(remaining.toFixed(2));
+                                setTransactionClient(null);
+                                navigate("/bills");
                               }}
                               data-testid={`button-pay-bill-${bill.id}`}
                             >
