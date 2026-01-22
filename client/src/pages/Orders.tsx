@@ -371,15 +371,17 @@ export default function Orders() {
         const firstColonIndex = errorMsg.indexOf(":");
 
         if (firstColonIndex !== -1) {
-          const statusCode = errorMsg.substring(0, firstColonIndex).trim();
           const jsonString = errorMsg.substring(firstColonIndex + 1).trim();
 
           // 2. Parse the JSON part
           const parsedBody = JSON.parse(jsonString);
           const cleanMessage = parsedBody.message || "An error occurred";
 
+          // Check if it's a duplicate customer error
+          const isCustomerExists = cleanMessage.toLowerCase().includes("customer details already exist");
+
           toast({
-            title: `Error ${statusCode}`,
+            title: isCustomerExists ? "Customer Already Exists" : "Order Error",
             description: cleanMessage,
             variant: "destructive",
           });

@@ -897,7 +897,7 @@ export async function registerRoutes(
             // Block creation - client already exists
             return res
               .status(400)
-              .json({ message: `This client already exists: ${existingClient.name}. Please select them from the client list instead of using Walk-in.` });
+              .json({ message: `Customer details already exist: ${existingClient.name}. Please select them from the client list.` });
           }
         }
         
