@@ -17,7 +17,6 @@ import {
   User,
   PlusCircle,
   AlertCircle,
-  ShoppingCart,
   Key,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
@@ -625,21 +624,6 @@ export default function Bills() {
                           )}
                         </div>
                         <div className="flex gap-1">
-                          {!bill.isPaid && bill.clientId && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setLocation(
-                                  `/orders?billId=${bill.id}&clientId=${bill.clientId}`,
-                                )
-                              }
-                              data-testid={`button-add-order-${bill.id}`}
-                              title="Add Order to this Bill"
-                            >
-                              <ShoppingCart className="w-4 h-4 text-green-600" />
-                            </Button>
-                          )}
                           {!bill.isPaid && (
                             <Button
                               variant="ghost"
