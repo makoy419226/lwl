@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Calendar, TrendingUp, Wallet, Receipt, FileText, CalendarDays, CalendarRange, Download, FileSpreadsheet, Truck, ShoppingBag } from "lucide-react";
+import { Loader2, Calendar, TrendingUp, Wallet, Receipt, FileText, CalendarDays, CalendarRange, Download, FileSpreadsheet, Truck, ShoppingBag, Users, Banknote } from "lucide-react";
 import * as XLSX from "xlsx";
 import type { ClientTransaction, Order } from "@shared/schema";
 
@@ -542,6 +542,74 @@ export default function SalesReports() {
     </div>
   );
 
+  const renderCashAdvanceSummary = (data: { deposits: any[] }) => {
+    type ClientSummaryItem = { clientName: string; clientPhone: string; totalAmount: number; transactions: any[] };
+    
+    const clientSummary = data.deposits.reduce<Record<string, ClientSummaryItem>>((acc, deposit) => {
+      const clientKey = `${deposit.clientId || deposit.clientName}`;
+      if (!acc[clientKey]) {
+        acc[clientKey] = {
+          clientName: deposit.clientName,
+          clientPhone: deposit.clientPhone,
+          totalAmount: 0,
+          transactions: [],
+        };
+      }
+      acc[clientKey].totalAmount += parseFloat(deposit.amount || "0");
+      acc[clientKey].transactions.push(deposit);
+      return acc;
+    }, {});
+
+    const sortedClients: ClientSummaryItem[] = Object.values(clientSummary).sort((a, b) => b.totalAmount - a.totalAmount);
+
+    return (
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-amber-600">
+            <Banknote className="w-5 h-5" />
+            Cash Advance Summary ({sortedClients.length} clients)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {sortedClients.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No cash advances for this period</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead className="text-center">Deposits</TableHead>
+                  <TableHead className="text-right">Total Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedClients.map((client, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{client.clientName}</TableCell>
+                    <TableCell className="text-muted-foreground">{client.clientPhone || '-'}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary">{client.transactions.length}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-amber-600">
+                      {client.totalAmount.toFixed(2)} AED
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-muted/50 font-bold">
+                  <TableCell colSpan={3} className="text-right">Total Cash Advances:</TableCell>
+                  <TableCell className="text-right text-amber-600">
+                    {sortedClients.reduce((sum, c) => sum + c.totalAmount, 0).toFixed(2)} AED
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
       <div className="sticky top-0 z-30 w-full bg-card border-b border-border shadow-sm">
@@ -668,6 +736,7 @@ export default function SalesReports() {
                 {renderOrderTables(dailyOrderData)}
                 {renderSummaryCards(dailyData)}
                 {renderTransactionTables(dailyData)}
+                {renderCashAdvanceSummary(dailyData)}
               </>
             )}
           </TabsContent>
@@ -700,6 +769,7 @@ export default function SalesReports() {
                 {renderOrderTables(monthlyOrderData)}
                 {renderSummaryCards(monthlyData)}
                 {renderTransactionTables(monthlyData)}
+                {renderCashAdvanceSummary(monthlyData)}
               </>
             )}
           </TabsContent>
@@ -734,6 +804,7 @@ export default function SalesReports() {
                 {renderOrderTables(yearlyOrderData)}
                 {renderSummaryCards(yearlyData)}
                 {renderTransactionTables(yearlyData)}
+                {renderCashAdvanceSummary(yearlyData)}
               </>
             )}
           </TabsContent>
