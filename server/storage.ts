@@ -848,6 +848,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAllOrders(): Promise<void> {
     await db.delete(orders);
+    // Reset all product stock to zero
+    await db.update(products).set({ stock: 0 });
   }
 
   async deleteAllTransactions(): Promise<void> {
