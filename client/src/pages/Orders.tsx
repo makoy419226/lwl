@@ -3105,7 +3105,7 @@ export default function Orders() {
                   (o) => o.id === deliveryPinDialog.orderId,
                 );
                 const itemCount = order?.items
-                  ? parseItems(order.items).reduce(
+                  ? parseOrderItems(order.items).reduce(
                       (sum: number, item: any) => sum + (item.quantity || 1),
                       0,
                     )
