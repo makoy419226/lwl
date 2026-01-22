@@ -113,6 +113,7 @@ export default function Products() {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [isWalkIn, setIsWalkIn] = useState(false);
   const [walkInName, setWalkInName] = useState("");
+  const [walkInPhone, setWalkInPhone] = useState("");
   const [walkInAddress, setWalkInAddress] = useState("");
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
   const [discountPercent, setDiscountPercent] = useState("");
@@ -485,6 +486,22 @@ export default function Products() {
       });
       return;
     }
+    if (isWalkIn && !walkInName.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter the customer's name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isWalkIn && !walkInPhone.trim()) {
+      toast({
+        title: "Phone required",
+        description: "Please enter the customer's phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!hasOrderItems) {
       toast({
         title: "No items",
@@ -549,9 +566,10 @@ export default function Products() {
       const finalTotal = subtotal - discountAmt + tipsAmt;
 
       createOrderMutation.mutate({
-        clientId: selectedClientId,
-        customerName: customerName.trim() || "Walk-in Customer",
-        customerPhone: isWalkIn ? walkInAddress : customerPhone.trim(),
+        clientId: isWalkIn ? null : selectedClientId,
+        customerName: isWalkIn ? walkInName.trim() : customerName.trim(),
+        customerPhone: isWalkIn ? walkInPhone.trim() : customerPhone.trim(),
+        deliveryAddress: isWalkIn ? walkInAddress.trim() : undefined,
         orderNumber,
         items: itemsText,
         totalAmount: subtotal.toFixed(2),
@@ -584,6 +602,7 @@ export default function Products() {
     setSelectedClientId(null);
     setIsWalkIn(false);
     setWalkInName("");
+    setWalkInPhone("");
     setWalkInAddress("");
     setDiscountPercent("");
     setTips("");
@@ -1151,6 +1170,7 @@ export default function Products() {
                       setCustomerName("Walk-in Customer");
                       setCustomerPhone("");
                       setWalkInName("");
+                      setWalkInPhone("");
                       setWalkInAddress("");
                     } else {
                       setIsWalkIn(false);
@@ -1199,7 +1219,7 @@ export default function Products() {
                 </Select>
                 {isWalkIn && (
                   <>
-                    <Label className="text-xs font-semibold mt-2">Customer Name</Label>
+                    <Label className="text-xs font-semibold mt-2">Customer Name <span className="text-destructive">*</span></Label>
                     <Input
                       className="h-8 text-xs"
                       placeholder="Enter name..."
@@ -1209,6 +1229,14 @@ export default function Products() {
                         setCustomerName(e.target.value || "Walk-in Customer");
                       }}
                       data-testid="input-walkin-name"
+                    />
+                    <Label className="text-xs font-semibold mt-2">Phone Number <span className="text-destructive">*</span></Label>
+                    <Input
+                      className="h-8 text-xs"
+                      placeholder="Enter phone number..."
+                      value={walkInPhone}
+                      onChange={(e) => setWalkInPhone(e.target.value)}
+                      data-testid="input-walkin-phone"
                     />
                     <Label className="text-xs font-semibold mt-2">Address</Label>
                     <Input
