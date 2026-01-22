@@ -1129,6 +1129,26 @@ export async function registerRoutes(
     }
   });
 
+  // Reset everything (admin password protected)
+  app.post("/api/admin/reset-all", async (req, res) => {
+    const { adminPassword } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ message: "Invalid admin password" });
+    }
+    
+    try {
+      // Reset in proper order to handle foreign key constraints
+      await storage.deleteAllOrders(); // This also resets product stock to 0
+      await storage.deleteAllBills(); // This also clears transactions
+      await storage.deleteAllClients(); // This clears clients and remaining transactions
+      res.json({ success: true, message: "All data has been reset successfully" });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to reset all data: " + err.message });
+    }
+  });
+
   // Verify admin password
   app.post("/api/admin/verify", async (req, res) => {
     const { adminPassword } = req.body;
