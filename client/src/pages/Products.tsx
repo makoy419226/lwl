@@ -758,15 +758,19 @@ export default function Products() {
                             }}
                             title="Click to edit image"
                           >
-                            {(product.imageUrl || getProductImage(product.name)) ? (
-                              <img
-                                src={product.imageUrl || getProductImage(product.name) || ''}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              getCategoryIcon(product.category)
-                            )}
+                            {(() => {
+                              const imgSrc = product.imageUrl || getProductImage(product.name);
+                              if (imgSrc) {
+                                return (
+                                  <img
+                                    src={imgSrc}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                );
+                              }
+                              return getCategoryIcon(product.category);
+                            })()}
                           </div>
 
                           <div
