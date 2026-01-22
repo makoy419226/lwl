@@ -3627,16 +3627,29 @@ function OrderForm({
   };
 
   function handleClientChange(clientId: string) {
-    const client = clients.find((c) => c.id === parseInt(clientId));
-    setFormData({
-      ...formData,
-      clientId,
-      selectedBillId: "",
-      billOption: "new",
-      customerName: client?.name || "",
-      customerPhone: client?.phone || "",
-      deliveryAddress: client?.address || "",
-    });
+    if (clientId === "walkin") {
+      // For walk-in, clear customer info so user can enter it
+      setFormData({
+        ...formData,
+        clientId,
+        selectedBillId: "",
+        billOption: "new",
+        customerName: "",
+        customerPhone: "",
+        deliveryAddress: "",
+      });
+    } else {
+      const client = clients.find((c) => c.id === parseInt(clientId));
+      setFormData({
+        ...formData,
+        clientId,
+        selectedBillId: "",
+        billOption: "new",
+        customerName: client?.name || "",
+        customerPhone: client?.phone || "",
+        deliveryAddress: client?.address || "",
+      });
+    }
   }
   useEffect(() => {
     console.log("Form Data Updated:", formData);
