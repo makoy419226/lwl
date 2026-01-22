@@ -884,7 +884,17 @@ export async function registerRoutes(
       let clientId = req.body.clientId;
 
       if (!clientId) {
-        const existingClient = await storage.getClient(clientId);
+        // For walk-in orders, search for existing client by phone number
+        let existingClient = null;
+        if (customerPhone && customerPhone.trim()) {
+          const allClients = await storage.getClients();
+          const normalizedInputPhone = customerPhone.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '');
+          existingClient = allClients.find(client => {
+            const clientPhone = (client.phone || '').replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '');
+            return clientPhone && normalizedInputPhone && clientPhone === normalizedInputPhone && normalizedInputPhone.length >= 7;
+          });
+        }
+        
         if (existingClient) {
           clientId = existingClient.id;
           customerName = existingClient.name;
