@@ -431,10 +431,10 @@ export default function Clients() {
               <td style="padding: 10px 8px; text-align: center;">${idx + 1}</td>
               <td style="padding: 10px 8px;">${format(new Date(t.date), "dd/MM/yyyy")}</td>
               <td style="padding: 10px 8px;">${format(new Date(t.date), "HH:mm")}</td>
-              <td style="padding: 10px 8px; text-transform: capitalize; font-weight: 500; color: ${t.type === "bill" ? "#2196f3" : "#4caf50"};">${t.type}</td>
+              <td style="padding: 10px 8px; text-transform: capitalize; font-weight: 500; color: ${t.type === "deposit" ? "#4caf50" : "#2196f3"};">${t.type}</td>
               <td style="padding: 10px 8px;">${t.description || "-"}</td>
-              <td style="padding: 10px 8px; text-align: right; color: ${t.type === "bill" ? "#2196f3" : "#4caf50"};">${parseFloat(t.amount).toFixed(2)} AED</td>
-              <td style="padding: 10px 8px; text-align: right; font-weight: 500;">${parseFloat(t.runningBalance).toFixed(2)} AED</td>
+              <td style="padding: 10px 8px; text-align: right; color: ${t.type === "deposit" ? "#4caf50" : "#2196f3"};">${t.type === "deposit" ? "+" : ""}${parseFloat(t.amount).toFixed(2)} AED</td>
+              <td style="padding: 10px 8px; text-align: right; font-weight: 500; color: #f44336;">${balance.toFixed(2)} AED</td>
             </tr>
           `,
             )
@@ -554,8 +554,8 @@ export default function Clients() {
             format(new Date(t.date), "HH:mm"),
             t.type.toUpperCase(),
             t.description || "-",
-            `${parseFloat(t.amount).toFixed(2)} AED`,
-            `${parseFloat(t.runningBalance).toFixed(2)} AED`,
+            `${t.type === "deposit" ? "+" : ""}${parseFloat(t.amount).toFixed(2)} AED`,
+            `${balance.toFixed(2)} AED`,
           ]);
         }
       }
@@ -1268,13 +1268,13 @@ export default function Clients() {
                               {tx.description}
                             </TableCell>
                             <TableCell
-                              className={`text-right font-medium ${tx.type === "bill" ? "text-blue-600" : "text-green-600"}`}
+                              className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}
                             >
-                              {tx.type === "bill" ? "+" : "-"}
+                              {tx.type === "deposit" ? "+" : ""}
                               {parseFloat(tx.amount).toFixed(2)}
                             </TableCell>
-                            <TableCell className="text-right font-bold">
-                              {parseFloat(tx.runningBalance).toFixed(2)}
+                            <TableCell className="text-right font-bold text-red-600">
+                              {getClientBalanceDue(transactionClient!).toFixed(2)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1589,11 +1589,11 @@ export default function Clients() {
                                   data-testid={`input-edit-amount-${tx.id}`}
                                 />
                               ) : (
-                                <>{tx.type === "bill" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED</>
+                                <>{tx.type === "deposit" ? "+" : ""}{parseFloat(tx.amount).toFixed(2)} AED</>
                               )}
                             </TableCell>
-                            <TableCell className="text-right font-bold">
-                              {parseFloat(tx.runningBalance).toFixed(2)} AED
+                            <TableCell className="text-right font-bold text-red-600">
+                              {getClientBalanceDue(viewingClient).toFixed(2)} AED
                             </TableCell>
                             <TableCell className="text-center">
                               {editingTransaction?.id === tx.id ? (
