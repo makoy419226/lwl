@@ -997,7 +997,11 @@ export default function Bills() {
                   PAID
                 </div>
                 <div className="text-sm mt-2 text-gray-600">
-                  Payment Method: {createdBill.bill.paymentMethod?.toUpperCase() || 'CASH'}
+                  Payment Method: {
+                    createdBill.bill.paymentMethod === 'deposit' 
+                      ? 'CLIENT CREDIT' 
+                      : (createdBill.bill.paymentMethod?.toUpperCase() || 'CASH')
+                  }
                 </div>
               </div>
             )}
@@ -1107,7 +1111,11 @@ export default function Bills() {
                   PAID
                 </div>
                 <div className="text-sm mt-2 text-gray-600">
-                  Payment Method: {viewBillPDF.paymentMethod?.toUpperCase() || 'CASH'}
+                  Payment Method: {
+                    viewBillPDF.paymentMethod === 'deposit' 
+                      ? 'CLIENT CREDIT' 
+                      : (viewBillPDF.paymentMethod?.toUpperCase() || 'CASH')
+                  }
                 </div>
               </div>
             )}
