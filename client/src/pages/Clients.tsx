@@ -923,7 +923,7 @@ export default function Clients() {
                           className="h-8 w-8 text-primary"
                           onClick={() => setTransactionClient(client)}
                           data-testid={`button-history-${client.id}`}
-                          title="Add Bill/Deposit"
+                          title="Add Deposit"
                         >
                           <History className="w-4 h-4" />
                         </Button>
@@ -1042,88 +1042,45 @@ export default function Clients() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 p-4 border rounded-lg">
-                  <h4 className="font-semibold text-blue-600 flex items-center gap-2">
-                    <Receipt className="w-4 h-4" /> Add Bill
-                  </h4>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Amount (AED)"
-                    value={billAmount}
-                    onChange={(e) => setBillAmount(e.target.value)}
-                    data-testid="input-bill-amount"
-                  />
-                  <Input
-                    placeholder="Description (optional)"
-                    value={billDescription}
-                    onChange={(e) => setBillDescription(e.target.value)}
-                    data-testid="input-bill-description"
-                  />
-                  <Button
-                    className="w-full"
-                    onClick={() => {
-                      if (billAmount && transactionClient) {
-                        addBillMutation.mutate({
-                          clientId: transactionClient.id,
-                          amount: billAmount,
-                          description: billDescription,
-                        });
-                      }
-                    }}
-                    disabled={!billAmount || addBillMutation.isPending}
-                    data-testid="button-add-bill"
-                  >
-                    {addBillMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Plus className="w-4 h-4 mr-2" />
-                    )}
-                    Add Bill
-                  </Button>
-                </div>
-
-                <div className="space-y-2 p-4 border rounded-lg">
-                  <h4 className="font-semibold text-green-600 flex items-center gap-2">
-                    <Wallet className="w-4 h-4" /> Add Deposit
-                  </h4>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Amount (AED)"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    data-testid="input-deposit-amount"
-                  />
-                  <Input
-                    placeholder="Description (optional)"
-                    value={depositDescription}
-                    onChange={(e) => setDepositDescription(e.target.value)}
-                    data-testid="input-deposit-description"
-                  />
-                  <Button
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    onClick={() => {
-                      if (depositAmount && transactionClient) {
-                        addDepositMutation.mutate({
-                          clientId: transactionClient.id,
-                          amount: depositAmount,
-                          description: depositDescription,
-                        });
-                      }
-                    }}
-                    disabled={!depositAmount || addDepositMutation.isPending}
-                    data-testid="button-add-deposit"
-                  >
-                    {addDepositMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Plus className="w-4 h-4 mr-2" />
-                    )}
-                    Add Deposit
-                  </Button>
-                </div>
+              <div className="space-y-2 p-4 border rounded-lg">
+                <h4 className="font-semibold text-green-600 flex items-center gap-2">
+                  <Wallet className="w-4 h-4" /> Add Deposit
+                </h4>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Amount (AED)"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  data-testid="input-deposit-amount"
+                />
+                <Input
+                  placeholder="Description (optional)"
+                  value={depositDescription}
+                  onChange={(e) => setDepositDescription(e.target.value)}
+                  data-testid="input-deposit-description"
+                />
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    if (depositAmount && transactionClient) {
+                      addDepositMutation.mutate({
+                        clientId: transactionClient.id,
+                        amount: depositAmount,
+                        description: depositDescription,
+                      });
+                    }
+                  }}
+                  disabled={!depositAmount || addDepositMutation.isPending}
+                  data-testid="button-add-deposit"
+                >
+                  {addDepositMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
+                  )}
+                  Add Deposit
+                </Button>
               </div>
 
               {unpaidBills && unpaidBills.length > 0 && (
@@ -1715,7 +1672,7 @@ export default function Clients() {
                   onClick={() => setTransactionClient(viewingClient)}
                 >
                   <History className="w-4 h-4 mr-2" />
-                  Add Bill/Deposit
+                  Add Deposit
                 </Button>
                 <Button
                   variant="outline"
