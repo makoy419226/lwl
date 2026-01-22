@@ -3527,10 +3527,17 @@ export default function Orders() {
                       </TableHeader>
                       <TableBody>
                         {orderItems.map((item, index) => {
-                          const product = products?.find(
+                          const baseName = item.name.replace(/\s*\([^)]*\)\s*$/, "").trim();
+                          let product = products?.find(
                             (p) =>
                               p.name.toLowerCase() === item.name.toLowerCase(),
                           );
+                          if (!product) {
+                            product = products?.find(
+                              (p) =>
+                                p.name.toLowerCase() === baseName.toLowerCase(),
+                            );
+                          }
                           const unitPrice = product
                             ? parseFloat(product.price || "0")
                             : 0;
