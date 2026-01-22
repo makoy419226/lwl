@@ -548,64 +548,53 @@ export default function SalesReports() {
     </div>
   );
 
-  const renderCashAdvanceSummary = (data: { deposits: any[] }) => {
-    type ClientSummaryItem = { clientName: string; clientPhone: string; totalAmount: number; transactions: any[] };
-    
-    const clientSummary = data.deposits.reduce<Record<string, ClientSummaryItem>>((acc, deposit) => {
-      const clientKey = `${deposit.clientId || deposit.clientName}`;
-      if (!acc[clientKey]) {
-        acc[clientKey] = {
-          clientName: deposit.clientName,
-          clientPhone: deposit.clientPhone,
-          totalAmount: 0,
-          transactions: [],
-        };
-      }
-      acc[clientKey].totalAmount += parseFloat(deposit.amount || "0");
-      acc[clientKey].transactions.push(deposit);
-      return acc;
-    }, {});
+  const renderCashAdvanceSummary = () => {
+    // Show current credit available for all clients (from their deposit field)
+    const clientsWithCredit = (allClients || [])
+      .filter((client: any) => parseFloat(client.deposit || "0") > 0)
+      .map((client: any) => ({
+        clientName: client.name,
+        clientPhone: client.phone,
+        creditAvailable: parseFloat(client.deposit || "0"),
+      }))
+      .sort((a, b) => b.creditAvailable - a.creditAvailable);
 
-    const sortedClients: ClientSummaryItem[] = Object.values(clientSummary).sort((a, b) => b.totalAmount - a.totalAmount);
+    const totalCreditAvailable = clientsWithCredit.reduce((sum, c) => sum + c.creditAvailable, 0);
 
     return (
       <Card className="mt-6">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-amber-600">
             <Banknote className="w-5 h-5" />
-            Cash Advance Summary ({sortedClients.length} clients)
+            Cash Advance Summary ({clientsWithCredit.length} clients with credit)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {sortedClients.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No cash advances for this period</p>
+          {clientsWithCredit.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No clients with available credit</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Client</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead className="text-center">Deposits</TableHead>
-                  <TableHead className="text-right">Total Amount</TableHead>
+                  <TableHead className="text-right">Credit Available</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedClients.map((client, index) => (
+                {clientsWithCredit.map((client, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{client.clientName}</TableCell>
                     <TableCell className="text-muted-foreground">{client.clientPhone || '-'}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="secondary">{client.transactions.length}</Badge>
-                    </TableCell>
                     <TableCell className="text-right font-semibold text-amber-600">
-                      {client.totalAmount.toFixed(2)} AED
+                      {client.creditAvailable.toFixed(2)} AED
                     </TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="bg-muted/50 font-bold">
-                  <TableCell colSpan={3} className="text-right">Total Cash Advances:</TableCell>
+                  <TableCell colSpan={2} className="text-right">Total Credit Available:</TableCell>
                   <TableCell className="text-right text-amber-600">
-                    {sortedClients.reduce((sum, c) => sum + c.totalAmount, 0).toFixed(2)} AED
+                    {totalCreditAvailable.toFixed(2)} AED
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -742,7 +731,7 @@ export default function SalesReports() {
                 {renderOrderTables(dailyOrderData)}
                 {renderSummaryCards(dailyData)}
                 {renderTransactionTables(dailyData)}
-                {renderCashAdvanceSummary(dailyData)}
+                {renderCashAdvanceSummary()}
               </>
             )}
           </TabsContent>
@@ -775,7 +764,7 @@ export default function SalesReports() {
                 {renderOrderTables(monthlyOrderData)}
                 {renderSummaryCards(monthlyData)}
                 {renderTransactionTables(monthlyData)}
-                {renderCashAdvanceSummary(monthlyData)}
+                {renderCashAdvanceSummary()}
               </>
             )}
           </TabsContent>
@@ -810,7 +799,7 @@ export default function SalesReports() {
                 {renderOrderTables(yearlyOrderData)}
                 {renderSummaryCards(yearlyData)}
                 {renderTransactionTables(yearlyData)}
-                {renderCashAdvanceSummary(yearlyData)}
+                {renderCashAdvanceSummary()}
               </>
             )}
           </TabsContent>
