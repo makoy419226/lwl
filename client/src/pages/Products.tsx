@@ -3,7 +3,6 @@ import { useSearch } from "wouter";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients, useCreateClient } from "@/hooks/use-clients";
 import { getProductImage } from "@/lib/productImages";
-import testAbayaImage from "@/assets/products/abaya.png";
 import {
   Loader2,
   Search,
@@ -752,22 +751,34 @@ export default function Products() {
                           data-testid={`box-product-${product.id}`}
                         >
                           <div
-                            className="w-14 h-14 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm"
+                            className="w-14 h-14 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm relative"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditImage(product.id, product.imageUrl);
                             }}
                             title="Click to edit image"
                           >
-                            <img
-                              src={product.imageUrl || getProductImage(product.name) || testAbayaImage}
-                              alt={product.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                console.log('Image failed to load:', product.name);
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
+                            {(() => {
+                              const imageSrc = product.imageUrl || getProductImage(product.name);
+                              if (imageSrc) {
+                                return (
+                                  <img
+                                    src={imageSrc}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                      const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                                      if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                                    }}
+                                  />
+                                );
+                              }
+                              return null;
+                            })()}
+                            <div className="fallback-icon absolute inset-0 flex items-center justify-center" style={{ display: (product.imageUrl || getProductImage(product.name)) ? 'none' : 'flex' }}>
+                              {getCategoryIcon(product.category)}
+                            </div>
                           </div>
 
                           <div
