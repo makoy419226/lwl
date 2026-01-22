@@ -572,7 +572,7 @@ export default function Products() {
         clientId: isWalkIn ? null : selectedClientId,
         customerName: isWalkIn ? walkInName.trim() : customerName.trim(),
         customerPhone: isWalkIn ? walkInPhone.trim() : customerPhone.trim(),
-        deliveryAddress: isWalkIn ? walkInAddress.trim() : undefined,
+        deliveryAddress: walkInAddress.trim() || "n/a",
         orderNumber,
         items: itemsText,
         totalAmount: subtotal.toFixed(2),
@@ -584,7 +584,7 @@ export default function Products() {
         deliveryType: deliveryType,
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
-        notes: isWalkIn && walkInAddress ? `Address: ${walkInAddress}` : undefined,
+        notes: `Address: ${walkInAddress.trim() || "n/a"}`,
       });
 
       setShowPinDialog(false);
@@ -1157,6 +1157,7 @@ export default function Products() {
                         setSelectedClientId(client.id);
                         setCustomerName(client.name);
                         setCustomerPhone(client.phone || "");
+                        setWalkInAddress(client.address || "");
                         if (client.discountPercent) {
                           setDiscountPercent(client.discountPercent);
                         }
@@ -1214,16 +1215,16 @@ export default function Products() {
                       onChange={(e) => setWalkInPhone(e.target.value)}
                       data-testid="input-walkin-phone"
                     />
-                    <Label className="text-xs font-semibold mt-2">Address</Label>
-                    <Input
-                      className="h-8 text-xs"
-                      placeholder="Enter address..."
-                      value={walkInAddress}
-                      onChange={(e) => setWalkInAddress(e.target.value)}
-                      data-testid="input-walkin-address"
-                    />
                   </>
                 )}
+                <Label className="text-xs font-semibold mt-2">Address <span className="text-destructive">*</span></Label>
+                <Input
+                  className="h-8 text-xs"
+                  placeholder="Enter address..."
+                  value={walkInAddress}
+                  onChange={(e) => setWalkInAddress(e.target.value)}
+                  data-testid="input-walkin-address"
+                />
                 <Label className="text-xs font-semibold mt-2">Service Type</Label>
                 <Select
                   value={orderType}
