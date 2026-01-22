@@ -409,9 +409,9 @@ export default function Clients() {
 
 
   const downloadClientPDF = async (client: Client) => {
-    const totalBill = parseFloat(client.amount || "0");
-    const totalDeposit = parseFloat(client.deposit || "0");
-    const balance = parseFloat(client.balance || "0");
+    const totalBill = getClientTotalBills(client);
+    const totalDeposit = getClientTotalDeposits(client);
+    const balance = getClientBalanceDue(client);
 
     // Fetch all transactions for this client
     let transactionRows = "";
@@ -533,9 +533,9 @@ export default function Clients() {
   };
 
   const downloadClientExcel = async (client: Client) => {
-    const totalBill = parseFloat(client.amount || "0");
-    const totalDeposit = parseFloat(client.deposit || "0");
-    const balance = parseFloat(client.balance || "0");
+    const totalBill = getClientTotalBills(client);
+    const totalDeposit = getClientTotalDeposits(client);
+    const balance = getClientBalanceDue(client);
 
     // Fetch all transactions for this client
     let transactionData: any[][] = [];
@@ -622,36 +622,48 @@ export default function Clients() {
     }, 0);
   };
 
-  const getClientTotalBill = (client: Client): number => {
-    const baseBillAmount = parseFloat(client.amount || "0");
-    if (!allOrders) return baseBillAmount;
-    
-    // Find all orders for this client that are linked to bills
-    const clientOrders = allOrders.filter(order => order.clientId === client.id && order.billId);
-    const ordersTotal = clientOrders.reduce((sum, order) => {
-      return sum + parseFloat(order.totalAmount || "0");
+  // Calculate Total Bills = sum of paid amounts from orders (what was actually paid)
+  const getClientTotalBills = (client: Client): number => {
+    if (!allOrders) return 0;
+    const clientOrders = allOrders.filter(order => order.clientId === client.id);
+    return clientOrders.reduce((sum, order) => {
+      return sum + parseFloat(order.paidAmount || "0");
     }, 0);
-    
-    return baseBillAmount + ordersTotal;
+  };
+
+  // Calculate Total Deposits = sum of deposit transactions (money customer gave)
+  const getClientTotalDeposits = (client: Client): number => {
+    return parseFloat(client.deposit || "0");
+  };
+
+  // Calculate Balance Due = unpaid order amounts (total - paid)
+  const getClientBalanceDue = (client: Client): number => {
+    if (!allOrders) return 0;
+    const clientOrders = allOrders.filter(order => order.clientId === client.id);
+    return clientOrders.reduce((sum, order) => {
+      const total = parseFloat(order.totalAmount || "0");
+      const paid = parseFloat(order.paidAmount || "0");
+      return sum + (total - paid);
+    }, 0);
   };
 
   const totalAmount =
-    clients?.reduce((sum, c) => sum + getClientTotalBill(c), 0) || 0;
+    clients?.reduce((sum, c) => sum + getClientTotalBills(c), 0) || 0;
   const totalDeposit =
-    clients?.reduce((sum, c) => sum + parseFloat(c.deposit || "0"), 0) || 0;
+    clients?.reduce((sum, c) => sum + getClientTotalDeposits(c), 0) || 0;
   const totalBalance =
-    clients?.reduce((sum, c) => sum + parseFloat(c.balance || "0"), 0) || 0;
+    clients?.reduce((sum, c) => sum + getClientBalanceDue(c), 0) || 0;
 
   const displayedClients = useMemo(() => {
     if (!clients) return [];
     if (showDueClientsOnly) {
-      return clients.filter((c) => parseFloat(c.balance || "0") > 0);
+      return clients.filter((c) => getClientBalanceDue(c) > 0);
     }
     return clients;
-  }, [clients, showDueClientsOnly]);
+  }, [clients, showDueClientsOnly, allOrders]);
 
   const dueClientsCount =
-    clients?.filter((c) => parseFloat(c.balance || "0") > 0).length || 0;
+    clients?.filter((c) => getClientBalanceDue(c) > 0).length || 0;
 
   return (
     <div className="flex flex-col h-screen">
@@ -861,19 +873,19 @@ export default function Clients() {
                       className="text-right font-medium text-blue-600"
                       data-testid={`text-client-amount-${client.id}`}
                     >
-                      {getClientTotalBill(client).toFixed(2)}
+                      {getClientTotalBills(client).toFixed(2)}
                     </TableCell>
                     <TableCell
                       className="text-right font-medium text-green-600"
                       data-testid={`text-client-deposit-${client.id}`}
                     >
-                      {parseFloat(client.deposit || "0").toFixed(2)}
+                      {getClientTotalDeposits(client).toFixed(2)}
                     </TableCell>
                     <TableCell
-                      className={`text-right font-bold ${parseFloat(client.balance || "0") > 0 ? "text-destructive" : "text-primary"}`}
+                      className={`text-right font-bold ${getClientBalanceDue(client) > 0 ? "text-destructive" : "text-primary"}`}
                       data-testid={`text-client-balance-${client.id}`}
                     >
-                      {parseFloat(client.balance || "0").toFixed(2)}
+                      {getClientBalanceDue(client).toFixed(2)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
@@ -1405,21 +1417,21 @@ export default function Clients() {
                   <Receipt className="w-6 h-6 mx-auto mb-2 text-blue-600" />
                   <p className="text-sm text-muted-foreground">Total Bills</p>
                   <p className="text-xl font-bold text-blue-600">
-                    {getClientTotalBill(viewingClient).toFixed(2)} AED
+                    {getClientTotalBills(viewingClient).toFixed(2)} AED
                   </p>
                 </div>
                 <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 text-center">
                   <Wallet className="w-6 h-6 mx-auto mb-2 text-green-600" />
                   <p className="text-sm text-muted-foreground">Total Deposits</p>
                   <p className="text-xl font-bold text-green-600">
-                    {parseFloat(viewingClient.deposit || "0").toFixed(2)} AED
+                    {getClientTotalDeposits(viewingClient).toFixed(2)} AED
                   </p>
                 </div>
-                <div className={`rounded-lg p-4 text-center ${parseFloat(viewingClient.balance || "0") > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-green-50 dark:bg-green-950/30"}`}>
-                  <Wallet className={`w-6 h-6 mx-auto mb-2 ${parseFloat(viewingClient.balance || "0") > 0 ? "text-red-600" : "text-green-600"}`} />
+                <div className={`rounded-lg p-4 text-center ${getClientBalanceDue(viewingClient) > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-green-50 dark:bg-green-950/30"}`}>
+                  <Wallet className={`w-6 h-6 mx-auto mb-2 ${getClientBalanceDue(viewingClient) > 0 ? "text-red-600" : "text-green-600"}`} />
                   <p className="text-sm text-muted-foreground">Balance Due</p>
-                  <p className={`text-xl font-bold ${parseFloat(viewingClient.balance || "0") > 0 ? "text-red-600" : "text-green-600"}`}>
-                    {parseFloat(viewingClient.balance || "0").toFixed(2)} AED
+                  <p className={`text-xl font-bold ${getClientBalanceDue(viewingClient) > 0 ? "text-red-600" : "text-green-600"}`}>
+                    {getClientBalanceDue(viewingClient).toFixed(2)} AED
                   </p>
                 </div>
               </div>
