@@ -169,17 +169,17 @@ app.use((req, res, next) => {
     }
   }
 
-  // Schedule daily report at 6:00 AM UAE time (UTC+4)
+  // Schedule daily report at 1:00 AM UAE time (UTC+4)
   function scheduleNextDailyReport() {
     const now = new Date();
     const uaeOffset = 4 * 60 * 60 * 1000; // UAE is UTC+4
     const nowUAE = new Date(now.getTime() + uaeOffset);
     
-    // Set target time to 6:00 AM UAE
+    // Set target time to 1:00 AM UAE
     const targetUAE = new Date(nowUAE);
-    targetUAE.setHours(6, 0, 0, 0);
+    targetUAE.setHours(1, 0, 0, 0);
     
-    // If we've passed 6 AM today, schedule for tomorrow
+    // If we've passed 1 AM today, schedule for tomorrow
     if (nowUAE >= targetUAE) {
       targetUAE.setDate(targetUAE.getDate() + 1);
     }
@@ -198,5 +198,5 @@ app.use((req, res, next) => {
 
   // Start the scheduler
   scheduleNextDailyReport();
-  log(`Daily sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} at 6:00 AM UAE time)`, "scheduler");
+  log(`Daily sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} at 1:00 AM UAE time)`, "scheduler");
 })();

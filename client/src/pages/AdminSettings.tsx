@@ -213,7 +213,7 @@ export default function AdminSettings() {
               Daily Sales Report
             </CardTitle>
             <CardDescription>
-              Daily sales reports are automatically sent to idusma0010@gmail.com at 6:00 AM UAE time.
+              Daily sales reports are automatically sent to idusma0010@gmail.com at 1:00 AM UAE time.
             </CardDescription>
           </CardHeader>
           <CardContent>
