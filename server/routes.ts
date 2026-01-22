@@ -880,46 +880,47 @@ export async function registerRoutes(
       //   return res.status(400).json({ message: "Customer phone is required" });
       // }
 
-      // Check if customer already exists and auto-add to clients list if new
+      // Check if customer already exists - if so, reject and require using the existing client
       let clientId = req.body.clientId;
 
       if (!clientId) {
-        // For walk-in orders, search for existing client by phone number
-        let existingClient = null;
+        // For walk-in orders, check if phone matches existing client - if so, reject
         if (customerPhone && customerPhone.trim()) {
           const allClients = await storage.getClients();
           const normalizedInputPhone = customerPhone.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '');
-          existingClient = allClients.find(client => {
+          const existingClient = allClients.find(client => {
             const clientPhone = (client.phone || '').replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '');
             return clientPhone && normalizedInputPhone && clientPhone === normalizedInputPhone && normalizedInputPhone.length >= 7;
           });
+          
+          if (existingClient) {
+            // Block creation - client already exists
+            return res
+              .status(400)
+              .json({ message: `This client already exists: ${existingClient.name}. Please select them from the client list instead of using Walk-in.` });
+          }
         }
         
-        if (existingClient) {
-          clientId = existingClient.id;
-          customerName = existingClient.name;
-          customerPhone = existingClient.phone;
-        } else {
-          // Validate required fields
-          if (!customerName || !customerName.trim()) {
-            return res
-              .status(400)
-              .json({ message: "Customer name is required" });
-          }
-          if (!customerPhone || !customerPhone.trim()) {
-            return res
-              .status(400)
-              .json({ message: "Customer phone is required" });
-          }
-          // Auto-create new client
-          const newClient = await storage.createClient({
-            name: customerName.trim(),
-            phone: customerPhone.trim(),
-            email: "",
-            address: deliveryAddress?.trim() || "",
-          });
-          clientId = newClient.id;
+        // No matching client found - create new one
+        // Validate required fields
+        if (!customerName || !customerName.trim()) {
+          return res
+            .status(400)
+            .json({ message: "Customer name is required" });
         }
+        if (!customerPhone || !customerPhone.trim()) {
+          return res
+            .status(400)
+            .json({ message: "Customer phone is required" });
+        }
+        // Auto-create new client
+        const newClient = await storage.createClient({
+          name: customerName.trim(),
+          phone: customerPhone.trim(),
+          email: "",
+          address: deliveryAddress?.trim() || "",
+        });
+        clientId = newClient.id;
       }
 
       let assignedBillId = req.body.requestBillId || null;
