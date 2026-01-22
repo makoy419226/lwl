@@ -147,6 +147,7 @@ export default function Orders() {
   const [deliveryPhotoPreviews, setDeliveryPhotoPreviews] = useState<string[]>(
     [],
   );
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [tagPinDialog, setTagPinDialog] = useState<{ orderId: number } | null>(
     null,
   );
@@ -834,6 +835,7 @@ export default function Orders() {
               deliveredByWorkerId: data.worker.id,
               deliveryPhoto: deliveryPhotos[0] || null,
               deliveryPhotos: deliveryPhotos.length > 0 ? deliveryPhotos : null,
+              deliveryAddress: deliveryAddress || null,
               itemCountVerified: itemCountVerified,
               verifiedAt: itemCountVerified ? new Date().toISOString() : null,
               verifiedByWorkerId: itemCountVerified ? data.worker.id : null,
@@ -846,6 +848,7 @@ export default function Orders() {
         setDeliveryPinError("");
         setDeliveryPhotos([]);
         setDeliveryPhotoPreviews([]);
+        setDeliveryAddress("");
       }
     },
     onError: () => {
@@ -896,10 +899,13 @@ export default function Orders() {
   };
 
   const handleDeliveryWithPin = (orderId: number) => {
+    const order = orders?.find(o => o.id === orderId);
+    const client = order?.clientId ? clients?.find(c => c.id === order.clientId) : null;
     setDeliveryPinDialog({ orderId });
     setDeliveryPin("");
     setDeliveryPinError("");
     setItemCountVerified(false);
+    setDeliveryAddress(client?.address || "");
   };
 
   const submitDeliveryPin = () => {
@@ -1468,18 +1474,18 @@ export default function Orders() {
                             </div>
 
                             {/* Delivery Address Row - shown in For Delivery tab */}
-                            {activeTab === "for-delivery" && client && (
+                            {activeTab === "for-delivery" && (
                               <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3 space-y-2">
                                 <div className="flex items-start gap-2">
                                   <MapPin className="w-4 h-4 text-cyan-600 mt-0.5 shrink-0" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs text-muted-foreground font-medium uppercase">Delivery Address</p>
                                     <p className="text-sm font-medium break-words">
-                                      {client.address || "No address on file"}
+                                      {order.deliveryAddress || client?.address || "No address on file"}
                                     </p>
                                   </div>
                                 </div>
-                                {client.phone && (
+                                {client?.phone && (
                                   <div className="flex items-center gap-2">
                                     <Phone className="w-4 h-4 text-cyan-600 shrink-0" />
                                     <a 
@@ -1879,18 +1885,18 @@ export default function Orders() {
                                                     </p>
                                                   </div>
                                                 </div>
-                                                {activeTab === "for-delivery" && client?.address && (
+                                                {activeTab === "for-delivery" && (order.deliveryAddress || client?.address) && (
                                                   <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3 space-y-2">
                                                     <div className="flex items-start gap-2">
                                                       <MapPin className="w-4 h-4 text-cyan-600 mt-0.5 shrink-0" />
                                                       <div className="flex-1 min-w-0">
                                                         <p className="text-xs text-muted-foreground font-medium uppercase">Delivery Address</p>
                                                         <p className="text-sm font-medium break-words">
-                                                          {client.address}
+                                                          {order.deliveryAddress || client?.address}
                                                         </p>
                                                       </div>
                                                     </div>
-                                                    {client.phone && (
+                                                    {client?.phone && (
                                                       <div className="flex items-center gap-2">
                                                         <Phone className="w-4 h-4 text-cyan-600 shrink-0" />
                                                         <a 
@@ -3069,6 +3075,20 @@ export default function Orders() {
                   </div>
                 );
               })()}
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Delivery Address
+              </Label>
+              <Textarea
+                placeholder="Enter delivery address..."
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                className="min-h-[80px] resize-none"
+                data-testid="input-delivery-address"
+              />
+            </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">Enter Staff PIN</Label>

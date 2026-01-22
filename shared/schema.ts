@@ -126,6 +126,7 @@ export const orders = pgTable("orders", {
   tips: numeric("tips", { precision: 12, scale: 2 }).default("0"),
   deliveryPhoto: text("delivery_photo"),
   deliveryPhotos: text("delivery_photos").array(),
+  deliveryAddress: text("delivery_address"),
   stockDeducted: boolean("stock_deducted").default(false),
   itemCountVerified: boolean("item_count_verified").default(false),
   verifiedAt: timestamp("verified_at"),
