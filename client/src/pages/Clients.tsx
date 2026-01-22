@@ -1241,12 +1241,12 @@ export default function Clients() {
                           const sortedTx = [...transactions].sort(
                             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                           );
-                          let runningBalance = 0;
+                          let remainingBalance = 0;
                           return sortedTx.map((tx) => {
-                            if (tx.type === "bill") {
-                              runningBalance += parseFloat(tx.amount);
+                            if (tx.type === "deposit") {
+                              remainingBalance += parseFloat(tx.amount);
                             } else {
-                              runningBalance -= parseFloat(tx.amount);
+                              remainingBalance -= parseFloat(tx.amount);
                             }
                             return (
                               <TableRow key={tx.id}>
@@ -1266,11 +1266,11 @@ export default function Clients() {
                                 <TableCell
                                   className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}
                                 >
-                                  {tx.type === "deposit" ? "+" : ""}
+                                  {tx.type === "deposit" ? "+" : "-"}
                                   {parseFloat(tx.amount).toFixed(2)}
                                 </TableCell>
-                                <TableCell className={`text-right font-bold ${runningBalance > 0 ? "text-red-600" : "text-green-600"}`}>
-                                  {runningBalance.toFixed(2)}
+                                <TableCell className={`text-right font-bold ${remainingBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                  {remainingBalance.toFixed(2)}
                                 </TableCell>
                               </TableRow>
                             );
@@ -1551,14 +1551,14 @@ export default function Clients() {
                           const sortedTx = [...viewingClientTransactions].sort(
                             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                           );
-                          let runningBalance = 0;
+                          let remainingBalance = 0;
                           return sortedTx.map((tx) => {
-                            if (tx.type === "bill") {
-                              runningBalance += parseFloat(tx.amount);
+                            if (tx.type === "deposit") {
+                              remainingBalance += parseFloat(tx.amount);
                             } else {
-                              runningBalance -= parseFloat(tx.amount);
+                              remainingBalance -= parseFloat(tx.amount);
                             }
-                            const currentBalance = runningBalance;
+                            const currentBalance = remainingBalance;
                             return (
                           <TableRow key={tx.id}>
                             <TableCell className="text-sm">
@@ -1599,10 +1599,10 @@ export default function Clients() {
                                   data-testid={`input-edit-amount-${tx.id}`}
                                 />
                               ) : (
-                                <>{tx.type === "deposit" ? "+" : ""}{parseFloat(tx.amount).toFixed(2)} AED</>
+                                <>{tx.type === "deposit" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED</>
                               )}
                             </TableCell>
-                            <TableCell className={`text-right font-bold ${currentBalance > 0 ? "text-red-600" : "text-green-600"}`}>
+                            <TableCell className={`text-right font-bold ${currentBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
                               {currentBalance.toFixed(2)} AED
                             </TableCell>
                             <TableCell className="text-center">
