@@ -1061,6 +1061,23 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Reset all orders (admin password protected)
+  app.post("/api/orders/reset-all", async (req, res) => {
+    const { adminPassword } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ message: "Invalid admin password" });
+    }
+    
+    try {
+      await storage.deleteAllOrders();
+      res.json({ success: true, message: "All orders have been reset" });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to reset orders: " + err.message });
+    }
+  });
+
   // Packing Workers routes
   app.get("/api/packing-workers", async (req, res) => {
     const workers = await storage.getPackingWorkers();

@@ -77,6 +77,7 @@ import {
   Sparkles,
   ShoppingCart,
   Footprints,
+  RotateCcw,
 } from "lucide-react";
 
 const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
@@ -157,6 +158,9 @@ export default function Orders() {
     format(new Date(), "yyyy-MM-dd"),
   );
   const [viewPhotoOrder, setViewPhotoOrder] = useState<Order | null>(null);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [resetError, setResetError] = useState("");
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const reportTableRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -393,6 +397,27 @@ export default function Orders() {
           variant: "destructive",
         });
       }
+    },
+  });
+
+  const resetOrdersMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await apiRequest("POST", "/api/orders/reset-all", { adminPassword: password });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      setShowResetDialog(false);
+      setAdminPassword("");
+      setResetError("");
+      toast({
+        title: "Orders Reset",
+        description: "All orders have been cleared successfully.",
+      });
+    },
+    onError: (error: any) => {
+      setResetError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to reset orders");
     },
   });
 
@@ -1229,6 +1254,75 @@ export default function Orders() {
                 data-testid="input-search-orders"
               />
             </div>
+            <Dialog open={showResetDialog} onOpenChange={(open) => {
+              setShowResetDialog(open);
+              if (!open) {
+                setAdminPassword("");
+                setResetError("");
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 border-destructive/50 text-destructive hover:bg-destructive/10"
+                  data-testid="button-reset-orders"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="w-5 h-5" />
+                    Reset All Orders
+                  </DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete all orders from the system. This action cannot be undone. Enter the admin password to confirm.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Admin Password</Label>
+                    <Input
+                      id="admin-password"
+                      type="password"
+                      placeholder="Enter admin password..."
+                      value={adminPassword}
+                      onChange={(e) => {
+                        setAdminPassword(e.target.value);
+                        setResetError("");
+                      }}
+                      data-testid="input-admin-password"
+                    />
+                    {resetError && (
+                      <p className="text-sm text-destructive">{resetError}</p>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowResetDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => resetOrdersMutation.mutate(adminPassword)}
+                    disabled={!adminPassword || resetOrdersMutation.isPending}
+                    data-testid="button-confirm-reset"
+                  >
+                    {resetOrdersMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                    )}
+                    Reset All Orders
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
