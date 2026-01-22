@@ -556,28 +556,46 @@ export default function Bills() {
     setShowPaymentDialog(true);
   };
 
-  const downloadBillPDF = async (bill: Bill) => {
+  const printBillPDF = async (bill: Bill) => {
     setViewBillPDF(bill);
-    // Increased timeout slightly to ensure DOM is fully rendered
-    setTimeout(async () => {
+    setTimeout(() => {
       if (billPdfRef.current) {
-        const opt = {
-          margin: 5,
-          filename: `Bill-${bill.referenceNumber || bill.id}.pdf`,
-          image: { type: "jpeg" as const, quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: {
-            unit: "mm",
-            format: [80, 150] as [number, number],
-            orientation: "portrait" as const,
-          },
-        };
-        await html2pdf().set(opt).from(billPdfRef.current).save();
+        const printContent = billPdfRef.current.innerHTML;
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>Bill - ${bill.referenceNumber || bill.id}</title>
+                <style>
+                  body {
+                    font-family: 'Courier New', monospace;
+                    font-size: 11px;
+                    padding: 10px;
+                    max-width: 80mm;
+                    margin: 0 auto;
+                  }
+                  .text-center { text-align: center; }
+                  .font-bold { font-weight: bold; }
+                  .border-b { border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+                  @media print {
+                    body { margin: 0; padding: 5px; }
+                  }
+                </style>
+              </head>
+              <body>
+                ${printContent}
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 250);
+        }
         setViewBillPDF(null);
-        toast({
-          title: "PDF Downloaded",
-          description: `Bill ${bill.referenceNumber || bill.id} saved`,
-        });
       }
     }, 500);
   };
@@ -665,11 +683,11 @@ export default function Bills() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => downloadBillPDF(bill)}
-                            data-testid={`button-download-pdf-${bill.id}`}
-                            title="Download PDF"
+                            onClick={() => printBillPDF(bill)}
+                            data-testid={`button-print-pdf-${bill.id}`}
+                            title="Print Bill"
                           >
-                            <Download className="w-4 h-4 text-primary" />
+                            <Printer className="w-4 h-4 text-primary" />
                           </Button>
                           <Button
                             variant="ghost"
