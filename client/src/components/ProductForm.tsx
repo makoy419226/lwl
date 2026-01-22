@@ -2,18 +2,29 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProductSchema, type Product } from "@shared/schema";
 import { z } from "zod";
-import { useCreateProduct, useUpdateProduct } from "@/hooks/use-products";
+import { useCreateProduct, useUpdateProduct, useProducts } from "@/hooks/use-products";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload, X, Image } from "lucide-react";
+
+const CATEGORIES = [
+  "Arabic Clothes",
+  "Men's Clothes",
+  "Ladies' Clothes",
+  "Baby Clothes",
+  "Linens",
+  "Shop Items",
+  "General Items",
+  "Shoes, Carpets & More",
+];
 
 // Extend schema to coerce numbers from string inputs
 const formSchema = insertProductSchema.extend({
-  stockQuantity: z.coerce.number().min(0),
+  stockQuantity: z.coerce.number().min(0).optional(),
   price: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
 });
 
@@ -28,6 +39,7 @@ interface ProductFormProps {
 export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps) {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const { data: products } = useProducts();
   const [imagePreview, setImagePreview] = useState<string>(defaultValues?.imageUrl || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,22 +120,33 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues ? {
       ...defaultValues,
-      stockQuantity: defaultValues.stockQuantity || 0,
       price: defaultValues.price || "",
       description: defaultValues.description || "",
       sku: defaultValues.sku || "",
       imageUrl: defaultValues.imageUrl || "",
-      category: defaultValues.category || "Laundry",
+      category: defaultValues.category || "Arabic Clothes",
     } : {
       name: "",
       description: "",
-      category: "Laundry",
-      stockQuantity: 0,
+      category: "Arabic Clothes",
       price: "",
       sku: "",
       imageUrl: "",
     },
   });
+
+  const watchedName = form.watch("name");
+  const watchedCategory = form.watch("category");
+
+  useEffect(() => {
+    if (mode === "create" && watchedName && watchedName.length >= 3 && watchedCategory) {
+      const prefix = watchedName.substring(0, 3).toUpperCase();
+      const categoryProducts = products?.filter(p => p.category === watchedCategory) || [];
+      const nextNumber = categoryProducts.length + 1;
+      const newSKU = `${prefix}-${String(nextNumber).padStart(3, '0')}`;
+      form.setValue("sku", newSKU);
+    }
+  }, [watchedName, watchedCategory, mode, products, form]);
 
   const onSubmit = (values: FormValues) => {
     if (mode === "create") {
@@ -159,46 +182,28 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || "Laundry"}>
-                  <FormControl>
-                    <SelectTrigger className="rounded-lg">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Laundry">Laundry</SelectItem>
-                    <SelectItem value="Detergent">Detergent</SelectItem>
-                    <SelectItem value="Softener">Softener</SelectItem>
-                    <SelectItem value="Stain Remover">Stain Remover</SelectItem>
-                    <SelectItem value="Accessories">Accessories</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="sku"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>SKU</FormLabel>
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value || "Arabic Clothes"}>
                 <FormControl>
-                  <Input placeholder="L-101" {...field} value={field.value || ""} className="rounded-lg" />
+                  <SelectTrigger className="rounded-lg">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                <SelectContent>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <FormField
@@ -217,12 +222,18 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
 
           <FormField
             control={form.control}
-            name="stockQuantity"
+            name="sku"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Stock</FormLabel>
+                <FormLabel>SKU (Auto-generated)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} className="rounded-lg" />
+                  <Input 
+                    placeholder="Auto-generated" 
+                    {...field} 
+                    value={field.value || ""} 
+                    className="rounded-lg bg-muted"
+                    readOnly
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
