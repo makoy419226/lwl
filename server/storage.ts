@@ -855,6 +855,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAllBills(): Promise<void> {
+    await db.delete(clientTransactions);
     await db.delete(bills);
   }
 
