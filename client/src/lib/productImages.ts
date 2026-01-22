@@ -149,21 +149,28 @@ const productImageMap: Record<string, string> = {
 export function getProductImage(productName: string): string | null {
   const normalizedName = productName.split(' (')[0].trim();
   
+  // Try exact match first
   if (productImageMap[productName]) {
+    console.log(`[getProductImage] Exact match for "${productName}":`, productImageMap[productName]);
     return productImageMap[productName];
   }
   
+  // Try normalized name (without parentheses)
   if (productImageMap[normalizedName]) {
+    console.log(`[getProductImage] Normalized match for "${normalizedName}":`, productImageMap[normalizedName]);
     return productImageMap[normalizedName];
   }
   
+  // Try substring matching
   for (const key of Object.keys(productImageMap)) {
     if (productName.toLowerCase().includes(key.toLowerCase()) || 
         key.toLowerCase().includes(productName.toLowerCase())) {
+      console.log(`[getProductImage] Substring match "${productName}" with key "${key}":`, productImageMap[key]);
       return productImageMap[key];
     }
   }
   
+  console.log(`[getProductImage] No match for "${productName}"`);
   return null;
 }
 

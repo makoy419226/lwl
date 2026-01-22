@@ -3,6 +3,7 @@ import { useSearch } from "wouter";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients, useCreateClient } from "@/hooks/use-clients";
 import { getProductImage } from "@/lib/productImages";
+import testAbayaImage from "@/assets/products/abaya.png";
 import {
   Loader2,
   Search,
@@ -758,19 +759,15 @@ export default function Products() {
                             }}
                             title="Click to edit image"
                           >
-                            {(() => {
-                              const imgSrc = product.imageUrl || getProductImage(product.name);
-                              if (imgSrc) {
-                                return (
-                                  <img
-                                    src={imgSrc}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                );
-                              }
-                              return getCategoryIcon(product.category);
-                            })()}
+                            <img
+                              src={product.imageUrl || getProductImage(product.name) || testAbayaImage}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log('Image failed to load:', product.name);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
                           </div>
 
                           <div
