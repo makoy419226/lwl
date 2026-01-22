@@ -71,7 +71,34 @@ import {
   X,
   Tag,
   ChevronDown,
+  Home,
+  Sparkles,
+  ShoppingCart,
+  Footprints,
 } from "lucide-react";
+
+const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
+  switch (category) {
+    case "Arabic Clothes":
+      return <Shirt className={`${size} text-amber-600`} />;
+    case "Men's Clothes":
+      return <Shirt className={`${size} text-blue-600`} />;
+    case "Ladies' Clothes":
+      return <Sparkles className={`${size} text-pink-500`} />;
+    case "Baby Clothes":
+      return <Sparkles className={`${size} text-purple-500`} />;
+    case "Linens":
+      return <Home className={`${size} text-green-600`} />;
+    case "Shop Items":
+      return <ShoppingCart className={`${size} text-cyan-600`} />;
+    case "General Items":
+      return <Package className={`${size} text-gray-600`} />;
+    case "Shoes, Carpets & More":
+      return <Footprints className={`${size} text-orange-600`} />;
+    default:
+      return <Shirt className={`${size} text-primary`} />;
+  }
+};
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OrderReceipt } from "@/components/OrderReceipt";
@@ -4142,6 +4169,7 @@ function OrderForm({
               <AccordionItem key={category} value={category}>
                 <AccordionTrigger className="px-3 py-2 text-sm font-semibold bg-muted/30 hover:bg-muted/50">
                   <div className="flex items-center gap-2">
+                    {getCategoryIcon(category, "w-5 h-5")}
                     <span>{category}</span>
                     <Badge variant="secondary" className="text-xs">
                       {categoryProducts?.length || 0}

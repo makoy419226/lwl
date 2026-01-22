@@ -46,30 +46,26 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Order } from "@shared/schema";
 
-const getCategoryIcon = (category: string | null) => {
+const getCategoryIcon = (category: string | null, size: string = "w-5 h-5") => {
   switch (category) {
-    case "Traditional Wear":
-    case "Formal Wear":
-    case "Tops":
-    case "Bottoms":
-    case "Outerwear":
-    case "Workwear":
-    case "Specialty":
-      return <Shirt className="w-5 h-5 text-primary" />;
-    case "Undergarments":
-    case "Accessories":
-      return <Sparkles className="w-5 h-5 text-primary" />;
-    case "Bedding":
-    case "Home Linens":
-    case "Bathroom":
-    case "Flooring":
-      return <Home className="w-5 h-5 text-primary" />;
-    case "Footwear":
-      return <Footprints className="w-5 h-5 text-primary" />;
-    case "Baby Wear":
-      return <Sparkles className="w-5 h-5 text-pink-500" />;
+    case "Arabic Clothes":
+      return <Shirt className={`${size} text-amber-600`} />;
+    case "Men's Clothes":
+      return <Shirt className={`${size} text-blue-600`} />;
+    case "Ladies' Clothes":
+      return <Sparkles className={`${size} text-pink-500`} />;
+    case "Baby Clothes":
+      return <Sparkles className={`${size} text-purple-500`} />;
+    case "Linens":
+      return <Home className={`${size} text-green-600`} />;
+    case "Shop Items":
+      return <ShoppingCart className={`${size} text-cyan-600`} />;
+    case "General Items":
+      return <Package className={`${size} text-gray-600`} />;
+    case "Shoes, Carpets & More":
+      return <Footprints className={`${size} text-orange-600`} />;
     default:
-      return <Shirt className="w-5 h-5 text-primary" />;
+      return <Shirt className={`${size} text-primary`} />;
   }
 };
 
@@ -201,6 +197,43 @@ export default function Products() {
   const updateProduct = useUpdateProduct();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const groupedProducts = useMemo(() => {
+    if (!products) return {};
+    const groups: Record<string, typeof products> = {};
+    const categoryOrder = [
+      "Arabic Clothes",
+      "Men's Clothes",
+      "Ladies' Clothes",
+      "Baby Clothes",
+      "Linens",
+      "Shop Items",
+      "General Items",
+      "Shoes, Carpets & More",
+    ];
+    
+    products.forEach((product) => {
+      const category = product.category || "Other";
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(product);
+    });
+    
+    const sortedGroups: Record<string, typeof products> = {};
+    categoryOrder.forEach((cat) => {
+      if (groups[cat]) {
+        sortedGroups[cat] = groups[cat];
+      }
+    });
+    Object.keys(groups).forEach((cat) => {
+      if (!sortedGroups[cat]) {
+        sortedGroups[cat] = groups[cat];
+      }
+    });
+    
+    return sortedGroups;
+  }, [products]);
 
   const { data: clientBalance } = useQuery<{
     totalDue: string;
@@ -694,130 +727,143 @@ export default function Products() {
                 <p className="font-semibold text-lg">Failed to load</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {products?.map((product) => (
-                  <div
-                    key={product.id}
-                    className={`relative rounded-xl border-2 p-3 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
-                      quantities[product.id]
-                        ? "border-primary bg-gradient-to-br from-primary/20 to-primary/5 ring-2 ring-primary/40 shadow-md"
-                        : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60 hover:from-primary/5 hover:to-card"
-                    }`}
-                    onClick={() => handleProductClick(product)}
-                    data-testid={`box-product-${product.id}`}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditImage(product.id, product.imageUrl);
-                      }}
-                      title="Click to edit image"
-                    >
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Shirt className="w-5 h-5 text-primary" />
-                      )}
+              <div className="space-y-4">
+                {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+                  <div key={category} className="space-y-2">
+                    <div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg sticky top-0 z-10">
+                      {getCategoryIcon(category, "w-6 h-6")}
+                      <h3 className="font-bold text-sm">{category}</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {categoryProducts?.length || 0}
+                      </Badge>
                     </div>
-
-                    <div
-                      className="text-sm leading-tight text-center font-bold text-foreground line-clamp-2 min-h-[2.5rem] flex items-center justify-center px-1"
-                      data-testid={`text-product-name-${product.id}`}
-                    >
-                      {product.name}
-                    </div>
-
-                    <div
-                      className="text-lg font-black text-primary mt-1 bg-primary/10 px-2 py-0.5 rounded-full"
-                      data-testid={`text-product-price-${product.id}`}
-                    >
-                      {product.price
-                        ? `${parseFloat(product.price).toFixed(0)}`
-                        : "-"}
-                    </div>
-
-                    {product.stockQuantity !== null &&
-                      product.stockQuantity !== undefined && (
-                        <div className="flex flex-col items-center mt-1 gap-0.5">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                      {categoryProducts?.map((product) => (
+                        <div
+                          key={product.id}
+                          className={`relative rounded-xl border-2 p-3 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
+                            quantities[product.id]
+                              ? "border-primary bg-gradient-to-br from-primary/20 to-primary/5 ring-2 ring-primary/40 shadow-md"
+                              : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60 hover:from-primary/5 hover:to-card"
+                          }`}
+                          onClick={() => handleProductClick(product)}
+                          data-testid={`box-product-${product.id}`}
+                        >
                           <div
-                            className="text-[10px] font-medium text-muted-foreground"
-                            data-testid={`text-stock-${product.id}`}
+                            className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditImage(product.id, product.imageUrl);
+                            }}
+                            title="Click to edit image"
                           >
-                            Stock: {product.stockQuantity}
-                            {allocatedStock && allocatedStock[product.name] ? (
-                              <span className="text-amber-600 dark:text-amber-400 ml-1">
-                                ({allocatedStock[product.name]} pending)
-                              </span>
-                            ) : null}
+                            {product.imageUrl ? (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              getCategoryIcon(product.category)
+                            )}
                           </div>
-                        </div>
-                      )}
 
-                    {quantities[product.id] ? (
-                      <>
-                        <div
-                          className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span data-testid={`text-qty-${product.id}`}>
-                            {quantities[product.id]}
-                          </span>
-                        </div>
-                        <div
-                          className="flex gap-1 mt-2 w-full"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            size="sm"
-                            variant={
-                              packingTypes[product.id] === "hanging"
-                                ? "default"
-                                : "outline"
-                            }
-                            className="flex-1 h-6 text-[10px] px-1"
-                            onClick={() =>
-                              handlePackingTypeChange(product.id, "hanging")
-                            }
-                            data-testid={`button-hanging-${product.id}`}
+                          <div
+                            className="text-sm leading-tight text-center font-bold text-foreground line-clamp-2 min-h-[2.5rem] flex items-center justify-center px-1"
+                            data-testid={`text-product-name-${product.id}`}
                           >
-                            Hanging
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={
-                              packingTypes[product.id] === "folding" ||
-                              !packingTypes[product.id]
-                                ? "default"
-                                : "outline"
-                            }
-                            className="flex-1 h-6 text-[10px] px-1"
-                            onClick={() =>
-                              handlePackingTypeChange(product.id, "folding")
-                            }
-                            data-testid={`button-folding-${product.id}`}
+                            {product.name}
+                          </div>
+
+                          <div
+                            className="text-lg font-black text-primary mt-1 bg-primary/10 px-2 py-0.5 rounded-full"
+                            data-testid={`text-product-price-${product.id}`}
                           >
-                            Folding
-                          </Button>
+                            {product.price
+                              ? `${parseFloat(product.price).toFixed(0)}`
+                              : "-"}
+                          </div>
+
+                          {product.stockQuantity !== null &&
+                            product.stockQuantity !== undefined && (
+                              <div className="flex flex-col items-center mt-1 gap-0.5">
+                                <div
+                                  className="text-[10px] font-medium text-muted-foreground"
+                                  data-testid={`text-stock-${product.id}`}
+                                >
+                                  Stock: {product.stockQuantity}
+                                  {allocatedStock && allocatedStock[product.name] ? (
+                                    <span className="text-amber-600 dark:text-amber-400 ml-1">
+                                      ({allocatedStock[product.name]} pending)
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            )}
+
+                          {quantities[product.id] ? (
+                            <>
+                              <div
+                                className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span data-testid={`text-qty-${product.id}`}>
+                                  {quantities[product.id]}
+                                </span>
+                              </div>
+                              <div
+                                className="flex gap-1 mt-2 w-full"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Button
+                                  size="sm"
+                                  variant={
+                                    packingTypes[product.id] === "hanging"
+                                      ? "default"
+                                      : "outline"
+                                  }
+                                  className="flex-1 h-6 text-[10px] px-1"
+                                  onClick={() =>
+                                    handlePackingTypeChange(product.id, "hanging")
+                                  }
+                                  data-testid={`button-hanging-${product.id}`}
+                                >
+                                  Hanging
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={
+                                    packingTypes[product.id] === "folding" ||
+                                    !packingTypes[product.id]
+                                      ? "default"
+                                      : "outline"
+                                  }
+                                  className="flex-1 h-6 text-[10px] px-1"
+                                  onClick={() =>
+                                    handlePackingTypeChange(product.id, "folding")
+                                  }
+                                  data-testid={`button-folding-${product.id}`}
+                                >
+                                  Folding
+                                </Button>
+                              </div>
+                              <Button
+                                size="icon"
+                                variant="destructive"
+                                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuantityChange(product.id, -1);
+                                }}
+                                data-testid={`button-qty-minus-${product.id}`}
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                            </>
+                          ) : null}
                         </div>
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleQuantityChange(product.id, -1);
-                          }}
-                          data-testid={`button-qty-minus-${product.id}`}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                      </>
-                    ) : null}
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
