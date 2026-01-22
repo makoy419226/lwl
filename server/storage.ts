@@ -114,6 +114,8 @@ export interface IStorage {
   updateOrder(id: number, updates: UpdateOrderRequest): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
   deleteAllOrders(): Promise<void>;
+  deleteAllTransactions(): Promise<void>;
+  deleteAllBills(): Promise<void>;
   getPackingWorkers(): Promise<PackingWorker[]>;
   getPackingWorker(id: number): Promise<PackingWorker | undefined>;
   createPackingWorker(worker: InsertPackingWorker): Promise<PackingWorker>;
@@ -845,6 +847,14 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAllOrders(): Promise<void> {
     await db.delete(orders);
+  }
+
+  async deleteAllTransactions(): Promise<void> {
+    await db.delete(clientTransactions);
+  }
+
+  async deleteAllBills(): Promise<void> {
+    await db.delete(bills);
   }
 
   async getPackingWorkers(): Promise<PackingWorker[]> {

@@ -1078,6 +1078,52 @@ export async function registerRoutes(
     }
   });
 
+  // Reset all transactions (admin password protected)
+  app.post("/api/transactions/reset-all", async (req, res) => {
+    const { adminPassword } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ message: "Invalid admin password" });
+    }
+    
+    try {
+      await storage.deleteAllTransactions();
+      res.json({ success: true, message: "All transactions have been reset" });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to reset transactions: " + err.message });
+    }
+  });
+
+  // Reset all bills (admin password protected)
+  app.post("/api/bills/reset-all", async (req, res) => {
+    const { adminPassword } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ message: "Invalid admin password" });
+    }
+    
+    try {
+      await storage.deleteAllBills();
+      res.json({ success: true, message: "All bills have been reset" });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to reset bills: " + err.message });
+    }
+  });
+
+  // Verify admin password
+  app.post("/api/admin/verify", async (req, res) => {
+    const { adminPassword } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ success: false, message: "Invalid admin password" });
+    }
+    
+    res.json({ success: true, message: "Admin verified" });
+  });
+
   // Packing Workers routes
   app.get("/api/packing-workers", async (req, res) => {
     const workers = await storage.getPackingWorkers();
