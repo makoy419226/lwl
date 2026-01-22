@@ -1009,28 +1009,44 @@ export default function Clients() {
 
           {transactionClient && (
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Total Bill</p>
-                  <p className="text-xl font-bold text-blue-600">
-                    {parseFloat(transactionClient.amount || "0").toFixed(2)} AED
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Deposit</p>
-                  <p className="text-xl font-bold text-green-600">
-                    {parseFloat(transactionClient.deposit || "0").toFixed(2)}{" "}
-                    AED
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Due</p>
-                  <p className="text-xl font-bold text-destructive">
-                    {parseFloat(transactionClient.balance || "0").toFixed(2)}{" "}
-                    AED
-                  </p>
-                </div>
-              </div>
+              {(() => {
+                // Calculate actual unpaid bills due
+                const clientUnpaidTotal = unpaidBills?.reduce((sum, bill) => {
+                  const total = parseFloat(bill.amount || "0");
+                  const paid = parseFloat(bill.paidAmount || "0");
+                  return sum + (total - paid);
+                }, 0) || 0;
+                const depositBalance = parseFloat(transactionClient.deposit || "0");
+                // Due = unpaid bills - available deposit (minimum 0)
+                const actualDue = Math.max(0, clientUnpaidTotal - depositBalance);
+                // Available credit = deposit - unpaid bills (if positive)
+                const availableCredit = Math.max(0, depositBalance - clientUnpaidTotal);
+                
+                return (
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">Unpaid Bills</p>
+                      <p className="text-xl font-bold text-blue-600">
+                        {clientUnpaidTotal.toFixed(2)} AED
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">Deposit Balance</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {depositBalance.toFixed(2)} AED
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">
+                        {actualDue > 0 ? "Amount Due" : "Credit Available"}
+                      </p>
+                      <p className={`text-xl font-bold ${actualDue > 0 ? "text-destructive" : "text-green-600"}`}>
+                        {actualDue > 0 ? actualDue.toFixed(2) : availableCredit.toFixed(2)} AED
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="space-y-2 p-4 border rounded-lg">
                 <h4 className="font-semibold text-green-600 flex items-center gap-2">
