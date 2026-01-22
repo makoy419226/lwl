@@ -737,11 +737,11 @@ export default function Products() {
                         {categoryProducts?.length || 0}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4">
                       {categoryProducts?.map((product) => (
                         <div
                           key={product.id}
-                          className={`relative rounded-xl border-2 p-3 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
+                          className={`relative rounded-xl border-2 p-4 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
                             quantities[product.id]
                               ? "border-primary bg-gradient-to-br from-primary/20 to-primary/5 ring-2 ring-primary/40 shadow-md"
                               : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60 hover:from-primary/5 hover:to-card"
@@ -750,7 +750,7 @@ export default function Products() {
                           data-testid={`box-product-${product.id}`}
                         >
                           <div
-                            className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm"
+                            className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditImage(product.id, product.imageUrl);
