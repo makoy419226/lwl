@@ -66,13 +66,13 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "manager", "cashier"] },
     { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "manager", "cashier"] },
     { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "manager", "cashier"] },
-    { href: "/orders", icon: ClipboardList, label: "Orders", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "cashier"] },
+    { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "cashier"] },
     { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
     { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
     { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "manager"] },
     { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "manager"] },
     { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "manager", "cashier"] },
-    { href: "/track", icon: FlaskConical, label: "Track Order", active: isTrackOrder, testId: "nav-track-order", experimental: true, roles: ["admin", "manager"] },
+    { href: "/track", icon: FlaskConical, label: "Public Tracking Page", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "manager"] },
     { href: "/admin-settings", icon: Settings, label: "Admin Settings", active: isAdminSettings, testId: "nav-admin-settings", roles: ["admin"] },
   ];
 
