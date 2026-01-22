@@ -755,51 +755,6 @@ export async function seedDatabase() {
     );
   }
 
-  // Seed clients if empty
-  const existingClients = await storage.getClients();
-  if (existingClients.length === 0) {
-    console.log("Seeding clients...");
-
-    const clientsData = [
-      {
-        name: "Abdullah",
-        address: "",
-        phone: "+971543956492",
-        amount: "0",
-        deposit: "0",
-        balance: "0",
-      },
-      {
-        name: "Ahmed Al-Mansouri",
-        address: "Dubai, UAE",
-        phone: "+971501234567",
-        amount: "0",
-        deposit: "0",
-        balance: "0",
-      },
-      {
-        name: "Fatima Al-Ketbi",
-        address: "Abu Dhabi, UAE",
-        phone: "+971507654321",
-        amount: "0",
-        deposit: "0",
-        balance: "0",
-      },
-      {
-        name: "Mohammed Al-Falahi",
-        address: "Sharjah, UAE",
-        phone: "+971509876543",
-        amount: "0",
-        deposit: "0",
-        balance: "0",
-      },
-    ];
-
-    for (const client of clientsData) {
-      await storage.createClient(client);
-    }
-    console.log("Seeding complete.");
-  }
 
   // Seed default users if none exist
   const existingUsers = await db.select().from(users);
