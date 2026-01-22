@@ -116,6 +116,7 @@ export default function Products() {
   const [walkInPhone, setWalkInPhone] = useState("");
   const [walkInAddress, setWalkInAddress] = useState("");
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
+  const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery">("pickup");
   const [discountPercent, setDiscountPercent] = useState("");
   const [tips, setTips] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
@@ -580,7 +581,7 @@ export default function Products() {
         tips: tipsAmt.toFixed(2),
         finalAmount: finalTotal.toFixed(2),
         entryDate: new Date().toISOString(),
-        deliveryType: "pickup",
+        deliveryType: deliveryType,
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
         notes: isWalkIn && walkInAddress ? `Address: ${walkInAddress}` : undefined,
@@ -609,6 +610,7 @@ export default function Products() {
     setDiscountPercent("");
     setTips("");
     setOrderType("normal");
+    setDeliveryType("pickup");
   };
 
   const handleAddOtherItem = () => {
@@ -1222,7 +1224,7 @@ export default function Products() {
                     />
                   </>
                 )}
-                <Label className="text-xs font-semibold mt-2">Order Type</Label>
+                <Label className="text-xs font-semibold mt-2">Service Type</Label>
                 <Select
                   value={orderType}
                   onValueChange={(value: "normal" | "urgent") => setOrderType(value)}
@@ -1236,6 +1238,22 @@ export default function Products() {
                   <SelectContent className="z-[100] bg-background border shadow-lg">
                     <SelectItem value="normal">Normal</SelectItem>
                     <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Label className="text-xs font-semibold mt-2">Pickup / Delivery</Label>
+                <Select
+                  value={deliveryType}
+                  onValueChange={(value: "pickup" | "delivery") => setDeliveryType(value)}
+                >
+                  <SelectTrigger
+                    className="h-8 text-xs"
+                    data-testid="select-delivery-type"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-[100] bg-background border shadow-lg">
+                    <SelectItem value="pickup">Pickup</SelectItem>
+                    <SelectItem value="delivery">Delivery</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="flex gap-1">
