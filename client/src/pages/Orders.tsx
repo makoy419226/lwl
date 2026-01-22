@@ -1684,16 +1684,6 @@ export default function Orders() {
                                   />
                                 </Button>
                                 <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="flex-1"
-                                  onClick={() => setNewCreatedOrder(order)}
-                                  data-testid={`button-mobile-invoice-${order.id}`}
-                                >
-                                  <Receipt className="w-4 h-4 mr-1" />
-                                  Invoice
-                                </Button>
-                                <Button
                                   size="icon"
                                   variant="ghost"
                                   className="text-orange-500"
@@ -2233,20 +2223,6 @@ export default function Orders() {
                                               <Camera
                                                 className={`w-4 h-4 ${(order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto ? "text-blue-900 dark:text-blue-400" : "text-red-500"}`}
                                               />
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="whitespace-nowrap touch-manipulation"
-                                              onClick={() => {
-                                                setNewCreatedOrder(order);
-                                              }}
-                                              data-testid={`button-invoice-${order.id}`}
-                                            >
-                                              <Receipt className="w-3 h-3 sm:mr-1" />
-                                              <span className="hidden sm:inline">
-                                                Invoice
-                                              </span>
                                             </Button>
                                             <Button
                                               size="icon"
