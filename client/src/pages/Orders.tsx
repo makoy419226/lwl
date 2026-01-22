@@ -3655,15 +3655,35 @@ function OrderForm({
     console.log("Form Data Updated:", formData);
   }, [formData]); // This runs every time formData changes
 
-  // Check if entered phone matches an existing client
-  const matchingClient = useMemo(() => {
-    if (!formData.customerPhone || formData.clientId !== "walkin") return null;
-    const normalizedPhone = formData.customerPhone.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '');
-    return clients.find((c) => {
-      const clientPhone = c.phone?.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '');
-      return clientPhone && clientPhone === normalizedPhone && normalizedPhone.length >= 7;
-    });
-  }, [formData.customerPhone, formData.clientId, clients]);
+  // Check if entered info matches an existing client
+  const clientMatch = useMemo(() => {
+    if (formData.clientId !== "walkin") return null;
+    
+    const normalizedPhone = formData.customerPhone?.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '') || '';
+    const enteredName = formData.customerName?.trim().toLowerCase() || '';
+    const enteredAddress = formData.deliveryAddress?.trim().toLowerCase() || '';
+    
+    for (const client of clients) {
+      const clientPhone = client.phone?.replace(/\D/g, '').replace(/^(00971|971|\+971|0)/, '') || '';
+      const clientName = client.name?.trim().toLowerCase() || '';
+      const clientAddress = client.address?.trim().toLowerCase() || '';
+      
+      const phoneMatches = clientPhone && normalizedPhone && clientPhone === normalizedPhone && normalizedPhone.length >= 7;
+      const nameMatches = clientName && enteredName && clientName === enteredName;
+      const addressMatches = clientAddress && enteredAddress && clientAddress === enteredAddress;
+      
+      if (phoneMatches) {
+        if (nameMatches && addressMatches) {
+          return { client, matchType: 'full', message: 'Name, phone number, and address match an existing client' };
+        } else if (nameMatches) {
+          return { client, matchType: 'name_phone', message: 'Name and phone number match an existing client' };
+        } else {
+          return { client, matchType: 'phone', message: 'Phone number matches an existing client' };
+        }
+      }
+    }
+    return null;
+  }, [formData.customerPhone, formData.customerName, formData.deliveryAddress, formData.clientId, clients]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -3703,23 +3723,23 @@ function OrderForm({
               onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
               data-testid="input-customer-phone"
             />
-            {matchingClient && (
+            {clientMatch && (
               <div className="p-3 border border-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg mt-2">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
                   <span className="font-medium text-amber-700 dark:text-amber-400">
-                    Client already exists!
+                    This client is already in the system!
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  This phone number belongs to <strong>{matchingClient.name}</strong>
+                  {clientMatch.message}: <strong>{clientMatch.client.name}</strong>
                 </p>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   className="mt-2"
-                  onClick={() => handleClientChange(matchingClient.id.toString())}
+                  onClick={() => handleClientChange(clientMatch.client.id.toString())}
                   data-testid="button-use-existing-client"
                 >
                   Use existing client
