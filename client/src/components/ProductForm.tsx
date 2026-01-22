@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useRef, useEffect } from "react";
-import { Upload, X, Image } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Upload, X, Image, Sparkles } from "lucide-react";
+import { getProductImage } from "@/lib/productImages";
 
 const CATEGORIES = [
   "Arabic Clothes",
@@ -41,6 +42,7 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
   const updateProduct = useUpdateProduct();
   const { data: products } = useProducts();
   const [imagePreview, setImagePreview] = useState<string>(defaultValues?.imageUrl || "");
+  const [isCustomImage, setIsCustomImage] = useState<boolean>(!!defaultValues?.imageUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processImage = (file: File): Promise<string> => {
@@ -95,12 +97,14 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
       try {
         const processedBase64 = await processImage(file);
         setImagePreview(processedBase64);
+        setIsCustomImage(true);
         form.setValue("imageUrl", processedBase64);
       } catch (error) {
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64 = reader.result as string;
           setImagePreview(base64);
+          setIsCustomImage(true);
           form.setValue("imageUrl", base64);
         };
         reader.readAsDataURL(file);
@@ -110,6 +114,7 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
 
   const clearImage = () => {
     setImagePreview("");
+    setIsCustomImage(false);
     form.setValue("imageUrl", "");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -137,6 +142,15 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
 
   const watchedName = form.watch("name");
   const watchedCategory = form.watch("category");
+
+  const autoMatchedImage = useMemo(() => {
+    if (watchedName && watchedName.length >= 2) {
+      return getProductImage(watchedName);
+    }
+    return null;
+  }, [watchedName]);
+
+  const displayImage = isCustomImage ? imagePreview : (autoMatchedImage || imagePreview);
 
   useEffect(() => {
     if (mode === "create" && watchedName && watchedName.length >= 3 && watchedCategory) {
@@ -265,25 +279,33 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
           name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Product Image (Optional)</FormLabel>
+              <FormLabel>Product Image</FormLabel>
               <FormControl>
                 <div className="space-y-3">
-                  {imagePreview ? (
+                  {displayImage ? (
                     <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden">
                       <img 
-                        src={imagePreview} 
+                        src={displayImage} 
                         alt="Preview" 
                         className="w-full h-full object-contain"
                       />
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="destructive"
-                        className="absolute top-2 right-2 h-6 w-6"
-                        onClick={clearImage}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
+                      {!isCustomImage && autoMatchedImage && (
+                        <div className="absolute top-2 left-2 flex items-center gap-1 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full">
+                          <Sparkles className="w-3 h-3" />
+                          Auto-matched
+                        </div>
+                      )}
+                      {isCustomImage && (
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-2 right-2 h-6 w-6"
+                          onClick={clearImage}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div 
@@ -302,18 +324,16 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
                     onChange={handleImageUpload}
                     className="hidden"
                   />
-                  {!imagePreview && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Image
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {displayImage ? "Upload Custom Image" : "Upload Image"}
+                  </Button>
                 </div>
               </FormControl>
               <FormMessage />
