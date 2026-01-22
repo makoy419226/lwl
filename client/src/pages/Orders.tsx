@@ -78,6 +78,8 @@ import {
   ShoppingCart,
   Footprints,
   RotateCcw,
+  MapPin,
+  Phone,
 } from "lucide-react";
 
 const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
@@ -1092,6 +1094,8 @@ export default function Orders() {
       return matchesSearch && order.tagDone && !order.packingDone;
     if (activeTab === "packing-done")
       return matchesSearch && order.packingDone && !order.delivered;
+    if (activeTab === "for-delivery")
+      return matchesSearch && order.packingDone && !order.delivered && order.deliveryType === "delivery";
     if (activeTab === "delivery") return matchesSearch && order.delivered;
     return matchesSearch;
   });
@@ -1342,6 +1346,14 @@ export default function Orders() {
                 <span className="hidden sm:inline">3.</span> Pack
               </TabsTrigger>
               <TabsTrigger
+                value="for-delivery"
+                className="h-10 px-3 text-sm touch-manipulation bg-cyan-100 dark:bg-cyan-900/30 data-[state=active]:bg-cyan-600 data-[state=active]:text-white"
+                data-testid="tab-for-delivery"
+              >
+                <MapPin className="w-4 h-4 mr-1" />
+                For Delivery
+              </TabsTrigger>
+              <TabsTrigger
                 value="delivery"
                 className="h-10 px-3 text-sm touch-manipulation bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
               >
@@ -1454,6 +1466,32 @@ export default function Orders() {
                                 {order.totalAmount} AED
                               </span>
                             </div>
+
+                            {/* Delivery Address Row - shown in For Delivery tab */}
+                            {activeTab === "for-delivery" && client && (
+                              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3 space-y-2">
+                                <div className="flex items-start gap-2">
+                                  <MapPin className="w-4 h-4 text-cyan-600 mt-0.5 shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-muted-foreground font-medium uppercase">Delivery Address</p>
+                                    <p className="text-sm font-medium break-words">
+                                      {client.address || "No address on file"}
+                                    </p>
+                                  </div>
+                                </div>
+                                {client.phone && (
+                                  <div className="flex items-center gap-2">
+                                    <Phone className="w-4 h-4 text-cyan-600 shrink-0" />
+                                    <a 
+                                      href={`tel:${client.phone}`}
+                                      className="text-sm font-medium text-cyan-700 dark:text-cyan-400 underline"
+                                    >
+                                      {client.phone}
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
                             {/* Items Row */}
                             <div className="flex items-center justify-between gap-2">
@@ -1841,6 +1879,30 @@ export default function Orders() {
                                                     </p>
                                                   </div>
                                                 </div>
+                                                {activeTab === "for-delivery" && client?.address && (
+                                                  <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3 space-y-2">
+                                                    <div className="flex items-start gap-2">
+                                                      <MapPin className="w-4 h-4 text-cyan-600 mt-0.5 shrink-0" />
+                                                      <div className="flex-1 min-w-0">
+                                                        <p className="text-xs text-muted-foreground font-medium uppercase">Delivery Address</p>
+                                                        <p className="text-sm font-medium break-words">
+                                                          {client.address}
+                                                        </p>
+                                                      </div>
+                                                    </div>
+                                                    {client.phone && (
+                                                      <div className="flex items-center gap-2">
+                                                        <Phone className="w-4 h-4 text-cyan-600 shrink-0" />
+                                                        <a 
+                                                          href={`tel:${client.phone}`}
+                                                          className="text-sm font-medium text-cyan-700 dark:text-cyan-400 underline"
+                                                        >
+                                                          {client.phone}
+                                                        </a>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
                                                 <div className="flex justify-between items-center gap-2">
                                                   <span className="text-sm">
                                                     Due Balance:
