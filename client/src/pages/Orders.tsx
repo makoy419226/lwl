@@ -918,17 +918,10 @@ export default function Orders() {
   };
 
   const handleDeliveryWithPin = (orderId: number) => {
-    setDeliveryConfirmDialog({ orderId });
-  };
-
-  const confirmDeliveryAndProceed = () => {
-    if (deliveryConfirmDialog) {
-      setDeliveryPinDialog({ orderId: deliveryConfirmDialog.orderId });
-      setDeliveryPin("");
-      setDeliveryPinError("");
-      setItemCountVerified(false);
-      setDeliveryConfirmDialog(null);
-    }
+    setDeliveryPinDialog({ orderId });
+    setDeliveryPin("");
+    setDeliveryPinError("");
+    setItemCountVerified(false);
   };
 
   const submitDeliveryPin = () => {
@@ -1731,13 +1724,15 @@ export default function Orders() {
 
                             {order.delivered && (
                               <>
-                                <Badge
-                                  variant="outline"
-                                  className="text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30"
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="flex-1 bg-green-600 hover:bg-green-600 cursor-default"
+                                  disabled
                                 >
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  Done
-                                </Badge>
+                                  <CheckCircle2 className="w-4 h-4 mr-1" />
+                                  {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
+                                </Button>
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -2286,12 +2281,17 @@ export default function Orders() {
                                           )}
                                         {order.delivered && (
                                           <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                                            <Badge
-                                              variant="outline"
-                                              className="text-green-600 hidden sm:inline-flex"
+                                            <Button
+                                              size="sm"
+                                              variant="default"
+                                              className="bg-green-600 hover:bg-green-600 cursor-default whitespace-nowrap"
+                                              disabled
                                             >
-                                              Completed
-                                            </Badge>
+                                              <CheckCircle2 className="w-3 h-3 sm:mr-1" />
+                                              <span className="hidden sm:inline">
+                                                {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
+                                              </span>
+                                            </Button>
                                             <Button
                                               size="icon"
                                               variant="ghost"
@@ -2995,52 +2995,6 @@ export default function Orders() {
         </DialogContent>
       </Dialog>
 
-      {/* Delivery Confirmation Dialog */}
-      <Dialog
-        open={!!deliveryConfirmDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeliveryConfirmDialog(null);
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600">
-              <AlertTriangle className="w-5 h-5" />
-              Confirm Order Completion
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure this order is correct and ready to be marked as delivered/picked up?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
-            <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
-              This action cannot be undone. Once marked as delivered or picked up:
-            </p>
-            <ul className="mt-2 text-sm text-amber-700 dark:text-amber-300 list-disc pl-5 space-y-1">
-              <li>The order status cannot be changed</li>
-              <li>The delivery type cannot be modified</li>
-              <li>All items will be considered released</li>
-            </ul>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setDeliveryConfirmDialog(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="bg-green-600 hover:bg-green-700"
-              onClick={confirmDeliveryAndProceed}
-            >
-              Yes, Proceed
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <Dialog
         open={!!deliveryPinDialog}
         onOpenChange={(open) => {
@@ -3058,6 +3012,15 @@ export default function Orders() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+              <p className="text-xs text-amber-800 dark:text-amber-200 font-medium flex items-center gap-1">
+                <AlertTriangle className="w-4 h-4" />
+                This action cannot be undone
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                Order status and delivery type cannot be changed after confirmation.
+              </p>
+            </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Camera className="w-4 h-4" />
