@@ -563,8 +563,6 @@ export default function Bills() {
       <TopBar
         onSearch={setSearchTerm}
         searchValue={searchTerm}
-        onAddClick={() => setIsCreateOpen(true)}
-        addButtonLabel="Add Bill"
         pageTitle="Bills"
       />
 
@@ -573,7 +571,6 @@ export default function Bills() {
           <TabsList className="mb-4">
             <TabsTrigger value="bills">Bills List</TabsTrigger>
             <TabsTrigger value="due">Due Customers</TabsTrigger>
-            <TabsTrigger value="pricelist">New Order</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bills">
@@ -603,7 +600,7 @@ export default function Bills() {
                   {searchTerm ? "No matching bills" : "No bills found"}
                 </h3>
                 <p className="max-w-md text-center">
-                  {searchTerm ? `No bills match "${searchTerm}"` : "Click 'Add Bill' to create your first bill."}
+                  {searchTerm ? `No bills match "${searchTerm}"` : "Bills are created automatically when orders are placed."}
                 </p>
               </div>
             ) : (
@@ -855,238 +852,8 @@ export default function Bills() {
             )}
           </TabsContent>
 
-          <TabsContent value="pricelist">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Laundry Items
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="font-bold">Item</TableHead>
-                        <TableHead className="text-right font-bold">
-                          Price (AED)
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedProducts.map((product) => (
-                        <TableRow
-                          key={product.id}
-                          data-testid={`row-product-${product.id}`}
-                        >
-                          <TableCell className="font-medium">
-                            {product.name}
-                          </TableCell>
-                          <TableCell className="text-right font-bold text-primary">
-                            {parseFloat(product.price || "0").toFixed(2)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </main>
-
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-scroll flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-display text-primary">
-              Create New Bill
-            </DialogTitle>
-            <DialogDescription>
-              Select items and client to create a bill
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex gap-4 flex-1 overflow-visible">
-            <div className="flex-1 overflow-visible flex flex-col">
-              <div className="grid grid-cols-2 gap-2 mb-4 relative z-50">
-                <div>
-                  <Label>Select Client</Label>
-                  <Select
-                    value={selectedClientId}
-                    onValueChange={(value) => {
-                      setSelectedClientId(value);
-                      if (value === "walkin") {
-                        setCustomerName("Walk-in Customer");
-                        setCustomerPhone("");
-                      } else if (value) {
-                        const client = clients.find(
-                          (c) => c.id === parseInt(value),
-                        );
-                        if (client) {
-                          setCustomerName(client.name);
-                          setCustomerPhone(client.phone || "");
-                        }
-                      }
-                    }}
-                  >
-                    <SelectTrigger data-testid="select-client">
-                      <SelectValue placeholder="Choose a client..." />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] max-h-[300px]">
-                      <SelectItem value="walkin">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          Walk-in Customer
-                        </div>
-                      </SelectItem>
-                      {clients.map((client) => (
-                        <SelectItem
-                          key={client.id}
-                          value={client.id.toString()}
-                        >
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            {client.name} - {client.phone}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Phone</Label>
-                  <Input
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="Customer phone"
-                    data-testid="input-customer-phone"
-                    disabled={
-                      selectedClientId !== "" && selectedClientId !== "walkin"
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between mb-2">
-                <Label>Select Items</Label>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowNewItemDialog(true)}
-                  data-testid="button-new-item"
-                >
-                  <PlusCircle className="w-4 h-4 mr-1" />
-                  New Item
-                </Button>
-              </div>
-              <ScrollArea className="flex-1 border rounded-lg p-2">
-                <div className="grid grid-cols-3 gap-2">
-                  {sortedProducts.map((product) => {
-                    const qty = selectedItems[product.id] || 0;
-                    return (
-                      <div
-                        key={product.id}
-                        className={`p-2 border rounded-lg text-center ${qty > 0 ? "border-primary bg-primary/5" : ""}`}
-                        data-testid={`item-${product.id}`}
-                      >
-                        <p className="text-xs font-medium truncate">
-                          {product.name}
-                        </p>
-                        <p className="text-xs text-primary font-bold">
-                          {parseFloat(product.price || "0").toFixed(2)}
-                        </p>
-                        <div className="flex items-center justify-center gap-1 mt-1">
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="h-6 w-6"
-                            onClick={() => updateItemQty(product.id, -1)}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <span className="w-6 text-center text-sm font-bold">
-                            {qty}
-                          </span>
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="h-6 w-6"
-                            onClick={() => updateItemQty(product.id, 1)}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </div>
-
-            <div className="w-64 border-l pl-4 flex flex-col">
-              <h3 className="font-bold mb-2">Bill Summary</h3>
-              <div className="flex-1 overflow-auto border rounded-lg p-2 mb-2">
-                {Object.entries(selectedItems)
-                  .filter(([_, qty]) => qty > 0)
-                  .map(([productId, qty]) => {
-                    const product = products?.find(
-                      (p) => p.id === parseInt(productId),
-                    );
-                    const subtotal = parseFloat(product?.price || "0") * qty;
-                    return (
-                      <div
-                        key={productId}
-                        className="flex justify-between text-sm py-1 border-b"
-                      >
-                        <span>
-                          {product?.name} x{qty}
-                        </span>
-                        <span className="font-medium">
-                          {subtotal.toFixed(2)}
-                        </span>
-                      </div>
-                    );
-                  })}
-              </div>
-
-              <div className="mb-2">
-                <Label>Notes (Optional)</Label>
-                <Input
-                  value={billDescription}
-                  onChange={(e) => setBillDescription(e.target.value)}
-                  placeholder="Additional notes"
-                  data-testid="input-bill-notes"
-                />
-              </div>
-
-              <div className="border-t pt-2 mb-2">
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total:</span>
-                  <span className="text-primary">
-                    {calculateTotal().toFixed(2)} AED
-                  </span>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleCreateBill}
-                disabled={createBillMutation.isPending}
-                className="w-full"
-                data-testid="button-create-bill"
-              >
-                {createBillMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <Receipt className="w-4 h-4 mr-2" />
-                )}
-                Create Bill
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={!!createdBill}
