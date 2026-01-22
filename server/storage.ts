@@ -818,6 +818,8 @@ export class DatabaseStorage implements IStorage {
       updateData.deliveryDate = new Date(updates.deliveryDate);
     if (updates.expectedDeliveryAt)
       updateData.expectedDeliveryAt = new Date(updates.expectedDeliveryAt);
+    if (updates.verifiedAt)
+      updateData.verifiedAt = new Date(updates.verifiedAt);
 
     // Check if order is being marked as delivered
     if (updates.delivered === true) {
