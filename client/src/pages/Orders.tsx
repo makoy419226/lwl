@@ -1229,31 +1229,6 @@ export default function Orders() {
                 data-testid="input-search-orders"
               />
             </div>
-            <Dialog open={isCreateOpen} onOpenChange={handleDialogClose}>
-              <DialogTrigger asChild>
-                <Button
-                  className="h-11 px-3 lg:px-4 touch-manipulation whitespace-nowrap"
-                  data-testid="button-new-order"
-                >
-                  <Plus className="w-4 h-4 lg:mr-2" />
-                  <span className="hidden lg:inline">New Order</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[95vw] sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Order</DialogTitle>
-                </DialogHeader>
-                <OrderForm
-                  key={`${prefilledClientId || ""}-${prefilledBillId || ""}`}
-                  clients={clients || []}
-                  bills={bills || []}
-                  onSubmit={(data) => createOrderMutation.mutate(data)}
-                  isLoading={createOrderMutation.isPending}
-                  initialClientId={prefilledClientId}
-                  initialBillId={prefilledBillId}
-                />
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
       </div>
