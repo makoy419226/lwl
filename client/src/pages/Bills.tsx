@@ -953,25 +953,26 @@ export default function Bills() {
               </div>
               <div>Customer: {createdBill?.bill.customerName}</div>
             </div>
-            <div className="border-t border-b py-2 mb-2">
-              <div className="flex justify-between text-xs font-bold border-b pb-1 mb-1">
-                <span>Item</span>
-                <span>Price x Qty = Total</span>
-              </div>
-              {createdBill?.items.map((item, idx) => (
-                <div key={idx} className="py-1 border-b border-dotted last:border-0">
-                  <div className="font-medium text-xs">{item.name}</div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">
-                      {item.price.toFixed(2)} x {item.qty}
-                    </span>
-                    <span className="font-medium">
-                      {(item.price * item.qty).toFixed(2)} AED
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <table className="w-full border-collapse mb-3" style={{ fontSize: '11px' }}>
+              <thead>
+                <tr className="border-b-2 border-black">
+                  <th className="text-left py-2 font-bold">Item</th>
+                  <th className="text-center py-2 font-bold">Qty</th>
+                  <th className="text-right py-2 font-bold">Price</th>
+                  <th className="text-right py-2 font-bold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {createdBill?.items.map((item, idx) => (
+                  <tr key={idx} className="border-b border-gray-300">
+                    <td className="py-2 text-left">{item.name}</td>
+                    <td className="py-2 text-center">{item.qty}</td>
+                    <td className="py-2 text-right">{item.price.toFixed(2)}</td>
+                    <td className="py-2 text-right font-medium">{(item.price * item.qty).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             <div className="flex justify-between font-bold">
               <span>TOTAL:</span>
               <span>
@@ -980,9 +981,6 @@ export default function Bills() {
             </div>
             <div className="text-center mt-3 text-xs">
               Thank you for your business!
-            </div>
-            <div className="text-center mt-2 text-xs font-bold">
-              For Orders/Delivery: +971 50 123 4567
             </div>
           </div>
 
@@ -1059,8 +1057,8 @@ export default function Bills() {
                 <div>Phone: {viewBillPDF.customerPhone}</div>
               )}
             </div>
-            <div className="border-t border-b py-1 mb-2">
-              <div className="text-xs">{viewBillPDF.description}</div>
+            <div className="border-t border-b py-2 mb-2">
+              <div className="text-xs whitespace-pre-wrap">{viewBillPDF.description}</div>
             </div>
             <div className="flex justify-between font-bold">
               <span>TOTAL:</span>
@@ -1070,9 +1068,6 @@ export default function Bills() {
             </div>
             <div className="text-center mt-3 text-xs">
               Thank you for your business!
-            </div>
-            <div className="text-center mt-2 text-xs font-bold">
-              For Orders/Delivery: +971 50 123 4567
             </div>
           </div>
         </div>
