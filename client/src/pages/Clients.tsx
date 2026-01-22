@@ -873,7 +873,7 @@ export default function Clients() {
                     <TableCell
                       className="font-semibold cursor-pointer hover:text-primary hover:underline"
                       data-testid={`text-client-name-${client.id}`}
-                      onClick={() => setViewingClient(client)}
+                      onClick={() => setTransactionClient(client)}
                     >
                       <div className="flex items-center gap-2">
                         <span>{client.name}</span>
@@ -882,7 +882,7 @@ export default function Clients() {
                             ({client.billNumber})
                           </span>
                         )}
-                        <Eye className="w-3 h-3 opacity-50" />
+                        <Wallet className="w-3 h-3 opacity-50" />
                       </div>
                     </TableCell>
                     <TableCell data-testid={`text-client-contact-${client.id}`}>
@@ -917,16 +917,6 @@ export default function Clients() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-primary"
-                          onClick={() => setTransactionClient(client)}
-                          data-testid={`button-history-${client.id}`}
-                          title="Add Deposit"
-                        >
-                          <History className="w-4 h-4" />
-                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
