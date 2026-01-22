@@ -275,139 +275,143 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Amount (AED)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-amount" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {mode === "edit" && (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount (AED)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-amount" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="deposit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Deposit (AED)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-deposit" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+              <FormField
+                control={form.control}
+                name="deposit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Deposit (AED)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-deposit" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-        <FormField
-          control={form.control}
-          name="balance"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Balance (AED)</FormLabel>
-              <FormControl>
-                <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-balance" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes / Suggestions</FormLabel>
-              <FormControl>
-                <Input placeholder="Add any notes about this client..." {...field} data-testid="input-notes" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="billNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bill Number</FormLabel>
-              <FormControl>
-                <Input placeholder="BL-2024-001" {...field} data-testid="input-billNumber" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="preferredPaymentMethod"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Method</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || "cash"}>
+            <FormField
+              control={form.control}
+              name="balance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Balance (AED)</FormLabel>
                   <FormControl>
-                    <SelectTrigger data-testid="select-payment-method">
-                      <SelectValue placeholder="Select method" />
-                    </SelectTrigger>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-balance" />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="cash">
-                      <div className="flex items-center gap-2">
-                        <Banknote className="w-4 h-4 text-green-600" />
-                        Cash
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="card">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-blue-600" />
-                        Card
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="bank">
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-purple-600" />
-                        Bank Transfer
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="discountPercent"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Discount %</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    min="0" 
-                    max="100" 
-                    placeholder="0" 
-                    {...field} 
-                    data-testid="input-discount-percent" 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes / Suggestions</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Add any notes about this client..." {...field} data-testid="input-notes" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="billNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bill Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="BL-2024-001" {...field} data-testid="input-billNumber" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="preferredPaymentMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Method</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "cash"}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-payment-method">
+                          <SelectValue placeholder="Select method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cash">
+                          <div className="flex items-center gap-2">
+                            <Banknote className="w-4 h-4 text-green-600" />
+                            Cash
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="card">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-blue-600" />
+                            Card
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="bank">
+                          <div className="flex items-center gap-2">
+                            <Building className="w-4 h-4 text-purple-600" />
+                            Bank Transfer
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="discountPercent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Discount %</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        max="100" 
+                        placeholder="0" 
+                        {...field} 
+                        data-testid="input-discount-percent" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </>
+        )}
 
         <Button
           type="submit"
