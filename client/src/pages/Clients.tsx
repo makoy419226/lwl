@@ -1532,7 +1532,6 @@ export default function Clients() {
                           <TableHead>Description</TableHead>
                           <TableHead className="text-right">Amount</TableHead>
                           <TableHead className="text-right">Balance</TableHead>
-                          <TableHead className="text-center">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1565,85 +1564,13 @@ export default function Clients() {
                               {tx.billId ? `#${tx.billId}` : "-"}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {editingTransaction?.id === tx.id ? (
-                                <Input
-                                  value={editTransactionDescription}
-                                  onChange={(e) => setEditTransactionDescription(e.target.value)}
-                                  placeholder="Description"
-                                  className="h-8"
-                                  data-testid={`input-edit-description-${tx.id}`}
-                                />
-                              ) : (
-                                tx.description
-                              )}
+                              {tx.description}
                             </TableCell>
                             <TableCell className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}>
-                              {editingTransaction?.id === tx.id ? (
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={editTransactionAmount}
-                                  onChange={(e) => setEditTransactionAmount(e.target.value)}
-                                  className="h-8 w-24 ml-auto"
-                                  data-testid={`input-edit-amount-${tx.id}`}
-                                />
-                              ) : (
-                                <>{tx.type === "deposit" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED</>
-                              )}
+                              {tx.type === "deposit" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED
                             </TableCell>
                             <TableCell className={`text-right font-bold ${currentBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
                               {currentBalance.toFixed(2)} AED
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {editingTransaction?.id === tx.id ? (
-                                <div className="flex items-center justify-center gap-1">
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={handleSaveTransaction}
-                                    disabled={updateTransactionMutation.isPending}
-                                    className="h-7 w-7 text-green-600"
-                                    data-testid={`button-save-transaction-${tx.id}`}
-                                  >
-                                    <Check className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      setEditingTransaction(null);
-                                      setEditTransactionAmount("");
-                                      setEditTransactionDescription("");
-                                    }}
-                                    className="h-7 w-7"
-                                    data-testid={`button-cancel-edit-${tx.id}`}
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center gap-1">
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => handleEditTransaction(tx)}
-                                    className="h-7 w-7"
-                                    data-testid={`button-edit-transaction-${tx.id}`}
-                                  >
-                                    <Pencil className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => handleDeleteTransaction(tx)}
-                                    disabled={deleteTransactionMutation.isPending}
-                                    className="h-7 w-7 text-destructive"
-                                    data-testid={`button-delete-transaction-${tx.id}`}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              )}
                             </TableCell>
                           </TableRow>
                             );
