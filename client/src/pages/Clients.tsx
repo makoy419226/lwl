@@ -1434,21 +1434,11 @@ export default function Clients() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Package className="w-5 h-5" />
                   Order History ({clientOrders?.length || 0})
                 </h3>
-                <Button
-                  onClick={() => {
-                    setViewingClient(null);
-                    navigate(`/products?clientId=${viewingClient.id}`);
-                  }}
-                  data-testid="button-new-order-for-client"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Order
-                </Button>
               </div>
 
               {clientOrdersLoading ? (
@@ -1459,7 +1449,6 @@ export default function Clients() {
                 <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                   <ShoppingBag className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>No orders found for this client</p>
-                  <p className="text-sm">Click "New Order" to create one</p>
                 </div>
               ) : (
                 <div className="border rounded-lg overflow-hidden">
