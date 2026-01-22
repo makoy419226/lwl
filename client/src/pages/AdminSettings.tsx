@@ -124,7 +124,7 @@ export default function AdminSettings() {
                       <li>All orders</li>
                       <li>All bills and payments</li>
                       <li>All clients</li>
-                      <li>All transaction history</li>
+                      <li>All deposits and transaction history</li>
                       <li>All customer dues</li>
                       <li>Inventory stock (reset to zero)</li>
                     </ul>
