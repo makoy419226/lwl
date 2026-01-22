@@ -115,6 +115,7 @@ export default function Clients() {
 
   const { data: allOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
+    refetchOnMount: "always",
   });
 
   const { data: transactions } = useQuery<ClientTransaction[]>({
