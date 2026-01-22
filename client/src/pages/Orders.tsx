@@ -1701,7 +1701,7 @@ export default function Orders() {
                                 <Button
                                   size="sm"
                                   variant="default"
-                                  className="flex-1 bg-green-600 hover:bg-green-700"
+                                  className="flex-1"
                                   onClick={() =>
                                     handleDeliveryWithPin(order.id)
                                   }
@@ -1718,7 +1718,7 @@ export default function Orders() {
                                 <Button
                                   size="sm"
                                   variant="default"
-                                  className="flex-1 bg-green-600 hover:bg-green-700"
+                                  className="flex-1"
                                   onClick={() =>
                                     handleDeliveryWithPin(order.id)
                                   }
@@ -2254,7 +2254,7 @@ export default function Orders() {
                                             <Button
                                               size="sm"
                                               variant="default"
-                                              className="whitespace-nowrap touch-manipulation bg-green-600 hover:bg-green-700"
+                                              className="whitespace-nowrap touch-manipulation"
                                               onClick={() =>
                                                 handleDeliveryWithPin(order.id)
                                               }
@@ -2272,7 +2272,7 @@ export default function Orders() {
                                             <Button
                                               size="sm"
                                               variant="default"
-                                              className="whitespace-nowrap touch-manipulation bg-green-600 hover:bg-green-700"
+                                              className="whitespace-nowrap touch-manipulation"
                                               onClick={() =>
                                                 handleDeliveryWithPin(order.id)
                                               }
