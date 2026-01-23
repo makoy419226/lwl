@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/Sidebar";
 import { QuickSearch } from "@/components/QuickSearch";
 import Dashboard from "@/pages/Dashboard";
+import TodaysWork from "@/pages/TodaysWork";
 import Products from "@/pages/Products";
 import Clients from "@/pages/Clients";
 import ClientDetails from "@/pages/ClientDetails";
@@ -28,6 +29,7 @@ const UserContext = createContext<UserInfo | null>(null);
 
 const rolePermissions: Record<string, string[]> = {
   "/": ["admin", "manager", "cashier"],
+  "/dashboard": ["admin", "manager", "cashier"],
   "/inventory": ["admin", "manager", "cashier"],
   "/products": ["admin", "manager", "cashier"],
   "/clients": ["admin", "manager", "cashier"],
@@ -63,7 +65,8 @@ function Router() {
   
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={TodaysWork} />
+      <Route path="/dashboard" component={TodaysWork} />
       <Route path="/inventory" component={Dashboard} />
       <Route path="/products" component={Products} />
       <Route path="/clients" component={Clients} />

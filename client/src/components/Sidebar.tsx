@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, Search, FlaskConical, Settings } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, Search, FlaskConical, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -43,7 +43,8 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     }
   }, [location, isMobile]);
 
-  const isInventory = location === "/" || location === "/inventory";
+  const isDashboard = location === "/" || location === "/dashboard";
+  const isInventory = location === "/inventory";
   const isPriceList = location === "/products";
   const isClients = location === "/clients" || location.startsWith("/clients/");
   const isBills = location === "/bills";
@@ -62,6 +63,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isAdminOrManager = isAdmin || isManager;
 
   const allNavItems = [
+    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "manager", "cashier"] },
     { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "manager", "cashier"] },
     { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "manager", "cashier"] },
     { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "manager", "cashier"] },
