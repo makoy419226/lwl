@@ -1016,11 +1016,19 @@ export default function Clients() {
                   const paid = parseFloat(bill.paidAmount || "0");
                   return sum + (total - paid);
                 }, 0) || 0;
-                const depositBalance = parseFloat(transactionClient.deposit || "0");
-                // Due = unpaid bills - available deposit (minimum 0)
-                const actualDue = Math.max(0, clientUnpaidTotal - depositBalance);
-                // Available credit = deposit - unpaid bills (if positive)
-                const availableCredit = Math.max(0, depositBalance - clientUnpaidTotal);
+                
+                // Calculate credit balance from transactions (deposit - deposit_used)
+                const creditBalance = transactions?.reduce((sum, tx) => {
+                  if (tx.type === "deposit") {
+                    return sum + parseFloat(tx.amount || "0");
+                  } else if (tx.type === "deposit_used") {
+                    return sum - parseFloat(tx.amount || "0");
+                  }
+                  return sum;
+                }, 0) || 0;
+                
+                // Credit Available = credit balance (what's been added minus what's been used)
+                const availableCredit = Math.max(0, creditBalance);
                 
                 return (
                   <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
@@ -1031,11 +1039,9 @@ export default function Clients() {
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">
-                        {actualDue > 0 ? "Amount Due" : "Credit Available"}
-                      </p>
-                      <p className={`text-xl font-bold ${actualDue > 0 ? "text-destructive" : "text-green-600"}`}>
-                        {actualDue > 0 ? actualDue.toFixed(2) : availableCredit.toFixed(2)} AED
+                      <p className="text-sm text-muted-foreground">Credit Available</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {availableCredit.toFixed(2)} AED
                       </p>
                     </div>
                   </div>
