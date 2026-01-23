@@ -962,8 +962,20 @@ export default function Bills() {
           <div
             ref={invoiceRef}
             className="bg-white p-6 rounded-lg border text-black"
-            style={{ fontFamily: "Arial, sans-serif", fontSize: "12px" }}
+            style={{ fontFamily: "Arial, sans-serif", fontSize: "12px", position: "relative" }}
           >
+            <div style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              opacity: 0.08,
+              pointerEvents: "none",
+              zIndex: 0,
+            }}>
+              <img src={logoImage} alt="" style={{ width: "350px", height: "auto" }} />
+            </div>
+            <div style={{ position: "relative", zIndex: 1 }}>
             <div className="text-center border-b pb-3 mb-3">
               <img 
                 src={logoImage} 
@@ -1051,6 +1063,7 @@ export default function Bills() {
             <div className="text-center mt-4 text-xs">
               Thank you for your business!
             </div>
+            </div>
           </div>
 
           <div className="flex gap-2 mt-4">
@@ -1091,8 +1104,21 @@ export default function Bills() {
               fontFamily: "Arial, sans-serif",
               fontSize: "12px",
               width: "210mm",
+              position: "relative",
             }}
           >
+            <div style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              opacity: 0.08,
+              pointerEvents: "none",
+              zIndex: 0,
+            }}>
+              <img src={logoImage} alt="" style={{ width: "350px", height: "auto" }} />
+            </div>
+            <div style={{ position: "relative", zIndex: 1 }}>
             <div className="text-center border-b pb-3 mb-3">
               <img 
                 src={logoImage} 
@@ -1193,6 +1219,7 @@ export default function Bills() {
             
             <div className="text-center mt-4 text-xs">
               Thank you for your business!
+            </div>
             </div>
           </div>
         </div>
