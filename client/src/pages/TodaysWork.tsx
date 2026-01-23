@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shirt, Package, CalendarCheck, Clock, CheckCircle2, TrendingUp } from "lucide-react";
+import { Loader2, Shirt, Package, CalendarCheck, Clock, CheckCircle2, TrendingUp, Truck, HandCoins } from "lucide-react";
 import { format } from "date-fns";
 
 export default function TodaysWork() {
@@ -23,12 +23,20 @@ export default function TodaysWork() {
     (order) => order.status === "entry" || order.status === "washing" || order.status === "tagging"
   );
 
-  const readyForDelivery = todaysOrders.filter(
-    (order) => order.status === "ready" || order.status === "packing"
+  const readyForPickup = todaysOrders.filter(
+    (order) => (order.status === "ready" || order.status === "packing") && order.deliveryType === "pickup"
   );
 
-  const delivered = todaysOrders.filter(
-    (order) => order.status === "delivered"
+  const readyForDelivery = todaysOrders.filter(
+    (order) => (order.status === "ready" || order.status === "packing") && order.deliveryType === "delivery"
+  );
+
+  const pickedUpToday = todaysOrders.filter(
+    (order) => order.status === "delivered" && order.deliveryType === "pickup"
+  );
+
+  const deliveredToday = todaysOrders.filter(
+    (order) => order.status === "delivered" && order.deliveryType === "delivery"
   );
 
   const totalRevenue = todaysOrders.reduce((sum, order) => {
@@ -62,7 +70,7 @@ export default function TodaysWork() {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="p-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800" data-testid="card-washing-count">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
@@ -75,14 +83,38 @@ export default function TodaysWork() {
           </div>
         </Card>
 
-        <Card className="p-4 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800" data-testid="card-ready-count">
+        <Card className="p-4 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800" data-testid="card-ready-pickup-count">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
-              <Package className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <HandCoins className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Ready</p>
-              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300" data-testid="text-ready-count">{readyForDelivery.length}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Ready for Pickup</p>
+              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300" data-testid="text-ready-pickup-count">{readyForPickup.length}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800" data-testid="card-ready-delivery-count">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+              <Truck className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">Ready for Delivery</p>
+              <p className="text-2xl font-bold text-orange-700 dark:text-orange-300" data-testid="text-ready-delivery-count">{readyForDelivery.length}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 bg-teal-50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800" data-testid="card-pickedup-count">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
+              <Package className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            </div>
+            <div>
+              <p className="text-xs text-teal-600 dark:text-teal-400 font-medium">Picked Up Today</p>
+              <p className="text-2xl font-bold text-teal-700 dark:text-teal-300" data-testid="text-pickedup-count">{pickedUpToday.length}</p>
             </div>
           </div>
         </Card>
@@ -93,8 +125,8 @@ export default function TodaysWork() {
               <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-xs text-green-600 dark:text-green-400 font-medium">Delivered</p>
-              <p className="text-2xl font-bold text-green-700 dark:text-green-300" data-testid="text-delivered-count">{delivered.length}</p>
+              <p className="text-xs text-green-600 dark:text-green-400 font-medium">Delivered Today</p>
+              <p className="text-2xl font-bold text-green-700 dark:text-green-300" data-testid="text-delivered-count">{deliveredToday.length}</p>
             </div>
           </div>
         </Card>
@@ -216,14 +248,14 @@ export default function TodaysWork() {
         <Card className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="w-4 h-4 text-green-500" />
-            <h3 className="font-bold text-sm text-muted-foreground uppercase">Delivered Today</h3>
-            <Badge variant="secondary" className="ml-auto">{delivered.length}</Badge>
+            <h3 className="font-bold text-sm text-muted-foreground uppercase">Completed Today</h3>
+            <Badge variant="secondary" className="ml-auto">{pickedUpToday.length + deliveredToday.length}</Badge>
           </div>
           <div className="space-y-2 max-h-64 overflow-auto">
-            {delivered.length === 0 ? (
-              <p className="text-center text-muted-foreground text-xs py-2">No deliveries yet</p>
+            {(pickedUpToday.length + deliveredToday.length) === 0 ? (
+              <p className="text-center text-muted-foreground text-xs py-2">No completed orders yet</p>
             ) : (
-              delivered.map((order) => (
+              [...pickedUpToday, ...deliveredToday].map((order) => (
                 <div key={order.id} className="p-2 bg-green-50 dark:bg-green-950/20 rounded-lg text-xs">
                   <div className="flex justify-between">
                     <span className="font-medium">#{order.orderNumber}</span>
