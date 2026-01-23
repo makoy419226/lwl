@@ -987,37 +987,18 @@ export async function registerRoutes(
           });
           assignedBillId = newBill.id;
         } else {
-          // Default behavior: add to existing unpaid bill or create new
-          const unpaidBills = await storage.getUnpaidBills(clientId);
-
-          if (unpaidBills.length > 0) {
-            // Add to existing unpaid bill
-            const existingBill = unpaidBills[0];
-            const newAmount =
-              parseFloat(existingBill.amount.toString()) + orderAmount;
-            const existingDesc = existingBill.description || "";
-            const newDesc = existingDesc
-              ? `${existingDesc}\nOrder #${order.orderNumber}: ${order.items || "Items"}`
-              : `Order #${order.orderNumber}: ${order.items || "Items"}`;
-
-            await storage.updateBill(existingBill.id, {
-              amount: newAmount.toFixed(2),
-              description: newDesc,
-            });
-            assignedBillId = existingBill.id;
-          } else {
-            // Create new bill for this client
-            const newBill = await storage.createBill({
-              clientId,
-              customerName: customerName.trim(),
-              customerPhone: customerPhone.trim(),
-              amount: orderAmount.toFixed(2),
-              description: `Order #${order.orderNumber}: ${order.items || "Items"}`,
-              billDate: new Date(),
-              referenceNumber: `BILL-${order.orderNumber}`,
-            });
-            assignedBillId = newBill.id;
-          }
+          // Default behavior: always create a new bill for each order
+          // Each order gets its own separate bill for independent payment tracking
+          const newBill = await storage.createBill({
+            clientId,
+            customerName: customerName.trim(),
+            customerPhone: customerPhone.trim(),
+            amount: orderAmount.toFixed(2),
+            description: `Order #${order.orderNumber}: ${order.items || "Items"}`,
+            billDate: new Date(),
+            referenceNumber: `BILL-${order.orderNumber}`,
+          });
+          assignedBillId = newBill.id;
         }
 
         // Update order with billId if we assigned one
