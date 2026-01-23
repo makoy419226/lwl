@@ -22,7 +22,7 @@ import PublicOrder from "@/pages/PublicOrder";
 import TrackOrder from "@/pages/TrackOrder";
 import AdminSettings from "@/pages/AdminSettings";
 import NotFound from "@/pages/not-found";
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import logoImage from "@assets/image_1767220512226.png";
 
 export const UserContext = createContext<UserInfo | null>(null);
@@ -105,12 +105,73 @@ function App() {
     setUser(userData);
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("user");
+    localStorage.removeItem("lastActivity");
     setIsLoggedIn(false);
     setUser(null);
-  };
+  }, []);
+
+  // Session timeout after 2 hours of inactivity
+  const TIMEOUT_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+  const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateLastActivity = useCallback(() => {
+    if (isLoggedIn) {
+      localStorage.setItem("lastActivity", Date.now().toString());
+    }
+  }, [isLoggedIn]);
+
+  const checkSessionTimeout = useCallback(() => {
+    const lastActivity = localStorage.getItem("lastActivity");
+    if (lastActivity && isLoggedIn) {
+      const elapsed = Date.now() - parseInt(lastActivity, 10);
+      if (elapsed >= TIMEOUT_DURATION) {
+        handleLogout();
+      }
+    }
+  }, [isLoggedIn, handleLogout]);
+
+  // Set up activity tracking and timeout checking
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    // Initialize last activity on login
+    updateLastActivity();
+
+    // Activity events to track
+    const events = ["mousedown", "keydown", "scroll", "touchstart", "mousemove"];
+    
+    // Throttle activity updates to once per minute
+    let lastUpdate = Date.now();
+    const throttledUpdate = () => {
+      const now = Date.now();
+      if (now - lastUpdate >= 60000) { // Update at most once per minute
+        lastUpdate = now;
+        updateLastActivity();
+      }
+    };
+
+    events.forEach(event => {
+      window.addEventListener(event, throttledUpdate, { passive: true });
+    });
+
+    // Check for timeout every minute
+    activityTimeoutRef.current = setInterval(checkSessionTimeout, 60000);
+
+    // Check immediately on mount (in case user returns to inactive tab)
+    checkSessionTimeout();
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, throttledUpdate);
+      });
+      if (activityTimeoutRef.current) {
+        clearInterval(activityTimeoutRef.current);
+      }
+    };
+  }, [isLoggedIn, updateLastActivity, checkSessionTimeout]);
 
   if (location.startsWith("/order/") || location === "/track") {
     return (
