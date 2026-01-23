@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shirt, Package, CalendarCheck, Clock, CheckCircle2, TrendingUp, Truck, HandCoins } from "lucide-react";
+import { Loader2, Package, Clock, CheckCircle2, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 
 export default function TodaysWork() {
@@ -19,16 +19,8 @@ export default function TodaysWork() {
     return orderDate.getTime() === today.getTime();
   });
 
-  const pendingWashing = todaysOrders.filter(
-    (order) => order.status === "entry" || order.status === "washing" || order.status === "tagging"
-  );
-
   const readyForPickup = todaysOrders.filter(
     (order) => (order.status === "ready" || order.status === "packing") && order.deliveryType === "pickup"
-  );
-
-  const readyForDelivery = todaysOrders.filter(
-    (order) => (order.status === "ready" || order.status === "packing") && order.deliveryType === "delivery"
   );
 
   const pickedUpToday = todaysOrders.filter(
@@ -70,77 +62,35 @@ export default function TodaysWork() {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="p-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800" data-testid="card-washing-count">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-              <Shirt className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="p-6" data-testid="card-ready-pickup">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-amber-500" />
+              <h3 className="font-semibold text-foreground">READY FOR PICKUP</h3>
             </div>
-            <div>
-              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Washing</p>
-              <p className="text-2xl font-bold text-blue-700 dark:text-blue-300" data-testid="text-washing-count">{pendingWashing.length}</p>
-            </div>
+            <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="text-ready-pickup-count">
+              {readyForPickup.length}
+            </Badge>
           </div>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {readyForPickup.length === 0 ? "No items ready" : `${readyForPickup.length} order${readyForPickup.length !== 1 ? 's' : ''} ready for pickup`}
+          </p>
         </Card>
 
-        <Card className="p-4 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800" data-testid="card-ready-pickup-count">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
-              <HandCoins className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+        <Card className="p-6" data-testid="card-completed-today">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <h3 className="font-semibold text-foreground">COMPLETED TODAY</h3>
             </div>
-            <div>
-              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Ready for Pickup</p>
-              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300" data-testid="text-ready-pickup-count">{readyForPickup.length}</p>
-            </div>
+            <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="text-completed-count">
+              {pickedUpToday.length + deliveredToday.length}
+            </Badge>
           </div>
-        </Card>
-
-        <Card className="p-4 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800" data-testid="card-ready-delivery-count">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
-              <Truck className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div>
-              <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">Ready for Delivery</p>
-              <p className="text-2xl font-bold text-orange-700 dark:text-orange-300" data-testid="text-ready-delivery-count">{readyForDelivery.length}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-teal-50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800" data-testid="card-pickedup-count">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-              <Package className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-            </div>
-            <div>
-              <p className="text-xs text-teal-600 dark:text-teal-400 font-medium">Picked Up Today</p>
-              <p className="text-2xl font-bold text-teal-700 dark:text-teal-300" data-testid="text-pickedup-count">{pickedUpToday.length}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800" data-testid="card-delivered-count">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-xs text-green-600 dark:text-green-400 font-medium">Delivered Today</p>
-              <p className="text-2xl font-bold text-green-700 dark:text-green-300" data-testid="text-delivered-count">{deliveredToday.length}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800" data-testid="card-total-count">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-              <CalendarCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Total Orders</p>
-              <p className="text-2xl font-bold text-purple-700 dark:text-purple-300" data-testid="text-total-count">{todaysOrders.length}</p>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {pickedUpToday.length + deliveredToday.length === 0 ? "No completed orders yet" : `${pickedUpToday.length + deliveredToday.length} order${pickedUpToday.length + deliveredToday.length !== 1 ? 's' : ''} completed`}
+          </p>
         </Card>
       </div>
 
