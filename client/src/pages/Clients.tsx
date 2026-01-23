@@ -1142,7 +1142,25 @@ export default function Clients() {
                             </div>
                           </div>
                           {payingBillId === bill.id ? (
-                            <div className="flex items-center gap-2 ml-4">
+                            <div className="flex flex-col gap-2 ml-4">
+                              {/* Warning if credit is available but paying with cash/card/bank */}
+                              {(() => {
+                                const creditAvailable = transactions?.reduce((sum, tx) => {
+                                  if (tx.type === "deposit") return sum + parseFloat(tx.amount || "0");
+                                  if (tx.type === "deposit_used") return sum - parseFloat(tx.amount || "0");
+                                  return sum;
+                                }, 0) || 0;
+                                
+                                if (creditAvailable > 0 && billPaymentMethod !== "deposit") {
+                                  return (
+                                    <div className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded text-xs text-amber-700 dark:text-amber-300">
+                                      <span>⚠️ Client has {creditAvailable.toFixed(2)} AED credit available</span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                              <div className="flex items-center gap-2">
                               <Input
                                 type="number"
                                 step="0.01"
@@ -1159,7 +1177,7 @@ export default function Clients() {
                                 onValueChange={setBillPaymentMethod}
                               >
                                 <SelectTrigger
-                                  className="w-24"
+                                  className="w-28"
                                   data-testid={`select-pay-method-${bill.id}`}
                                 >
                                   <SelectValue />
@@ -1168,6 +1186,7 @@ export default function Clients() {
                                   <SelectItem value="cash">Cash</SelectItem>
                                   <SelectItem value="card">Card</SelectItem>
                                   <SelectItem value="bank">Bank</SelectItem>
+                                  <SelectItem value="deposit">Use Credit</SelectItem>
                                 </SelectContent>
                               </Select>
                               <Button
@@ -1204,6 +1223,7 @@ export default function Clients() {
                               >
                                 Cancel
                               </Button>
+                              </div>
                             </div>
                           ) : (
                             <Button
