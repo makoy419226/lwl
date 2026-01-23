@@ -49,7 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, startOfDay, startOfWeek, startOfMonth, startOfYear, isAfter, isSameDay } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, Client, Bill, Order } from "@shared/schema";
 import html2pdf from "html2pdf.js";
@@ -84,6 +84,7 @@ export default function Bills() {
   const searchParams = useSearch();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const [searchTerm, setSearchTerm] = useState(urlSearch);
+  const [timePeriod, setTimePeriod] = useState<"today" | "week" | "month" | "year" | "all">("all");
   
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
@@ -154,15 +155,43 @@ export default function Bills() {
   const { data: bills, isLoading, isError, refetch } = useBills();
 
   const filteredBills = useMemo(() => {
-    if (!bills || !searchTerm) return bills;
-    const term = searchTerm.toLowerCase();
-    return bills.filter(b => 
-      b.referenceNumber?.toLowerCase().includes(term) ||
-      b.customerName?.toLowerCase().includes(term) ||
-      b.description?.toLowerCase().includes(term) ||
-      String(b.id).includes(term)
-    );
-  }, [bills, searchTerm]);
+    if (!bills) return bills;
+    
+    let filtered = bills;
+    
+    // Time period filter
+    if (timePeriod !== "all") {
+      const now = new Date();
+      filtered = filtered.filter(b => {
+        const billDate = new Date(b.billDate);
+        switch (timePeriod) {
+          case "today":
+            return isSameDay(billDate, now);
+          case "week":
+            return isAfter(billDate, startOfWeek(now, { weekStartsOn: 0 })) || isSameDay(billDate, startOfWeek(now, { weekStartsOn: 0 }));
+          case "month":
+            return isAfter(billDate, startOfMonth(now)) || isSameDay(billDate, startOfMonth(now));
+          case "year":
+            return isAfter(billDate, startOfYear(now)) || isSameDay(billDate, startOfYear(now));
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(b => 
+        b.referenceNumber?.toLowerCase().includes(term) ||
+        b.customerName?.toLowerCase().includes(term) ||
+        b.description?.toLowerCase().includes(term) ||
+        String(b.id).includes(term)
+      );
+    }
+    
+    return filtered;
+  }, [bills, searchTerm, timePeriod]);
   const { data: clients = [] } = useClients();
   const { mutate: deleteBill } = useDeleteBill();
   const { mutate: createProduct, isPending: isCreatingProduct } =
@@ -735,9 +764,28 @@ export default function Bills() {
               <p className="text-muted-foreground">
                 Track bill entries for customers.
               </p>
-              <div className="mt-2 text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full inline-block">
-                Total Bills:{" "}
-                <span className="text-primary">{bills?.length || 0}</span>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                  Total: <span className="text-primary">{bills?.length || 0}</span>
+                </div>
+                <div className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                  Showing: <span className="text-primary">{filteredBills?.length || 0}</span>
+                </div>
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-sm text-muted-foreground">View:</span>
+                  <Select value={timePeriod} onValueChange={(v) => setTimePeriod(v as typeof timePeriod)}>
+                    <SelectTrigger className="w-32" data-testid="select-time-period">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                      <SelectItem value="month">This Month</SelectItem>
+                      <SelectItem value="year">This Year</SelectItem>
+                      <SelectItem value="all">All Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
