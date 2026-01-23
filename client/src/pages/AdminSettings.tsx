@@ -187,7 +187,7 @@ export default function AdminSettings() {
               Daily Sales Report
             </CardTitle>
             <CardDescription>
-              Daily sales reports are automatically sent to idusma0010@gmail.com at 1:00 AM UAE time.
+              Daily sales reports are automatically sent to liquidewashesruwais@gmail.com at 1:00 AM UAE time.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -221,7 +221,7 @@ export default function AdminSettings() {
                       Send Daily Sales Report
                     </DialogTitle>
                     <DialogDescription>
-                      This will send today's sales report to idusma0010@gmail.com. Enter the admin password to confirm.
+                      This will send today's sales report to liquidewashesruwais@gmail.com. Enter the admin password to confirm.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
