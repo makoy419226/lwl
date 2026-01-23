@@ -2277,6 +2277,74 @@ export default function Products() {
               </Popover>
             </div>
 
+            {/* Walk-in Customer Fields */}
+            {isWalkIn && (
+              <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+                <div>
+                  <Label className="text-xs font-semibold">Customer Name <span className="text-destructive">*</span></Label>
+                  <Input
+                    className="h-8 text-xs mt-1"
+                    placeholder="Enter name..."
+                    value={walkInName}
+                    onChange={(e) => {
+                      setWalkInName(e.target.value);
+                      setCustomerName(e.target.value || "Walk-in Customer");
+                    }}
+                    data-testid="popup-input-walkin-name"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">Phone Number <span className="text-destructive">*</span></Label>
+                  <Input
+                    className={`h-8 text-xs mt-1 ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
+                    placeholder="Enter phone number..."
+                    value={walkInPhone}
+                    onChange={(e) => setWalkInPhone(e.target.value)}
+                    data-testid="popup-input-walkin-phone"
+                  />
+                </div>
+                {clientMatch && (
+                  <div className="bg-red-100 dark:bg-red-950 border border-red-500 rounded-lg p-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-bold text-red-700 dark:text-red-300">
+                          {clientMatch.message}: {clientMatch.client.name}
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="mt-1 text-xs h-7 bg-red-50 dark:bg-red-900 border-red-300"
+                          onClick={() => {
+                            setIsWalkIn(false);
+                            setSelectedClientId(clientMatch.client.id);
+                            setCustomerName(clientMatch.client.name);
+                            setCustomerPhone(clientMatch.client.phone || "");
+                            setWalkInAddress(clientMatch.client.address || "");
+                            setWalkInName("");
+                            setWalkInPhone("");
+                          }}
+                        >
+                          Use existing: {clientMatch.client.name}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <Label className="text-xs font-semibold">Address <span className="text-destructive">*</span></Label>
+                  <Input
+                    className="h-8 text-xs mt-1"
+                    placeholder="Enter address..."
+                    value={walkInAddress}
+                    onChange={(e) => setWalkInAddress(e.target.value)}
+                    data-testid="popup-input-walkin-address"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Order Type */}
             <div className="flex gap-2">
               <Button
@@ -2315,16 +2383,16 @@ export default function Products() {
 
             {/* Place Order Button */}
             <Button
-              className="w-full h-10 font-bold"
+              className={`w-full h-10 font-bold ${clientMatch ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : ""}`}
               onClick={() => {
                 setShowCartPopup(false);
                 handleCreateOrder();
               }}
-              disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn)}
+              disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn) || !!clientMatch}
               data-testid="popup-button-place-order"
             >
               {createOrderMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Place Order - {(orderTotal - (orderTotal * (parseFloat(discountPercent) || 0)) / 100 + (parseFloat(tips) || 0)).toFixed(2)} AED
+              {clientMatch ? "Use existing client above" : `Place Order - ${(orderTotal - (orderTotal * (parseFloat(discountPercent) || 0)) / 100 + (parseFloat(tips) || 0)).toFixed(2)} AED`}
             </Button>
           </div>
         </DialogContent>
