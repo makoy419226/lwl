@@ -1257,15 +1257,28 @@ export default function Clients() {
                             }
                             // "payment" and "bill" types don't affect credit balance
                             
-                            // Determine display type and styling
+                            // Determine display type and styling based on type and payment method
                             const getTypeDisplay = () => {
-                              switch (tx.type) {
-                                case "deposit": return { label: "Credit Added", color: "bg-green-100 text-green-700" };
-                                case "deposit_used": return { label: "Credit Used", color: "bg-orange-100 text-orange-700" };
-                                case "bill": return { label: "Bill", color: "bg-blue-100 text-blue-700" };
-                                case "payment": return { label: "Payment", color: "bg-purple-100 text-purple-700" };
-                                default: return { label: tx.type, color: "bg-gray-100 text-gray-700" };
+                              if (tx.type === "deposit") {
+                                return { label: "Add Credit to Account", color: "bg-green-100 text-green-700" };
                               }
+                              if (tx.type === "deposit_used") {
+                                return { label: "Paid with Credit", color: "bg-orange-100 text-orange-700" };
+                              }
+                              if (tx.type === "bill") {
+                                return { label: "Bill", color: "bg-blue-100 text-blue-700" };
+                              }
+                              // For payment types, show the payment method
+                              if (tx.type === "payment" || tx.paymentMethod) {
+                                const method = tx.paymentMethod || "cash";
+                                switch (method) {
+                                  case "cash": return { label: "Paid in Cash", color: "bg-purple-100 text-purple-700" };
+                                  case "card": return { label: "Paid in Card", color: "bg-indigo-100 text-indigo-700" };
+                                  case "bank": return { label: "Paid in Bank", color: "bg-cyan-100 text-cyan-700" };
+                                  default: return { label: `Paid in ${method}`, color: "bg-gray-100 text-gray-700" };
+                                }
+                              }
+                              return { label: tx.type, color: "bg-gray-100 text-gray-700" };
                             };
                             const typeDisplay = getTypeDisplay();
                             
