@@ -27,6 +27,7 @@ const CATEGORIES = [
 const formSchema = insertProductSchema.extend({
   stockQuantity: z.coerce.number().min(0).optional(),
   price: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
+  dryCleanPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -124,17 +125,20 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues ? {
-      ...defaultValues,
+      name: defaultValues.name,
       price: defaultValues.price || "",
+      dryCleanPrice: defaultValues.dryCleanPrice || "",
       description: defaultValues.description || "",
       sku: defaultValues.sku || "",
       imageUrl: defaultValues.imageUrl || "",
       category: defaultValues.category || "Arabic Clothes",
+      stockQuantity: defaultValues.stockQuantity ?? undefined,
     } : {
       name: "",
       description: "",
       category: "Arabic Clothes",
       price: "",
+      dryCleanPrice: "",
       sku: "",
       imageUrl: "",
     },
@@ -225,7 +229,7 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price (AED)</FormLabel>
+                <FormLabel>Normal Price (AED)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
                 </FormControl>
@@ -236,24 +240,38 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
 
           <FormField
             control={form.control}
-            name="sku"
+            name="dryCleanPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>SKU (Auto-generated)</FormLabel>
+                <FormLabel>Dry Clean Price (AED)</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Auto-generated" 
-                    {...field} 
-                    value={field.value || ""} 
-                    className="rounded-lg bg-muted"
-                    readOnly
-                  />
+                  <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="sku"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>SKU (Auto-generated)</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Auto-generated" 
+                  {...field} 
+                  value={field.value || ""} 
+                  className="rounded-lg bg-muted"
+                  readOnly
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
