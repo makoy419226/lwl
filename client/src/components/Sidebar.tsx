@@ -62,23 +62,46 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isManager = userRole === "manager";
   const isAdminOrManager = isAdmin || isManager;
 
-  const allNavItems = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "manager", "cashier"] },
-    { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "manager", "cashier"] },
-    { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "manager", "cashier"] },
-    { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "manager", "cashier"] },
-    { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "manager", "cashier"] },
-    { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "cashier"] },
-    { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
-    { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
-    { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "manager"] },
-    { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "manager"] },
-    { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "manager", "cashier"] },
-    { href: "/track", icon: FlaskConical, label: "Public Tracking Page", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "manager"] },
-    { href: "/admin-settings", icon: Settings, label: "Admin Settings", active: isAdminSettings, testId: "nav-admin-settings", roles: ["admin"] },
+  const navGroups = [
+    {
+      label: "Operations",
+      items: [
+        { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "manager", "cashier"] },
+        { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "manager", "cashier"] },
+        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "cashier"] },
+      ]
+    },
+    {
+      label: "Business",
+      items: [
+        { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "manager", "cashier"] },
+        { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "manager", "cashier"] },
+        { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "manager", "cashier"] },
+        { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "manager"] },
+      ]
+    },
+    {
+      label: "Reports",
+      items: [
+        { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
+        { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "manager"] },
+      ]
+    },
+    {
+      label: "Settings",
+      items: [
+        { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
+        { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "manager", "cashier"] },
+        { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "manager"] },
+        { href: "/admin-settings", icon: Settings, label: "Admin Settings", active: isAdminSettings, testId: "nav-admin-settings", roles: ["admin"] },
+      ]
+    },
   ];
 
-  const navItems = allNavItems.filter(item => item.roles.includes(userRole));
+  const filteredGroups = navGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => item.roles.includes(userRole))
+  })).filter(group => group.items.length > 0);
 
   return (
     <>
@@ -107,36 +130,38 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
         transition-transform duration-300 ease-in-out
         ${isMobile && !isOpen ? '-translate-x-full' : 'translate-x-0'}
       `}>
-        <div className="p-4 border-b border-border">
+        <div className="p-3 border-b border-border">
           <img 
             src={logoImage} 
             alt="Liquid Washes Laundry" 
-            className="w-full h-auto max-h-24 object-contain"
+            className="w-full h-auto max-h-16 object-contain"
             data-testid="img-logo"
           />
         </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href}>
-              <Button
-                variant={item.active ? "default" : "ghost"}
-                className={`w-full justify-start rounded-lg font-semibold gap-3 h-12 touch-manipulation ${
-                  item.active
-                    ? "bg-primary text-white shadow-md"
-                    : "text-foreground hover:bg-muted/50"
-                }`}
-                data-testid={item.testId}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                <span className="truncate flex-1 text-left">{item.label}</span>
-                {"experimental" in item && item.experimental && (
-                  <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 shrink-0 text-red-500 border-red-500">
-                    Beta
-                  </Badge>
-                )}
-              </Button>
-            </Link>
+        <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+          {filteredGroups.map((group, groupIndex) => (
+            <div key={group.label} className="space-y-1">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-1">
+                {group.label}
+              </p>
+              {group.items.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    variant={item.active ? "default" : "ghost"}
+                    className={`w-full justify-start rounded-lg font-medium gap-3 h-10 touch-manipulation ${
+                      item.active
+                        ? "bg-primary text-white shadow-md"
+                        : "text-foreground hover:bg-muted/50"
+                    }`}
+                    data-testid={item.testId}
+                  >
+                    <item.icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate flex-1 text-left text-sm">{item.label}</span>
+                  </Button>
+                </Link>
+              ))}
+            </div>
           ))}
         </nav>
 
@@ -172,12 +197,10 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
           </div>
         )}
 
-        <div className="p-4 border-t border-border text-xs text-muted-foreground text-center space-y-1">
-          <p className="font-semibold text-foreground">Liquide Washes Laundry</p>
-          <p>Centra Market D/109</p>
-          <p>Al Dhanna City, Al Ruwais</p>
-          <p>Abu Dhabi - UAE</p>
-          <p className="pt-1">© 2024</p>
+        <div className="p-3 border-t border-border text-[10px] text-muted-foreground text-center">
+          <p className="font-medium text-foreground text-xs">Liquide Washes Laundry</p>
+          <p>Al Dhanna City, Al Ruwais · Abu Dhabi</p>
+          <p>© 2024</p>
         </div>
       </div>
     </>
