@@ -913,11 +913,6 @@ export default function Products() {
                         >
                           <div
                             className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-1 sm:mb-2 shadow-sm relative"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditImage(product.id, product.imageUrl);
-                            }}
-                            title="Click to edit image"
                           >
                             {(() => {
                               const imageSrc = product.imageUrl || getProductImage(product.name);
@@ -950,8 +945,7 @@ export default function Products() {
                           </div>
 
                           <div 
-                            className="flex flex-col items-center mt-0.5 sm:mt-1 gap-0.5 relative group w-full"
-                            onClick={(e) => e.stopPropagation()}
+                            className="flex flex-col items-center mt-0.5 sm:mt-1 gap-0.5 w-full"
                           >
                             {quantities[product.id] ? (
                               // Show price based on dry clean selection when item is added
@@ -974,23 +968,6 @@ export default function Products() {
                                 Tap to add
                               </div>
                             )}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="absolute -right-6 top-1/2 -translate-y-1/2 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingPriceProduct({
-                                  id: product.id,
-                                  name: product.name,
-                                  price: product.price || "",
-                                  dryCleanPrice: product.dryCleanPrice || "",
-                                });
-                              }}
-                              data-testid={`button-edit-price-${product.id}`}
-                            >
-                              <Pencil className="w-3 h-3" />
-                            </Button>
                           </div>
 
                           {product.stockQuantity !== null &&
