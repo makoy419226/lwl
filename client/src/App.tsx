@@ -25,7 +25,7 @@ import NotFound from "@/pages/not-found";
 import { useState, useEffect, createContext, useContext } from "react";
 import logoImage from "@assets/image_1767220512226.png";
 
-const UserContext = createContext<UserInfo | null>(null);
+export const UserContext = createContext<UserInfo | null>(null);
 
 const rolePermissions: Record<string, string[]> = {
   "/": ["admin", "manager", "cashier"],

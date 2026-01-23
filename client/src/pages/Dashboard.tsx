@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { TopBar } from "@/components/TopBar";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/use-products";
@@ -7,11 +7,14 @@ import { SiWhatsapp } from "react-icons/si";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProductForm } from "@/components/ProductForm";
+import { UserContext } from "@/App";
 
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { data: products, isLoading, isError } = useProducts(searchTerm);
+  const user = useContext(UserContext);
+  const isAdmin = user?.role === "admin";
 
   const container = {
     hidden: { opacity: 0 },
@@ -69,8 +72,8 @@ export default function Dashboard() {
       <TopBar 
         onSearch={setSearchTerm} 
         searchValue={searchTerm}
-        onAddClick={() => setIsCreateOpen(true)}
-        addButtonLabel="Add Product"
+        onAddClick={isAdmin ? () => setIsCreateOpen(true) : undefined}
+        addButtonLabel={isAdmin ? "Add Product" : undefined}
         pageTitle="Inventory"
       />
 
@@ -111,7 +114,7 @@ export default function Dashboard() {
           >
             {products?.map((product) => (
               <motion.div key={product.id} variants={item}>
-                <ProductCard product={product} />
+                <ProductCard product={product} canEdit={isAdmin} />
               </motion.div>
             ))}
           </motion.div>

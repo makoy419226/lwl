@@ -34,6 +34,7 @@ const getCategoryIcon = (category: string | null) => {
 
 interface ProductCardProps {
   product: Product;
+  canEdit?: boolean;
 }
 
 const activeColors = [
@@ -47,7 +48,7 @@ const activeColors = [
   "from-emerald-500 to-emerald-600",
 ];
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, canEdit = true }: ProductCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [colorIndex, setColorIndex] = useState(() => Math.floor(Math.random() * activeColors.length));
@@ -90,51 +91,53 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
         
-        {/* Quick Action Overlay (visible on hover) */}
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
-          <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-            <DialogTrigger asChild>
-              <Button size="icon" variant="secondary" className="rounded-full shadow-lg hover:scale-110 transition-transform bg-white text-primary hover:bg-white hover:text-primary">
-                <Edit2 className="w-4 h-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-display text-primary">Edit Product</DialogTitle>
-              </DialogHeader>
-              <ProductForm 
-                defaultValues={product} 
-                onSuccess={() => setIsEditOpen(false)}
-                mode="edit"
-              />
-            </DialogContent>
-          </Dialog>
+        {/* Quick Action Overlay (visible on hover) - only for admins */}
+        {canEdit && (
+          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="secondary" className="rounded-full shadow-lg hover:scale-110 transition-transform bg-white text-primary hover:bg-white hover:text-primary">
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-display text-primary">Edit Product</DialogTitle>
+                </DialogHeader>
+                <ProductForm 
+                  defaultValues={product} 
+                  onSuccess={() => setIsEditOpen(false)}
+                  mode="edit"
+                />
+              </DialogContent>
+            </Dialog>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="icon" variant="destructive" className="rounded-full shadow-lg hover:scale-110 transition-transform">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete {product.name}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the product from your inventory.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  onClick={() => deleteProduct.mutate(product.id)}
-                >
-                  {deleteProduct.isPending ? "Deleting..." : "Delete"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="icon" variant="destructive" className="rounded-full shadow-lg hover:scale-110 transition-transform">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {product.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the product from your inventory.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => deleteProduct.mutate(product.id)}
+                  >
+                    {deleteProduct.isPending ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </div>
 
       {/* Content Area */}
