@@ -67,6 +67,7 @@ function Router() {
     <Switch>
       <Route path="/" component={TodaysWork} />
       <Route path="/dashboard" component={TodaysWork} />
+      <Route path="/todays-work" component={TodaysWork} />
       <Route path="/inventory" component={Dashboard} />
       <Route path="/products" component={Products} />
       <Route path="/clients" component={Clients} />
