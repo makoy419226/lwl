@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Package, Clock, CheckCircle2, TrendingUp } from "lucide-react";
+import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
 export default function TodaysWork() {
@@ -21,6 +21,10 @@ export default function TodaysWork() {
 
   const readyForPickup = todaysOrders.filter(
     (order) => (order.status === "ready" || order.status === "packing") && order.deliveryType === "pickup"
+  );
+
+  const readyForDelivery = todaysOrders.filter(
+    (order) => (order.status === "ready" || order.status === "packing") && order.deliveryType === "delivery"
   );
 
   const pickedUpToday = todaysOrders.filter(
@@ -62,7 +66,7 @@ export default function TodaysWork() {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="p-6" data-testid="card-ready-pickup">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -74,22 +78,84 @@ export default function TodaysWork() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground text-center py-4">
-            {readyForPickup.length === 0 ? "No items ready" : `${readyForPickup.length} order${readyForPickup.length !== 1 ? 's' : ''} ready for pickup`}
+            {readyForPickup.length === 0 ? "No items ready" : `${readyForPickup.length} order${readyForPickup.length !== 1 ? 's' : ''} ready`}
           </p>
         </Card>
 
-        <Card className="p-6" data-testid="card-completed-today">
+        <Card className="p-6" data-testid="card-ready-delivery">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <h3 className="font-semibold text-foreground">COMPLETED TODAY</h3>
+              <Truck className="w-5 h-5 text-orange-500" />
+              <h3 className="font-semibold text-foreground">READY FOR DELIVERY</h3>
             </div>
-            <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="text-completed-count">
-              {pickedUpToday.length + deliveredToday.length}
+            <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="text-ready-delivery-count">
+              {readyForDelivery.length}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground text-center py-4">
-            {pickedUpToday.length + deliveredToday.length === 0 ? "No completed orders yet" : `${pickedUpToday.length + deliveredToday.length} order${pickedUpToday.length + deliveredToday.length !== 1 ? 's' : ''} completed`}
+            {readyForDelivery.length === 0 ? "No items ready" : `${readyForDelivery.length} order${readyForDelivery.length !== 1 ? 's' : ''} ready`}
+          </p>
+        </Card>
+
+        <Card className="p-6" data-testid="card-delivered-today">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <h3 className="font-semibold text-foreground">DELIVERED TODAY</h3>
+            </div>
+            <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="text-delivered-count">
+              {deliveredToday.length}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {deliveredToday.length === 0 ? "No deliveries yet" : `${deliveredToday.length} order${deliveredToday.length !== 1 ? 's' : ''} delivered`}
+          </p>
+        </Card>
+
+        <Card className="p-6" data-testid="card-picked-up-today">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <HandCoins className="w-5 h-5 text-teal-500" />
+              <h3 className="font-semibold text-foreground">PICKED UP TODAY</h3>
+            </div>
+            <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="text-pickedup-count">
+              {pickedUpToday.length}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {pickedUpToday.length === 0 ? "No pickups yet" : `${pickedUpToday.length} order${pickedUpToday.length !== 1 ? 's' : ''} picked up`}
+          </p>
+        </Card>
+
+        <Card className="p-6" data-testid="card-total-sales">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-foreground">TOTAL SALES TODAY</h3>
+            </div>
+            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" data-testid="text-total-sales">
+              {totalRevenue.toFixed(0)} AED
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {todaysOrders.length === 0 ? "No orders yet" : `${todaysOrders.length} order${todaysOrders.length !== 1 ? 's' : ''} today`}
+          </p>
+        </Card>
+
+        <Card className="p-6" data-testid="card-unpaid-bills">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              <h3 className="font-semibold text-foreground">UNPAID BILLS TODAY</h3>
+            </div>
+            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" data-testid="text-unpaid-bills">
+              {(totalRevenue - paidAmount).toFixed(0)} AED
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length === 0 
+              ? "All bills paid" 
+              : `${todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length} unpaid bill${todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length !== 1 ? 's' : ''}`}
           </p>
         </Card>
       </div>
