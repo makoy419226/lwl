@@ -128,7 +128,7 @@ export default function TodaysWork() {
               <span className="font-bold text-lg text-green-600">{paidAmount.toFixed(0)} AED</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t">
-              <span className="text-muted-foreground text-sm">Outstanding</span>
+              <span className="text-muted-foreground text-sm">Unpaid</span>
               <span className="font-bold text-lg text-amber-600">{(totalRevenue - paidAmount).toFixed(0)} AED</span>
             </div>
           </div>
