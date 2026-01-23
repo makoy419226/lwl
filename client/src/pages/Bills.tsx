@@ -53,7 +53,7 @@ import { format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, Client, Bill, Order } from "@shared/schema";
 import html2pdf from "html2pdf.js";
-import logoImage from "@assets/company_logo.png";
+import logoImage from "@assets/image_1769169126339.png";
 
 function parseDescriptionItems(description: string, products?: Product[]): { name: string; qty: number; price: number; total: number }[] {
   if (!description) return [];

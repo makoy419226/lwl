@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Printer, X } from "lucide-react";
 import type { Order, Client, Product } from "@shared/schema";
-import logoImage from "@assets/company_logo.png";
+import logoImage from "@assets/image_1769169126339.png";
 import paidStampImage from "@assets/image_1767486604951.png";
 
 interface OrderReceiptProps {

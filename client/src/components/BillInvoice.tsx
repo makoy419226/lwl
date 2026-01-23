@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Printer, X } from "lucide-react";
-import logoImage from "@assets/company_logo.png";
+import logoImage from "@assets/image_1769169126339.png";
 
 interface BillInvoiceProps {
   invoiceNumber: string;
