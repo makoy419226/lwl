@@ -1031,7 +1031,7 @@ export default function Clients() {
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Deposit Balance</p>
+                      <p className="text-sm text-muted-foreground">Credit Balance</p>
                       <p className="text-xl font-bold text-green-600">
                         {depositBalance.toFixed(2)} AED
                       </p>
@@ -1050,7 +1050,7 @@ export default function Clients() {
 
               <div className="space-y-2 p-4 border rounded-lg">
                 <h4 className="font-semibold text-green-600 flex items-center gap-2">
-                  <Wallet className="w-4 h-4" /> Add Deposit
+                  <Wallet className="w-4 h-4" /> Add Credit to Account
                 </h4>
                 <Input
                   type="number"
@@ -1085,7 +1085,7 @@ export default function Clients() {
                   ) : (
                     <Plus className="w-4 h-4 mr-2" />
                   )}
-                  Add Deposit
+                  Add Credit
                 </Button>
               </div>
 
@@ -1247,36 +1247,49 @@ export default function Clients() {
                           const sortedTx = [...transactions].sort(
                             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                           );
-                          let remainingBalance = 0;
+                          let creditBalance = 0;
                           return sortedTx.map((tx) => {
+                            // deposit = credit added, deposit_used = credit used for payment
                             if (tx.type === "deposit") {
-                              remainingBalance += parseFloat(tx.amount);
-                            } else {
-                              remainingBalance -= parseFloat(tx.amount);
+                              creditBalance += parseFloat(tx.amount);
+                            } else if (tx.type === "deposit_used") {
+                              creditBalance -= parseFloat(tx.amount);
                             }
+                            // "payment" and "bill" types don't affect credit balance
+                            
+                            // Determine display type and styling
+                            const getTypeDisplay = () => {
+                              switch (tx.type) {
+                                case "deposit": return { label: "Credit Added", color: "bg-green-100 text-green-700" };
+                                case "deposit_used": return { label: "Credit Used", color: "bg-orange-100 text-orange-700" };
+                                case "bill": return { label: "Bill", color: "bg-blue-100 text-blue-700" };
+                                case "payment": return { label: "Payment", color: "bg-purple-100 text-purple-700" };
+                                default: return { label: tx.type, color: "bg-gray-100 text-gray-700" };
+                              }
+                            };
+                            const typeDisplay = getTypeDisplay();
+                            
                             return (
                               <TableRow key={tx.id}>
                                 <TableCell className="text-sm">
                                   {format(new Date(tx.date), "dd/MM/yyyy HH:mm")}
                                 </TableCell>
                                 <TableCell>
-                                  <span
-                                    className={`text-xs font-semibold px-2 py-1 rounded ${tx.type === "bill" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}
-                                  >
-                                    {tx.type === "bill" ? "Bill" : "Deposit"}
+                                  <span className={`text-xs font-semibold px-2 py-1 rounded ${typeDisplay.color}`}>
+                                    {typeDisplay.label}
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">
                                   {tx.description}
                                 </TableCell>
                                 <TableCell
-                                  className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}
+                                  className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : tx.type === "deposit_used" ? "text-orange-600" : "text-muted-foreground"}`}
                                 >
-                                  {tx.type === "deposit" ? "+" : "-"}
+                                  {tx.type === "deposit" ? "+" : tx.type === "deposit_used" ? "-" : ""}
                                   {parseFloat(tx.amount).toFixed(2)}
                                 </TableCell>
-                                <TableCell className={`text-right font-bold ${remainingBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                  {remainingBalance.toFixed(2)}
+                                <TableCell className={`text-right font-bold ${creditBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                  {creditBalance.toFixed(2)}
                                 </TableCell>
                               </TableRow>
                             );
