@@ -452,8 +452,15 @@ export default function Bills() {
                 .border-dotted { border-bottom: 1px dotted #ccc; }
                 .last\\:border-0:last-child { border: none; }
                 .text-gray-600 { color: #666; }
+                table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                th, td { border: 1px solid #333; padding: 10px 8px; }
+                th { background: #1e40af; color: white; font-weight: bold; text-transform: uppercase; font-size: 11px; }
+                td { font-size: 12px; }
+                tbody tr:nth-child(even) { background: #f5f5f5; }
                 @media print {
                   body { margin: 0; padding: 20mm; }
+                  th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                  tbody tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 }
               </style>
             </head>
@@ -623,8 +630,15 @@ export default function Bills() {
                   .text-center { text-align: center; }
                   .font-bold { font-weight: bold; }
                   .border-b { border-bottom: 1px solid #000; padding-bottom: 12px; margin-bottom: 12px; }
+                  table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                  th, td { border: 1px solid #333; padding: 10px 8px; }
+                  th { background: #1e40af; color: white; font-weight: bold; text-transform: uppercase; font-size: 11px; }
+                  td { font-size: 12px; }
+                  tbody tr:nth-child(even) { background: #f5f5f5; }
                   @media print {
                     body { margin: 0; padding: 20mm; }
+                    th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    tbody tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                   }
                 </style>
               </head>
@@ -978,22 +992,24 @@ export default function Bills() {
               </div>
               <div>Customer: {createdBill?.bill.customerName}</div>
             </div>
-            <table className="w-full border-collapse mb-3" style={{ fontSize: '11px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', fontSize: '12px' }}>
               <thead>
-                <tr className="border-b-2 border-black">
-                  <th className="text-left py-2 font-bold">Item</th>
-                  <th className="text-center py-2 font-bold">Qty</th>
-                  <th className="text-right py-2 font-bold">Price</th>
-                  <th className="text-right py-2 font-bold">Total</th>
+                <tr>
+                  <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 'bold', width: '8%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>S.No</th>
+                  <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 'bold', width: '42%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Item</th>
+                  <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 'bold', width: '12%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Qty</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontWeight: 'bold', width: '18%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Price</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontWeight: 'bold', width: '20%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
                 {createdBill?.items.map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-300">
-                    <td className="py-2 text-left">{item.name}</td>
-                    <td className="py-2 text-center">{item.qty}</td>
-                    <td className="py-2 text-right">{item.price.toFixed(2)}</td>
-                    <td className="py-2 text-right font-medium">{(item.price * item.qty).toFixed(2)}</td>
+                  <tr key={idx} style={{ background: idx % 2 === 1 ? '#f5f5f5' : 'white' }}>
+                    <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{idx + 1}</td>
+                    <td style={{ textAlign: 'left', padding: '10px 8px', border: '1px solid #333' }}>{item.name}</td>
+                    <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{item.qty}</td>
+                    <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333' }}>{item.price.toFixed(2)}</td>
+                    <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333', fontWeight: '500' }}>{(item.price * item.qty).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1114,24 +1130,24 @@ export default function Bills() {
               const parsedItems = parseDescriptionItems(viewBillPDF.description || '', products);
               if (parsedItems.length > 0) {
                 return (
-                  <table className="w-full border-collapse mb-3" style={{ fontSize: '11px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', fontSize: '12px' }}>
                     <thead>
-                      <tr style={{ borderBottom: '2px solid #000' }}>
-                        <th style={{ textAlign: 'center', padding: '8px 4px', fontWeight: 'bold', width: '8%' }}>S.No</th>
-                        <th style={{ textAlign: 'left', padding: '8px 4px', fontWeight: 'bold', width: '42%' }}>Item</th>
-                        <th style={{ textAlign: 'center', padding: '8px 4px', fontWeight: 'bold', width: '12%' }}>Qty</th>
-                        <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 'bold', width: '18%' }}>Price</th>
-                        <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 'bold', width: '20%' }}>Total</th>
+                      <tr>
+                        <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 'bold', width: '8%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>S.No</th>
+                        <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 'bold', width: '42%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Item</th>
+                        <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 'bold', width: '12%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Qty</th>
+                        <th style={{ textAlign: 'right', padding: '10px 8px', fontWeight: 'bold', width: '18%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Price</th>
+                        <th style={{ textAlign: 'right', padding: '10px 8px', fontWeight: 'bold', width: '20%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
                       {parsedItems.map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #ddd' }}>
-                          <td style={{ textAlign: 'center', padding: '6px 4px' }}>{idx + 1}</td>
-                          <td style={{ textAlign: 'left', padding: '6px 4px' }}>{item.name}</td>
-                          <td style={{ textAlign: 'center', padding: '6px 4px' }}>{item.qty}</td>
-                          <td style={{ textAlign: 'right', padding: '6px 4px' }}>{item.price.toFixed(2)}</td>
-                          <td style={{ textAlign: 'right', padding: '6px 4px', fontWeight: '500' }}>{item.total.toFixed(2)}</td>
+                        <tr key={idx} style={{ background: idx % 2 === 1 ? '#f5f5f5' : 'white' }}>
+                          <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{idx + 1}</td>
+                          <td style={{ textAlign: 'left', padding: '10px 8px', border: '1px solid #333' }}>{item.name}</td>
+                          <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{item.qty}</td>
+                          <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333' }}>{item.price.toFixed(2)}</td>
+                          <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333', fontWeight: '500' }}>{item.total.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
