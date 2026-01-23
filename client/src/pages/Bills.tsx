@@ -488,10 +488,28 @@ export default function Bills() {
         `);
         printWindow.document.close();
         printWindow.focus();
-        setTimeout(() => {
+        const images = printWindow.document.images;
+        if (images.length === 0) {
           printWindow.print();
           printWindow.close();
-        }, 250);
+        } else {
+          let loaded = 0;
+          const checkAllLoaded = () => {
+            loaded++;
+            if (loaded >= images.length) {
+              printWindow.print();
+              printWindow.close();
+            }
+          };
+          for (let i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+              checkAllLoaded();
+            } else {
+              images[i].onload = checkAllLoaded;
+              images[i].onerror = checkAllLoaded;
+            }
+          }
+        }
       }
     }
   };
@@ -666,14 +684,32 @@ export default function Bills() {
           `);
           printWindow.document.close();
           printWindow.focus();
-          setTimeout(() => {
+          const images = printWindow.document.images;
+          if (images.length === 0) {
             printWindow.print();
             printWindow.close();
-          }, 250);
+          } else {
+            let loaded = 0;
+            const checkAllLoaded = () => {
+              loaded++;
+              if (loaded >= images.length) {
+                printWindow.print();
+                printWindow.close();
+              }
+            };
+            for (let i = 0; i < images.length; i++) {
+              if (images[i].complete) {
+                checkAllLoaded();
+              } else {
+                images[i].onload = checkAllLoaded;
+                images[i].onerror = checkAllLoaded;
+              }
+            }
+          }
         }
         setViewBillPDF(null);
       }
-    }, 500);
+    }, 100);
   };
 
   const sortedProducts =
