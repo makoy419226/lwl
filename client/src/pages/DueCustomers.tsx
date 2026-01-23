@@ -143,12 +143,15 @@ export default function DueCustomers() {
       return sortOrder === "desc" ? totalB - totalA : totalA - totalB;
     });
 
-  const totalDue = dueCustomers.reduce((sum, client) => {
-    const clientBalance = parseFloat(client.balance || "0");
-    const pendingBillAmount = pendingBillsByClient[client.id]?.amount || 0;
-    const pendingOrderAmount = pendingOrdersByClient[client.id]?.amount || 0;
-    return sum + clientBalance + pendingBillAmount + pendingOrderAmount;
-  }, 0);
+  // Calculate total due from all unpaid bills directly
+  const totalDue = useMemo(() => {
+    return (bills || []).reduce((sum, bill) => {
+      const billAmount = parseFloat(bill.amount || "0");
+      const paidAmount = parseFloat(bill.paidAmount || "0");
+      const balance = billAmount - paidAmount;
+      return balance > 0.01 ? sum + balance : sum;
+    }, 0);
+  }, [bills]);
 
   const totalPendingBills = Object.values(pendingBillsByClient).reduce(
     (sum, data) => sum + data.count,
@@ -342,35 +345,10 @@ export default function DueCustomers() {
 
         <Card>
           <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-destructive" />
-                Due Customer List
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name or phone..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 w-64"
-                    data-testid="input-search-due"
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setSortOrder(sortOrder === "desc" ? "asc" : "desc")
-                  }
-                  data-testid="button-sort"
-                >
-                  <ArrowUpDown className="w-4 h-4 mr-1" />
-                  {sortOrder === "desc" ? "Highest First" : "Lowest First"}
-                </Button>
-              </div>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-destructive" />
+              Due Customers List
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {dueCustomers.length === 0 ? (
@@ -522,21 +500,59 @@ export default function DueCustomers() {
                 <FileText className="w-5 h-5 text-amber-500" />
                 Unpaid Bills
               </CardTitle>
-              <Link href="/bills">
-                <Button variant="default" data-testid="button-go-to-bills">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Go to Bills for Payment
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name or phone..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 w-64"
+                    data-testid="input-search-bills"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+                  }
+                  data-testid="button-sort"
+                >
+                  <ArrowUpDown className="w-4 h-4 mr-1" />
+                  {sortOrder === "desc" ? "Highest First" : "Lowest First"}
                 </Button>
-              </Link>
+                <Link href="/bills">
+                  <Button variant="default" data-testid="button-go-to-bills">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Go to Bills for Payment
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {(() => {
-              const unpaidBills = (bills || []).filter((bill) => {
-                const billAmount = parseFloat(bill.amount || "0");
-                const paidAmount = parseFloat(bill.paidAmount || "0");
-                return (billAmount - paidAmount) > 0.01;
-              });
+              const unpaidBills = (bills || [])
+                .filter((bill) => {
+                  const billAmount = parseFloat(bill.amount || "0");
+                  const paidAmount = parseFloat(bill.paidAmount || "0");
+                  return (billAmount - paidAmount) > 0.01;
+                })
+                .filter((bill) => {
+                  if (!searchTerm) return true;
+                  const client = clients?.find(c => c.id === bill.clientId);
+                  const clientName = client?.name?.toLowerCase() || "";
+                  const clientPhone = client?.phone?.toLowerCase() || "";
+                  const billRef = bill.referenceNumber?.toLowerCase() || "";
+                  const search = searchTerm.toLowerCase();
+                  return clientName.includes(search) || clientPhone.includes(search) || billRef.includes(search);
+                })
+                .sort((a, b) => {
+                  const balanceA = parseFloat(a.amount || "0") - parseFloat(a.paidAmount || "0");
+                  const balanceB = parseFloat(b.amount || "0") - parseFloat(b.paidAmount || "0");
+                  return sortOrder === "desc" ? balanceB - balanceA : balanceA - balanceB;
+                });
               
               if (unpaidBills.length === 0) {
                 return (
