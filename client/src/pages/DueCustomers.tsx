@@ -514,6 +514,126 @@ export default function DueCustomers() {
           </CardContent>
         </Card>
 
+        {/* Unpaid Bills Section */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-amber-500" />
+                Unpaid Bills
+              </CardTitle>
+              <Link href="/bills">
+                <Button variant="default" data-testid="button-go-to-bills">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Go to Bills for Payment
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const unpaidBills = (bills || []).filter((bill) => {
+                const billAmount = parseFloat(bill.amount || "0");
+                const paidAmount = parseFloat(bill.paidAmount || "0");
+                return (billAmount - paidAmount) > 0.01;
+              });
+              
+              if (unpaidBills.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">No unpaid bills</p>
+                    <p className="text-sm">All bills have been paid</p>
+                  </div>
+                );
+              }
+              
+              return (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Bill Reference</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Bill Amount</TableHead>
+                      <TableHead className="text-right">Paid</TableHead>
+                      <TableHead className="text-right">Balance Due</TableHead>
+                      <TableHead className="text-center">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {unpaidBills.slice(0, 20).map((bill) => {
+                      const billAmount = parseFloat(bill.amount || "0");
+                      const paidAmount = parseFloat(bill.paidAmount || "0");
+                      const balanceDue = billAmount - paidAmount;
+                      const client = clients?.find(c => c.id === bill.clientId);
+                      
+                      return (
+                        <TableRow key={bill.id} data-testid={`row-unpaid-bill-${bill.id}`}>
+                          <TableCell className="font-medium">
+                            {bill.referenceNumber || `BILL-${bill.id}`}
+                          </TableCell>
+                          <TableCell>
+                            {client ? (
+                              <Link href={`/clients/${client.id}`}>
+                                <span className="text-primary hover:underline cursor-pointer">
+                                  {client.name}
+                                </span>
+                              </Link>
+                            ) : (
+                              bill.customerName || "-"
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {bill.billDate ? new Date(bill.billDate).toLocaleDateString() : "-"}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            AED {billAmount.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right text-green-600">
+                            AED {paidAmount.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant="destructive">
+                              AED {balanceDue.toFixed(2)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Link href="/bills">
+                              <Button size="sm" variant="outline" data-testid={`button-pay-bill-${bill.id}`}>
+                                Pay
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              );
+            })()}
+            {(() => {
+              const unpaidBills = (bills || []).filter((bill) => {
+                const billAmount = parseFloat(bill.amount || "0");
+                const paidAmount = parseFloat(bill.paidAmount || "0");
+                return (billAmount - paidAmount) > 0.01;
+              });
+              if (unpaidBills.length > 20) {
+                return (
+                  <div className="text-center mt-4">
+                    <Link href="/bills">
+                      <Button variant="ghost" className="text-primary">
+                        View all {unpaidBills.length} unpaid bills
+                      </Button>
+                    </Link>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </CardContent>
+        </Card>
+
         {/* Payment Dialog */}
         <Dialog
           open={showPaymentDialog}
