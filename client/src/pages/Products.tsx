@@ -1712,10 +1712,16 @@ export default function Products() {
                 <span>Subtotal</span>
                 <span className="font-semibold">{orderTotal.toFixed(2)} AED</span>
               </div>
+              {orderType === "urgent" && (
+                <div className="flex justify-between text-xs text-orange-600 font-semibold">
+                  <span>Urgent (x2)</span>
+                  <span>+{orderTotal.toFixed(2)} AED</span>
+                </div>
+              )}
               {parseFloat(discountPercent) > 0 && (
                 <div className="flex justify-between text-xs text-green-600">
                   <span>Discount ({discountPercent}%)</span>
-                  <span>-{((orderTotal * parseFloat(discountPercent)) / 100).toFixed(2)} AED</span>
+                  <span>-{(((orderType === "urgent" ? orderTotal * 2 : orderTotal) * parseFloat(discountPercent)) / 100).toFixed(2)} AED</span>
                 </div>
               )}
               {parseFloat(tips) > 0 && (
@@ -1727,7 +1733,12 @@ export default function Products() {
               <div className="flex justify-between text-sm font-bold text-primary border-t pt-2 mt-2">
                 <span>TOTAL</span>
                 <span>
-                  {(orderTotal - (orderTotal * (parseFloat(discountPercent) || 0)) / 100 + (parseFloat(tips) || 0)).toFixed(2)} AED
+                  {(() => {
+                    const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
+                    const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
+                    const tipsAmt = parseFloat(tips) || 0;
+                    return (base - discountAmt + tipsAmt).toFixed(2);
+                  })()} AED
                 </span>
               </div>
             </div>
@@ -1902,7 +1913,12 @@ export default function Products() {
               data-testid="popup-button-place-order"
             >
               {createOrderMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {clientMatch ? "Use existing client above" : `Place Order - ${(orderTotal - (orderTotal * (parseFloat(discountPercent) || 0)) / 100 + (parseFloat(tips) || 0)).toFixed(2)} AED`}
+              {clientMatch ? "Use existing client above" : `Place Order - ${(() => {
+                const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
+                const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
+                const tipsAmt = parseFloat(tips) || 0;
+                return (base - discountAmt + tipsAmt).toFixed(2);
+              })()} AED`}
             </Button>
           </div>
         </DialogContent>
