@@ -165,14 +165,14 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
                       <Link key={item.href} href={item.href}>
                         <Button
                           variant={item.active ? "default" : "ghost"}
-                          className={`w-full justify-start rounded-lg font-medium gap-3 h-9 touch-manipulation pl-6 ${
+                          className={`w-full justify-start rounded-lg font-medium gap-3 h-9 touch-manipulation pl-6 transition-all duration-200 group ${
                             item.active
                               ? "bg-primary text-white shadow-md"
-                              : "text-foreground hover:bg-muted/50"
+                              : "text-foreground hover:bg-primary/10 hover:translate-x-1 hover:text-primary"
                           }`}
                           data-testid={item.testId}
                         >
-                          <item.icon className="w-4 h-4 flex-shrink-0" />
+                          <item.icon className="w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
                           <span className="truncate flex-1 text-left text-sm">{item.label}</span>
                         </Button>
                       </Link>
@@ -188,14 +188,14 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
                     <Link key={item.href} href={item.href}>
                       <Button
                         variant={item.active ? "default" : "ghost"}
-                        className={`w-full justify-start rounded-lg font-medium gap-3 h-10 touch-manipulation ${
+                        className={`w-full justify-start rounded-lg font-medium gap-3 h-10 touch-manipulation transition-all duration-200 group ${
                           item.active
                             ? "bg-primary text-white shadow-md"
-                            : "text-foreground hover:bg-muted/50"
+                            : "text-foreground hover:bg-primary/10 hover:translate-x-1 hover:text-primary"
                         }`}
                         data-testid={item.testId}
                       >
-                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <item.icon className="w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
                         <span className="truncate flex-1 text-left text-sm">{item.label}</span>
                       </Button>
                     </Link>
