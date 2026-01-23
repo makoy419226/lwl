@@ -44,5 +44,5 @@ integrations = ["resend:1.0.0"]
 [userenv]
 
 [userenv.shared]
-SMTP_HOST = "smtp.mail.yahoo.com"
+SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = "587"
