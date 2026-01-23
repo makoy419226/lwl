@@ -85,7 +85,7 @@ export function ProductCard({ product, canEdit = true }: ProductCardProps) {
               <img 
                 src={imageSrc} 
                 alt={product.name} 
-                className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
