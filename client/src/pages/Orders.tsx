@@ -3749,25 +3749,28 @@ function OrderForm({
               data-testid="input-customer-phone"
             />
             {clientMatch && (
-              <div className="p-3 border border-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg mt-2">
+              <div className="p-4 border-2 border-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg mt-2 animate-pulse">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span className="font-medium text-amber-700 dark:text-amber-400">
-                    This client is already in the system!
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                  <span className="font-bold text-red-700 dark:text-red-400 text-base">
+                    CUSTOMER ALREADY EXISTS!
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {clientMatch.message}: <strong>{clientMatch.client.name}</strong>
+                <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                  {clientMatch.message}: <strong className="text-red-700">{clientMatch.client.name}</strong>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Phone: {clientMatch.client.phone}
                 </p>
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className="mt-2"
+                  variant="default"
+                  className="mt-3 bg-red-600 hover:bg-red-700 text-white"
                   onClick={() => handleClientChange(clientMatch.client.id.toString())}
                   data-testid="button-use-existing-client"
                 >
-                  Use existing client
+                  Click here to use existing client: {clientMatch.client.name}
                 </Button>
               </div>
             )}
@@ -4101,6 +4104,11 @@ function OrderForm({
         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         {clientMatch ? "Use existing client above" : `Create Order (${orderTotal.toFixed(2)} AED)`}
       </Button>
+      {clientMatch && (
+        <p className="text-sm text-red-600 text-center font-medium">
+          Cannot create order - Customer "{clientMatch.client.name}" already exists with this phone number
+        </p>
+      )}
       {formData.billOption === "existing" && !formData.selectedBillId && (
         <p className="text-sm text-orange-600 text-center">
           Please select an existing bill to attach this order to

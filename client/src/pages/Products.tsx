@@ -22,6 +22,7 @@ import {
   UserPlus,
   Lock,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -508,6 +509,40 @@ export default function Products() {
   }, [orderItems, customItems]);
 
   const hasOrderItems = orderItems.length > 0 || customItems.length > 0;
+
+  // Detect if walk-in customer phone matches an existing client
+  const clientMatch = useMemo(() => {
+    if (!isWalkIn || !walkInPhone || walkInPhone.length < 4) return null;
+    
+    // Normalize phone number for comparison
+    const normalizePhone = (phone: string) => {
+      let cleaned = phone.replace(/\D/g, '');
+      // Remove common UAE prefixes
+      if (cleaned.startsWith('00971')) cleaned = cleaned.slice(5);
+      else if (cleaned.startsWith('971')) cleaned = cleaned.slice(3);
+      else if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+      return cleaned;
+    };
+    
+    const normalizedWalkIn = normalizePhone(walkInPhone);
+    if (normalizedWalkIn.length < 4) return null;
+    
+    const matchingClient = clients?.find(client => {
+      if (!client.phone) return false;
+      const normalizedClient = normalizePhone(client.phone);
+      return normalizedClient === normalizedWalkIn || 
+             normalizedClient.endsWith(normalizedWalkIn) || 
+             normalizedWalkIn.endsWith(normalizedClient);
+    });
+    
+    if (matchingClient) {
+      return {
+        client: matchingClient,
+        message: "Customer already exists with this phone number"
+      };
+    }
+    return null;
+  }, [isWalkIn, walkInPhone, clients]);
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
@@ -1298,12 +1333,45 @@ export default function Products() {
                     />
                     <Label className="text-xs font-semibold mt-2">Phone Number <span className="text-destructive">*</span></Label>
                     <Input
-                      className="h-8 text-xs"
+                      className={`h-8 text-xs ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
                       placeholder="Enter phone number..."
                       value={walkInPhone}
                       onChange={(e) => setWalkInPhone(e.target.value)}
                       data-testid="input-walkin-phone"
                     />
+                    {clientMatch && (
+                      <div className="bg-red-100 dark:bg-red-950 border-2 border-red-500 rounded-lg p-3 animate-pulse" data-testid="duplicate-warning">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                          <div className="flex-1 space-y-1">
+                            <p className="text-sm font-bold text-red-700 dark:text-red-300">
+                              {clientMatch.message}: <strong className="text-red-800 dark:text-red-200">{clientMatch.client.name}</strong>
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400">
+                              Phone: {clientMatch.client.phone}
+                            </p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="mt-2 text-xs bg-red-50 dark:bg-red-900 border-red-300 dark:border-red-700 hover:bg-red-200 dark:hover:bg-red-800"
+                              onClick={() => {
+                                setIsWalkIn(false);
+                                setSelectedClientId(clientMatch.client.id);
+                                setCustomerName(clientMatch.client.name);
+                                setCustomerPhone(clientMatch.client.phone || "");
+                                setWalkInAddress(clientMatch.client.address || "");
+                                setWalkInName("");
+                                setWalkInPhone("");
+                              }}
+                              data-testid="button-use-existing-client"
+                            >
+                              Click here to use existing client: {clientMatch.client.name}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
                 <Label className="text-xs font-semibold mt-2">Address <span className="text-destructive">*</span></Label>
@@ -1359,15 +1427,16 @@ export default function Products() {
                   </Button>
                   <Button
                     size="sm"
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
+                    className={`flex-1 font-bold ${clientMatch ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"} text-white`}
                     onClick={handleCreateOrder}
                     disabled={
                       createOrderMutation.isPending ||
-                      (!selectedClientId && !isWalkIn)
+                      (!selectedClientId && !isWalkIn) ||
+                      !!clientMatch
                     }
                     data-testid="button-create-order-panel"
                   >
-                    {createOrderMutation.isPending ? "..." : "CREATE"}
+                    {createOrderMutation.isPending ? "..." : clientMatch ? "Use existing client above" : "CREATE"}
                   </Button>
                 </div>
               </div>
