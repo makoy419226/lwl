@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle, Shirt } from "lucide-react";
+import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
 export default function TodaysWork() {
@@ -18,10 +18,6 @@ export default function TodaysWork() {
     orderDate.setHours(0, 0, 0, 0);
     return orderDate.getTime() === today.getTime();
   });
-
-  const pendingWashing = todaysOrders.filter(
-    (order) => order.status === "entry" || order.status === "washing" || order.status === "tagging"
-  );
 
   const readyForPickup = todaysOrders.filter(
     (order) => (order.status === "ready" || order.status === "packing") && order.deliveryType === "pickup"
@@ -220,73 +216,6 @@ export default function TodaysWork() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Shirt className="w-4 h-4 text-blue-500" />
-            <h3 className="font-bold text-sm text-muted-foreground uppercase">In Washing</h3>
-            <Badge variant="secondary" className="ml-auto">{pendingWashing.length}</Badge>
-          </div>
-          <div className="space-y-2 max-h-64 overflow-auto">
-            {pendingWashing.length === 0 ? (
-              <p className="text-center text-muted-foreground text-xs py-2">No items in washing</p>
-            ) : (
-              pendingWashing.map((order) => (
-                <div key={order.id} className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg text-xs">
-                  <div className="flex justify-between">
-                    <span className="font-medium">#{order.orderNumber}</span>
-                    <span className="text-muted-foreground">{parseFloat(order.totalAmount || "0").toFixed(0)} AED</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Package className="w-4 h-4 text-amber-500" />
-            <h3 className="font-bold text-sm text-muted-foreground uppercase">Ready for Pickup</h3>
-            <Badge variant="secondary" className="ml-auto">{readyForDelivery.length}</Badge>
-          </div>
-          <div className="space-y-2 max-h-64 overflow-auto">
-            {readyForDelivery.length === 0 ? (
-              <p className="text-center text-muted-foreground text-xs py-2">No items ready</p>
-            ) : (
-              readyForDelivery.map((order) => (
-                <div key={order.id} className="p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg text-xs">
-                  <div className="flex justify-between">
-                    <span className="font-medium">#{order.orderNumber}</span>
-                    <span className="text-muted-foreground">{parseFloat(order.totalAmount || "0").toFixed(0)} AED</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle2 className="w-4 h-4 text-green-500" />
-            <h3 className="font-bold text-sm text-muted-foreground uppercase">Completed Today</h3>
-            <Badge variant="secondary" className="ml-auto">{pickedUpToday.length + deliveredToday.length}</Badge>
-          </div>
-          <div className="space-y-2 max-h-64 overflow-auto">
-            {(pickedUpToday.length + deliveredToday.length) === 0 ? (
-              <p className="text-center text-muted-foreground text-xs py-2">No completed orders yet</p>
-            ) : (
-              [...pickedUpToday, ...deliveredToday].map((order) => (
-                <div key={order.id} className="p-2 bg-green-50 dark:bg-green-950/20 rounded-lg text-xs">
-                  <div className="flex justify-between">
-                    <span className="font-medium">#{order.orderNumber}</span>
-                    <span className="text-muted-foreground">{parseFloat(order.totalAmount || "0").toFixed(0)} AED</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-      </div>
     </div>
   );
 }
