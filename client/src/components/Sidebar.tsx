@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, Search, FlaskConical, Settings } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -21,6 +21,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [settingsExpanded, setSettingsExpanded] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -65,6 +66,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const navGroups = [
     {
       label: "Operations",
+      collapsible: false,
       items: [
         { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "manager", "cashier"] },
         { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "manager", "cashier"] },
@@ -73,6 +75,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     },
     {
       label: "Business",
+      collapsible: false,
       items: [
         { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "manager", "cashier"] },
         { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "manager", "cashier"] },
@@ -82,6 +85,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     },
     {
       label: "Reports",
+      collapsible: false,
       items: [
         { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
         { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "manager"] },
@@ -89,6 +93,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
     },
     {
       label: "Settings",
+      collapsible: true,
       items: [
         { href: "/workers", icon: HardHat, label: "Staff", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
         { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "manager", "cashier"] },
@@ -140,27 +145,63 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
         </div>
 
         <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
-          {filteredGroups.map((group, groupIndex) => (
+          {filteredGroups.map((group) => (
             <div key={group.label} className="space-y-1">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-1">
-                {group.label}
-              </p>
-              {group.items.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant={item.active ? "default" : "ghost"}
-                    className={`w-full justify-start rounded-lg font-medium gap-3 h-10 touch-manipulation ${
-                      item.active
-                        ? "bg-primary text-white shadow-md"
-                        : "text-foreground hover:bg-muted/50"
-                    }`}
-                    data-testid={item.testId}
+              {group.collapsible ? (
+                <>
+                  <button
+                    onClick={() => setSettingsExpanded(!settingsExpanded)}
+                    className="w-full flex items-center justify-between text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-1 hover:text-foreground transition-colors"
+                    data-testid="button-toggle-settings"
                   >
-                    <item.icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate flex-1 text-left text-sm">{item.label}</span>
-                  </Button>
-                </Link>
-              ))}
+                    <span className="flex items-center gap-2">
+                      <Settings className="w-3 h-3" />
+                      {group.label}
+                    </span>
+                    <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${settingsExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+                  <div className={`space-y-1 overflow-hidden transition-all duration-200 ${settingsExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    {group.items.map((item) => (
+                      <Link key={item.href} href={item.href}>
+                        <Button
+                          variant={item.active ? "default" : "ghost"}
+                          className={`w-full justify-start rounded-lg font-medium gap-3 h-9 touch-manipulation pl-6 ${
+                            item.active
+                              ? "bg-primary text-white shadow-md"
+                              : "text-foreground hover:bg-muted/50"
+                          }`}
+                          data-testid={item.testId}
+                        >
+                          <item.icon className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate flex-1 text-left text-sm">{item.label}</span>
+                        </Button>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 pb-1">
+                    {group.label}
+                  </p>
+                  {group.items.map((item) => (
+                    <Link key={item.href} href={item.href}>
+                      <Button
+                        variant={item.active ? "default" : "ghost"}
+                        className={`w-full justify-start rounded-lg font-medium gap-3 h-10 touch-manipulation ${
+                          item.active
+                            ? "bg-primary text-white shadow-md"
+                            : "text-foreground hover:bg-muted/50"
+                        }`}
+                        data-testid={item.testId}
+                      >
+                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate flex-1 text-left text-sm">{item.label}</span>
+                      </Button>
+                    </Link>
+                  ))}
+                </>
+              )}
             </div>
           ))}
         </nav>
