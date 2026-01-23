@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle } from "lucide-react";
+import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle, Shirt } from "lucide-react";
 import { format } from "date-fns";
 
 export default function TodaysWork() {
@@ -18,6 +18,10 @@ export default function TodaysWork() {
     orderDate.setHours(0, 0, 0, 0);
     return orderDate.getTime() === today.getTime();
   });
+
+  const pendingWashing = todaysOrders.filter(
+    (order) => order.status === "entry" || order.status === "washing" || order.status === "tagging"
+  );
 
   const readyForPickup = todaysOrders.filter(
     (order) => (order.status === "ready" || order.status === "packing") && order.deliveryType === "pickup"
