@@ -1184,29 +1184,35 @@ export default function Products() {
                       </tr>
                     </thead>
                     <tbody>
-                      {orderItems.map((item, idx) => (
-                        <tr
-                          key={item.product.id}
-                          className="border-b border-dashed"
-                        >
-                          <td className="py-1 font-bold">{idx + 1}</td>
-                          <td
-                            className="py-1 font-bold truncate max-w-[100px]"
-                            title={item.product.name}
+                      {orderItems.map((item, idx) => {
+                        const isDryClean = dryCleanItems[item.product.id];
+                        const itemPrice = isDryClean 
+                          ? parseFloat(item.product.dryCleanPrice || item.product.price || "0")
+                          : parseFloat(item.product.price || "0");
+                        return (
+                          <tr
+                            key={item.product.id}
+                            className={`border-b border-dashed ${isDryClean ? "bg-purple-50 dark:bg-purple-900/20" : ""}`}
                           >
-                            {item.product.name}
-                          </td>
-                          <td className="py-1 text-center font-bold">
-                            {item.quantity}
-                          </td>
-                          <td className="py-1 text-right font-bold">
-                            {(
-                              parseFloat(item.product.price || "0") *
-                              item.quantity
-                            ).toFixed(0)}
-                          </td>
-                        </tr>
-                      ))}
+                            <td className="py-1 font-bold">{idx + 1}</td>
+                            <td
+                              className="py-1 font-bold truncate max-w-[100px] flex items-center gap-1"
+                              title={item.product.name}
+                            >
+                              {item.product.name}
+                              {isDryClean && (
+                                <span className="text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>
+                              )}
+                            </td>
+                            <td className="py-1 text-center font-bold">
+                              {item.quantity}
+                            </td>
+                            <td className="py-1 text-right font-bold">
+                              {(itemPrice * item.quantity).toFixed(0)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                       {customItems.map((item, idx) => (
                         <tr
                           key={`custom-${idx}`}
