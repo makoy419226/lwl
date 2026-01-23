@@ -1098,21 +1098,14 @@ export default function Products() {
         )}
       </div>
 
-      {/* Right side - Order Slip or Today's Work List (hidden on mobile) */}
+      {/* Right side - Today's Work List only (Order slip moved to popup) */}
       <div className="hidden lg:flex w-80 border-l-2 border-primary/20 bg-gradient-to-b from-muted/50 to-background flex-col shadow-xl">
-        {hasOrderItems ? (
-          <>
-            <div className="h-14 px-4 flex items-center justify-between border-b border-primary/20 bg-gradient-to-r from-primary/15 to-primary/5">
-              <h2 className="text-base font-black text-primary flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow">
-                  <ShoppingCart className="w-4 h-4 text-white" />
-                </div>
-                Order Slip
-              </h2>
-              <Badge className="text-xs font-bold bg-primary text-white shadow">
-                {orderItems.length + customItems.length}
-              </Badge>
-            </div>
+        <div className="h-12 px-3 flex items-center border-b bg-white/80 dark:bg-background/80">
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Clock className="w-4 h-4 text-primary" />
+            Today's Work
+          </h2>
+        </div>
             <div className="flex-1 overflow-auto p-4">
               <div className="border-2 border-primary/20 rounded-xl bg-white dark:bg-background p-4 space-y-4 shadow-sm">
                 <div className="text-center border-b border-primary/20 pb-3">
