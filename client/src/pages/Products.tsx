@@ -1021,13 +1021,13 @@ export default function Products() {
                                 </span>
                               </div>
                               <div
-                                className="flex flex-col gap-1 sm:gap-1.5 mt-2 sm:mt-3 w-full"
+                                className="flex flex-col gap-0.5 sm:gap-1 mt-1.5 sm:mt-2 w-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Button
                                   size="sm"
                                   variant={dryCleanItems[product.id] ? "default" : "outline"}
-                                  className={`w-full h-6 sm:h-7 text-[10px] sm:text-xs ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                                  className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
                                   onClick={() =>
                                     setDryCleanItems(prev => ({
                                       ...prev,
@@ -1038,7 +1038,7 @@ export default function Products() {
                                 >
                                   Dry Clean
                                 </Button>
-                                <div className="flex gap-0.5 sm:gap-1">
+                                <div className="flex gap-0.5">
                                   <Button
                                     size="sm"
                                     variant={
@@ -1046,7 +1046,7 @@ export default function Products() {
                                         ? "default"
                                         : "outline"
                                     }
-                                    className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs"
+                                    className="flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2"
                                     onClick={() =>
                                       handlePackingTypeChange(product.id, "hanging")
                                     }
@@ -1062,7 +1062,7 @@ export default function Products() {
                                         ? "default"
                                         : "outline"
                                     }
-                                    className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs"
+                                    className="flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2"
                                     onClick={() =>
                                       handlePackingTypeChange(product.id, "folding")
                                     }
