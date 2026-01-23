@@ -816,7 +816,23 @@ export default function Orders() {
     },
   });
 
-  const handlePackingWithPin = (orderId: number) => {
+  const handlePackingWithPin = async (orderId: number) => {
+    try {
+      const res = await fetch(`/api/stage-checklists/order/${orderId}/packing`);
+      if (res.ok) {
+        const checklist = await res.json();
+        if (!checklist || !checklist.isComplete) {
+          toast({
+            title: "Checklist Incomplete",
+            description: "Please complete the packing checklist before entering your PIN.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking packing checklist:", error);
+    }
     setPackingPinDialog({ orderId });
     setPackingPin("");
     setPinError("");
@@ -990,7 +1006,23 @@ export default function Orders() {
     },
   });
 
-  const handleTagWithPin = (orderId: number) => {
+  const handleTagWithPin = async (orderId: number) => {
+    try {
+      const res = await fetch(`/api/stage-checklists/order/${orderId}/tagging`);
+      if (res.ok) {
+        const checklist = await res.json();
+        if (!checklist || !checklist.isComplete) {
+          toast({
+            title: "Checklist Incomplete",
+            description: "Please complete the tagging checklist before entering your PIN.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking tagging checklist:", error);
+    }
     setTagPinDialog({ orderId });
     setTagPin("");
     setTagPinError("");
