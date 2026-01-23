@@ -101,6 +101,7 @@ export const orders = pgTable("orders", {
   }).default("0"),
   finalAmount: numeric("final_amount", { precision: 12, scale: 2 }),
   paymentMethod: text("payment_method").default("cash"), // 'cash', 'card', 'bank'
+  serviceType: text("service_type").default("normal"), // 'normal', 'dry_clean'
   status: text("status").default("entry"),
   deliveryType: text("delivery_type").default("takeaway"),
   expectedDeliveryAt: timestamp("expected_delivery_at"),

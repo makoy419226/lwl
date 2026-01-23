@@ -90,6 +90,7 @@ export default function Products() {
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const urlClientId = new URLSearchParams(searchParams).get("clientId");
   const [searchTerm, setSearchTerm] = useState(urlSearch);
+  const [orderCategory, setOrderCategory] = useState<"normal" | "dry_clean">("normal");
   const [initialClientLoaded, setInitialClientLoaded] = useState(false);
 
   useEffect(() => {
@@ -675,6 +676,7 @@ export default function Products() {
         finalAmount: finalTotal.toFixed(2),
         entryDate: new Date().toISOString(),
         deliveryType: deliveryType,
+        serviceType: orderCategory,
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
         notes: `Address: ${walkInAddress.trim() || "n/a"}`,
@@ -842,6 +844,15 @@ export default function Products() {
               </div>
               New Order
             </h1>
+            <Select value={orderCategory} onValueChange={(v: "normal" | "dry_clean") => setOrderCategory(v)}>
+              <SelectTrigger className="w-32 h-9 rounded-full border-2 border-primary/20" data-testid="select-order-category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="dry_clean">Dry Clean</SelectItem>
+              </SelectContent>
+            </Select>
             <div className="flex-1 max-w-sm relative group">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
                 <Search className="w-4 h-4" />
