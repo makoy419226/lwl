@@ -40,3 +40,9 @@ waitForPort = 5000
 
 [agent]
 integrations = ["resend:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+SMTP_HOST = "smtp.mail.yahoo.com"
+SMTP_PORT = "587"
