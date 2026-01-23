@@ -15,6 +15,7 @@ export const products = pgTable("products", {
   name: text("name").notNull(),
   description: text("description"),
   price: numeric("price", { precision: 10, scale: 2 }),
+  dryCleanPrice: numeric("dry_clean_price", { precision: 10, scale: 2 }),
   sku: text("sku"),
   category: text("category").default("Laundry"),
   stockQuantity: integer("stock_quantity").default(0),

@@ -109,6 +109,7 @@ export function useUpdateProduct() {
             ? Number(updates.stockQuantity)
             : undefined,
         price: updates.price ? String(updates.price) : undefined,
+        dryCleanPrice: updates.dryCleanPrice ? String(updates.dryCleanPrice) : undefined,
       };
 
       const url = buildUrl(api.products.update.path, { id });

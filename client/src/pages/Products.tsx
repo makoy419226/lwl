@@ -23,6 +23,7 @@ import {
   Lock,
   AlertCircle,
   AlertTriangle,
+  Pencil,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,12 @@ export default function Products() {
 
   const [editingImageId, setEditingImageId] = useState<number | null>(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [editingPriceProduct, setEditingPriceProduct] = useState<{
+    id: number;
+    name: string;
+    price: string;
+    dryCleanPrice: string;
+  } | null>(null);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [dryCleanItems, setDryCleanItems] = useState<Record<number, boolean>>({});
   const [packingTypes, setPackingTypes] = useState<
@@ -500,14 +507,18 @@ export default function Products() {
 
   const orderTotal = useMemo(() => {
     const productTotal = orderItems.reduce((sum, item) => {
-      return sum + parseFloat(item.product.price || "0") * item.quantity;
+      const isDryClean = dryCleanItems[item.product.id];
+      const price = isDryClean 
+        ? parseFloat(item.product.dryCleanPrice || item.product.price || "0")
+        : parseFloat(item.product.price || "0");
+      return sum + price * item.quantity;
     }, 0);
     const customTotal = customItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0,
     );
     return productTotal + customTotal;
-  }, [orderItems, customItems]);
+  }, [orderItems, customItems, dryCleanItems]);
 
   const hasOrderItems = orderItems.length > 0 || customItems.length > 0;
 
@@ -938,13 +949,39 @@ export default function Products() {
                             {product.name}
                           </div>
 
-                          <div
-                            className="text-lg font-black text-primary mt-1 bg-primary/10 px-2 py-0.5 rounded-full"
-                            data-testid={`text-product-price-${product.id}`}
+                          <div 
+                            className="flex flex-col items-center mt-1 gap-0.5 relative group"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {product.price
-                              ? `${parseFloat(product.price).toFixed(0)}`
-                              : "-"}
+                            <div
+                              className="text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full"
+                              data-testid={`text-product-price-${product.id}`}
+                            >
+                              N: {product.price ? parseFloat(product.price).toFixed(0) : "-"}
+                            </div>
+                            <div
+                              className="text-sm font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded-full"
+                              data-testid={`text-product-dc-price-${product.id}`}
+                            >
+                              DC: {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="absolute -right-6 top-1/2 -translate-y-1/2 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingPriceProduct({
+                                  id: product.id,
+                                  name: product.name,
+                                  price: product.price || "",
+                                  dryCleanPrice: product.dryCleanPrice || "",
+                                });
+                              }}
+                              data-testid={`button-edit-price-${product.id}`}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
                           </div>
 
                           {product.stockQuantity !== null &&
@@ -2065,6 +2102,83 @@ export default function Products() {
             >
               Add to Order
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Prices Dialog */}
+      <Dialog
+        open={!!editingPriceProduct}
+        onOpenChange={(open) => !open && setEditingPriceProduct(null)}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit Prices - {editingPriceProduct?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Normal Price (AED)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={editingPriceProduct?.price || ""}
+                onChange={(e) =>
+                  setEditingPriceProduct((prev) =>
+                    prev ? { ...prev, price: e.target.value } : null
+                  )
+                }
+                data-testid="input-edit-normal-price"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Dry Clean Price (AED)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={editingPriceProduct?.dryCleanPrice || ""}
+                onChange={(e) =>
+                  setEditingPriceProduct((prev) =>
+                    prev ? { ...prev, dryCleanPrice: e.target.value } : null
+                  )
+                }
+                data-testid="input-edit-dc-price"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setEditingPriceProduct(null)}
+                data-testid="button-cancel-edit-price"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  if (editingPriceProduct) {
+                    updateProduct.mutate({
+                      id: editingPriceProduct.id,
+                      price: editingPriceProduct.price || undefined,
+                      dryCleanPrice: editingPriceProduct.dryCleanPrice || undefined,
+                    });
+                    setEditingPriceProduct(null);
+                  }
+                }}
+                disabled={updateProduct.isPending}
+                data-testid="button-save-prices"
+              >
+                {updateProduct.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
