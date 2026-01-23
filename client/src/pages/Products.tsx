@@ -144,6 +144,7 @@ export default function Products() {
   const [tips, setTips] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
+  const [showCartPopup, setShowCartPopup] = useState(false);
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
@@ -1073,69 +1074,32 @@ export default function Products() {
           </div>
         </main>
 
-        {/* Order Summary Bar - Highlighted */}
+        {/* Floating Cart Button */}
         {hasOrderItems && (
-          <div className={`sticky bottom-0 z-40 mx-2 mb-2 p-3 border-2 shadow-2xl rounded-xl backdrop-blur-sm ${
-            orderType === "urgent" 
-              ? "border-orange-500 bg-gradient-to-r from-orange-500/20 via-red-500/15 to-orange-500/20" 
-              : "border-primary bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10"
-          }`}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${
-                  orderType === "urgent"
-                    ? "bg-gradient-to-br from-orange-500 to-red-500"
-                    : "bg-gradient-to-br from-primary to-primary/80"
-                }`}>
-                  <ShoppingCart className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    {orderItems.length + customItems.length} items selected
-                    {orderType === "urgent" && <span className="ml-1 text-orange-600 font-bold">(URGENT 2x)</span>}
-                  </p>
-                  <p
-                    className={`text-xl font-black ${orderType === "urgent" ? "text-orange-600" : "text-primary"}`}
-                    data-testid="text-order-total"
-                  >
-                    {orderType === "urgent" ? (orderTotal * 2).toFixed(2) : orderTotal.toFixed(2)} AED
-                    {orderType === "urgent" && <span className="text-sm ml-1 line-through text-muted-foreground">{orderTotal.toFixed(2)}</span>}
-                  </p>
-                </div>
-              </div>
-
-              {customerName && (
-                <span className="text-xs font-semibold text-muted-foreground px-2">
-                  {customerName}
-                </span>
-              )}
+          <button
+            onClick={() => setShowCartPopup(true)}
+            className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95 ${
+              orderType === "urgent" 
+                ? "bg-gradient-to-r from-orange-500 to-red-500 text-white" 
+                : "bg-gradient-to-r from-primary to-primary/90 text-white"
+            }`}
+            data-testid="button-open-cart"
+          >
+            <div className="relative">
+              <ShoppingCart className="w-5 h-5" />
+              <span className="absolute -top-2 -right-2 w-5 h-5 bg-white text-primary text-xs font-bold rounded-full flex items-center justify-center">
+                {orderItems.length + customItems.length}
+              </span>
             </div>
-
-            <div className={`mt-1 pt-1 border-t text-[10px] text-muted-foreground line-clamp-1 ${
-              orderType === "urgent" ? "border-orange-500/20" : "border-primary/20"
-            }`}>
-              {orderItems.map((item, idx) => (
-                <span key={item.product.id} className="font-medium">
-                  {item.quantity}x {item.product.name}
-                  {idx < orderItems.length + customItems.length - 1 ? ", " : ""}
-                </span>
-              ))}
-              {customItems.map((item, idx) => (
-                <span
-                  key={`custom-${idx}`}
-                  className="font-medium text-amber-600"
-                >
-                  {item.quantity}x {item.name}
-                  {idx < customItems.length - 1 ? ", " : ""}
-                </span>
-              ))}
-            </div>
-          </div>
+            <span className="font-bold text-sm">
+              {orderType === "urgent" ? (orderTotal * 2).toFixed(0) : orderTotal.toFixed(0)} AED
+            </span>
+          </button>
         )}
       </div>
 
-      {/* Right side - Order Slip or Today's Work List */}
-      <div className="w-80 border-l-2 border-primary/20 bg-gradient-to-b from-muted/50 to-background flex flex-col shadow-xl">
+      {/* Right side - Order Slip or Today's Work List (hidden on mobile) */}
+      <div className="hidden lg:flex w-80 border-l-2 border-primary/20 bg-gradient-to-b from-muted/50 to-background flex-col shadow-xl">
         {hasOrderItems ? (
           <>
             <div className="h-14 px-4 flex items-center justify-between border-b border-primary/20 bg-gradient-to-r from-primary/15 to-primary/5">
@@ -2171,6 +2135,197 @@ export default function Products() {
                 )}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cart Popup Dialog */}
+      <Dialog open={showCartPopup} onOpenChange={setShowCartPopup}>
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-auto p-0">
+          <DialogHeader className="px-4 pt-4 pb-2 border-b bg-gradient-to-r from-primary/10 to-primary/5">
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4 text-white" />
+              </div>
+              Order Slip
+              <Badge className="ml-auto text-xs font-bold bg-primary text-white">
+                {orderItems.length + customItems.length} items
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="p-4 space-y-3">
+            {/* Items Table */}
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/50">
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-2 font-bold">Item</th>
+                    <th className="text-center py-2 px-1 font-bold">Qty</th>
+                    <th className="text-right py-2 px-2 font-bold">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orderItems.map((item) => {
+                    const isDryClean = dryCleanItems[item.product.id];
+                    const itemPrice = isDryClean 
+                      ? parseFloat(item.product.dryCleanPrice || item.product.price || "0")
+                      : parseFloat(item.product.price || "0");
+                    return (
+                      <tr key={item.product.id} className={`border-b ${isDryClean ? "bg-purple-50 dark:bg-purple-900/20" : ""}`}>
+                        <td className="py-2 px-2 font-medium">
+                          {item.product.name}
+                          {isDryClean && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
+                        </td>
+                        <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
+                        <td className="py-2 px-2 text-right font-bold">{(itemPrice * item.quantity).toFixed(0)}</td>
+                      </tr>
+                    );
+                  })}
+                  {customItems.map((item, idx) => (
+                    <tr key={`custom-${idx}`} className="border-b bg-amber-50 dark:bg-amber-900/20">
+                      <td className="py-2 px-2 font-medium flex items-center gap-1">
+                        {item.name}
+                        <button onClick={() => removeCustomItem(idx)} className="text-red-500 hover:text-red-700">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </td>
+                      <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
+                      <td className="py-2 px-2 text-right font-bold">{(item.price * item.quantity).toFixed(0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div className="border rounded-lg p-3 space-y-1 bg-muted/30">
+              <div className="flex justify-between text-xs">
+                <span>Subtotal</span>
+                <span className="font-semibold">{orderTotal.toFixed(2)} AED</span>
+              </div>
+              {parseFloat(discountPercent) > 0 && (
+                <div className="flex justify-between text-xs text-green-600">
+                  <span>Discount ({discountPercent}%)</span>
+                  <span>-{((orderTotal * parseFloat(discountPercent)) / 100).toFixed(2)} AED</span>
+                </div>
+              )}
+              {parseFloat(tips) > 0 && (
+                <div className="flex justify-between text-xs text-blue-600">
+                  <span>Tips</span>
+                  <span>+{parseFloat(tips).toFixed(2)} AED</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm font-bold text-primary border-t pt-2 mt-2">
+                <span>TOTAL</span>
+                <span>
+                  {(orderTotal - (orderTotal * (parseFloat(discountPercent) || 0)) / 100 + (parseFloat(tips) || 0)).toFixed(2)} AED
+                </span>
+              </div>
+            </div>
+
+            {/* Client Selection */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Select Client</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="h-9 text-xs w-full justify-between" data-testid="popup-select-client">
+                    {isWalkIn ? "Walk-in Customer" : selectedClientId ? clients?.find((c) => c.id === selectedClientId)?.name || "Choose client..." : "Choose client..."}
+                    <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 z-[200]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search clients..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>No client found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="walk-in-customer"
+                          onSelect={() => {
+                            setSelectedClientId(null);
+                            setIsWalkIn(true);
+                            setCustomerName("Walk-in Customer");
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${isWalkIn ? "opacity-100" : "opacity-0"}`} />
+                          Walk-in Customer
+                        </CommandItem>
+                        {clients?.map((client) => (
+                          <CommandItem
+                            key={client.id}
+                            value={`${client.name} ${client.phone || ""}`}
+                            onSelect={() => {
+                              setIsWalkIn(false);
+                              setSelectedClientId(client.id);
+                              setCustomerName(client.name);
+                              setCustomerPhone(client.phone || "");
+                              if (client.discountPercent) setDiscountPercent(client.discountPercent);
+                            }}
+                          >
+                            <Check className={`mr-2 h-4 w-4 ${selectedClientId === client.id ? "opacity-100" : "opacity-0"}`} />
+                            <div>
+                              <div className="font-medium">{client.name}</div>
+                              {client.phone && <div className="text-xs text-muted-foreground">{client.phone}</div>}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Order Type */}
+            <div className="flex gap-2">
+              <Button
+                variant={orderType === "normal" ? "default" : "outline"}
+                className="flex-1 h-9 text-xs"
+                onClick={() => setOrderType("normal")}
+              >
+                <Clock className="w-3 h-3 mr-1" /> Normal
+              </Button>
+              <Button
+                variant={orderType === "urgent" ? "default" : "outline"}
+                className={`flex-1 h-9 text-xs ${orderType === "urgent" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                onClick={() => setOrderType("urgent")}
+              >
+                <Zap className="w-3 h-3 mr-1" /> Urgent 2x
+              </Button>
+            </div>
+
+            {/* Delivery Type */}
+            <div className="flex gap-2">
+              <Button
+                variant={deliveryType === "pickup" ? "default" : "outline"}
+                className="flex-1 h-9 text-xs"
+                onClick={() => setDeliveryType("pickup")}
+              >
+                <Package className="w-3 h-3 mr-1" /> Pickup
+              </Button>
+              <Button
+                variant={deliveryType === "delivery" ? "default" : "outline"}
+                className="flex-1 h-9 text-xs"
+                onClick={() => setDeliveryType("delivery")}
+              >
+                <Truck className="w-3 h-3 mr-1" /> Delivery
+              </Button>
+            </div>
+
+            {/* Place Order Button */}
+            <Button
+              className="w-full h-10 font-bold"
+              onClick={() => {
+                setShowCartPopup(false);
+                handleCreateOrder();
+              }}
+              disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn)}
+              data-testid="popup-button-place-order"
+            >
+              {createOrderMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Place Order - {(orderTotal - (orderTotal * (parseFloat(discountPercent) || 0)) / 100 + (parseFloat(tips) || 0)).toFixed(2)} AED
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
