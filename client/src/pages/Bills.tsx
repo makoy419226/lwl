@@ -113,6 +113,23 @@ export default function Bills() {
   const [newItemCategory, setNewItemCategory] = useState("");
   const invoiceRef = useRef<HTMLDivElement>(null);
   const billPdfRef = useRef<HTMLDivElement>(null);
+  const [logoBase64, setLogoBase64] = useState<string>("");
+
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        setLogoBase64(canvas.toDataURL("image/png"));
+      }
+    };
+    img.src = logoImage;
+  }, []);
 
   const [showCreatorPinDialog, setShowCreatorPinDialog] = useState(false);
   const [creatorPin, setCreatorPin] = useState("");
@@ -973,12 +990,12 @@ export default function Bills() {
               pointerEvents: "none",
               zIndex: 0,
             }}>
-              <img src={logoImage} alt="" style={{ width: "350px", height: "auto" }} />
+              <img src={logoBase64 || logoImage} alt="" style={{ width: "350px", height: "auto" }} />
             </div>
             <div style={{ position: "relative", zIndex: 1 }}>
             <div className="text-center border-b pb-3 mb-3">
               <img 
-                src={logoImage} 
+                src={logoBase64 || logoImage} 
                 alt="Liquid Washes Laundry" 
                 style={{ width: '120px', height: 'auto', objectFit: 'contain', margin: '0 auto 10px' }}
               />
@@ -1116,12 +1133,12 @@ export default function Bills() {
               pointerEvents: "none",
               zIndex: 0,
             }}>
-              <img src={logoImage} alt="" style={{ width: "350px", height: "auto" }} />
+              <img src={logoBase64 || logoImage} alt="" style={{ width: "350px", height: "auto" }} />
             </div>
             <div style={{ position: "relative", zIndex: 1 }}>
             <div className="text-center border-b pb-3 mb-3">
               <img 
-                src={logoImage} 
+                src={logoBase64 || logoImage} 
                 alt="Liquid Washes Laundry" 
                 style={{ width: '120px', height: 'auto', objectFit: 'contain', margin: '0 auto 10px' }}
               />
