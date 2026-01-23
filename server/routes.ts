@@ -6,7 +6,8 @@ import { z } from "zod";
 import { db } from "./db";
 import { users, passwordResetTokens, stageChecklists } from "@shared/schema";
 import { eq, and, gt } from "drizzle-orm";
-import { sendPasswordResetEmail, sendDailySalesReportEmail, type DailySalesData } from "./resend";
+import { sendPasswordResetEmail } from "./resend";
+import { sendDailySalesReportEmailSMTP, type DailySalesData } from "./smtp";
 import PDFDocument from "pdfkit";
 
 import { seedDatabase } from "./seed";
@@ -1251,7 +1252,7 @@ export async function registerRoutes(
     try {
       const reportDate = date ? new Date(date) : new Date();
       const salesData = await generateDailySalesData(reportDate);
-      await sendDailySalesReportEmail(ADMIN_REPORT_EMAIL, salesData);
+      await sendDailySalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
       
       res.json({ 
         success: true, 

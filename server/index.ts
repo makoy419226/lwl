@@ -5,7 +5,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { sendDailySalesReportEmail, type DailySalesData } from "./resend";
+import { sendDailySalesReportEmailSMTP, type DailySalesData } from "./smtp";
 import { storage } from "./storage";
 
 const app = express();
@@ -162,7 +162,7 @@ app.use((req, res, next) => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const salesData = await generateDailySalesData(yesterday);
-      await sendDailySalesReportEmail(ADMIN_REPORT_EMAIL, salesData);
+      await sendDailySalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
       log(`Daily sales report sent to ${ADMIN_REPORT_EMAIL}`, "scheduler");
     } catch (err: any) {
       log(`Failed to send daily report: ${err.message}`, "scheduler");

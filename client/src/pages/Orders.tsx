@@ -368,24 +368,42 @@ export default function Orders() {
       let isCustomerExists = false;
       
       try {
-        const errorMsg = error.message || "";
+        const errorMsg = String(error.message || error || "");
+        console.log("Order error:", errorMsg);
         
-        // Try to extract JSON from "400: {...}" format
-        const jsonMatch = errorMsg.match(/\{.*\}/);
+        // Try to extract JSON from "400: {...}" format - use greedy match for nested braces
+        const jsonMatch = errorMsg.match(/\{[^{}]*"message"[^{}]*\}/);
         if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          cleanMessage = parsed.message || cleanMessage;
-        } else if (errorMsg.includes(":")) {
-          // Try to get text after status code
-          cleanMessage = errorMsg.split(":").slice(1).join(":").trim() || cleanMessage;
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            cleanMessage = parsed.message || cleanMessage;
+          } catch {
+            // If JSON parse fails, try extracting message directly
+            const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+            if (msgMatch) {
+              cleanMessage = msgMatch[1];
+            }
+          }
         } else {
-          cleanMessage = errorMsg || cleanMessage;
+          // Try to extract message field directly from string
+          const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+          if (msgMatch) {
+            cleanMessage = msgMatch[1];
+          } else if (errorMsg.includes(":")) {
+            // Try to get text after status code
+            const parts = errorMsg.split(":");
+            if (parts.length > 1) {
+              cleanMessage = parts.slice(1).join(":").trim() || cleanMessage;
+            }
+          } else {
+            cleanMessage = errorMsg || cleanMessage;
+          }
         }
         
         isCustomerExists = cleanMessage.toLowerCase().includes("customer details already exist") ||
                           cleanMessage.toLowerCase().includes("customer already exists");
       } catch (err) {
-        // Keep default message
+        console.error("Error parsing order error:", err);
       }
       
       toast({
