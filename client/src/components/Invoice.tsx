@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Printer, Download, X } from "lucide-react";
+import logoImage from "@assets/company_logo.png";
 
 interface InvoiceProps {
   invoiceNumber: string;
@@ -9,7 +10,7 @@ interface InvoiceProps {
   clientName: string;
   clientPhone?: string;
   clientAddress?: string;
-  items?: { description: string; amount: number }[];
+  items?: { description: string; quantity?: number; rate?: number; amount: number }[];
   totalAmount: number;
   paidAmount: number;
   paymentMethod?: string;
@@ -60,6 +61,7 @@ export function Invoice({
               }
               .invoice-container { width: 100%; }
               .header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #1e40af; padding-bottom: 12px; }
+              .logo { max-width: 80px; height: auto; margin: 0 auto 8px; display: block; }
               .company-name { font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 6px; letter-spacing: 1px; }
               .company-address { font-size: 10px; color: #666; line-height: 1.4; }
               .invoice-title { font-size: 16px; font-weight: bold; text-align: center; margin: 12px 0; color: #1e40af; background: #f0f4ff; padding: 8px; border-radius: 4px; }
@@ -69,8 +71,9 @@ export function Invoice({
               .info-value { font-size: 11px; font-weight: 500; }
               .items-table { width: 100%; border-collapse: collapse; margin: 12px 0; border: 1px solid #ddd; }
               .items-table th, .items-table td { padding: 8px 6px; text-align: left; border-bottom: 1px solid #e5e5e5; }
-              .items-table th { background: #1e40af; color: white; font-weight: 600; font-size: 10px; }
+              .items-table th { background: #1e40af; color: white; font-weight: 600; font-size: 10px; text-transform: uppercase; }
               .items-table td { font-size: 10px; }
+              .items-table .center { text-align: center; }
               .items-table .amount { text-align: right; }
               .items-table tbody tr:nth-child(even) { background: #f9fafb; }
               .totals { margin-top: 12px; padding: 10px; background: #f8f9fa; border-radius: 6px; }
@@ -123,6 +126,7 @@ export function Invoice({
 
         <div ref={invoiceRef} className="p-6 invoice-container">
           <div className="header">
+            <img src={logoImage} alt="Company Logo" className="logo" style={{ maxWidth: "80px", height: "auto", margin: "0 auto 8px", display: "block" }} />
             <div className="company-name">{companyInfo.name}</div>
             <div className="company-address">
               {companyInfo.address}<br />
@@ -165,14 +169,20 @@ export function Invoice({
             <table className="items-table">
               <thead>
                 <tr>
-                  <th>Description</th>
-                  <th className="amount">Amount (AED)</th>
+                  <th className="center" style={{ width: "8%" }}>S.No</th>
+                  <th style={{ width: "42%" }}>Item Description</th>
+                  <th className="center" style={{ width: "12%" }}>Qty</th>
+                  <th className="amount" style={{ width: "18%" }}>Rate</th>
+                  <th className="amount" style={{ width: "20%" }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, index) => (
                   <tr key={index}>
+                    <td className="center">{index + 1}</td>
                     <td>{item.description}</td>
+                    <td className="center">{item.quantity ?? 1}</td>
+                    <td className="amount">{(item.rate ?? item.amount).toFixed(2)}</td>
                     <td className="amount">{item.amount.toFixed(2)}</td>
                   </tr>
                 ))}
