@@ -913,7 +913,7 @@ export default function Products() {
                           data-testid={`box-product-${product.id}`}
                         >
                           <div
-                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-1 sm:mb-2 shadow-sm relative"
+                            className="w-full h-20 sm:h-24 md:h-28 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-1 sm:mb-2 shadow-sm relative"
                           >
                             {(() => {
                               const imageSrc = product.imageUrl || getProductImage(product.name);
