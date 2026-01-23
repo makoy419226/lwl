@@ -481,30 +481,56 @@ export class DatabaseStorage implements IStorage {
       ...(isPaid && { paymentMethod: paymentMethod || "cash" }),
     });
 
-    // If bill is fully paid, also mark corresponding orders as paid
-    if (isPaid && bill.clientId) {
+    // Update order paidAmounts for this bill's orders
+    if (bill.clientId) {
       const clientOrders = await db
         .select()
         .from(orders)
         .where(eq(orders.clientId, bill.clientId));
-      const billOrderIds = clientOrders
-        .filter((order) => order.billId === billId)
-        .map((order) => order.id);
+      const billOrders = clientOrders.filter((order) => order.billId === billId);
 
-      if (billOrderIds.length > 0) {
-        await db
-          .update(orders)
-          .set({ paidAmount: sql`total_amount` }) // Set paidAmount to match totalAmount
-          .where(inArray(orders.id, billOrderIds));
+      if (billOrders.length > 0) {
+        if (isPaid) {
+          // Bill fully paid - mark all orders as fully paid
+          await db
+            .update(orders)
+            .set({ paidAmount: sql`total_amount` })
+            .where(inArray(orders.id, billOrders.map(o => o.id)));
 
-        console.log(
-          `[PAYMENT] Marked ${billOrderIds.length} order(s) as paid for bill ${billId}`,
-        );
+          console.log(
+            `[PAYMENT] Marked ${billOrders.length} order(s) as fully paid for bill ${billId}`,
+          );
+        } else {
+          // Partial payment - distribute payment across unpaid orders proportionally
+          let remainingPayment = paymentAmount;
+          
+          for (const order of billOrders) {
+            if (remainingPayment <= 0) break;
+            
+            const orderTotal = parseFloat(order.totalAmount || order.finalAmount || "0");
+            const orderPaid = parseFloat(order.paidAmount || "0");
+            const orderRemaining = orderTotal - orderPaid;
+            
+            if (orderRemaining > 0) {
+              const paymentForThisOrder = Math.min(remainingPayment, orderRemaining);
+              const newOrderPaid = orderPaid + paymentForThisOrder;
+              
+              await db
+                .update(orders)
+                .set({ paidAmount: newOrderPaid.toFixed(2) })
+                .where(eq(orders.id, order.id));
+              
+              remainingPayment -= paymentForThisOrder;
+              console.log(
+                `[PAYMENT] Applied ${paymentForThisOrder.toFixed(2)} to order #${order.orderNumber}, new paidAmount: ${newOrderPaid.toFixed(2)}`,
+              );
+            }
+          }
+        }
       }
     }
 
-    // Update client deposit and balance directly without creating a transaction
-    // to avoid double-counting (the bill payment itself is already tracked)
+    // Handle deposit updates for payment tracking
     if (bill.clientId) {
       const client = await this.getClient(bill.clientId);
       if (client && paymentAmount > 0) {
@@ -520,30 +546,51 @@ export class DatabaseStorage implements IStorage {
           newDeposit = Math.max(0, currentDeposit - paymentAmount);
           transactionType = "deposit_used";
           transactionDescription = `Deposit used for Bill #${bill.id}: ${bill.description || "N/A"}`;
+          
+          const newBalance = currentAmount - newDeposit;
+          await this.updateClient(bill.clientId, {
+            deposit: newDeposit.toFixed(2),
+            balance: newBalance.toFixed(2),
+          });
+
+          // Record the transaction for history
+          await this.createTransaction({
+            clientId: bill.clientId,
+            type: transactionType,
+            amount: paymentAmount.toFixed(2),
+            description: transactionDescription,
+            date: new Date(),
+            runningBalance: newBalance.toFixed(2),
+            paymentMethod: paymentMethod || "cash",
+          });
         } else {
-          // Cash/Card/Bank - add to deposit as normal payment
-          newDeposit = currentDeposit + paymentAmount;
-          transactionType = "deposit";
+          // Cash/Card/Bank - record payment transaction but don't add to deposit
+          // The payment goes directly to the order/bill, not as credit balance
+          transactionType = "payment";
           transactionDescription = `Payment for Bill #${bill.id}: ${bill.description || "N/A"}`;
+          
+          // Calculate running balance from unpaid orders
+          const clientOrders = await db
+            .select()
+            .from(orders)
+            .where(eq(orders.clientId, bill.clientId));
+          const runningBalance = clientOrders.reduce((sum, order) => {
+            const total = parseFloat(order.totalAmount || order.finalAmount || "0");
+            const paid = parseFloat(order.paidAmount || "0");
+            return sum + (total - paid);
+          }, 0);
+
+          // Record the payment transaction for history
+          await this.createTransaction({
+            clientId: bill.clientId,
+            type: transactionType,
+            amount: paymentAmount.toFixed(2),
+            description: transactionDescription,
+            date: new Date(),
+            runningBalance: runningBalance.toFixed(2),
+            paymentMethod: paymentMethod || "cash",
+          });
         }
-        
-        const newBalance = currentAmount - newDeposit;
-
-        await this.updateClient(bill.clientId, {
-          deposit: newDeposit.toFixed(2),
-          balance: newBalance.toFixed(2),
-        });
-
-        // Record the transaction for history without triggering balance changes again
-        await this.createTransaction({
-          clientId: bill.clientId,
-          type: transactionType,
-          amount: paymentAmount.toFixed(2),
-          description: transactionDescription,
-          date: new Date(),
-          runningBalance: newBalance.toFixed(2),
-          paymentMethod: paymentMethod || "cash",
-        });
       }
     }
 
