@@ -347,8 +347,7 @@ export default function DueCustomers() {
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-amber-500" />
+              <CardTitle>
                 Unpaid Bills
               </CardTitle>
               <div className="flex items-center gap-2 flex-wrap">
