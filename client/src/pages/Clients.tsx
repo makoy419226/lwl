@@ -1023,17 +1023,11 @@ export default function Clients() {
                 const availableCredit = Math.max(0, depositBalance - clientUnpaidTotal);
                 
                 return (
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">Unpaid Bills</p>
                       <p className="text-xl font-bold text-blue-600">
                         {clientUnpaidTotal.toFixed(2)} AED
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Credit Balance</p>
-                      <p className="text-xl font-bold text-green-600">
-                        {depositBalance.toFixed(2)} AED
                       </p>
                     </div>
                     <div className="text-center">
