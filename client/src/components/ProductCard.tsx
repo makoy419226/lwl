@@ -1,5 +1,6 @@
 import { Product } from "@shared/schema";
 import { Edit2, Trash2, Package, Shirt, Footprints, Home, Sparkles } from "lucide-react";
+import { getProductImage } from "@/lib/productImages";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -77,19 +78,29 @@ export function ProductCard({ product, canEdit = true }: ProductCardProps) {
     >
       {/* Image / Icon Area */}
       <div className={`h-28 w-full ${placeholderGradient} flex items-center justify-center overflow-hidden relative`}>
-        {product.imageUrl ? (
-          <img 
-            src={product.imageUrl} 
-            alt={product.name} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 animate-pulse"
-          />
-        ) : (
-          <div className={`flex flex-col items-center justify-center animate-pulse ${
-            isActive ? "text-white" : "text-primary/40 group-hover:text-primary/60"
-          } transition-colors`}>
-            {getCategoryIcon(product.category)}
-          </div>
-        )}
+        {(() => {
+          const imageSrc = product.imageUrl || getProductImage(product.name);
+          if (imageSrc) {
+            return (
+              <img 
+                src={imageSrc} 
+                alt={product.name} 
+                className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                  if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                }}
+              />
+            );
+          }
+          return null;
+        })()}
+        <div className={`fallback-icon flex-col items-center justify-center ${
+          isActive ? "text-white" : "text-primary/40 group-hover:text-primary/60"
+        } transition-colors`} style={{ display: (product.imageUrl || getProductImage(product.name)) ? 'none' : 'flex' }}>
+          {getCategoryIcon(product.category)}
+        </div>
         
         {/* Quick Action Overlay (visible on hover) - only for admins */}
         {canEdit && (
