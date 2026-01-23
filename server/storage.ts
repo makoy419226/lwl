@@ -530,69 +530,37 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    // Handle deposit updates for payment tracking
-    if (bill.clientId) {
+    // Only update deposit when payment method is "deposit" (using existing credit balance)
+    // Cash/Card/Bank payments do NOT affect the deposit/credit balance at all
+    if (bill.clientId && paymentMethod === "deposit") {
       const client = await this.getClient(bill.clientId);
       if (client && paymentAmount > 0) {
         const currentDeposit = parseFloat(client.deposit || "0");
         const currentAmount = parseFloat(client.amount || "0");
         
-        let newDeposit: number;
-        let transactionType: string;
-        let transactionDescription: string;
+        // Deduct from existing deposit - customer is using their pre-paid balance
+        const newDeposit = Math.max(0, currentDeposit - paymentAmount);
+        const newBalance = currentAmount - newDeposit;
         
-        if (paymentMethod === "deposit") {
-          // Deduct from existing deposit - customer is using their pre-paid balance
-          newDeposit = Math.max(0, currentDeposit - paymentAmount);
-          transactionType = "deposit_used";
-          transactionDescription = `Deposit used for Bill #${bill.id}: ${bill.description || "N/A"}`;
-          
-          const newBalance = currentAmount - newDeposit;
-          await this.updateClient(bill.clientId, {
-            deposit: newDeposit.toFixed(2),
-            balance: newBalance.toFixed(2),
-          });
+        await this.updateClient(bill.clientId, {
+          deposit: newDeposit.toFixed(2),
+          balance: newBalance.toFixed(2),
+        });
 
-          // Record the transaction for history
-          await this.createTransaction({
-            clientId: bill.clientId,
-            type: transactionType,
-            amount: paymentAmount.toFixed(2),
-            description: transactionDescription,
-            date: new Date(),
-            runningBalance: newBalance.toFixed(2),
-            paymentMethod: paymentMethod || "cash",
-          });
-        } else {
-          // Cash/Card/Bank - record payment transaction but don't add to deposit
-          // The payment goes directly to the order/bill, not as credit balance
-          transactionType = "payment";
-          transactionDescription = `Payment for Bill #${bill.id}: ${bill.description || "N/A"}`;
-          
-          // Calculate running balance from unpaid orders
-          const clientOrders = await db
-            .select()
-            .from(orders)
-            .where(eq(orders.clientId, bill.clientId));
-          const runningBalance = clientOrders.reduce((sum, order) => {
-            const total = parseFloat(order.totalAmount || order.finalAmount || "0");
-            const paid = parseFloat(order.paidAmount || "0");
-            return sum + (total - paid);
-          }, 0);
-
-          // Record the payment transaction for history
-          await this.createTransaction({
-            clientId: bill.clientId,
-            type: transactionType,
-            amount: paymentAmount.toFixed(2),
-            description: transactionDescription,
-            date: new Date(),
-            runningBalance: runningBalance.toFixed(2),
-            paymentMethod: paymentMethod || "cash",
-          });
-        }
+        // Record the deposit usage transaction for history
+        await this.createTransaction({
+          clientId: bill.clientId,
+          type: "deposit_used",
+          amount: paymentAmount.toFixed(2),
+          description: `Deposit used for Bill #${bill.id}: ${bill.description || "N/A"}`,
+          date: new Date(),
+          runningBalance: newBalance.toFixed(2),
+          paymentMethod: "deposit",
+        });
       }
     }
+    // For cash/card/bank payments - no transaction record needed
+    // The payment is already tracked on the bill and orders
 
     return { bill: updatedBill, payment: payment! };
   }
