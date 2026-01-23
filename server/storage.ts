@@ -559,8 +559,19 @@ export class DatabaseStorage implements IStorage {
         });
       }
     }
-    // For cash/card/bank payments - no transaction record needed
-    // The payment is already tracked on the bill and orders
+    // For cash/card/bank payments - record transaction for history but don't affect deposit
+    if (bill.clientId && paymentMethod !== "deposit") {
+      await this.createTransaction({
+        clientId: bill.clientId,
+        billId: billId,
+        type: "payment",
+        amount: paymentAmount.toFixed(2),
+        description: `Payment for Bill #${bill.id}: ${bill.description || "N/A"}`,
+        date: new Date(),
+        runningBalance: "0", // Not used for payment types
+        paymentMethod: paymentMethod || "cash",
+      });
+    }
 
     return { bill: updatedBill, payment: payment! };
   }
