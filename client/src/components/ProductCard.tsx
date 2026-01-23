@@ -143,9 +143,14 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
             {product.category || "General"}
           </span>
-          <span className="text-lg font-bold text-primary font-display">
-            AED {product.price ? Number(product.price).toFixed(2) : '0.00'}
-          </span>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-sm font-bold text-primary font-display">
+              AED {product.price ? Number(product.price).toFixed(2) : '0.00'}
+            </span>
+            <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
+              DC: {product.dryCleanPrice ? Number(product.dryCleanPrice).toFixed(2) : '-'}
+            </span>
+          </div>
         </div>
 
         <h3 className="text-lg font-bold text-foreground mb-1 font-display line-clamp-1 group-hover:text-primary transition-colors">

@@ -953,18 +953,27 @@ export default function Products() {
                             className="flex flex-col items-center mt-1 gap-0.5 relative group"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div
-                              className="text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full"
-                              data-testid={`text-product-price-${product.id}`}
-                            >
-                              N: {product.price ? parseFloat(product.price).toFixed(0) : "-"}
-                            </div>
-                            <div
-                              className="text-sm font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded-full"
-                              data-testid={`text-product-dc-price-${product.id}`}
-                            >
-                              DC: {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
-                            </div>
+                            {quantities[product.id] ? (
+                              // Show price based on dry clean selection when item is added
+                              <div
+                                className={`text-lg font-black px-3 py-1 rounded-full ${
+                                  dryCleanItems[product.id] 
+                                    ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30" 
+                                    : "text-primary bg-primary/10"
+                                }`}
+                                data-testid={`text-product-active-price-${product.id}`}
+                              >
+                                {dryCleanItems[product.id] 
+                                  ? (product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-")
+                                  : (product.price ? parseFloat(product.price).toFixed(0) : "-")
+                                } AED
+                              </div>
+                            ) : (
+                              // Show hint to tap when item not added
+                              <div className="text-xs text-muted-foreground italic">
+                                Tap to add
+                              </div>
+                            )}
                             <Button
                               size="icon"
                               variant="ghost"
