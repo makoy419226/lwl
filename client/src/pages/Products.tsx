@@ -90,7 +90,6 @@ export default function Products() {
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const urlClientId = new URLSearchParams(searchParams).get("clientId");
   const [searchTerm, setSearchTerm] = useState(urlSearch);
-  const [orderCategory, setOrderCategory] = useState<"normal" | "dry_clean">("normal");
   const [initialClientLoaded, setInitialClientLoaded] = useState(false);
 
   useEffect(() => {
@@ -121,6 +120,7 @@ export default function Products() {
   const [editingImageId, setEditingImageId] = useState<number | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [dryCleanItems, setDryCleanItems] = useState<Record<number, boolean>>({});
   const [packingTypes, setPackingTypes] = useState<
     Record<number, "hanging" | "folding">
   >({});
@@ -648,13 +648,17 @@ export default function Products() {
 
       const productItemsText = orderItems.map((item) => {
         const packing = packingTypes[item.product.id] || "folding";
-        return `${item.quantity}x ${item.product.name} (${packing})`;
+        const isDryClean = dryCleanItems[item.product.id];
+        const serviceLabel = isDryClean ? "DC" : "N";
+        return `${item.quantity}x ${item.product.name} [${serviceLabel}] (${packing})`;
       });
       const customItemsText = customItems.map(
         (item) => `${item.quantity}x ${item.name} @ ${item.price} AED`,
       );
       const itemsText = [...productItemsText, ...customItemsText].join(", ");
       const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+      
+      const hasDryCleanItems = orderItems.some(item => dryCleanItems[item.product.id]);
 
       let subtotal = pendingUrgent ? orderTotal * 2 : orderTotal;
       const discPct = parseFloat(discountPercent) || 0;
@@ -676,7 +680,7 @@ export default function Products() {
         finalAmount: finalTotal.toFixed(2),
         entryDate: new Date().toISOString(),
         deliveryType: deliveryType,
-        serviceType: orderCategory,
+        serviceType: hasDryCleanItems ? "dry_clean" : "normal",
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
         notes: `Address: ${walkInAddress.trim() || "n/a"}`,
@@ -693,6 +697,7 @@ export default function Products() {
 
   const clearOrder = () => {
     setQuantities({});
+    setDryCleanItems({});
     setPackingTypes({});
     setCustomItems([]);
     setCustomerName("");
@@ -844,15 +849,6 @@ export default function Products() {
               </div>
               New Order
             </h1>
-            <Select value={orderCategory} onValueChange={(v: "normal" | "dry_clean") => setOrderCategory(v)}>
-              <SelectTrigger className="w-32 h-9 rounded-full border-2 border-primary/20" data-testid="select-order-category">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="dry_clean">Dry Clean</SelectItem>
-              </SelectContent>
-            </Select>
             <div className="flex-1 max-w-sm relative group">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
                 <Search className="w-4 h-4" />
@@ -984,35 +980,51 @@ export default function Products() {
                               >
                                 <Button
                                   size="sm"
-                                  variant={
-                                    packingTypes[product.id] === "hanging"
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  className="w-full h-7 text-xs"
+                                  variant={dryCleanItems[product.id] ? "default" : "outline"}
+                                  className={`w-full h-7 text-xs ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
                                   onClick={() =>
-                                    handlePackingTypeChange(product.id, "hanging")
+                                    setDryCleanItems(prev => ({
+                                      ...prev,
+                                      [product.id]: !prev[product.id]
+                                    }))
                                   }
-                                  data-testid={`button-hanging-${product.id}`}
+                                  data-testid={`button-dryClean-${product.id}`}
                                 >
-                                  Hanging
+                                  Dry Clean
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant={
-                                    packingTypes[product.id] === "folding" ||
-                                    !packingTypes[product.id]
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  className="w-full h-7 text-xs"
-                                  onClick={() =>
-                                    handlePackingTypeChange(product.id, "folding")
-                                  }
-                                  data-testid={`button-folding-${product.id}`}
-                                >
-                                  Folding
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant={
+                                      packingTypes[product.id] === "hanging"
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    className="flex-1 h-7 text-xs"
+                                    onClick={() =>
+                                      handlePackingTypeChange(product.id, "hanging")
+                                    }
+                                    data-testid={`button-hanging-${product.id}`}
+                                  >
+                                    Hang
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={
+                                      packingTypes[product.id] === "folding" ||
+                                      !packingTypes[product.id]
+                                        ? "default"
+                                        : "outline"
+                                    }
+                                    className="flex-1 h-7 text-xs"
+                                    onClick={() =>
+                                      handlePackingTypeChange(product.id, "folding")
+                                    }
+                                    data-testid={`button-folding-${product.id}`}
+                                  >
+                                    Fold
+                                  </Button>
+                                </div>
                               </div>
                               <Button
                                 size="icon"
