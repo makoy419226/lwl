@@ -77,7 +77,7 @@ export function ProductCard({ product, canEdit = true }: ProductCardProps) {
       data-testid={`card-product-${product.id}`}
     >
       {/* Image / Icon Area */}
-      <div className={`h-28 w-full ${placeholderGradient} flex items-center justify-center overflow-hidden relative`}>
+      <div className={`h-36 sm:h-40 w-full ${placeholderGradient} flex items-center justify-center overflow-hidden relative rounded-t-2xl`}>
         {(() => {
           const imageSrc = product.imageUrl || getProductImage(product.name);
           if (imageSrc) {
@@ -85,7 +85,7 @@ export function ProductCard({ product, canEdit = true }: ProductCardProps) {
               <img 
                 src={imageSrc} 
                 alt={product.name} 
-                className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
