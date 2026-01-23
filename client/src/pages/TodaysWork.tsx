@@ -97,18 +97,20 @@ export default function TodaysWork() {
           </p>
         </Card>
 
-        <Card className="p-6" data-testid="card-delivered-today">
+        <Card className="p-6" data-testid="card-unpaid-bills">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <h3 className="font-semibold text-foreground">DELIVERED TODAY</h3>
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              <h3 className="font-semibold text-foreground">UNPAID BILLS TODAY</h3>
             </div>
-            <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="text-delivered-count">
-              {deliveredToday.length}
+            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" data-testid="text-unpaid-bills">
+              {(totalRevenue - paidAmount).toFixed(0)} AED
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground text-center py-4">
-            {deliveredToday.length === 0 ? "No deliveries yet" : `${deliveredToday.length} order${deliveredToday.length !== 1 ? 's' : ''} delivered`}
+            {todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length === 0 
+              ? "All bills paid" 
+              : `${todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length} unpaid bill${todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length !== 1 ? 's' : ''}`}
           </p>
         </Card>
 
@@ -127,6 +129,21 @@ export default function TodaysWork() {
           </p>
         </Card>
 
+        <Card className="p-6" data-testid="card-delivered-today">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <h3 className="font-semibold text-foreground">DELIVERED TODAY</h3>
+            </div>
+            <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="text-delivered-count">
+              {deliveredToday.length}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {deliveredToday.length === 0 ? "No deliveries yet" : `${deliveredToday.length} order${deliveredToday.length !== 1 ? 's' : ''} delivered`}
+          </p>
+        </Card>
+
         <Card className="p-6" data-testid="card-total-sales">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -139,23 +156,6 @@ export default function TodaysWork() {
           </div>
           <p className="text-sm text-muted-foreground text-center py-4">
             {todaysOrders.length === 0 ? "No orders yet" : `${todaysOrders.length} order${todaysOrders.length !== 1 ? 's' : ''} today`}
-          </p>
-        </Card>
-
-        <Card className="p-6" data-testid="card-unpaid-bills">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-500" />
-              <h3 className="font-semibold text-foreground">UNPAID BILLS TODAY</h3>
-            </div>
-            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" data-testid="text-unpaid-bills">
-              {(totalRevenue - paidAmount).toFixed(0)} AED
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground text-center py-4">
-            {todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length === 0 
-              ? "All bills paid" 
-              : `${todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length} unpaid bill${todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length !== 1 ? 's' : ''}`}
           </p>
         </Card>
       </div>
