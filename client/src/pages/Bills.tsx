@@ -53,6 +53,32 @@ import { format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, Client, Bill, Order } from "@shared/schema";
 import html2pdf from "html2pdf.js";
+import logoImage from "@assets/company_logo.png";
+
+function parseDescriptionItems(description: string, products?: Product[]): { name: string; qty: number; price: number; total: number }[] {
+  if (!description) return [];
+  
+  const orderMatch = description.match(/Order #[A-Z0-9-]+:\s*/i);
+  const itemsText = orderMatch ? description.replace(orderMatch[0], '') : description;
+  
+  const itemParts = itemsText.split(',').map(s => s.trim()).filter(Boolean);
+  
+  return itemParts.map(part => {
+    const match = part.match(/^(\d+)x\s+(.+)$/i);
+    if (match) {
+      const qty = parseInt(match[1]);
+      const name = match[2].trim();
+      const baseName = name.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s*\[[^\]]*\]\s*/g, '').trim();
+      let product = products?.find(p => p.name.toLowerCase() === name.toLowerCase());
+      if (!product) {
+        product = products?.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+      }
+      const price = product ? parseFloat(product.price || '0') : 0;
+      return { name, qty, price, total: qty * price };
+    }
+    return { name: part, qty: 1, price: 0, total: 0 };
+  });
+}
 
 export default function Bills() {
   const searchParams = useSearch();
@@ -926,7 +952,7 @@ export default function Bills() {
           >
             <div className="text-center border-b pb-3 mb-3">
               <img 
-                src="/assets/company_logo.png" 
+                src={logoImage} 
                 alt="Liquid Washes Laundry" 
                 style={{ width: '120px', height: 'auto', objectFit: 'contain', margin: '0 auto 10px' }}
               />
@@ -1044,16 +1070,16 @@ export default function Bills() {
         <div className="fixed left-[-9999px]">
           <div
             ref={billPdfRef}
-            className="bg-white p-4 rounded-lg border text-black"
+            className="bg-white p-6 rounded-lg border text-black"
             style={{
-              fontFamily: "Courier New, monospace",
-              fontSize: "11px",
-              width: "70mm",
+              fontFamily: "Arial, sans-serif",
+              fontSize: "12px",
+              width: "210mm",
             }}
           >
             <div className="text-center border-b pb-3 mb-3">
               <img 
-                src="/assets/company_logo.png" 
+                src={logoImage} 
                 alt="Liquid Washes Laundry" 
                 style={{ width: '120px', height: 'auto', objectFit: 'contain', margin: '0 auto 10px' }}
               />
@@ -1083,9 +1109,38 @@ export default function Bills() {
                 <div>Phone: {viewBillPDF.customerPhone}</div>
               )}
             </div>
-            <div className="border-t border-b py-2 mb-2">
-              <div className="text-xs whitespace-pre-wrap">{viewBillPDF.description}</div>
-            </div>
+            
+            {(() => {
+              const parsedItems = parseDescriptionItems(viewBillPDF.description || '', products);
+              if (parsedItems.length > 0) {
+                return (
+                  <table className="w-full border-collapse mb-3" style={{ fontSize: '11px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #000' }}>
+                        <th style={{ textAlign: 'center', padding: '8px 4px', fontWeight: 'bold', width: '8%' }}>S.No</th>
+                        <th style={{ textAlign: 'left', padding: '8px 4px', fontWeight: 'bold', width: '42%' }}>Item</th>
+                        <th style={{ textAlign: 'center', padding: '8px 4px', fontWeight: 'bold', width: '12%' }}>Qty</th>
+                        <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 'bold', width: '18%' }}>Price</th>
+                        <th style={{ textAlign: 'right', padding: '8px 4px', fontWeight: 'bold', width: '20%' }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedItems.map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #ddd' }}>
+                          <td style={{ textAlign: 'center', padding: '6px 4px' }}>{idx + 1}</td>
+                          <td style={{ textAlign: 'left', padding: '6px 4px' }}>{item.name}</td>
+                          <td style={{ textAlign: 'center', padding: '6px 4px' }}>{item.qty}</td>
+                          <td style={{ textAlign: 'right', padding: '6px 4px' }}>{item.price.toFixed(2)}</td>
+                          <td style={{ textAlign: 'right', padding: '6px 4px', fontWeight: '500' }}>{item.total.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              }
+              return null;
+            })()}
+            
             <div className="flex justify-between font-bold text-base border-t pt-2">
               <span>TOTAL:</span>
               <span>
