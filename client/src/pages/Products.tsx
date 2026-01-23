@@ -1735,7 +1735,7 @@ export default function Products() {
             {/* Client Selection */}
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Select Client</Label>
-              <Popover>
+              <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="h-9 text-xs w-full justify-between" data-testid="popup-select-client">
                     {isWalkIn ? "Walk-in Customer" : selectedClientId ? clients?.find((c) => c.id === selectedClientId)?.name || "Choose client..." : "Choose client..."}
@@ -1754,6 +1754,7 @@ export default function Products() {
                             setSelectedClientId(null);
                             setIsWalkIn(true);
                             setCustomerName("Walk-in Customer");
+                            setClientDropdownOpen(false);
                           }}
                         >
                           <Check className={`mr-2 h-4 w-4 ${isWalkIn ? "opacity-100" : "opacity-0"}`} />
@@ -1769,6 +1770,7 @@ export default function Products() {
                               setCustomerName(client.name);
                               setCustomerPhone(client.phone || "");
                               if (client.discountPercent) setDiscountPercent(client.discountPercent);
+                              setClientDropdownOpen(false);
                             }}
                           >
                             <Check className={`mr-2 h-4 w-4 ${selectedClientId === client.id ? "opacity-100" : "opacity-0"}`} />
