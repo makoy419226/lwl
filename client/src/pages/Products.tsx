@@ -899,11 +899,11 @@ export default function Products() {
                         {categoryProducts?.length || 0}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
                       {categoryProducts?.map((product) => (
                         <div
                           key={product.id}
-                          className={`relative rounded-xl border-2 p-4 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
+                          className={`relative rounded-lg sm:rounded-xl border-2 p-2 sm:p-3 md:p-4 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
                             quantities[product.id]
                               ? "border-primary bg-gradient-to-br from-primary/20 to-primary/5 ring-2 ring-primary/40 shadow-md"
                               : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60 hover:from-primary/5 hover:to-card"
@@ -912,7 +912,7 @@ export default function Products() {
                           data-testid={`box-product-${product.id}`}
                         >
                           <div
-                            className="w-14 h-14 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-2 shadow-sm relative"
+                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 flex items-center justify-center overflow-hidden flex-shrink-0 mb-1 sm:mb-2 shadow-sm relative"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditImage(product.id, product.imageUrl);
@@ -943,20 +943,20 @@ export default function Products() {
                           </div>
 
                           <div
-                            className="text-sm leading-tight text-center font-bold text-foreground line-clamp-2 min-h-[2.5rem] flex items-center justify-center px-1"
+                            className="text-xs sm:text-sm leading-tight text-center font-bold text-foreground line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] flex items-center justify-center px-0.5 sm:px-1"
                             data-testid={`text-product-name-${product.id}`}
                           >
                             {product.name}
                           </div>
 
                           <div 
-                            className="flex flex-col items-center mt-1 gap-0.5 relative group"
+                            className="flex flex-col items-center mt-0.5 sm:mt-1 gap-0.5 relative group w-full"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {quantities[product.id] ? (
                               // Show price based on dry clean selection when item is added
                               <div
-                                className={`text-lg font-black px-3 py-1 rounded-full ${
+                                className={`text-sm sm:text-lg font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${
                                   dryCleanItems[product.id] 
                                     ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30" 
                                     : "text-primary bg-primary/10"
@@ -1013,7 +1013,7 @@ export default function Products() {
                           {quantities[product.id] ? (
                             <>
                               <div
-                                className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
+                                className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <span data-testid={`text-qty-${product.id}`}>
@@ -1021,13 +1021,13 @@ export default function Products() {
                                 </span>
                               </div>
                               <div
-                                className="flex flex-col gap-1.5 mt-3 w-full"
+                                className="flex flex-col gap-1 sm:gap-1.5 mt-2 sm:mt-3 w-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Button
                                   size="sm"
                                   variant={dryCleanItems[product.id] ? "default" : "outline"}
-                                  className={`w-full h-7 text-xs ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                                  className={`w-full h-6 sm:h-7 text-[10px] sm:text-xs ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
                                   onClick={() =>
                                     setDryCleanItems(prev => ({
                                       ...prev,
@@ -1038,7 +1038,7 @@ export default function Products() {
                                 >
                                   Dry Clean
                                 </Button>
-                                <div className="flex gap-1">
+                                <div className="flex gap-0.5 sm:gap-1">
                                   <Button
                                     size="sm"
                                     variant={
@@ -1046,7 +1046,7 @@ export default function Products() {
                                         ? "default"
                                         : "outline"
                                     }
-                                    className="flex-1 h-7 text-xs"
+                                    className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs"
                                     onClick={() =>
                                       handlePackingTypeChange(product.id, "hanging")
                                     }
@@ -1062,7 +1062,7 @@ export default function Products() {
                                         ? "default"
                                         : "outline"
                                     }
-                                    className="flex-1 h-7 text-xs"
+                                    className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs"
                                     onClick={() =>
                                       handlePackingTypeChange(product.id, "folding")
                                     }
@@ -1075,7 +1075,7 @@ export default function Products() {
                               <Button
                                 size="icon"
                                 variant="destructive"
-                                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full"
+                                className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleQuantityChange(product.id, -1);
