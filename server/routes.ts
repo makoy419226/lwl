@@ -1154,14 +1154,47 @@ export async function registerRoutes(
       const itemsArray: string[] = [];
       
       for (const item of items) {
-        const product = allProducts.find((p: any) => p.name === item.name);
+        // Parse item name to extract base product name and service type
+        // Format can be: "ProductName [N] (folding)", "ProductName [D] (hanger)", or "ProductName (Size) @ price AED"
+        let itemName = item.name;
+        let isDryClean = false;
+        let customPrice: number | null = null;
+        
+        // Check for custom price format: "ProductName (Size) @ price AED"
+        const customPriceMatch = itemName.match(/(.+?)\s*@\s*([\d.]+)\s*AED/i);
+        if (customPriceMatch) {
+          const baseName = customPriceMatch[1].trim();
+          customPrice = parseFloat(customPriceMatch[2]);
+          newTotal += customPrice * item.quantity;
+          itemsArray.push(`${item.quantity}x ${item.name}`);
+          continue;
+        }
+        
+        // Check for service type [N] or [D]
+        if (itemName.includes('[D]')) {
+          isDryClean = true;
+        }
+        
+        // Extract base product name by removing service indicator and packaging type
+        let baseProductName = itemName
+          .replace(/\s*\[N\]\s*/g, '')
+          .replace(/\s*\[D\]\s*/g, '')
+          .replace(/\s*\(folding\)\s*/gi, '')
+          .replace(/\s*\(hanger\)\s*/gi, '')
+          .trim();
+        
+        const product = allProducts.find((p: any) => p.name.toLowerCase() === baseProductName.toLowerCase());
         if (product) {
-          const price = parseFloat(product.price || "0");
+          // Use dry clean price if [D] service type, otherwise normal price
+          const price = isDryClean 
+            ? parseFloat(product.dryCleanPrice || product.price || "0")
+            : parseFloat(product.price || "0");
           newTotal += price * item.quantity;
           itemsArray.push(`${item.quantity}x ${item.name}`);
         } else {
-          // Custom item - parse price from existing item if possible
+          // Custom item - try to find price from original order items
           itemsArray.push(`${item.quantity}x ${item.name}`);
+          // Look for price in original items - keep the item but price stays 0 if not found
         }
       }
       
