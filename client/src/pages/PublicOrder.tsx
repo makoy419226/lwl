@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoImage from "@assets/image_1767220512226.png";
 
@@ -21,6 +21,7 @@ interface PublicOrderData {
 
 export default function PublicOrder() {
   const { token } = useParams<{ token: string }>();
+  const [, setLocation] = useLocation();
 
   const { data: order, isLoading, error } = useQuery<PublicOrderData>({
     queryKey: ["/api/orders/public", token],
@@ -69,11 +70,11 @@ export default function PublicOrder() {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute left-0 top-4"
-            onClick={() => window.history.back()}
-            data-testid="button-back"
+            className="absolute right-0 top-4"
+            onClick={() => setLocation("/dashboard")}
+            data-testid="button-close"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <X className="h-5 w-5" />
           </Button>
           <img src={logoImage} alt="Liquid Washes" className="h-16 mx-auto mb-2" />
           <h1 className="text-xl font-bold text-blue-800">Liquid Washes Laundry</h1>
