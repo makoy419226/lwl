@@ -1417,11 +1417,26 @@ export async function registerRoutes(
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+    // Only show orders that are not yet delivered/picked up
+    if (order.delivered) {
+      return res.status(404).json({ message: "This order has already been delivered/picked up" });
+    }
     // Return only safe, non-sensitive fields for public view (no financial data, no personal details)
+    // Include current status based on workflow progress
+    let currentStatus = "Received";
+    if (order.tagDone && !order.washingDone && !order.packingDone) {
+      currentStatus = "Tagged - In Process";
+    } else if (order.washingDone && !order.packingDone) {
+      currentStatus = "Washing Complete";
+    } else if (order.packingDone && !order.delivered) {
+      currentStatus = "Ready for Pickup/Delivery";
+    }
+    
     res.json({
       orderNumber: order.orderNumber,
       items: order.items,
       status: order.status,
+      currentStatus: currentStatus,
       entryDate: order.entryDate,
       deliveryType: order.deliveryType,
       tagDone: order.tagDone,

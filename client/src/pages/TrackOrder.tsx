@@ -130,9 +130,11 @@ export default function TrackOrder() {
           <Card className="border-destructive">
             <CardContent className="pt-6 text-center">
               <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-3" />
-              <p className="text-lg font-medium text-destructive">Order Not Found</p>
+              <p className="text-lg font-medium text-destructive">
+                {(error as Error).message?.includes("delivered") ? "Order Complete" : "Order Not Found"}
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
-                No order found with number "{searchedOrder}". Please check and try again.
+                {(error as Error).message || `No order found with number "${searchedOrder}". Please check and try again.`}
               </p>
               <Button variant="outline" className="mt-4" onClick={handleReset} data-testid="button-try-again">
                 <ArrowLeft className="h-4 w-4 mr-2" />
