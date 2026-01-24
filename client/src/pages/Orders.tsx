@@ -3116,7 +3116,7 @@ export default function Orders() {
                   </span>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.heic,.heif"
                     capture="environment"
                     className="hidden"
                     onChange={handleDeliveryPhotoChange}

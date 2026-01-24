@@ -338,7 +338,7 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                    accept="image/*,.heic,.heif"
                     onChange={handleImageUpload}
                     className="hidden"
                   />
