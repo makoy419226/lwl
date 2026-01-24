@@ -36,12 +36,12 @@ export default function Login({ onLogin }: LoginProps) {
   
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetStep, setResetStep] = useState<"email" | "code" | "newPassword">("email");
-  const [selectedService, setSelectedService] = useState<string | null>(null);
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const [fullScreenImage, setFullScreenImage] = useState<{name: string, image: string} | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,23 +292,15 @@ export default function Login({ onLogin }: LoginProps) {
                   key={index}
                   className={`${service.color} text-white rounded-lg p-4 text-center font-semibold shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer relative overflow-hidden`}
                   style={{ animationDelay: `${index * 100}ms` }}
-                  onClick={() => setSelectedService(selectedService === service.name ? null : service.name)}
+                  onClick={() => {
+                    const image = getProductImage(service.name);
+                    if (image) {
+                      setFullScreenImage({ name: service.name, image });
+                    }
+                  }}
                   data-testid={`service-box-${index}`}
                 >
-                  {selectedService === service.name ? (
-                    <div className="absolute inset-0 bg-white rounded-lg flex items-center justify-center">
-                      <img 
-                        src={getProductImage(service.name) || ""} 
-                        alt={service.name}
-                        className="w-full h-full object-contain p-1"
-                      />
-                      <div className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5">
-                        <X className="w-3 h-3 text-white" />
-                      </div>
-                    </div>
-                  ) : (
-                    service.name
-                  )}
+                  {service.name}
                 </div>
               ))}
             </div>
@@ -447,6 +439,32 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {fullScreenImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setFullScreenImage(null)}
+          data-testid="fullscreen-image-overlay"
+        >
+          <button
+            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+            onClick={() => setFullScreenImage(null)}
+            data-testid="button-close-fullscreen"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <div className="text-center max-w-4xl w-full">
+            <img 
+              src={fullScreenImage.image} 
+              alt={fullScreenImage.name}
+              className="max-w-full max-h-[80vh] mx-auto object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              data-testid="img-fullscreen-service"
+            />
+            <h3 className="text-white text-2xl font-bold mt-4">{fullScreenImage.name}</h3>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
