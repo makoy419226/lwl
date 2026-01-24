@@ -109,6 +109,22 @@ export default function Clients() {
     paidAmount: number;
     paymentMethod?: string;
   } | null>(null);
+  const [combinedInvoiceData, setCombinedInvoiceData] = useState<{
+    invoiceNumber: string;
+    date: string;
+    clientName: string;
+    clientPhone?: string;
+    clientAddress?: string;
+    bills: Array<{
+      billId: number;
+      date: string;
+      description: string;
+      amount: number;
+      paid: number;
+      due: number;
+    }>;
+    totalDue: number;
+  } | null>(null);
   const { data: clients, isLoading, isError } = useClients(searchTerm);
   const { mutate: deleteClient } = useDeleteClient();
   const { toast } = useToast();
@@ -675,6 +691,32 @@ export default function Clients() {
     }, 0);
   };
 
+  // Generate combined invoice for all unpaid bills
+  const generateCombinedInvoice = () => {
+    if (!transactionClient || !unpaidBills || unpaidBills.length === 0) return;
+    
+    const billItems = unpaidBills.map((bill) => ({
+      billId: bill.id,
+      date: format(new Date(bill.billDate), "dd/MM/yyyy"),
+      description: bill.description || `Bill #${bill.id}`,
+      amount: parseFloat(bill.amount || "0"),
+      paid: parseFloat(bill.paidAmount || "0"),
+      due: parseFloat(bill.amount || "0") - parseFloat(bill.paidAmount || "0"),
+    }));
+    
+    const totalDue = billItems.reduce((sum, item) => sum + item.due, 0);
+    
+    setCombinedInvoiceData({
+      invoiceNumber: `DUE-${transactionClient.id}-${Date.now().toString().slice(-6)}`,
+      date: format(new Date(), "dd/MM/yyyy"),
+      clientName: transactionClient.name,
+      clientPhone: transactionClient.phone || undefined,
+      clientAddress: transactionClient.address || undefined,
+      bills: billItems,
+      totalDue,
+    });
+  };
+
   const totalAmount =
     clients?.reduce((sum, c) => sum + getClientTotalBills(c), 0) || 0;
   const totalDeposit =
@@ -1091,10 +1133,21 @@ export default function Clients() {
 
               {unpaidBills && unpaidBills.length > 0 && (
                 <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-destructive">
-                    <Receipt className="w-4 h-4" /> Unpaid Bills (
-                    {unpaidBills.length})
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold flex items-center gap-2 text-destructive">
+                      <Receipt className="w-4 h-4" /> Unpaid Bills (
+                      {unpaidBills.length})
+                    </h4>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={generateCombinedInvoice}
+                      data-testid="button-generate-combined-invoice"
+                    >
+                      <Printer className="w-4 h-4 mr-1" />
+                      Print Combined Invoice
+                    </Button>
+                  </div>
                   <div className="space-y-2">
                     {unpaidBills.map((bill) => {
                       const remaining =
@@ -1355,6 +1408,157 @@ export default function Clients() {
           onClose={() => setInvoiceData(null)}
         />
       )}
+
+      {/* Combined Invoice Dialog */}
+      <Dialog open={!!combinedInvoiceData} onOpenChange={(open) => !open && setCombinedInvoiceData(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5" />
+              Combined Due Invoice
+            </DialogTitle>
+          </DialogHeader>
+          {combinedInvoiceData && (
+            <div className="space-y-4" id="combined-invoice-print">
+              <div className="text-center border-b pb-3">
+                <h2 className="text-lg font-bold">Liquid Washes Laundry</h2>
+                <p className="text-xs text-muted-foreground">Statement of Outstanding Bills</p>
+                <p className="text-xs text-muted-foreground">Invoice #: {combinedInvoiceData.invoiceNumber}</p>
+                <p className="text-xs text-muted-foreground">Date: {combinedInvoiceData.date}</p>
+              </div>
+
+              <div className="border-b pb-3">
+                <p className="text-sm font-medium">{combinedInvoiceData.clientName}</p>
+                {combinedInvoiceData.clientPhone && (
+                  <p className="text-xs text-muted-foreground">{combinedInvoiceData.clientPhone}</p>
+                )}
+                {combinedInvoiceData.clientAddress && (
+                  <p className="text-xs text-muted-foreground">{combinedInvoiceData.clientAddress}</p>
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Outstanding Bills</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Bill #</TableHead>
+                      <TableHead className="text-xs">Date</TableHead>
+                      <TableHead className="text-xs text-right">Amount</TableHead>
+                      <TableHead className="text-xs text-right">Paid</TableHead>
+                      <TableHead className="text-xs text-right">Due</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {combinedInvoiceData.bills.map((bill) => (
+                      <TableRow key={bill.billId}>
+                        <TableCell className="text-xs">#{bill.billId}</TableCell>
+                        <TableCell className="text-xs">{bill.date}</TableCell>
+                        <TableCell className="text-xs text-right">{bill.amount.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs text-right text-green-600">{bill.paid.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs text-right text-destructive font-medium">{bill.due.toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="border-t pt-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold">Total Due:</span>
+                  <span className="text-lg font-bold text-destructive">
+                    AED {combinedInvoiceData.totalDue.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    const printContent = document.getElementById("combined-invoice-print");
+                    if (printContent) {
+                      const printWindow = window.open("", "_blank");
+                      if (printWindow) {
+                        printWindow.document.write(`
+                          <html>
+                            <head>
+                              <title>Combined Invoice - ${combinedInvoiceData.clientName}</title>
+                              <style>
+                                body { font-family: Arial, sans-serif; padding: 20px; }
+                                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                                th { background-color: #f5f5f5; }
+                                .text-right { text-align: right; }
+                                .text-center { text-align: center; }
+                                .total { font-size: 18px; font-weight: bold; margin-top: 15px; }
+                                .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+                                .due { color: #dc2626; }
+                                .paid { color: #16a34a; }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="header">
+                                <h1>Liquid Washes Laundry</h1>
+                                <p>Statement of Outstanding Bills</p>
+                                <p>Invoice #: ${combinedInvoiceData.invoiceNumber}</p>
+                                <p>Date: ${combinedInvoiceData.date}</p>
+                              </div>
+                              <div>
+                                <strong>${combinedInvoiceData.clientName}</strong><br/>
+                                ${combinedInvoiceData.clientPhone || ""}<br/>
+                                ${combinedInvoiceData.clientAddress || ""}
+                              </div>
+                              <h3>Outstanding Bills</h3>
+                              <table>
+                                <tr>
+                                  <th>Bill #</th>
+                                  <th>Date</th>
+                                  <th class="text-right">Amount (AED)</th>
+                                  <th class="text-right">Paid (AED)</th>
+                                  <th class="text-right">Due (AED)</th>
+                                </tr>
+                                ${combinedInvoiceData.bills.map(bill => `
+                                  <tr>
+                                    <td>#${bill.billId}</td>
+                                    <td>${bill.date}</td>
+                                    <td class="text-right">${bill.amount.toFixed(2)}</td>
+                                    <td class="text-right paid">${bill.paid.toFixed(2)}</td>
+                                    <td class="text-right due">${bill.due.toFixed(2)}</td>
+                                  </tr>
+                                `).join("")}
+                              </table>
+                              <div class="total">
+                                <span>Total Due: </span>
+                                <span class="due">AED ${combinedInvoiceData.totalDue.toFixed(2)}</span>
+                              </div>
+                              <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
+                                Thank you for your business!
+                              </div>
+                            </body>
+                          </html>
+                        `);
+                        printWindow.document.close();
+                        printWindow.print();
+                      }
+                    }
+                  }}
+                  data-testid="button-print-combined-invoice"
+                >
+                  <Printer className="w-4 h-4 mr-1" />
+                  Print
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setCombinedInvoiceData(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Cashier PIN Dialog for Cash Payments */}
       <Dialog
