@@ -3111,11 +3111,12 @@ export default function Orders() {
                 <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                   <Camera className="w-6 h-6 text-muted-foreground mb-1" />
                   <span className="text-xs text-muted-foreground">
-                    Click to add photo
+                    Tap to open camera
                   </span>
                   <input
                     type="file"
-                    accept="image/*,.heic,.heif,.webp,.bmp,.gif,.png,.jpg,.jpeg"
+                    accept="image/*"
+                    capture="environment"
                     className="hidden"
                     onChange={handleDeliveryPhotoChange}
                     data-testid="input-delivery-photo"
