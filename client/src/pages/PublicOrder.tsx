@@ -45,7 +45,16 @@ export default function PublicOrder() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4 relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4"
+          onClick={handleClose}
+          data-testid="button-close"
+        >
+          <X className="h-5 w-5" />
+        </Button>
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
@@ -53,10 +62,26 @@ export default function PublicOrder() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4 relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4"
+          onClick={handleClose}
+          data-testid="button-close"
+        >
+          <X className="h-5 w-5" />
+        </Button>
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <p className="text-lg text-muted-foreground">Order not found or link has expired.</p>
+            <Button
+              className="mt-4"
+              onClick={handleClose}
+              data-testid="button-close-page"
+            >
+              {isLoggedIn ? "Go to Dashboard" : "Close"}
+            </Button>
           </CardContent>
         </Card>
       </div>
