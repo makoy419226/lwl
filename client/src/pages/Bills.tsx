@@ -18,6 +18,7 @@ import {
   PlusCircle,
   AlertCircle,
   Key,
+  DollarSign,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
@@ -837,7 +838,7 @@ export default function Bills() {
                               data-testid={`button-pay-now-${bill.id}`}
                               title="Pay Now"
                             >
-                              <Package className="w-4 h-4 text-blue-600" />
+                              <DollarSign className="w-4 h-4 text-blue-600" />
                             </Button>
                           )}
                           <Button
