@@ -5,7 +5,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { sendDailySalesReportEmailSMTP, type DailySalesData } from "./smtp";
+import { sendDailySalesReportEmailSMTP, sendSalesReportEmailSMTP, type DailySalesData, type SalesReportData, type ReportPeriod } from "./smtp";
 import { storage } from "./storage";
 
 const app = express();
@@ -196,7 +196,212 @@ app.use((req, res, next) => {
     }, msUntilTarget);
   }
 
-  // Start the scheduler
+  // Start the daily scheduler
   scheduleNextDailyReport();
   log(`Daily sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} at 11:59 PM UAE time)`, "scheduler");
+
+  // Generate sales data for any date range
+  async function generateSalesReportData(startDate: Date, endDate: Date, period: ReportPeriod): Promise<SalesReportData> {
+    const orders = await storage.getOrders();
+    
+    const filteredOrders = orders.filter(order => {
+      const orderDate = new Date(order.entryDate);
+      return orderDate >= startDate && orderDate <= endDate;
+    });
+    
+    const totalOrders = filteredOrders.length;
+    const totalRevenue = filteredOrders.reduce((sum, o) => sum + parseFloat(o.finalAmount || "0"), 0);
+    const paidAmount = filteredOrders.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
+    const pendingAmount = totalRevenue - paidAmount;
+    const normalOrders = filteredOrders.filter(o => !o.urgent).length;
+    const urgentOrders = filteredOrders.filter(o => o.urgent).length;
+    const pickupOrders = filteredOrders.filter(o => o.deliveryType === "pickup").length;
+    const deliveryOrders = filteredOrders.filter(o => o.deliveryType === "delivery").length;
+    
+    const itemCounts: Record<string, number> = {};
+    filteredOrders.forEach(order => {
+      const itemsMatch = (order.items || '').match(/(\d+)x\s+([^,()]+)/g);
+      if (itemsMatch) {
+        itemsMatch.forEach(item => {
+          const match = item.match(/(\d+)x\s+(.+)/);
+          if (match) {
+            const count = parseInt(match[1]);
+            const name = match[2].trim();
+            itemCounts[name] = (itemCounts[name] || 0) + count;
+          }
+        });
+      }
+    });
+    
+    const topItems = Object.entries(itemCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, count]) => ({ name, count }));
+    
+    const formatDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    let dateRange = '';
+    if (period === 'daily') {
+      dateRange = formatDate(startDate);
+    } else if (period === 'yearly') {
+      dateRange = `Year ${startDate.getFullYear()}`;
+    } else {
+      dateRange = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+    }
+    
+    return {
+      period,
+      dateRange,
+      totalOrders,
+      totalRevenue,
+      paidAmount,
+      pendingAmount,
+      normalOrders,
+      urgentOrders,
+      pickupOrders,
+      deliveryOrders,
+      topItems
+    };
+  }
+
+  // Weekly report scheduler - sends every Saturday at 11:59 PM UAE time
+  async function sendScheduledWeeklyReport() {
+    try {
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(now);
+      endOfWeek.setHours(23, 59, 59, 999);
+      
+      const salesData = await generateSalesReportData(startOfWeek, endOfWeek, 'weekly');
+      await sendSalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
+      log(`Weekly sales report sent to ${ADMIN_REPORT_EMAIL}`, "scheduler");
+    } catch (err: any) {
+      log(`Failed to send weekly report: ${err.message}`, "scheduler");
+    }
+  }
+
+  function scheduleNextWeeklyReport() {
+    const now = new Date();
+    const uaeOffset = 4 * 60 * 60 * 1000;
+    const nowUAE = new Date(now.getTime() + uaeOffset);
+    
+    // Find next Saturday 11:59 PM UAE
+    const targetUAE = new Date(nowUAE);
+    const daysUntilSaturday = (6 - nowUAE.getDay() + 7) % 7;
+    targetUAE.setDate(nowUAE.getDate() + daysUntilSaturday);
+    targetUAE.setHours(23, 59, 0, 0);
+    
+    // If today is Saturday and we've passed 11:59 PM, schedule for next Saturday
+    if (nowUAE >= targetUAE) {
+      targetUAE.setDate(targetUAE.getDate() + 7);
+    }
+    
+    const targetLocal = new Date(targetUAE.getTime() - uaeOffset);
+    const msUntilTarget = targetLocal.getTime() - now.getTime();
+    
+    log(`Next weekly report scheduled in ${Math.round(msUntilTarget / 1000 / 60 / 60)} hours`, "scheduler");
+    
+    setTimeout(async () => {
+      await sendScheduledWeeklyReport();
+      scheduleNextWeeklyReport();
+    }, msUntilTarget);
+  }
+
+  scheduleNextWeeklyReport();
+  log(`Weekly sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} every Saturday at 11:59 PM UAE time)`, "scheduler");
+
+  // Monthly report scheduler - sends on the last day of each month at 11:59 PM UAE time
+  async function sendScheduledMonthlyReport() {
+    try {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const endOfMonth = new Date(now);
+      endOfMonth.setHours(23, 59, 59, 999);
+      
+      const salesData = await generateSalesReportData(startOfMonth, endOfMonth, 'monthly');
+      await sendSalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
+      log(`Monthly sales report sent to ${ADMIN_REPORT_EMAIL}`, "scheduler");
+    } catch (err: any) {
+      log(`Failed to send monthly report: ${err.message}`, "scheduler");
+    }
+  }
+
+  function scheduleNextMonthlyReport() {
+    const now = new Date();
+    const uaeOffset = 4 * 60 * 60 * 1000;
+    const nowUAE = new Date(now.getTime() + uaeOffset);
+    
+    // Get last day of current month
+    const lastDayOfMonth = new Date(nowUAE.getFullYear(), nowUAE.getMonth() + 1, 0);
+    lastDayOfMonth.setHours(23, 59, 0, 0);
+    
+    let targetUAE = new Date(lastDayOfMonth);
+    
+    // If we've passed the last day of this month, schedule for next month
+    if (nowUAE >= targetUAE) {
+      targetUAE = new Date(nowUAE.getFullYear(), nowUAE.getMonth() + 2, 0);
+      targetUAE.setHours(23, 59, 0, 0);
+    }
+    
+    const targetLocal = new Date(targetUAE.getTime() - uaeOffset);
+    const msUntilTarget = targetLocal.getTime() - now.getTime();
+    
+    log(`Next monthly report scheduled in ${Math.round(msUntilTarget / 1000 / 60 / 60 / 24)} days`, "scheduler");
+    
+    setTimeout(async () => {
+      await sendScheduledMonthlyReport();
+      scheduleNextMonthlyReport();
+    }, msUntilTarget);
+  }
+
+  scheduleNextMonthlyReport();
+  log(`Monthly sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} on last day of each month at 11:59 PM UAE time)`, "scheduler");
+
+  // Yearly report scheduler - sends on December 31st at 11:59 PM UAE time
+  async function sendScheduledYearlyReport() {
+    try {
+      const now = new Date();
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      startOfYear.setHours(0, 0, 0, 0);
+      const endOfYear = new Date(now);
+      endOfYear.setHours(23, 59, 59, 999);
+      
+      const salesData = await generateSalesReportData(startOfYear, endOfYear, 'yearly');
+      await sendSalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
+      log(`Yearly sales report sent to ${ADMIN_REPORT_EMAIL}`, "scheduler");
+    } catch (err: any) {
+      log(`Failed to send yearly report: ${err.message}`, "scheduler");
+    }
+  }
+
+  function scheduleNextYearlyReport() {
+    const now = new Date();
+    const uaeOffset = 4 * 60 * 60 * 1000;
+    const nowUAE = new Date(now.getTime() + uaeOffset);
+    
+    // December 31st 11:59 PM UAE
+    let targetUAE = new Date(nowUAE.getFullYear(), 11, 31);
+    targetUAE.setHours(23, 59, 0, 0);
+    
+    // If we've passed Dec 31 this year, schedule for next year
+    if (nowUAE >= targetUAE) {
+      targetUAE = new Date(nowUAE.getFullYear() + 1, 11, 31);
+      targetUAE.setHours(23, 59, 0, 0);
+    }
+    
+    const targetLocal = new Date(targetUAE.getTime() - uaeOffset);
+    const msUntilTarget = targetLocal.getTime() - now.getTime();
+    
+    log(`Next yearly report scheduled in ${Math.round(msUntilTarget / 1000 / 60 / 60 / 24)} days`, "scheduler");
+    
+    setTimeout(async () => {
+      await sendScheduledYearlyReport();
+      scheduleNextYearlyReport();
+    }, msUntilTarget);
+  }
+
+  scheduleNextYearlyReport();
+  log(`Yearly sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} on December 31st at 11:59 PM UAE time)`, "scheduler");
 })();

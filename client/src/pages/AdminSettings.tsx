@@ -205,7 +205,7 @@ export default function AdminSettings() {
               Sales Reports
             </CardTitle>
             <CardDescription>
-              Send sales reports to liquidewashesruwais@gmail.com. Daily reports are also sent automatically at 11:59 PM UAE time.
+              Send sales reports to liquidewashesruwais@gmail.com. Reports are sent automatically: Daily at 11:59 PM, Weekly every Saturday, Monthly on the last day, and Yearly on December 31st.
             </CardDescription>
           </CardHeader>
           <CardContent>
