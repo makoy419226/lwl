@@ -23,6 +23,7 @@ import {
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -810,102 +811,90 @@ export default function Bills() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredBills?.map((bill) => (
                   <Card
                     key={bill.id}
-                    className="border-border/50 hover:shadow-md transition-shadow"
+                    className={`relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                      bill.isPaid 
+                        ? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30" 
+                        : "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30"
+                    }`}
                     data-testid={`card-bill-${bill.id}`}
                   >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <CardTitle className="text-lg">
+                    <div className={`absolute top-0 left-0 w-1.5 h-full ${bill.isPaid ? "bg-green-500" : "bg-orange-500"}`} />
+                    <CardHeader className="pb-2 pl-5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge 
+                              variant={bill.isPaid ? "default" : "destructive"}
+                              className={`text-[10px] px-2 py-0 ${bill.isPaid ? "bg-green-500 hover:bg-green-600" : "bg-orange-500 hover:bg-orange-600"}`}
+                            >
+                              {bill.isPaid ? "PAID" : "UNPAID"}
+                            </Badge>
+                            {bill.referenceNumber && (
+                              <span className="text-xs text-muted-foreground font-mono">
+                                #{bill.referenceNumber}
+                              </span>
+                            )}
+                          </div>
+                          <CardTitle className="text-base font-bold truncate">
                             {bill.customerName || getClientName(bill.clientId!)}
                           </CardTitle>
-                          {bill.referenceNumber && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {bill.referenceNumber}
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(new Date(bill.billDate), "MMM dd, yyyy")}
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pl-5 pb-3">
+                      <div className="flex items-end justify-between gap-2">
+                        <div>
+                          <p className="text-2xl font-bold text-foreground">
+                            <span className="text-sm font-normal text-muted-foreground">AED </span>
+                            {parseFloat(bill.amount || "0").toFixed(2)}
+                          </p>
+                          {bill.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {bill.description}
                             </p>
                           )}
                         </div>
                         <div className="flex gap-1">
                           {!bill.isPaid && (
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              variant="default"
+                              size="sm"
+                              className="h-8 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                               onClick={() => handlePayNow(bill)}
                               data-testid={`button-pay-now-${bill.id}`}
-                              title="Pay Now"
                             >
-                              <DollarSign className="w-4 h-4 text-blue-600" />
+                              <DollarSign className="w-3.5 h-3.5 mr-1" />
+                              Pay
                             </Button>
                           )}
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="icon"
+                            className="h-8 w-8"
                             onClick={() => printBillPDF(bill)}
                             data-testid={`button-print-pdf-${bill.id}`}
                             title="Print Bill"
                           >
-                            <Printer className="w-4 h-4 text-primary" />
+                            <Printer className="w-3.5 h-3.5" />
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="icon"
-                            className="text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => handleDelete(bill.id)}
                             data-testid="button-delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            Amount
-                          </p>
-                          <p className="text-lg font-bold text-primary">
-                            AED {parseFloat(bill.amount || "0").toFixed(2)}
-                          </p>
-                          {bill.clientId && (() => {
-                            const client = clients.find(c => c.id === bill.clientId);
-                            if (client) {
-                              const totalWithOrders = getClientTotalBill(client);
-                              const baseAmount = parseFloat(client.amount || "0");
-                              if (totalWithOrders > baseAmount) {
-                                return (
-                                  <p className="text-xs text-muted-foreground">
-                                    (includes {(totalWithOrders - baseAmount).toFixed(2)} AED from orders)
-                                  </p>
-                                );
-                              }
-                            }
-                            return null;
-                          })()}
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            Date
-                          </p>
-                          <p className="text-sm font-semibold text-foreground">
-                            {format(new Date(bill.billDate), "MMM dd, yyyy")}
-                          </p>
-                        </div>
-                      </div>
-                      {bill.description && (
-                        <div>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            Description
-                          </p>
-                          <p className="text-sm text-foreground">
-                            {bill.description}
-                          </p>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 ))}
