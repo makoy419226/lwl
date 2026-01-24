@@ -1035,7 +1035,17 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid order ID" });
       }
       
-      const order = await storage.updateOrder(orderId, req.body);
+      const updates = { ...req.body };
+      
+      // If packingDone is being set to true, record the packing completion time
+      if (updates.packingDone === true) {
+        const existingOrder = await storage.getOrder(orderId);
+        if (existingOrder && !existingOrder.packingDone) {
+          updates.packingDate = new Date().toISOString();
+        }
+      }
+      
+      const order = await storage.updateOrder(orderId, updates);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
@@ -1571,6 +1581,7 @@ export async function registerRoutes(
       tagDone: order.tagDone,
       washingDone: order.washingDone,
       packingDone: order.packingDone,
+      packingDate: order.packingDate,
       delivered: order.delivered,
       urgent: order.urgent,
       expectedDeliveryAt: order.expectedDeliveryAt,

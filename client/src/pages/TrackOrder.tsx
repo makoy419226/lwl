@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, Search, ArrowLeft, AlertCircle, X } from "lucide-react";
+import { format } from "date-fns";
 import logoImage from "@assets/image_1767220512226.png";
 
 interface TrackOrderData {
@@ -17,6 +18,7 @@ interface TrackOrderData {
   tagDone: boolean;
   washingDone: boolean;
   packingDone: boolean;
+  packingDate: string | null;
   delivered: boolean;
   urgent: boolean;
   expectedDeliveryAt: string | null;
@@ -224,6 +226,17 @@ export default function TrackOrder() {
                     <span className="text-xs mt-1 text-center">{order.deliveryType === "Delivery" ? "Delivered" : "Picked Up"}</span>
                   </div>
                 </div>
+
+                {order.packingDone && order.packingDate && (
+                  <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
+                    <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                      Packing Completed
+                    </p>
+                    <p className="text-lg font-bold text-green-800 dark:text-green-200">
+                      {format(new Date(order.packingDate), "dd/MM/yyyy 'at' hh:mm a")}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
