@@ -285,25 +285,21 @@ export default function Login({ onLogin }: LoginProps) {
           </Card>
 
           <div className="hidden lg:block flex-1">
-            <div className="h-52 flex items-center justify-center mb-2">
-              {fullScreenImage ? (
-                <div 
-                  className="w-48 h-48 genie-popup"
-                  style={{
-                    '--origin-x': `${fullScreenImage.origin.x}px`,
-                    '--origin-y': `${fullScreenImage.origin.y}px`,
-                  } as React.CSSProperties}
-                >
+            <div className="h-48 flex items-center justify-center mb-2 relative">
+              <div className="w-48 h-48 absolute">
+                {fullScreenImage && (
                   <img 
                     src={fullScreenImage.image} 
                     alt={fullScreenImage.name}
-                    className="w-full h-full object-contain drop-shadow-xl"
+                    className="w-full h-full object-contain drop-shadow-xl genie-popup"
+                    style={{
+                      '--origin-x': `${fullScreenImage.origin.x}px`,
+                      '--origin-y': `${fullScreenImage.origin.y}px`,
+                    } as React.CSSProperties}
                     data-testid="img-fullscreen-service"
                   />
-                </div>
-              ) : (
-                <div className="w-48 h-48" />
-              )}
+                )}
+              </div>
             </div>
             <h2 className="text-2xl font-bold text-center mb-4 text-foreground">Our Laundry Services</h2>
             <div className="grid grid-cols-3 gap-3">
