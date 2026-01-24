@@ -291,11 +291,7 @@ export default function Login({ onLogin }: LoginProps) {
                   <img 
                     src={fullScreenImage.image} 
                     alt={fullScreenImage.name}
-                    className="w-full h-full object-contain drop-shadow-xl genie-popup"
-                    style={{
-                      '--origin-x': `${fullScreenImage.origin.x}px`,
-                      '--origin-y': `${fullScreenImage.origin.y}px`,
-                    } as React.CSSProperties}
+                    className="w-full h-full object-contain drop-shadow-xl animate-in fade-in duration-200"
                     data-testid="img-fullscreen-service"
                   />
                 )}
