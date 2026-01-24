@@ -1822,14 +1822,11 @@ export default function Orders() {
                             <TableHead className="hidden xl:table-cell w-[90px]">
                               Type
                             </TableHead>
-                            <TableHead className="hidden lg:table-cell w-[70px]">
-                              Time
-                            </TableHead>
                             <TableHead className="w-[80px] lg:w-[100px]">
                               Status
                             </TableHead>
-                            <TableHead className="hidden xl:table-cell w-[90px]">
-                              Ready
+                            <TableHead className="hidden xl:table-cell w-[100px]">
+                              READY D&T
                             </TableHead>
                             <TableHead className="w-[100px] lg:w-[140px]">
                               Actions
@@ -2078,11 +2075,6 @@ export default function Orders() {
                                           </SelectItem>
                                         </SelectContent>
                                       </Select>
-                                    </TableCell>
-                                    <TableCell className="hidden lg:table-cell text-xs">
-                                      {getTimeRemaining(
-                                        order.expectedDeliveryAt,
-                                      )}
                                     </TableCell>
                                     <TableCell>
                                       {getStatusBadge(order)}
