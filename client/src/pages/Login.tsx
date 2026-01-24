@@ -41,7 +41,7 @@ export default function Login({ onLogin }: LoginProps) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false);
-  const [fullScreenImage, setFullScreenImage] = useState<{name: string, image: string} | null>(null);
+  const [fullScreenImage, setFullScreenImage] = useState<{name: string, image: string, origin: {x: number, y: number}} | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,10 +292,13 @@ export default function Login({ onLogin }: LoginProps) {
                   key={index}
                   className={`${service.color} text-white rounded-lg p-4 text-center font-semibold shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer relative overflow-hidden`}
                   style={{ animationDelay: `${index * 100}ms` }}
-                  onClick={() => {
+                  onClick={(e) => {
                     const image = getProductImage(service.name);
                     if (image) {
-                      setFullScreenImage({ name: service.name, image });
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = rect.left + rect.width / 2;
+                      const y = rect.top + rect.height / 2;
+                      setFullScreenImage({ name: service.name, image, origin: { x, y } });
                     }
                   }}
                   data-testid={`service-box-${index}`}
@@ -442,15 +445,16 @@ export default function Login({ onLogin }: LoginProps) {
 
       {fullScreenImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 cursor-pointer animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 cursor-pointer animate-in fade-in duration-200"
           onClick={() => setFullScreenImage(null)}
           data-testid="fullscreen-image-overlay"
         >
           <div 
-            className="max-w-sm w-full relative text-center"
+            className="max-w-sm w-full relative text-center genie-popup"
             style={{
-              animation: 'genieIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards'
-            }}
+              '--origin-x': `${fullScreenImage.origin.x}px`,
+              '--origin-y': `${fullScreenImage.origin.y}px`,
+            } as React.CSSProperties}
             onClick={(e) => e.stopPropagation()}
           >
             <button
