@@ -1656,7 +1656,7 @@ export default function Products() {
 
       {/* Cart Popup Dialog */}
       <Dialog open={showCartPopup} onOpenChange={setShowCartPopup}>
-        <DialogContent className="max-w-sm max-h-[80vh] sm:max-h-[85vh] overflow-y-auto p-0 flex flex-col">
+        <DialogContent className="max-w-sm max-h-[70vh] sm:max-h-[85vh] overflow-y-auto p-0 flex flex-col">
           <DialogHeader className="px-4 pt-4 pb-2 border-b bg-gradient-to-r from-primary/10 to-primary/5">
             <DialogTitle className="flex items-center gap-2 text-primary">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -1669,7 +1669,7 @@ export default function Products() {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="p-4 space-y-3 flex-1 overflow-y-auto pb-6">
+          <div className="p-4 space-y-3 flex-1 overflow-y-auto pb-32">
             {/* Items Table */}
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-xs">
