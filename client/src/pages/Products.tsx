@@ -140,6 +140,7 @@ export default function Products() {
   const [walkInAddress, setWalkInAddress] = useState("");
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
   const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery">("pickup");
+  const [expectedDeliveryAt, setExpectedDeliveryAt] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
   const [tips, setTips] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
@@ -691,6 +692,7 @@ export default function Products() {
         tips: tipsAmt.toFixed(2),
         finalAmount: finalTotal.toFixed(2),
         entryDate: new Date().toISOString(),
+        expectedDeliveryAt: expectedDeliveryAt ? new Date(expectedDeliveryAt).toISOString() : null,
         deliveryType: deliveryType,
         serviceType: hasDryCleanItems ? "dry_clean" : "normal",
         urgent: pendingUrgent,
@@ -1918,6 +1920,20 @@ export default function Products() {
               >
                 <Truck className="w-3 h-3 mr-1" /> Delivery
               </Button>
+            </div>
+
+            {/* Expected Pickup/Delivery Date & Time */}
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">
+                {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date & Time
+              </Label>
+              <Input
+                type="datetime-local"
+                className="h-9 text-xs"
+                value={expectedDeliveryAt}
+                onChange={(e) => setExpectedDeliveryAt(e.target.value)}
+                data-testid="popup-input-expected-datetime"
+              />
             </div>
 
             {/* Place Order Button */}

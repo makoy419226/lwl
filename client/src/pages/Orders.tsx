@@ -1822,6 +1822,9 @@ export default function Orders() {
                             <TableHead className="hidden xl:table-cell w-[90px]">
                               Type
                             </TableHead>
+                            <TableHead className="hidden lg:table-cell w-[100px]">
+                              Expected D&T
+                            </TableHead>
                             <TableHead className="w-[80px] lg:w-[100px]">
                               Status
                             </TableHead>
@@ -2075,6 +2078,14 @@ export default function Orders() {
                                           </SelectItem>
                                         </SelectContent>
                                       </Select>
+                                    </TableCell>
+                                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                                      {order.expectedDeliveryAt ? (
+                                        <div>
+                                          <div>{format(new Date(order.expectedDeliveryAt), "MMM d, yyyy")}</div>
+                                          <div>{format(new Date(order.expectedDeliveryAt), "hh:mm a")}</div>
+                                        </div>
+                                      ) : "-"}
                                     </TableCell>
                                     <TableCell>
                                       {getStatusBadge(order)}
