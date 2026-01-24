@@ -771,6 +771,7 @@ export default function Bills() {
                     body { margin: 0; padding: 20mm; }
                     th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     tbody tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    .paid-stamp { color: #22c55e !important; border-color: #22c55e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                   }
                 </style>
               </head>
@@ -1664,30 +1665,58 @@ export default function Bills() {
             </div>
             
             {viewBillPDF.isPaid && (
-              <div className="text-center mt-4">
-                <div 
-                  style={{
-                    display: 'inline-block',
-                    border: '3px solid #22c55e',
-                    borderRadius: '8px',
-                    padding: '8px 20px',
+              <>
+                {/* Large diagonal PAID watermark stamp */}
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%) rotate(-25deg)',
+                  zIndex: 10,
+                  pointerEvents: 'none',
+                }}>
+                  <div style={{
+                    border: '6px solid #22c55e',
+                    borderRadius: '12px',
+                    padding: '15px 50px',
                     color: '#22c55e',
                     fontWeight: 'bold',
-                    fontSize: '18px',
-                    transform: 'rotate(-5deg)',
-                    textTransform: 'uppercase'
-                  }}
-                >
-                  PAID
+                    fontSize: '60px',
+                    fontFamily: 'Arial Black, Arial, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '8px',
+                    opacity: 0.35,
+                    textShadow: '2px 2px 0 rgba(34, 197, 94, 0.1)',
+                  }}>
+                    PAID
+                  </div>
                 </div>
-                <div className="text-sm mt-2 text-gray-600">
-                  Payment Method: {
-                    viewBillPDF.paymentMethod === 'deposit' 
-                      ? 'CLIENT CREDIT' 
-                      : (viewBillPDF.paymentMethod?.toUpperCase() || 'CASH')
-                  }
+                {/* Payment info at bottom */}
+                <div className="text-center mt-4">
+                  <div 
+                    style={{
+                      display: 'inline-block',
+                      border: '3px solid #22c55e',
+                      borderRadius: '8px',
+                      padding: '8px 20px',
+                      color: '#22c55e',
+                      fontWeight: 'bold',
+                      fontSize: '18px',
+                      transform: 'rotate(-5deg)',
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    PAID
+                  </div>
+                  <div className="text-sm mt-2 text-gray-600">
+                    Payment Method: {
+                      viewBillPDF.paymentMethod === 'deposit' 
+                        ? 'CLIENT CREDIT' 
+                        : (viewBillPDF.paymentMethod?.toUpperCase() || 'CASH')
+                    }
+                  </div>
                 </div>
-              </div>
+              </>
             )}
             
             <div style={{ 
