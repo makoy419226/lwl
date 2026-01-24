@@ -1001,7 +1001,24 @@ export default function Bills() {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
-                          <div className="flex justify-end mb-3">
+                          <div className="flex justify-end gap-2 mb-3">
+                            {totalDue > 0 && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const client = clients?.find(c => c.id === clientData.clientId);
+                                  if (client) {
+                                    handlePayNowForClient(client, totalDue);
+                                  }
+                                }}
+                                data-testid="button-pay-client-total"
+                              >
+                                <DollarSign className="w-4 h-4 mr-2" />
+                                Pay {totalDue.toFixed(2)} AED
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
