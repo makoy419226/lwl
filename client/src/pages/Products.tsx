@@ -1298,24 +1298,23 @@ export default function Products() {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Phone *</Label>
-                <Input
-                  placeholder="+971XXXXXXXXX"
-                  value={newClientPhone.startsWith("+971") ? newClientPhone : "+971" + newClientPhone.replace(/^\+971/, "")}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    // Ensure +971 prefix is always present
-                    if (!value.startsWith("+971")) {
-                      value = "+971";
-                    }
-                    // Only allow digits after +971
-                    const prefix = "+971";
-                    const rest = value.slice(4).replace(/\D/g, "");
-                    const phoneValue = prefix + rest;
-                    setNewClientPhone(phoneValue);
-                    checkExistingClientByPhone(phoneValue);
-                  }}
-                  data-testid="input-new-client-phone"
-                />
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                    +971
+                  </span>
+                  <Input
+                    className="rounded-l-none"
+                    placeholder="XXXXXXXXX"
+                    value={newClientPhone.replace(/^\+971/, "")}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      const phoneValue = "+971" + digits;
+                      setNewClientPhone(phoneValue);
+                      checkExistingClientByPhone(phoneValue);
+                    }}
+                    data-testid="input-new-client-phone"
+                  />
+                </div>
               </div>
             </div>
             {suggestedExistingClient && (
@@ -1827,23 +1826,21 @@ export default function Products() {
                 </div>
                 <div>
                   <Label className="text-xs font-semibold">Phone Number <span className="text-destructive">*</span></Label>
-                  <Input
-                    className={`h-8 text-xs mt-1 ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
-                    placeholder="+971XXXXXXXXX"
-                    value={walkInPhone.startsWith("+971") ? walkInPhone : "+971" + walkInPhone.replace(/^\+971/, "")}
-                    onChange={(e) => {
-                      let value = e.target.value;
-                      // Ensure +971 prefix is always present
-                      if (!value.startsWith("+971")) {
-                        value = "+971";
-                      }
-                      // Only allow digits after +971
-                      const prefix = "+971";
-                      const rest = value.slice(4).replace(/\D/g, "");
-                      setWalkInPhone(prefix + rest);
-                    }}
-                    data-testid="popup-input-walkin-phone"
-                  />
+                  <div className="flex mt-1">
+                    <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-xs h-8">
+                      +971
+                    </span>
+                    <Input
+                      className={`h-8 text-xs rounded-l-none ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
+                      placeholder="XXXXXXXXX"
+                      value={walkInPhone.replace(/^\+971/, "")}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "");
+                        setWalkInPhone("+971" + digits);
+                      }}
+                      data-testid="popup-input-walkin-phone"
+                    />
+                  </div>
                 </div>
                 {clientMatch && (
                   <div className="bg-red-100 dark:bg-red-950 border border-red-500 rounded-lg p-2 text-xs">

@@ -231,22 +231,22 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
             <FormItem>
               <FormLabel>Phone Number *</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="+971XXXXXXXXX" 
-                  value={field.value.startsWith("+971") ? field.value : "+971" + field.value.replace(/^\+971/, "")}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    // Ensure +971 prefix is always present
-                    if (!value.startsWith("+971")) {
-                      value = "+971";
-                    }
-                    // Only allow digits after +971
-                    const prefix = "+971";
-                    const rest = value.slice(4).replace(/\D/g, "");
-                    field.onChange(prefix + rest);
-                  }}
-                  data-testid="input-phone" 
-                />
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                    +971
+                  </span>
+                  <Input 
+                    className="rounded-l-none"
+                    placeholder="XXXXXXXXX" 
+                    value={field.value.replace(/^\+971/, "")}
+                    onChange={(e) => {
+                      // Only allow digits
+                      const digits = e.target.value.replace(/\D/g, "");
+                      field.onChange("+971" + digits);
+                    }}
+                    data-testid="input-phone" 
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
