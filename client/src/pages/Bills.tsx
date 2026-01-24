@@ -920,10 +920,33 @@ export default function Bills() {
                     <CardContent className="pl-5 pb-3">
                       <div className="flex items-end justify-between gap-2">
                         <div>
-                          <p className="text-2xl font-bold text-foreground">
-                            <span className="text-sm font-normal text-muted-foreground">AED </span>
-                            {parseFloat(bill.amount || "0").toFixed(2)}
-                          </p>
+                          {(() => {
+                            const amount = parseFloat(bill.amount || "0");
+                            const paid = parseFloat(bill.paidAmount || "0");
+                            const due = amount - paid;
+                            const isPartiallyPaid = !bill.isPaid && paid > 0;
+                            
+                            if (isPartiallyPaid) {
+                              return (
+                                <>
+                                  <p className="text-2xl font-bold text-red-600">
+                                    <span className="text-sm font-normal text-muted-foreground">Due: </span>
+                                    {due.toFixed(2)}
+                                    <span className="text-sm font-normal text-muted-foreground"> AED</span>
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Total: {amount.toFixed(2)} AED (Paid: {paid.toFixed(2)} AED)
+                                  </p>
+                                </>
+                              );
+                            }
+                            return (
+                              <p className="text-2xl font-bold text-foreground">
+                                <span className="text-sm font-normal text-muted-foreground">AED </span>
+                                {amount.toFixed(2)}
+                              </p>
+                            );
+                          })()}
                           {bill.description && (
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                               {bill.description}
