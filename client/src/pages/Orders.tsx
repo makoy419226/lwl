@@ -1794,8 +1794,8 @@ export default function Orders() {
                   </div>
 
                   {/* Desktop Table Layout */}
-                  <Card className="responsive-card hidden md:block overflow-hidden">
-                    <div className="overflow-x-hidden">
+                  <Card className="responsive-card hidden md:block">
+                    <div className="overflow-x-auto">
                       <Table className="w-full table-fixed">
                         <TableHeader>
                           <TableRow className="transition-all duration-200">
@@ -2052,8 +2052,9 @@ export default function Orders() {
                                           </Button>
                                         </PopoverTrigger>
                                         <PopoverContent
-                                          className="w-64 p-2"
+                                          className="w-64 p-2 z-[100]"
                                           align="start"
+                                          sideOffset={5}
                                         >
                                           <div className="space-y-1 max-h-48 overflow-y-auto">
                                             {parseOrderItems(order.items).map(
