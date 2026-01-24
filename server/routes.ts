@@ -1245,53 +1245,26 @@ export async function registerRoutes(
           // Check if bill was paid - if so, any added amount goes to due
           const previousBillAmount = parseFloat(bill.amount || "0");
           const previousPaidAmount = parseFloat(bill.paidAmount || "0");
-          const previousDue = parseFloat(bill.due || "0");
+          const previousDue = previousBillAmount - previousPaidAmount;
+          const wasPreviouslyPaid = bill.isPaid || previousPaidAmount >= previousBillAmount;
           
-          // If the bill was fully paid and we're adding items
-          if (amountDifference > 0 && previousPaidAmount >= previousBillAmount && previousDue === 0) {
-            // The additional amount becomes due
-            newDueAmount = amountDifference;
-            await storage.updateBill(order.billId, {
-              amount: billTotal.toFixed(2),
-              due: newDueAmount.toFixed(2),
-              paymentStatus: "partial",
-            });
-            billUpdated = true;
-          } else if (amountDifference > 0) {
-            // Bill wasn't fully paid, just add to existing due
-            newDueAmount = previousDue + amountDifference;
-            await storage.updateBill(order.billId, {
-              amount: billTotal.toFixed(2),
-              due: newDueAmount.toFixed(2),
-            });
-            billUpdated = true;
-          } else if (amountDifference < 0) {
-            // Items were reduced - reduce the due amount first, then add to credit
-            const reduction = Math.abs(amountDifference);
-            if (previousDue >= reduction) {
-              newDueAmount = previousDue - reduction;
-              await storage.updateBill(order.billId, {
-                amount: billTotal.toFixed(2),
-                due: newDueAmount.toFixed(2),
-                paymentStatus: newDueAmount === 0 && previousPaidAmount >= billTotal ? "paid" : "partial",
-              });
-            } else {
-              // Reduction is more than due, could be a credit situation
-              newDueAmount = 0;
-              const creditAmount = reduction - previousDue;
-              await storage.updateBill(order.billId, {
-                amount: billTotal.toFixed(2),
-                due: "0",
-                paymentStatus: previousPaidAmount >= billTotal ? "paid" : "partial",
-                notes: `${bill.notes || ""}\n[${new Date().toLocaleString()}] Credit of AED ${creditAmount.toFixed(2)} due to item reduction`,
-              });
-            }
-            billUpdated = true;
-          } else {
-            // No change in amount
-            await storage.updateBill(order.billId, {
-              amount: billTotal.toFixed(2),
-            });
+          // Calculate new due: new bill total - what was already paid
+          newDueAmount = billTotal - previousPaidAmount;
+          const isNowPaid = newDueAmount <= 0;
+          
+          // Update the bill with new amount
+          // Keep paidAmount as is - it shows what was already paid
+          // The due amount is calculated as: amount - paidAmount
+          await storage.updateBill(order.billId, {
+            amount: billTotal.toFixed(2),
+            isPaid: isNowPaid,
+            description: `Order #${order.orderNumber}: ${newItemsText}`,
+          });
+          billUpdated = true;
+          
+          // Log if a paid bill became unpaid due to item additions
+          if (wasPreviouslyPaid && !isNowPaid && amountDifference > 0) {
+            console.log(`Bill #${order.billId} was fully paid (${previousPaidAmount} AED) but now has additional due of ${newDueAmount.toFixed(2)} AED after item recount`);
           }
         }
       }
