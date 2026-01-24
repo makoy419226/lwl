@@ -19,6 +19,8 @@ import {
   AlertCircle,
   Key,
   DollarSign,
+  FolderOpen,
+  ChevronRight,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { QRCodeSVG } from "qrcode.react";
@@ -35,6 +37,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Table,
   TableBody,
@@ -765,6 +773,7 @@ export default function Bills() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="bills">Bills List</TabsTrigger>
+            <TabsTrigger value="by-client">By Client</TabsTrigger>
             <TabsTrigger value="due">Due Customers</TabsTrigger>
           </TabsList>
 
@@ -908,6 +917,144 @@ export default function Bills() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="by-client">
+            <div className="mb-4">
+              <p className="text-muted-foreground">
+                Bills organized by client, most recent first.
+              </p>
+            </div>
+
+            {(() => {
+              // Group bills by client
+              const billsByClient = new Map<string, { clientName: string; clientId: number | null; bills: typeof bills }>();
+              
+              const sortedBills = [...(filteredBills || [])].sort((a, b) => 
+                new Date(b.billDate).getTime() - new Date(a.billDate).getTime()
+              );
+              
+              sortedBills.forEach((bill) => {
+                const clientKey = bill.clientId ? `client-${bill.clientId}` : `walk-in-${bill.customerName || 'Unknown'}`;
+                const clientName = bill.customerName || 'Walk-in Customer';
+                
+                if (!billsByClient.has(clientKey)) {
+                  billsByClient.set(clientKey, { 
+                    clientName, 
+                    clientId: bill.clientId,
+                    bills: [] 
+                  });
+                }
+                billsByClient.get(clientKey)!.bills!.push(bill);
+              });
+
+              // Sort clients by most recent bill date
+              const sortedClients = Array.from(billsByClient.entries()).sort((a, b) => {
+                const aLatest = a[1].bills?.[0]?.billDate || '';
+                const bLatest = b[1].bills?.[0]?.billDate || '';
+                return new Date(bLatest).getTime() - new Date(aLatest).getTime();
+              });
+
+              if (sortedClients.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed border-border rounded-3xl bg-card/50">
+                    <FolderOpen className="w-16 h-16 mb-4 opacity-50" />
+                    <h3 className="text-xl font-bold text-foreground mb-2">No bills found</h3>
+                    <p>Bills will appear here organized by client.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <Accordion type="multiple" className="space-y-2">
+                  {sortedClients.map(([clientKey, clientData]) => {
+                    const totalAmount = clientData.bills?.reduce((sum, b) => sum + parseFloat(b.amount || '0'), 0) || 0;
+                    const totalPaid = clientData.bills?.reduce((sum, b) => sum + parseFloat(b.paidAmount || '0'), 0) || 0;
+                    const totalDue = totalAmount - totalPaid;
+
+                    return (
+                      <AccordionItem key={clientKey} value={clientKey} className="border rounded-lg bg-card">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center gap-3 flex-1">
+                            <FolderOpen className="w-5 h-5 text-amber-500" />
+                            <div className="flex-1 text-left">
+                              <span className="font-semibold">{clientData.clientName}</span>
+                              <span className="ml-2 text-sm text-muted-foreground">
+                                ({clientData.bills?.length || 0} bills)
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 mr-4 text-sm">
+                              <span>
+                                Total: <strong className="text-blue-600">{totalAmount.toFixed(2)} AED</strong>
+                              </span>
+                              {totalDue > 0 && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Due: {totalDue.toFixed(2)} AED
+                                </Badge>
+                              )}
+                              {totalDue === 0 && totalAmount > 0 && (
+                                <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                                  Paid
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Bill #</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
+                                <TableHead className="text-right">Paid</TableHead>
+                                <TableHead className="text-right">Due</TableHead>
+                                <TableHead>Status</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {clientData.bills?.map((bill) => {
+                                const amount = parseFloat(bill.amount || '0');
+                                const paid = parseFloat(bill.paidAmount || '0');
+                                const due = amount - paid;
+                                return (
+                                  <TableRow 
+                                    key={bill.id} 
+                                    className="cursor-pointer hover:bg-muted/50"
+                                    onClick={() => setSelectedBill(bill)}
+                                  >
+                                    <TableCell className="font-medium">#{bill.id}</TableCell>
+                                    <TableCell>{format(new Date(bill.billDate), 'dd/MM/yyyy')}</TableCell>
+                                    <TableCell className="max-w-xs truncate">
+                                      {bill.description || '-'}
+                                    </TableCell>
+                                    <TableCell className="text-right">{amount.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right text-green-600">{paid.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right text-destructive font-medium">
+                                      {due > 0 ? due.toFixed(2) : '-'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {due <= 0 ? (
+                                        <Badge variant="outline" className="text-green-600 border-green-600">Paid</Badge>
+                                      ) : paid > 0 ? (
+                                        <Badge variant="outline" className="text-amber-600 border-amber-600">Partial</Badge>
+                                      ) : (
+                                        <Badge variant="destructive">Unpaid</Badge>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="due">
