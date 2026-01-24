@@ -355,28 +355,81 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBills(): Promise<Bill[]> {
-    return await db.select().from(bills);
+    // Join with clients to get updated customer details
+    const result = await db
+      .select({
+        bill: bills,
+        client: clients,
+      })
+      .from(bills)
+      .leftJoin(clients, eq(bills.clientId, clients.id));
+    
+    // Map results to use current client details when available
+    return result.map(({ bill, client }) => ({
+      ...bill,
+      customerName: client?.name || bill.customerName,
+      customerPhone: client?.phone || bill.customerPhone,
+      
+    }));
   }
 
   async getBill(id: number): Promise<Bill | undefined> {
-    const [bill] = await db.select().from(bills).where(eq(bills.id, id));
-    return bill;
+    const result = await db
+      .select({
+        bill: bills,
+        client: clients,
+      })
+      .from(bills)
+      .leftJoin(clients, eq(bills.clientId, clients.id))
+      .where(eq(bills.id, id));
+    
+    if (result.length === 0) return undefined;
+    
+    const { bill, client } = result[0];
+    return {
+      ...bill,
+      customerName: client?.name || bill.customerName,
+      customerPhone: client?.phone || bill.customerPhone,
+      
+    };
   }
 
   async getClientBills(clientId: number): Promise<Bill[]> {
-    return await db
-      .select()
+    const result = await db
+      .select({
+        bill: bills,
+        client: clients,
+      })
       .from(bills)
+      .leftJoin(clients, eq(bills.clientId, clients.id))
       .where(eq(bills.clientId, clientId))
       .orderBy(desc(bills.billDate));
+    
+    return result.map(({ bill, client }) => ({
+      ...bill,
+      customerName: client?.name || bill.customerName,
+      customerPhone: client?.phone || bill.customerPhone,
+      
+    }));
   }
 
   async getUnpaidBills(clientId: number): Promise<Bill[]> {
-    return await db
-      .select()
+    const result = await db
+      .select({
+        bill: bills,
+        client: clients,
+      })
       .from(bills)
+      .leftJoin(clients, eq(bills.clientId, clients.id))
       .where(and(eq(bills.clientId, clientId), eq(bills.isPaid, false)))
       .orderBy(desc(bills.billDate));
+    
+    return result.map(({ bill, client }) => ({
+      ...bill,
+      customerName: client?.name || bill.customerName,
+      customerPhone: client?.phone || bill.customerPhone,
+      
+    }));
   }
 
   async createBill(insertBill: InsertBill): Promise<Bill> {
