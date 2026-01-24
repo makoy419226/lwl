@@ -1143,11 +1143,12 @@ export default function Orders() {
       const data = await res.json();
       toast({
         title: "Items Updated",
-        description: `Order items updated by ${data.updatedBy}. Bill has been recalculated.`,
+        description: data.message || `Order items updated by ${data.updatedBy}. Bill has been recalculated.`,
       });
       setEditItemsDialog(null);
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
     } catch (err) {
       setEditItemsPinError("Failed to update items");
     } finally {

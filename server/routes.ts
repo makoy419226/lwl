@@ -1111,13 +1111,20 @@ export async function registerRoutes(
       const tips = parseFloat(order.tips || "0");
       const finalAmount = subtotal - discountAmount + tips;
       
+      // Calculate the difference in order amount
+      const oldFinalAmount = parseFloat(order.finalAmount || order.totalAmount || "0");
+      const amountDifference = finalAmount - oldFinalAmount;
+      
       // Update order
       const updatedOrder = await storage.updateOrder(orderId, {
         items: newItemsText,
         totalAmount: newTotal.toFixed(2),
         finalAmount: finalAmount.toFixed(2),
-        notes: `${order.notes || ""}\n[${new Date().toLocaleString()}] Items updated by ${worker.name}`,
+        notes: `${order.notes || ""}\n[${new Date().toLocaleString()}] Items updated by ${worker.name}. Amount changed from AED ${oldFinalAmount.toFixed(2)} to AED ${finalAmount.toFixed(2)}`,
       });
+      
+      let billUpdated = false;
+      let newDueAmount = 0;
       
       // Update associated bill if exists
       if (order.billId) {
@@ -1136,16 +1143,70 @@ export async function registerRoutes(
             }
           }
           
-          await storage.updateBill(order.billId, {
-            amount: billTotal.toFixed(2),
-          });
+          // Check if bill was paid - if so, any added amount goes to due
+          const previousBillAmount = parseFloat(bill.amount || "0");
+          const previousPaidAmount = parseFloat(bill.paidAmount || "0");
+          const previousDue = parseFloat(bill.due || "0");
+          
+          // If the bill was fully paid and we're adding items
+          if (amountDifference > 0 && previousPaidAmount >= previousBillAmount && previousDue === 0) {
+            // The additional amount becomes due
+            newDueAmount = amountDifference;
+            await storage.updateBill(order.billId, {
+              amount: billTotal.toFixed(2),
+              due: newDueAmount.toFixed(2),
+              paymentStatus: "partial",
+            });
+            billUpdated = true;
+          } else if (amountDifference > 0) {
+            // Bill wasn't fully paid, just add to existing due
+            newDueAmount = previousDue + amountDifference;
+            await storage.updateBill(order.billId, {
+              amount: billTotal.toFixed(2),
+              due: newDueAmount.toFixed(2),
+            });
+            billUpdated = true;
+          } else if (amountDifference < 0) {
+            // Items were reduced - reduce the due amount first, then add to credit
+            const reduction = Math.abs(amountDifference);
+            if (previousDue >= reduction) {
+              newDueAmount = previousDue - reduction;
+              await storage.updateBill(order.billId, {
+                amount: billTotal.toFixed(2),
+                due: newDueAmount.toFixed(2),
+                paymentStatus: newDueAmount === 0 && previousPaidAmount >= billTotal ? "paid" : "partial",
+              });
+            } else {
+              // Reduction is more than due, could be a credit situation
+              newDueAmount = 0;
+              const creditAmount = reduction - previousDue;
+              await storage.updateBill(order.billId, {
+                amount: billTotal.toFixed(2),
+                due: "0",
+                paymentStatus: previousPaidAmount >= billTotal ? "paid" : "partial",
+                notes: `${bill.notes || ""}\n[${new Date().toLocaleString()}] Credit of AED ${creditAmount.toFixed(2)} due to item reduction`,
+              });
+            }
+            billUpdated = true;
+          } else {
+            // No change in amount
+            await storage.updateBill(order.billId, {
+              amount: billTotal.toFixed(2),
+            });
+          }
         }
       }
       
       res.json({ 
         order: updatedOrder, 
-        message: "Items updated successfully",
-        updatedBy: worker.name 
+        message: billUpdated && amountDifference > 0 
+          ? `Items updated. AED ${amountDifference.toFixed(2)} added to due amount.`
+          : billUpdated && amountDifference < 0
+          ? `Items updated. AED ${Math.abs(amountDifference).toFixed(2)} reduced from bill.`
+          : "Items updated successfully",
+        updatedBy: worker.name,
+        amountDifference: amountDifference.toFixed(2),
+        newDueAmount: newDueAmount.toFixed(2),
       });
     } catch (err: any) {
       res.status(400).json({ message: err.message });
