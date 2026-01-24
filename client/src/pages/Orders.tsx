@@ -2030,67 +2030,12 @@ export default function Orders() {
                                       </>
                                     ) : null}
                                     <TableCell>
-                                      <Popover>
-                                        <PopoverTrigger asChild>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="gap-1 touch-manipulation text-xs sm:text-sm"
-                                            data-testid={`button-view-items-${order.id}`}
-                                          >
-                                            <Package className="w-3 h-3" />
-                                            <span className="font-medium">
-                                              {parseOrderItems(
-                                                order.items,
-                                              ).reduce(
-                                                (sum, item) =>
-                                                  sum + item.quantity,
-                                                0,
-                                              )}
-                                            </span>
-                                            <ChevronDown className="w-3 h-3" />
-                                          </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent
-                                          className="w-64 p-2 z-[100]"
-                                          align="start"
-                                          sideOffset={5}
-                                        >
-                                          <div className="space-y-1 max-h-48 overflow-y-auto">
-                                            {parseOrderItems(order.items).map(
-                                              (item, i) => {
-                                                const imageUrl =
-                                                  getProductImage(item.name);
-                                                return (
-                                                  <div
-                                                    key={i}
-                                                    className="flex items-center gap-2 bg-muted/50 rounded-md px-2 py-1.5"
-                                                  >
-                                                    {imageUrl ? (
-                                                      <img
-                                                        src={imageUrl}
-                                                        alt={item.name}
-                                                        className="w-5 h-5 object-contain"
-                                                      />
-                                                    ) : (
-                                                      <Shirt className="w-5 h-5 text-muted-foreground" />
-                                                    )}
-                                                    <span className="text-sm flex-1 truncate">
-                                                      {item.name}
-                                                    </span>
-                                                    <Badge
-                                                      variant="secondary"
-                                                      className="text-xs"
-                                                    >
-                                                      {item.quantity}
-                                                    </Badge>
-                                                  </div>
-                                                );
-                                              },
-                                            )}
-                                          </div>
-                                        </PopoverContent>
-                                      </Popover>
+                                      <div className="flex items-center gap-1 text-xs sm:text-sm" data-testid={`text-items-count-${order.id}`}>
+                                        <Package className="w-3 h-3 text-muted-foreground" />
+                                        <span className="font-medium">
+                                          {parseOrderItems(order.items).reduce((sum, item) => sum + item.quantity, 0)}
+                                        </span>
+                                      </div>
                                     </TableCell>
                                     {activeTab !== "create" && (
                                       <TableCell className="font-semibold hidden lg:table-cell text-xs">
