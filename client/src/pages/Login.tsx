@@ -462,7 +462,6 @@ export default function Login({ onLogin }: LoginProps) {
               className="w-full h-full object-contain drop-shadow-xl"
               data-testid="img-fullscreen-service"
             />
-            <h3 className="text-foreground text-sm font-bold mt-1">{fullScreenImage.name}</h3>
           </div>
         </div>
       )}
