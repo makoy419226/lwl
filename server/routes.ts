@@ -686,6 +686,72 @@ export async function registerRoutes(
     }
   });
 
+  // Pay all unpaid bills for a client
+  app.post("/api/clients/:id/pay-all-bills", async (req, res) => {
+    try {
+      const clientId = Number(req.params.id);
+      if (isNaN(clientId)) {
+        return res.status(400).json({ message: "Invalid client ID" });
+      }
+      
+      const { amount, paymentMethod, notes } = req.body;
+      const paymentAmount = parseFloat(amount);
+      
+      if (isNaN(paymentAmount) || paymentAmount <= 0) {
+        return res.status(400).json({ message: "Valid payment amount is required" });
+      }
+      
+      // Get all unpaid bills for this client
+      const bills = await storage.getBills();
+      const clientUnpaidBills = bills
+        .filter(b => {
+          if (b.clientId !== clientId) return false;
+          const amt = parseFloat(b.amount || "0");
+          const paid = parseFloat(b.paidAmount || "0");
+          return amt - paid > 0.01;
+        })
+        .sort((a, b) => new Date(a.billDate).getTime() - new Date(b.billDate).getTime()); // oldest first
+      
+      if (clientUnpaidBills.length === 0) {
+        return res.status(400).json({ message: "No unpaid bills found for this client" });
+      }
+      
+      let remainingPayment = paymentAmount;
+      const paidBills: any[] = [];
+      
+      // Distribute payment across bills, starting with oldest
+      for (const bill of clientUnpaidBills) {
+        if (remainingPayment <= 0) break;
+        
+        const billAmount = parseFloat(bill.amount || "0");
+        const billPaid = parseFloat(bill.paidAmount || "0");
+        const billDue = billAmount - billPaid;
+        
+        const payForThisBill = Math.min(remainingPayment, billDue);
+        
+        if (payForThisBill > 0) {
+          const result = await storage.payBill(
+            bill.id,
+            payForThisBill.toString(),
+            paymentMethod,
+            notes || `Bulk payment for client`
+          );
+          paidBills.push({ billId: bill.id, amountPaid: payForThisBill, result });
+          remainingPayment -= payForThisBill;
+        }
+      }
+      
+      res.status(200).json({ 
+        success: true, 
+        message: `Payment of ${paymentAmount.toFixed(2)} AED applied to ${paidBills.length} bills`,
+        paidBills,
+        remainingAmount: remainingPayment > 0.01 ? remainingPayment : 0
+      });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
   // Transaction routes
   app.get("/api/clients/:id/transactions", async (req, res) => {
     const clientId = Number(req.params.id);

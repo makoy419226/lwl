@@ -160,6 +160,7 @@ export default function Bills() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentNotes, setPaymentNotes] = useState("");
+  const [bulkPaymentClientId, setBulkPaymentClientId] = useState<number | null>(null);
 
   const [, setLocation] = useLocation();
 
@@ -624,8 +625,10 @@ export default function Bills() {
       queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients", selectedBill?.clientId, "transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       setShowPaymentDialog(false);
       setSelectedBill(null);
+      setBulkPaymentClientId(null);
       toast({
         title: "Payment Successful",
         description: "Bill has been paid successfully.",
@@ -640,8 +643,44 @@ export default function Bills() {
     },
   });
 
+  const payAllBillsMutation = useMutation({
+    mutationFn: async (data: {
+      clientId: number;
+      amount: string;
+      paymentMethod: string;
+      notes?: string;
+    }) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/clients/${data.clientId}/pay-all-bills`,
+        data,
+      );
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", bulkPaymentClientId, "transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      setShowPaymentDialog(false);
+      setSelectedBill(null);
+      setBulkPaymentClientId(null);
+      toast({
+        title: "Payment Successful",
+        description: data.message || "All bills have been paid successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Failed to process payment.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProcessPayment = () => {
-    if (!selectedBill || !paymentAmount || parseFloat(paymentAmount) <= 0) {
+    if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
       toast({
         title: "Error",
         description: "Please enter a valid payment amount.",
@@ -650,12 +689,22 @@ export default function Bills() {
       return;
     }
 
-    payBillMutation.mutate({
-      billId: selectedBill.id,
-      amount: paymentAmount,
-      paymentMethod,
-      notes: paymentNotes,
-    });
+    // If bulk payment for client, use bulk endpoint
+    if (bulkPaymentClientId) {
+      payAllBillsMutation.mutate({
+        clientId: bulkPaymentClientId,
+        amount: paymentAmount,
+        paymentMethod,
+        notes: paymentNotes,
+      });
+    } else if (selectedBill) {
+      payBillMutation.mutate({
+        billId: selectedBill.id,
+        amount: paymentAmount,
+        paymentMethod,
+        notes: paymentNotes,
+      });
+    }
   };
 
   const handlePayNowForClient = (client: Client, totalDue: number) => {
@@ -677,9 +726,11 @@ export default function Bills() {
       return;
     }
 
-    setSelectedBill(clientUnpaidBills[0]);
+    // Set bulk payment mode for this client
+    setBulkPaymentClientId(client.id);
+    setSelectedBill(clientUnpaidBills[0]); // Keep for reference
     setPaymentAmount(totalDue.toFixed(2));
-    setPaymentNotes(`Payment for ${client.name}'s outstanding balance`);
+    setPaymentNotes(`Payment for ${client.name}'s outstanding balance (${clientUnpaidBills.length} bills)`);
     setPaymentMethod("cash");
     setShowPaymentDialog(true);
   };
@@ -1817,6 +1868,7 @@ export default function Bills() {
             setSelectedBill(null);
             setPaymentAmount("");
             setPaymentNotes("");
+            setBulkPaymentClientId(null);
           }
         }}
       >
@@ -1824,10 +1876,12 @@ export default function Bills() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="w-5 h-5 text-primary" />
-              Pay Bill
+              {bulkPaymentClientId ? "Pay All Outstanding Bills" : "Pay Bill"}
             </DialogTitle>
             <DialogDescription>
-              Process payment for {selectedBill?.referenceNumber}
+              {bulkPaymentClientId 
+                ? `Process payment for all unpaid bills`
+                : `Process payment for ${selectedBill?.referenceNumber}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1908,9 +1962,9 @@ export default function Bills() {
               </Button>
               <Button
                 onClick={handleProcessPayment}
-                disabled={payBillMutation.isPending}
+                disabled={payBillMutation.isPending || payAllBillsMutation.isPending}
               >
-                {payBillMutation.isPending ? "Processing..." : "Pay Now"}
+                {(payBillMutation.isPending || payAllBillsMutation.isPending) ? "Processing..." : "Pay Now"}
               </Button>
             </div>
           </div>
