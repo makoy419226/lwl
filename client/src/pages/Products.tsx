@@ -1102,7 +1102,7 @@ export default function Products() {
 
       {/* Urgent/Normal Service Dialog */}
       <Dialog open={showUrgentDialog} onOpenChange={setShowUrgentDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">
               Select Service Type
@@ -1159,7 +1159,7 @@ export default function Products() {
           }
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center flex items-center justify-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
@@ -1217,7 +1217,7 @@ export default function Products() {
 
       {/* Other Item Dialog */}
       <Dialog open={showOtherItemDialog} onOpenChange={setShowOtherItemDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Other Item</DialogTitle>
           </DialogHeader>
@@ -1456,7 +1456,7 @@ export default function Products() {
 
       {/* Size Selection Dialog */}
       <Dialog open={showSizeDialog} onOpenChange={setShowSizeDialog}>
-        <DialogContent className="max-w-xs">
+        <DialogContent className="max-w-xs max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">Select Size</DialogTitle>
           </DialogHeader>
@@ -1509,7 +1509,7 @@ export default function Products() {
 
       {/* Gutra Options Dialog */}
       <Dialog open={showGutraDialog} onOpenChange={setShowGutraDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">Gutra Options</DialogTitle>
           </DialogHeader>
@@ -1584,7 +1584,7 @@ export default function Products() {
         open={!!editingPriceProduct}
         onOpenChange={(open) => !open && setEditingPriceProduct(null)}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Prices - {editingPriceProduct?.name}</DialogTitle>
           </DialogHeader>

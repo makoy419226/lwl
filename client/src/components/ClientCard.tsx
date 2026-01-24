@@ -92,7 +92,7 @@ export function ClientCard({ client }: ClientCardProps) {
               Edit
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl font-display text-primary">Edit Client</DialogTitle>
             </DialogHeader>

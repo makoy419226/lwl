@@ -111,7 +111,7 @@ export function ProductCard({ product, canEdit = true }: ProductCardProps) {
                   <Edit2 className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-display text-primary">Edit Product</DialogTitle>
                 </DialogHeader>

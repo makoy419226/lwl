@@ -1425,7 +1425,7 @@ export default function Bills() {
         open={!!createdBill}
         onOpenChange={(open) => !open && setCreatedBill(null)}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="w-5 h-5 text-green-600" />
@@ -1785,7 +1785,7 @@ export default function Bills() {
       )}
 
       <Dialog open={showNewItemDialog} onOpenChange={setShowNewItemDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <PlusCircle className="w-5 h-5 text-primary" />
@@ -1859,7 +1859,7 @@ export default function Bills() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="w-5 h-5 text-primary" />
@@ -1931,7 +1931,7 @@ export default function Bills() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="w-5 h-5 text-primary" />
@@ -2032,7 +2032,7 @@ export default function Bills() {
 
       {/* Bill Details Popup */}
       <Dialog open={!!viewBillDetails} onOpenChange={(open) => !open && setViewBillDetails(null)}>
-        <DialogContent className={`max-w-md ${viewBillDetails?.isPaid ? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 border-green-200 dark:border-green-800" : "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-950/50 border-orange-200 dark:border-orange-800"}`}>
+        <DialogContent className={`max-w-md max-h-[85vh] overflow-y-auto ${viewBillDetails?.isPaid ? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 border-green-200 dark:border-green-800" : "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-950/50 border-orange-200 dark:border-orange-800"}`}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="w-5 h-5 text-primary" />

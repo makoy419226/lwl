@@ -331,7 +331,7 @@ export default function Login({ onLogin }: LoginProps) {
       </div>
 
       <Dialog open={showForgotPassword} onOpenChange={closeForgotPassword}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>

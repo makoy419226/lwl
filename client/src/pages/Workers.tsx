@@ -523,7 +523,7 @@ export default function Workers() {
                 Add Worker
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add Staff Member</DialogTitle>
               </DialogHeader>
@@ -1072,7 +1072,7 @@ export default function Workers() {
         open={!!editWorker}
         onOpenChange={(open) => !open && setEditWorker(null)}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Worker</DialogTitle>
           </DialogHeader>
@@ -1123,7 +1123,7 @@ export default function Workers() {
       </Dialog>
 
       <Dialog open={isUserCreateOpen} onOpenChange={setIsUserCreateOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserCog className="w-5 h-5" />
@@ -1222,7 +1222,7 @@ export default function Workers() {
         open={!!editUser}
         onOpenChange={(open) => !open && setEditUser(null)}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="w-5 h-5" />

@@ -130,7 +130,7 @@ export default function AdminSettings() {
                   Reset All Data
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 text-destructive">
                     <AlertTriangle className="w-5 h-5" />
@@ -252,7 +252,7 @@ export default function AdminSettings() {
                       Send {periodLabels[reportPeriod]} Report
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md">
+                  <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Mail className="w-5 h-5 text-primary" />

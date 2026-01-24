@@ -1058,7 +1058,7 @@ export default function Clients() {
       </main>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display text-primary">
               Add New Client
@@ -1072,7 +1072,7 @@ export default function Clients() {
         open={!!editingClient}
         onOpenChange={(open) => !open && setEditingClient(null)}
       >
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display text-primary">
               Edit Client
@@ -1949,7 +1949,7 @@ export default function Clients() {
           setPayAllMethod("cash");
         }
       }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-primary" />
