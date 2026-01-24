@@ -457,13 +457,6 @@ export default function Login({ onLogin }: LoginProps) {
             } as React.CSSProperties}
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="absolute -top-2 -right-2 z-10 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg"
-              onClick={() => setFullScreenImage(null)}
-              data-testid="button-close-fullscreen"
-            >
-              <X className="w-5 h-5" />
-            </button>
             <img 
               src={fullScreenImage.image} 
               alt={fullScreenImage.name}
