@@ -1506,7 +1506,7 @@ export default function Orders() {
                                           Due Balance:
                                         </span>
                                         <span
-                                          className="font-bold text-red-600"
+                                          className={`font-bold ${getClientDueBalance(client.id) === 0 ? "text-green-600" : "text-red-600"}`}
                                         >
                                           {getClientDueBalance(client.id).toFixed(2)}{" "}
                                           AED
@@ -1962,7 +1962,7 @@ export default function Orders() {
                                                     Due Balance:
                                                   </span>
                                                   <span
-                                                    className="font-bold text-red-600"
+                                                    className={`font-bold ${client && getClientDueBalance(client.id) === 0 ? "text-green-600" : "text-red-600"}`}
                                                   >
                                                     {client ? getClientDueBalance(client.id).toFixed(2) : "0.00"}{" "}
                                                     AED
@@ -2022,7 +2022,7 @@ export default function Orders() {
                                         </TableCell>
                                         <TableCell
                                           rowSpan={orderCount}
-                                          className="align-top font-semibold border-r hidden 2xl:table-cell text-xs text-red-600"
+                                          className={`align-top font-semibold border-r hidden 2xl:table-cell text-xs ${client && getClientDueBalance(client.id) === 0 ? "text-green-600" : "text-red-600"}`}
                                           data-testid={`text-client-due-${order.id}`}
                                         >
                                           {client ? getClientDueBalance(client.id).toFixed(0) : "0"} AED
