@@ -491,7 +491,7 @@ export default function Clients() {
             </tr>
             <tr>
               <td style="padding: 8px 0;"><strong>Address:</strong> ${client.address || "-"}</td>
-              <td style="padding: 8px 0;"><strong>Bill Number:</strong> ${client.billNumber || "-"}</td>
+              <td style="padding: 8px 0;"><strong>Account Number:</strong> ${client.billNumber || "-"}</td>
             </tr>
           </table>
         </div>
@@ -597,7 +597,7 @@ export default function Clients() {
       ["Client Name", client.name],
       ["Phone", client.phone || "-"],
       ["Address", client.address || "-"],
-      ["Bill Number", client.billNumber || "-"],
+      ["Account Number", client.billNumber || "-"],
       [],
       ["Financial Summary"],
       ["Total Bills", `${totalBill.toFixed(2)} AED`],
@@ -1457,7 +1457,7 @@ export default function Clients() {
                   <p className="font-medium">{viewingClient.address || "-"}</p>
                 </div>
                 <div className="bg-muted/30 rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground">Bill Number</p>
+                  <p className="text-sm text-muted-foreground">Account Number</p>
                   <p className="font-medium">{viewingClient.billNumber || "-"}</p>
                 </div>
               </div>
