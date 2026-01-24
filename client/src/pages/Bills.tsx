@@ -110,6 +110,7 @@ export default function Bills() {
     items: { name: string; qty: number; price: number }[];
   } | null>(null);
   const [viewBillPDF, setViewBillPDF] = useState<Bill | null>(null);
+  const [viewBillDetails, setViewBillDetails] = useState<Bill | null>(null);
   const [showNewItemDialog, setShowNewItemDialog] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
@@ -811,89 +812,38 @@ export default function Bills() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                 {filteredBills?.map((bill) => (
                   <Card
                     key={bill.id}
-                    className={`relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                    className={`relative overflow-hidden border-0 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer ${
                       bill.isPaid 
-                        ? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30" 
-                        : "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30"
+                        ? "bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/40 dark:to-emerald-950/40" 
+                        : "bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-950/40 dark:to-amber-950/40"
                     }`}
                     data-testid={`card-bill-${bill.id}`}
+                    onClick={() => setViewBillDetails(bill)}
                   >
-                    <div className={`absolute top-0 left-0 w-1.5 h-full ${bill.isPaid ? "bg-green-500" : "bg-orange-500"}`} />
-                    <CardHeader className="pb-2 pl-5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge 
-                              variant={bill.isPaid ? "default" : "destructive"}
-                              className={`text-[10px] px-2 py-0 ${bill.isPaid ? "bg-green-500 hover:bg-green-600" : "bg-orange-500 hover:bg-orange-600"}`}
-                            >
-                              {bill.isPaid ? "PAID" : "UNPAID"}
-                            </Badge>
-                            {bill.referenceNumber && (
-                              <span className="text-xs text-muted-foreground font-mono">
-                                #{bill.referenceNumber}
-                              </span>
-                            )}
-                          </div>
-                          <CardTitle className="text-base font-bold truncate">
-                            {bill.customerName || getClientName(bill.clientId!)}
-                          </CardTitle>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(new Date(bill.billDate), "MMM dd, yyyy")}
-                          </p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pl-5 pb-3">
-                      <div className="flex items-end justify-between gap-2">
-                        <div>
-                          <p className="text-2xl font-bold text-foreground">
-                            <span className="text-sm font-normal text-muted-foreground">AED </span>
-                            {parseFloat(bill.amount || "0").toFixed(2)}
-                          </p>
-                          {bill.description && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                              {bill.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          {!bill.isPaid && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-8 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                              onClick={() => handlePayNow(bill)}
-                              data-testid={`button-pay-now-${bill.id}`}
-                            >
-                              <DollarSign className="w-3.5 h-3.5 mr-1" />
-                              Pay
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => printBillPDF(bill)}
-                            data-testid={`button-print-pdf-${bill.id}`}
-                            title="Print Bill"
+                    <div className={`absolute top-0 left-0 w-1 h-full ${bill.isPaid ? "bg-green-500" : "bg-orange-500"}`} />
+                    <CardContent className="p-3 pl-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-1">
+                          <Badge 
+                            variant={bill.isPaid ? "default" : "destructive"}
+                            className={`text-[9px] px-1.5 py-0 ${bill.isPaid ? "bg-green-500" : "bg-orange-500"}`}
                           >
-                            <Printer className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => handleDelete(bill.id)}
-                            data-testid="button-delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                            {bill.isPaid ? "PAID" : "DUE"}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">
+                            {format(new Date(bill.billDate), "dd/MM")}
+                          </span>
                         </div>
+                        <p className="font-semibold text-sm truncate">
+                          {bill.customerName || getClientName(bill.clientId!)}
+                        </p>
+                        <p className="text-lg font-bold text-primary">
+                          {parseFloat(bill.amount || "0").toFixed(0)} <span className="text-xs font-normal">AED</span>
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1556,6 +1506,95 @@ export default function Bills() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bill Details Popup */}
+      <Dialog open={!!viewBillDetails} onOpenChange={(open) => !open && setViewBillDetails(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-primary" />
+              Bill Details
+            </DialogTitle>
+            <DialogDescription>
+              {viewBillDetails?.referenceNumber && `Reference: ${viewBillDetails.referenceNumber}`}
+            </DialogDescription>
+          </DialogHeader>
+          {viewBillDetails && (
+            <div className="space-y-4">
+              <div className={`p-4 rounded-lg ${viewBillDetails.isPaid ? "bg-green-50 dark:bg-green-950/30" : "bg-orange-50 dark:bg-orange-950/30"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <Badge className={viewBillDetails.isPaid ? "bg-green-500" : "bg-orange-500"}>
+                    {viewBillDetails.isPaid ? "PAID" : "UNPAID"}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {format(new Date(viewBillDetails.billDate), "MMM dd, yyyy")}
+                  </span>
+                </div>
+                <p className="text-xl font-bold">{viewBillDetails.customerName || getClientName(viewBillDetails.clientId!)}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Amount</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {parseFloat(viewBillDetails.amount || "0").toFixed(2)} <span className="text-sm">AED</span>
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Date</p>
+                  <p className="text-lg font-semibold">
+                    {format(new Date(viewBillDetails.billDate), "dd MMM yyyy")}
+                  </p>
+                </div>
+              </div>
+
+              {viewBillDetails.description && (
+                <div className="bg-muted/30 p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Items / Description</p>
+                  <p className="text-sm whitespace-pre-wrap">{viewBillDetails.description}</p>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                {!viewBillDetails.isPaid && (
+                  <Button
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    onClick={() => {
+                      handlePayNow(viewBillDetails);
+                      setViewBillDetails(null);
+                    }}
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Pay Now
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    printBillPDF(viewBillDetails);
+                    setViewBillDetails(null);
+                  }}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="text-destructive hover:bg-destructive/10"
+                  onClick={() => {
+                    handleDelete(viewBillDetails.id);
+                    setViewBillDetails(null);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
