@@ -47,9 +47,9 @@ export default function PublicOrder() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4 relative">
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="absolute right-4 top-4"
+          className="absolute right-4 top-4 bg-white shadow-md"
           onClick={handleClose}
           data-testid="button-close"
         >
@@ -64,9 +64,9 @@ export default function PublicOrder() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4 relative">
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="absolute right-4 top-4"
+          className="absolute right-4 top-4 bg-white shadow-md"
           onClick={handleClose}
           data-testid="button-close"
         >
@@ -103,9 +103,9 @@ export default function PublicOrder() {
       <div className="max-w-lg mx-auto space-y-4">
         <div className="relative text-center py-4">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="absolute right-0 top-4"
+            className="absolute right-0 top-4 bg-white shadow-md"
             onClick={handleClose}
             data-testid="button-close"
           >
