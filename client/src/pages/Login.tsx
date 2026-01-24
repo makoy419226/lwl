@@ -442,12 +442,12 @@ export default function Login({ onLogin }: LoginProps) {
 
       {fullScreenImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 cursor-pointer animate-in fade-in duration-200"
           onClick={() => setFullScreenImage(null)}
           data-testid="fullscreen-image-overlay"
         >
           <div 
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 max-w-sm w-full relative"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 max-w-sm w-full relative animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 ease-out"
             onClick={(e) => e.stopPropagation()}
           >
             <button
