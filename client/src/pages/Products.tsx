@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearch } from "wouter";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients, useCreateClient } from "@/hooks/use-clients";
+import { useBills } from "@/hooks/use-bills";
 import { getProductImage } from "@/lib/productImages";
 import {
   Loader2,
@@ -24,7 +25,10 @@ import {
   AlertCircle,
   AlertTriangle,
   Pencil,
+  Printer,
+  Tag,
 } from "lucide-react";
+import html2pdf from "html2pdf.js";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -34,6 +38,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -102,6 +107,7 @@ export default function Products() {
   }, [searchParams]);
 
   const { data: clients } = useClients();
+  const { data: bills } = useBills();
 
   useEffect(() => {
     if (urlClientId && clients && !initialClientLoaded) {
@@ -179,6 +185,8 @@ export default function Products() {
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
   const [editingStockId, setEditingStockId] = useState<number | null>(null);
   const [stockValue, setStockValue] = useState("");
+  const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  const [showPrintTagDialog, setShowPrintTagDialog] = useState(false);
 
   const sizeOptions: Record<string, { small: number; large: number }> = {
     Towel: { small: 5, large: 8 },
@@ -563,7 +571,7 @@ export default function Products() {
       const response = await apiRequest("POST", "/api/orders", orderData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] }); // Refresh clients for walk-in auto-created clients
       queryClient.invalidateQueries({ queryKey: ["/api/bills"] }); // Refresh bills for auto-created bills
@@ -573,10 +581,9 @@ export default function Products() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] }); // Refresh products to show updated stock
       setQuantities({});
       setCustomerName("");
-      toast({
-        title: "Order created",
-        description: "Order has been created successfully.",
-      });
+      // Store the created order and show print tag dialog
+      setCreatedOrder(data);
+      setShowPrintTagDialog(true);
     },
     onError: () => {
       toast({
@@ -725,6 +732,204 @@ export default function Products() {
     setTips("");
     setOrderType("normal");
     setDeliveryType("pickup");
+  };
+
+  const parseOrderItems = (items: string) => {
+    const parsed: { name: string; quantity: number }[] = [];
+    const itemParts = items.split(", ");
+    for (const part of itemParts) {
+      const match = part.match(/^(\d+)x\s+(.+)$/);
+      if (match) {
+        parsed.push({ name: match[2], quantity: parseInt(match[1], 10) });
+      }
+    }
+    return parsed;
+  };
+
+  const generateTagReceipt = (order: Order) => {
+    const client = clients?.find((c) => c.id === order.clientId);
+    const isUrgent = order.urgent;
+    const parsedItems = parseOrderItems(order.items || "");
+
+    const previousBills = bills?.filter((b) => b.clientId === order.clientId) || [];
+    const unpaidBills = previousBills.filter((b) => !b.isPaid);
+    const totalPreviousDue = unpaidBills.reduce((sum, b) => {
+      const billTotal = parseFloat(b.amount) || 0;
+      const billPaid = parseFloat(b.paidAmount || "0") || 0;
+      return sum + (billTotal - billPaid);
+    }, 0);
+
+    const itemsHtml = parsedItems
+      .map(
+        (item, idx) =>
+          `<tr style="border-bottom: 1px solid #e5e5e5;">
+        <td style="padding: 5px 4px; font-size: 9px;">${idx + 1}</td>
+        <td style="padding: 5px 4px; font-size: 9px;">${item.name}</td>
+        <td style="padding: 5px 4px; font-size: 9px; text-align: center; font-weight: bold;">${item.quantity}</td>
+        <td style="padding: 5px 4px; font-size: 9px; text-align: right;">${item.quantity} pcs</td>
+      </tr>`
+      )
+      .join("");
+
+    const content = document.createElement("div");
+    content.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 15px; max-width: 148mm; color: #000; background: #fff;">
+        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+          <div style="font-size: 18px; font-weight: bold; letter-spacing: 1px;">LIQUID WASHES LAUNDRY</div>
+          <div style="font-size: 10px; margin-top: 4px; color: #666;">Professional Laundry Services - UAE</div>
+          <div style="font-size: 9px; margin-top: 2px; color: #888;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
+        </div>
+        
+        ${isUrgent ? `<div style="text-align: center; padding: 8px; margin: 10px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px; border-radius: 4px;">*** URGENT ORDER ***</div>` : ""}
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+          <div style="flex: 1;">
+            <div style="font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 3px;">Order Number</div>
+            <div style="font-size: 20px; font-weight: bold; color: #000; border: 2px dashed #000; padding: 8px 12px; display: inline-block;">${order.orderNumber}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 9px; color: #666;">Entry Date</div>
+            <div style="font-size: 11px; font-weight: bold;">${format(new Date(order.entryDate), "dd MMM yyyy")}</div>
+            <div style="font-size: 10px; color: #666;">${format(new Date(order.entryDate), "hh:mm a")}</div>
+            ${order.expectedDeliveryAt ? `
+            <div style="font-size: 9px; color: #666; margin-top: 5px;">Expected Delivery</div>
+            <div style="font-size: 11px; font-weight: bold; color: #2563eb;">${format(new Date(order.expectedDeliveryAt), "dd MMM yyyy")}</div>
+            ` : ""}
+          </div>
+        </div>
+        
+        <div style="background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 4px; padding: 10px; margin-bottom: 15px;">
+          <div style="font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #ddd; padding-bottom: 3px;">Client Information</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <div style="font-size: 8px; color: #888;">Name</div>
+              <div style="font-size: 12px; font-weight: bold;">${client?.name || order.customerName || "Walk-in Customer"}</div>
+            </div>
+            <div>
+              <div style="font-size: 8px; color: #888;">Phone</div>
+              <div style="font-size: 12px; font-weight: bold;">${client?.phone || "-"}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div style="font-size: 8px; color: #888;">Address</div>
+              <div style="font-size: 10px;">${client?.address || "-"}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <div style="font-size: 11px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px;">ITEMS DETAIL</div>
+          <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+            <thead>
+              <tr style="background: #f0f0f0;">
+                <th style="padding: 6px 4px; text-align: left; font-size: 9px; border-bottom: 1px solid #000; width: 30px;">#</th>
+                <th style="padding: 6px 4px; text-align: left; font-size: 9px; border-bottom: 1px solid #000;">Item Description</th>
+                <th style="padding: 6px 4px; text-align: center; font-size: 9px; border-bottom: 1px solid #000; width: 40px;">Qty</th>
+                <th style="padding: 6px 4px; text-align: right; font-size: 9px; border-bottom: 1px solid #000; width: 60px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+            <tfoot>
+              <tr style="background: #f8f9fa; border-top: 1px solid #000;">
+                <td colspan="2" style="padding: 6px 4px; font-size: 10px; font-weight: bold;">Total: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} pcs</td>
+                <td colspan="2" style="padding: 6px 4px; font-size: 12px; font-weight: bold; text-align: right;">AED ${parseFloat(order.totalAmount).toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        
+        ${totalPreviousDue > 0 ? `
+        <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 4px; padding: 10px; margin-bottom: 10px;">
+          <div style="font-size: 11px; font-weight: bold; color: #856404; margin-bottom: 8px; border-bottom: 1px solid #ffc107; padding-bottom: 4px;">PREVIOUS OUTSTANDING BILLS (${unpaidBills.length})</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+            <thead>
+              <tr style="background: #ffeeba;">
+                <th style="padding: 4px; text-align: left; border-bottom: 1px solid #d39e00;">Bill #</th>
+                <th style="padding: 4px; text-align: left; border-bottom: 1px solid #d39e00;">Date</th>
+                <th style="padding: 4px; text-align: right; border-bottom: 1px solid #d39e00;">Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${unpaidBills.map(bill => {
+                const billTotal = parseFloat(bill.amount) || 0;
+                const billPaid = parseFloat(bill.paidAmount || "0") || 0;
+                const billDue = billTotal - billPaid;
+                return `<tr style="border-bottom: 1px dashed #d39e00;">
+                  <td style="padding: 3px 4px;">#${bill.referenceNumber || bill.id}</td>
+                  <td style="padding: 3px 4px;">${format(new Date(bill.billDate), "dd/MM/yy")}</td>
+                  <td style="padding: 3px 4px; text-align: right; font-weight: bold; color: #dc3545;">${billDue.toFixed(2)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 6px; border-top: 2px solid #d39e00;">
+            <span style="font-size: 10px; font-weight: bold; color: #856404;">TOTAL PREVIOUS DUE:</span>
+            <span style="font-size: 14px; font-weight: bold; color: #dc3545;">AED ${totalPreviousDue.toFixed(2)}</span>
+          </div>
+        </div>
+        ` : ""}
+        
+        ${order.notes ? `
+        <div style="background: #e8f4fd; border: 1px solid #90cdf4; border-radius: 4px; padding: 8px; margin-bottom: 10px;">
+          <div style="font-size: 9px; font-weight: bold; color: #2b6cb0; margin-bottom: 3px;">ORDER NOTES</div>
+          <div style="font-size: 10px;">${order.notes}</div>
+        </div>
+        ` : ""}
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
+          <div>
+            <div style="font-size: 8px; color: #888;">Packing</div>
+            <div style="font-size: 10px; font-weight: bold;">${order.packingDone ? "Done" : "Pending"}</div>
+          </div>
+          <div>
+            <div style="font-size: 8px; color: #888;">Status</div>
+            <div style="font-size: 10px; font-weight: bold; text-transform: uppercase;">${order.status}</div>
+          </div>
+          <div>
+            <div style="font-size: 8px; color: #888;">Tag</div>
+            <div style="font-size: 10px; font-weight: bold; color: ${order.tagDone ? "#16a34a" : "#dc2626"};">${order.tagDone ? "Done" : "Pending"}</div>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #000; color: #888; font-size: 8px;">
+          <div>Thank you for choosing Liquid Washes Laundry</div>
+          <div style="margin-top: 4px; font-weight: bold; color: #000; font-size: 9px;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
+          <div style="margin-top: 3px;">Generated on ${format(new Date(), "dd MMM yyyy 'at' hh:mm a")}</div>
+        </div>
+      </div>
+    `;
+
+    const opt = {
+      margin: 8,
+      filename: `Tag_${order.orderNumber}.pdf`,
+      image: { type: "jpeg" as const, quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: {
+        unit: "mm",
+        format: "a5" as const,
+        orientation: "portrait" as const,
+      },
+    };
+
+    html2pdf().set(opt).from(content).save();
+    toast({
+      title: "Tag Downloaded",
+      description: `Tag for ${order.orderNumber} saved`,
+    });
+  };
+
+  const handlePrintTagDialogClose = (printNow: boolean) => {
+    if (printNow && createdOrder) {
+      generateTagReceipt(createdOrder);
+    }
+    setShowPrintTagDialog(false);
+    setCreatedOrder(null);
+    clearOrder();
+    toast({
+      title: "Order created",
+      description: printNow ? "Order created and tag downloaded." : "Order created. You can print the tag later from Orders page.",
+    });
   };
 
   const handleAddOtherItem = () => {
@@ -1954,6 +2159,60 @@ export default function Products() {
                 return (base - discountAmt + tipsAmt).toFixed(2);
               })()} AED`}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Tag Prompt Dialog */}
+      <Dialog open={showPrintTagDialog} onOpenChange={(open) => {
+        if (!open) handlePrintTagDialogClose(false);
+      }}>
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="w-5 h-5 text-primary" />
+              Order Created Successfully!
+            </DialogTitle>
+            <DialogDescription>
+              Order #{createdOrder?.orderNumber} has been created. Would you like to print the order tag now?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            {createdOrder && (
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Order:</span>
+                  <span className="font-bold">{createdOrder.orderNumber}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Customer:</span>
+                  <span className="font-medium">
+                    {clients?.find(c => c.id === createdOrder.clientId)?.name || createdOrder.customerName || "Walk-in"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total:</span>
+                  <span className="font-bold text-primary">AED {createdOrder.finalAmount || createdOrder.totalAmount}</span>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button
+                variant="default"
+                className="flex-1"
+                onClick={() => handlePrintTagDialogClose(true)}
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Print Tag Now
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => handlePrintTagDialogClose(false)}
+              >
+                Print Later
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
