@@ -22,6 +22,16 @@ interface PublicOrderData {
 export default function PublicOrder() {
   const { token } = useParams<{ token: string }>();
   const [, setLocation] = useLocation();
+  
+  const isLoggedIn = !!localStorage.getItem("user");
+  
+  const handleClose = () => {
+    if (isLoggedIn) {
+      setLocation("/dashboard");
+    } else {
+      window.close();
+    }
+  };
 
   const { data: order, isLoading, error } = useQuery<PublicOrderData>({
     queryKey: ["/api/orders/public", token],
@@ -71,7 +81,7 @@ export default function PublicOrder() {
             variant="ghost"
             size="icon"
             className="absolute right-0 top-4"
-            onClick={() => setLocation("/dashboard")}
+            onClick={handleClose}
             data-testid="button-close"
           >
             <X className="h-5 w-5" />
@@ -156,10 +166,10 @@ export default function PublicOrder() {
 
         <Button
           className="w-full"
-          onClick={() => setLocation("/dashboard")}
-          data-testid="button-go-dashboard"
+          onClick={handleClose}
+          data-testid="button-close-page"
         >
-          Go to Dashboard
+          {isLoggedIn ? "Go to Dashboard" : "Close"}
         </Button>
 
         <div className="text-center text-xs text-muted-foreground py-4">
