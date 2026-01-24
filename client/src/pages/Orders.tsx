@@ -595,11 +595,32 @@ export default function Orders() {
         ${
           totalPreviousDue > 0
             ? `
-        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 8px; margin-bottom: 10px;">
-          <div style="font-size: 10px; font-weight: bold; color: #856404; margin-bottom: 4px;">PREVIOUS OUTSTANDING DUES</div>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 9px; color: #856404;">${unpaidBills.length} unpaid bill(s)</span>
-            <span style="font-size: 12px; font-weight: bold; color: #dc3545;">AED ${totalPreviousDue.toFixed(2)}</span>
+        <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 4px; padding: 10px; margin-bottom: 10px;">
+          <div style="font-size: 11px; font-weight: bold; color: #856404; margin-bottom: 8px; border-bottom: 1px solid #ffc107; padding-bottom: 4px;">PREVIOUS OUTSTANDING BILLS (${unpaidBills.length})</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+            <thead>
+              <tr style="background: #ffeeba;">
+                <th style="padding: 4px; text-align: left; border-bottom: 1px solid #d39e00;">Bill #</th>
+                <th style="padding: 4px; text-align: left; border-bottom: 1px solid #d39e00;">Date</th>
+                <th style="padding: 4px; text-align: right; border-bottom: 1px solid #d39e00;">Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${unpaidBills.map(bill => {
+                const billTotal = parseFloat(bill.amount) || 0;
+                const billPaid = parseFloat(bill.paidAmount || "0") || 0;
+                const billDue = billTotal - billPaid;
+                return `<tr style="border-bottom: 1px dashed #d39e00;">
+                  <td style="padding: 3px 4px;">#${bill.referenceNumber || bill.id}</td>
+                  <td style="padding: 3px 4px;">${format(new Date(bill.billDate), "dd/MM/yy")}</td>
+                  <td style="padding: 3px 4px; text-align: right; font-weight: bold; color: #dc3545;">${billDue.toFixed(2)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 6px; border-top: 2px solid #d39e00;">
+            <span style="font-size: 10px; font-weight: bold; color: #856404;">TOTAL PREVIOUS DUE:</span>
+            <span style="font-size: 14px; font-weight: bold; color: #dc3545;">AED ${totalPreviousDue.toFixed(2)}</span>
           </div>
         </div>
         `
