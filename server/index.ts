@@ -263,7 +263,12 @@ app.use((req, res, next) => {
     };
   }
 
-  // Weekly report scheduler - sends every Saturday at 11:59 PM UAE time
+  // Track what reports have been sent today to avoid duplicates
+  let lastWeeklyReportDate = '';
+  let lastMonthlyReportDate = '';
+  let lastYearlyReportDate = '';
+
+  // Send weekly report (Saturday)
   async function sendScheduledWeeklyReport() {
     try {
       const now = new Date();
@@ -281,37 +286,7 @@ app.use((req, res, next) => {
     }
   }
 
-  function scheduleNextWeeklyReport() {
-    const now = new Date();
-    const uaeOffset = 4 * 60 * 60 * 1000;
-    const nowUAE = new Date(now.getTime() + uaeOffset);
-    
-    // Find next Saturday 11:59 PM UAE
-    const targetUAE = new Date(nowUAE);
-    const daysUntilSaturday = (6 - nowUAE.getDay() + 7) % 7;
-    targetUAE.setDate(nowUAE.getDate() + daysUntilSaturday);
-    targetUAE.setHours(23, 59, 0, 0);
-    
-    // If today is Saturday and we've passed 11:59 PM, schedule for next Saturday
-    if (nowUAE >= targetUAE) {
-      targetUAE.setDate(targetUAE.getDate() + 7);
-    }
-    
-    const targetLocal = new Date(targetUAE.getTime() - uaeOffset);
-    const msUntilTarget = targetLocal.getTime() - now.getTime();
-    
-    log(`Next weekly report scheduled in ${Math.round(msUntilTarget / 1000 / 60 / 60)} hours`, "scheduler");
-    
-    setTimeout(async () => {
-      await sendScheduledWeeklyReport();
-      scheduleNextWeeklyReport();
-    }, msUntilTarget);
-  }
-
-  scheduleNextWeeklyReport();
-  log(`Weekly sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} every Saturday at 11:59 PM UAE time)`, "scheduler");
-
-  // Monthly report scheduler - sends on the last day of each month at 11:59 PM UAE time
+  // Send monthly report (last day of month)
   async function sendScheduledMonthlyReport() {
     try {
       const now = new Date();
@@ -328,38 +303,7 @@ app.use((req, res, next) => {
     }
   }
 
-  function scheduleNextMonthlyReport() {
-    const now = new Date();
-    const uaeOffset = 4 * 60 * 60 * 1000;
-    const nowUAE = new Date(now.getTime() + uaeOffset);
-    
-    // Get last day of current month
-    const lastDayOfMonth = new Date(nowUAE.getFullYear(), nowUAE.getMonth() + 1, 0);
-    lastDayOfMonth.setHours(23, 59, 0, 0);
-    
-    let targetUAE = new Date(lastDayOfMonth);
-    
-    // If we've passed the last day of this month, schedule for next month
-    if (nowUAE >= targetUAE) {
-      targetUAE = new Date(nowUAE.getFullYear(), nowUAE.getMonth() + 2, 0);
-      targetUAE.setHours(23, 59, 0, 0);
-    }
-    
-    const targetLocal = new Date(targetUAE.getTime() - uaeOffset);
-    const msUntilTarget = targetLocal.getTime() - now.getTime();
-    
-    log(`Next monthly report scheduled in ${Math.round(msUntilTarget / 1000 / 60 / 60 / 24)} days`, "scheduler");
-    
-    setTimeout(async () => {
-      await sendScheduledMonthlyReport();
-      scheduleNextMonthlyReport();
-    }, msUntilTarget);
-  }
-
-  scheduleNextMonthlyReport();
-  log(`Monthly sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} on last day of each month at 11:59 PM UAE time)`, "scheduler");
-
-  // Yearly report scheduler - sends on December 31st at 11:59 PM UAE time
+  // Send yearly report (December 31st)
   async function sendScheduledYearlyReport() {
     try {
       const now = new Date();
@@ -376,32 +320,43 @@ app.use((req, res, next) => {
     }
   }
 
-  function scheduleNextYearlyReport() {
+  // Check and send periodic reports at 11:59 PM UAE time
+  async function checkAndSendPeriodicReports() {
     const now = new Date();
     const uaeOffset = 4 * 60 * 60 * 1000;
     const nowUAE = new Date(now.getTime() + uaeOffset);
+    const todayKey = nowUAE.toISOString().split('T')[0];
+    const hour = nowUAE.getHours();
+    const minute = nowUAE.getMinutes();
     
-    // December 31st 11:59 PM UAE
-    let targetUAE = new Date(nowUAE.getFullYear(), 11, 31);
-    targetUAE.setHours(23, 59, 0, 0);
-    
-    // If we've passed Dec 31 this year, schedule for next year
-    if (nowUAE >= targetUAE) {
-      targetUAE = new Date(nowUAE.getFullYear() + 1, 11, 31);
-      targetUAE.setHours(23, 59, 0, 0);
+    // Only send at 11:59 PM UAE time (23:59)
+    if (hour === 23 && minute === 59) {
+      const dayOfWeek = nowUAE.getDay(); // 0=Sunday, 6=Saturday
+      const dayOfMonth = nowUAE.getDate();
+      const lastDayOfMonth = new Date(nowUAE.getFullYear(), nowUAE.getMonth() + 1, 0).getDate();
+      const month = nowUAE.getMonth();
+      
+      // Weekly report - Saturday (day 6)
+      if (dayOfWeek === 6 && lastWeeklyReportDate !== todayKey) {
+        lastWeeklyReportDate = todayKey;
+        await sendScheduledWeeklyReport();
+      }
+      
+      // Monthly report - last day of month
+      if (dayOfMonth === lastDayOfMonth && lastMonthlyReportDate !== todayKey) {
+        lastMonthlyReportDate = todayKey;
+        await sendScheduledMonthlyReport();
+      }
+      
+      // Yearly report - December 31st
+      if (month === 11 && dayOfMonth === 31 && lastYearlyReportDate !== todayKey) {
+        lastYearlyReportDate = todayKey;
+        await sendScheduledYearlyReport();
+      }
     }
-    
-    const targetLocal = new Date(targetUAE.getTime() - uaeOffset);
-    const msUntilTarget = targetLocal.getTime() - now.getTime();
-    
-    log(`Next yearly report scheduled in ${Math.round(msUntilTarget / 1000 / 60 / 60 / 24)} days`, "scheduler");
-    
-    setTimeout(async () => {
-      await sendScheduledYearlyReport();
-      scheduleNextYearlyReport();
-    }, msUntilTarget);
   }
 
-  scheduleNextYearlyReport();
-  log(`Yearly sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} on December 31st at 11:59 PM UAE time)`, "scheduler");
+  // Check every minute for periodic reports
+  setInterval(checkAndSendPeriodicReports, 60 * 1000);
+  log(`Periodic reports scheduler started: Weekly (Saturday), Monthly (last day), Yearly (Dec 31) - all at 11:59 PM UAE time`, "scheduler");
 })();
