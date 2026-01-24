@@ -1404,11 +1404,16 @@ export async function registerRoutes(
 
   // Public order tracking by order number (no auth required) - limited safe data only
   app.get("/api/orders/track/:orderNumber", async (req, res) => {
-    const { orderNumber } = req.params;
+    let { orderNumber } = req.params;
     if (!orderNumber || orderNumber.length < 1) {
       return res.status(400).json({ message: "Invalid order number" });
     }
-    const order = await storage.getOrderByNumber(orderNumber.toUpperCase());
+    // Normalize: if user enters just numbers, add ORD- prefix
+    orderNumber = orderNumber.trim().toUpperCase();
+    if (!orderNumber.startsWith("ORD-")) {
+      orderNumber = `ORD-${orderNumber}`;
+    }
+    const order = await storage.getOrderByNumber(orderNumber);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
