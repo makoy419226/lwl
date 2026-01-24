@@ -1060,14 +1060,18 @@ export default function Bills() {
                                         .client-info h3 { margin: 0 0 5px 0; font-size: 16px; }
                                         .client-info p { margin: 2px 0; font-size: 12px; }
                                         .invoice-title { font-size: 18px; font-weight: bold; margin: 20px 0 10px 0; text-align: center; }
-                                        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-                                        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 11px; }
-                                        th { background: #1e5aa8; color: white; font-weight: bold; }
+                                        table { width: 100%; border-collapse: collapse; margin: 15px 0; table-layout: fixed; }
+                                        th, td { padding: 6px 4px; text-align: left; border: 1px solid #ddd; font-size: 10px; vertical-align: top; }
+                                        th { background: #1e5aa8; color: white; font-weight: bold; white-space: nowrap; }
+                                        th:nth-child(1) { width: 50px; }
+                                        th:nth-child(2) { width: 70px; }
+                                        th:nth-child(3) { width: auto; }
+                                        th:nth-child(4), th:nth-child(5), th:nth-child(6) { width: 60px; }
                                         .text-right { text-align: right; }
                                         .total-row { background: #f5f5f5; font-weight: bold; }
                                         .grand-total { font-size: 18px; font-weight: bold; text-align: center; margin: 20px 0; padding: 15px; background: #1e5aa8; color: white; border-radius: 5px; }
                                         .footer { text-align: center; font-size: 10px; color: #999; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; }
-                                        .description { max-width: 250px; word-wrap: break-word; }
+                                        .description { word-wrap: break-word; overflow-wrap: break-word; font-size: 9px; line-height: 1.3; }
                                       </style>
                                     </head>
                                     <body>
