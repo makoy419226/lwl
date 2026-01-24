@@ -3374,7 +3374,8 @@ export default function Orders() {
               )}
 
               {/* Previous Unpaid Bills Section */}
-              {selectedBill.clientId && (() => {
+              {(() => {
+                const currentBillDue = parseFloat(selectedBill.amount) - parseFloat(selectedBill.paidAmount || "0");
                 const otherUnpaidBills = bills?.filter(
                   (b) => b.clientId === selectedBill.clientId && 
                          b.id !== selectedBill.id && 
@@ -3383,48 +3384,68 @@ export default function Orders() {
                 const totalPreviousDue = otherUnpaidBills.reduce((sum, b) => {
                   return sum + (parseFloat(b.amount) - parseFloat(b.paidAmount || "0"));
                 }, 0);
-
-                if (otherUnpaidBills.length === 0) return null;
+                const grandTotalDue = currentBillDue + totalPreviousDue;
 
                 return (
-                  <div className="border-t pt-3">
-                    <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <AlertTriangle className="w-4 h-4 text-amber-600" />
-                        <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                          Previous Unpaid Bills ({otherUnpaidBills.length})
-                        </span>
-                      </div>
-                      <ScrollArea className="max-h-32">
-                        <div className="space-y-1">
-                          {otherUnpaidBills.map((bill) => {
-                            const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
-                            return (
-                              <div
-                                key={bill.id}
-                                className="flex justify-between items-center text-sm bg-white dark:bg-background rounded px-2 py-1"
-                              >
-                                <span className="text-muted-foreground">
-                                  Bill #{bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")}
-                                </span>
-                                <span className="font-medium text-destructive">
-                                  {due.toFixed(2)} AED
-                                </span>
-                              </div>
-                            );
-                          })}
+                  <>
+                    {otherUnpaidBills.length > 0 && (
+                      <div className="border-t pt-3">
+                        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600" />
+                            <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                              Previous Unpaid Bills ({otherUnpaidBills.length})
+                            </span>
+                          </div>
+                          <ScrollArea className="max-h-32">
+                            <div className="space-y-1">
+                              {otherUnpaidBills.map((bill) => {
+                                const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
+                                return (
+                                  <div
+                                    key={bill.id}
+                                    className="flex justify-between items-center text-sm bg-white dark:bg-background rounded px-2 py-1"
+                                  >
+                                    <span className="text-muted-foreground">
+                                      Bill #{bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")}
+                                    </span>
+                                    <span className="font-medium text-destructive">
+                                      {due.toFixed(2)} AED
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </ScrollArea>
+                          <div className="flex justify-between items-center mt-2 pt-2 border-t border-amber-300 dark:border-amber-700">
+                            <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                              Total Previous Due:
+                            </span>
+                            <span className="font-bold text-destructive">
+                              {totalPreviousDue.toFixed(2)} AED
+                            </span>
+                          </div>
                         </div>
-                      </ScrollArea>
-                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-amber-300 dark:border-amber-700">
-                        <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                          Total Previous Due:
-                        </span>
-                        <span className="font-bold text-destructive">
-                          {totalPreviousDue.toFixed(2)} AED
-                        </span>
+                      </div>
+                    )}
+
+                    {/* Grand Total Due */}
+                    <div className="border-t pt-3">
+                      <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold">Total Amount Due:</span>
+                          <span className="text-xl font-bold text-primary">
+                            {grandTotalDue.toFixed(2)} AED
+                          </span>
+                        </div>
+                        {otherUnpaidBills.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            (This bill: {currentBillDue.toFixed(2)} + Previous: {totalPreviousDue.toFixed(2)})
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  </>
                 );
               })()}
 
@@ -3435,6 +3456,88 @@ export default function Orders() {
                   onClick={() => setShowBillDialog(false)}
                 >
                   Close
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    const client = clients?.find((c) => c.id === selectedBill.clientId);
+                    const currentBillDue = parseFloat(selectedBill.amount) - parseFloat(selectedBill.paidAmount || "0");
+                    const otherUnpaidBills = bills?.filter(
+                      (b) => b.clientId === selectedBill.clientId && 
+                             b.id !== selectedBill.id && 
+                             !b.isPaid
+                    ) || [];
+                    const totalPreviousDue = otherUnpaidBills.reduce((sum, b) => {
+                      return sum + (parseFloat(b.amount) - parseFloat(b.paidAmount || "0"));
+                    }, 0);
+                    const grandTotalDue = currentBillDue + totalPreviousDue;
+
+                    const printContent = `
+                      <html>
+                        <head>
+                          <title>Bill Summary - ${client?.name || 'Customer'}</title>
+                          <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+                            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                            .header h1 { margin: 0; font-size: 18px; }
+                            .header p { margin: 5px 0; font-size: 12px; color: #666; }
+                            .section { margin-bottom: 15px; }
+                            .section-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+                            .row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+                            .row.bold { font-weight: bold; }
+                            .total-box { background: #f0f0f0; padding: 10px; border-radius: 5px; margin-top: 10px; }
+                            .grand-total { font-size: 16px; font-weight: bold; text-align: center; }
+                            .footer { text-align: center; font-size: 10px; color: #999; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
+                          </style>
+                        </head>
+                        <body>
+                          <div class="header">
+                            <h1>LIQUID WASHES LAUNDRY</h1>
+                            <p>Bill Summary</p>
+                            <p>${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+                          </div>
+                          <div class="section">
+                            <div class="row"><span>Customer:</span><span>${client?.name || 'Walk-in Customer'}</span></div>
+                            ${client?.phone ? `<div class="row"><span>Phone:</span><span>${client.phone}</span></div>` : ''}
+                          </div>
+                          <div class="section">
+                            <div class="section-title">Current Bill #${selectedBill.id}</div>
+                            <div class="row"><span>Bill Date:</span><span>${format(new Date(selectedBill.billDate), "dd/MM/yyyy")}</span></div>
+                            <div class="row"><span>Total Amount:</span><span>${parseFloat(selectedBill.amount).toFixed(2)} AED</span></div>
+                            <div class="row"><span>Paid:</span><span>${parseFloat(selectedBill.paidAmount || "0").toFixed(2)} AED</span></div>
+                            <div class="row bold"><span>Balance:</span><span>${currentBillDue.toFixed(2)} AED</span></div>
+                          </div>
+                          ${otherUnpaidBills.length > 0 ? `
+                          <div class="section">
+                            <div class="section-title">Previous Unpaid Bills (${otherUnpaidBills.length})</div>
+                            ${otherUnpaidBills.map(bill => {
+                              const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
+                              return `<div class="row"><span>Bill #${bill.id} (${format(new Date(bill.billDate), "dd/MM/yy")})</span><span>${due.toFixed(2)} AED</span></div>`;
+                            }).join('')}
+                            <div class="row bold" style="margin-top: 5px; border-top: 1px dashed #999; padding-top: 5px;"><span>Previous Total:</span><span>${totalPreviousDue.toFixed(2)} AED</span></div>
+                          </div>
+                          ` : ''}
+                          <div class="total-box">
+                            <div class="grand-total">TOTAL AMOUNT DUE: ${grandTotalDue.toFixed(2)} AED</div>
+                          </div>
+                          <div class="footer">
+                            <p>Thank you for your business!</p>
+                          </div>
+                        </body>
+                      </html>
+                    `;
+                    const printWindow = window.open('', '_blank');
+                    if (printWindow) {
+                      printWindow.document.write(printContent);
+                      printWindow.document.close();
+                      printWindow.print();
+                    }
+                  }}
+                  data-testid="button-print-bill-summary"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
                 </Button>
                 <Button
                   className="flex-1"
