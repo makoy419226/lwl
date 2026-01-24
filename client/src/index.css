@@ -231,14 +231,20 @@
   }
 }
 
-@keyframes macPopIn {
+@keyframes genieIn {
   0% {
     opacity: 0;
-    transform: scale(0.5);
+    transform: scaleY(0.1) scaleX(0.3) translateY(100px);
+    transform-origin: bottom center;
+  }
+  50% {
+    transform: scaleY(0.8) scaleX(1.05) translateY(10px);
+    transform-origin: bottom center;
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scaleY(1) scaleX(1) translateY(0);
+    transform-origin: bottom center;
   }
 }
 

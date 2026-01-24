@@ -442,19 +442,19 @@ export default function Login({ onLogin }: LoginProps) {
 
       {fullScreenImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 cursor-pointer animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 cursor-pointer animate-in fade-in duration-150"
           onClick={() => setFullScreenImage(null)}
           data-testid="fullscreen-image-overlay"
         >
           <div 
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 max-w-sm w-full relative"
+            className="max-w-sm w-full relative text-center"
             style={{
-              animation: 'macPopIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
+              animation: 'genieIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+              className="absolute -top-2 -right-2 z-10 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg"
               onClick={() => setFullScreenImage(null)}
               data-testid="button-close-fullscreen"
             >
@@ -463,10 +463,10 @@ export default function Login({ onLogin }: LoginProps) {
             <img 
               src={fullScreenImage.image} 
               alt={fullScreenImage.name}
-              className="w-full h-64 object-contain rounded-lg"
+              className="w-full h-72 object-contain drop-shadow-2xl"
               data-testid="img-fullscreen-service"
             />
-            <h3 className="text-center text-xl font-bold mt-3 text-foreground">{fullScreenImage.name}</h3>
+            <h3 className="text-white text-xl font-bold mt-3 drop-shadow-lg">{fullScreenImage.name}</h3>
           </div>
         </div>
       )}
