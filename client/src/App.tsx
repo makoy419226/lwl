@@ -38,7 +38,7 @@ const rolePermissions: Record<string, string[]> = {
   "/workers": ["admin"],
   "/sales-reports": ["admin"],
   "/incidents": ["admin", "manager"],
-  "/due-customers": ["admin", "manager"],
+  "/due-customers": ["admin", "manager", "cashier"],
   "/contact": ["admin", "manager", "cashier"],
   "/track": ["admin", "manager"],
   "/admin-settings": ["admin"],
