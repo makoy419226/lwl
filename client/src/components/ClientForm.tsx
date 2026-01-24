@@ -253,6 +253,18 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
           )}
         />
 
+        {mode === "edit" && client?.billNumber && (
+          <div className="space-y-2">
+            <FormLabel>Account Number</FormLabel>
+            <Input 
+              value={client.billNumber} 
+              disabled 
+              className="bg-muted cursor-not-allowed"
+              data-testid="input-account-number-readonly" 
+            />
+          </div>
+        )}
+
         {existingClient && mode === "create" && (
           <div className="p-4 rounded-lg border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 space-y-3" data-testid="existing-client-warning">
             <div className="flex items-start gap-3">
