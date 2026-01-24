@@ -812,38 +812,90 @@ export default function Bills() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredBills?.map((bill) => (
                   <Card
                     key={bill.id}
-                    className={`relative overflow-hidden border-0 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer ${
+                    className={`relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
                       bill.isPaid 
-                        ? "bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/40 dark:to-emerald-950/40" 
-                        : "bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-950/40 dark:to-amber-950/40"
+                        ? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30" 
+                        : "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30"
                     }`}
                     data-testid={`card-bill-${bill.id}`}
                     onClick={() => setViewBillDetails(bill)}
                   >
-                    <div className={`absolute top-0 left-0 w-1 h-full ${bill.isPaid ? "bg-green-500" : "bg-orange-500"}`} />
-                    <CardContent className="p-3 pl-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-1">
-                          <Badge 
-                            variant={bill.isPaid ? "default" : "destructive"}
-                            className={`text-[9px] px-1.5 py-0 ${bill.isPaid ? "bg-green-500" : "bg-orange-500"}`}
-                          >
-                            {bill.isPaid ? "PAID" : "DUE"}
-                          </Badge>
-                          <span className="text-[10px] text-muted-foreground">
-                            {format(new Date(bill.billDate), "dd/MM")}
-                          </span>
+                    <div className={`absolute top-0 left-0 w-1.5 h-full ${bill.isPaid ? "bg-green-500" : "bg-orange-500"}`} />
+                    <CardHeader className="pb-2 pl-5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge 
+                              variant={bill.isPaid ? "default" : "destructive"}
+                              className={`text-[10px] px-2 py-0 ${bill.isPaid ? "bg-green-500 hover:bg-green-600" : "bg-orange-500 hover:bg-orange-600"}`}
+                            >
+                              {bill.isPaid ? "PAID" : "UNPAID"}
+                            </Badge>
+                            {bill.referenceNumber && (
+                              <span className="text-xs text-muted-foreground font-mono">
+                                #{bill.referenceNumber}
+                              </span>
+                            )}
+                          </div>
+                          <CardTitle className="text-base font-bold truncate">
+                            {bill.customerName || getClientName(bill.clientId!)}
+                          </CardTitle>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(new Date(bill.billDate), "MMM dd, yyyy")}
+                          </p>
                         </div>
-                        <p className="font-semibold text-sm truncate">
-                          {bill.customerName || getClientName(bill.clientId!)}
-                        </p>
-                        <p className="text-lg font-bold text-primary">
-                          {parseFloat(bill.amount || "0").toFixed(0)} <span className="text-xs font-normal">AED</span>
-                        </p>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pl-5 pb-3">
+                      <div className="flex items-end justify-between gap-2">
+                        <div>
+                          <p className="text-2xl font-bold text-foreground">
+                            <span className="text-sm font-normal text-muted-foreground">AED </span>
+                            {parseFloat(bill.amount || "0").toFixed(2)}
+                          </p>
+                          {bill.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {bill.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          {!bill.isPaid && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+                              onClick={() => handlePayNow(bill)}
+                              data-testid={`button-pay-now-${bill.id}`}
+                            >
+                              <DollarSign className="w-3.5 h-3.5 mr-1" />
+                              Pay
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => printBillPDF(bill)}
+                            data-testid={`button-print-pdf-${bill.id}`}
+                            title="Print Bill"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => handleDelete(bill.id)}
+                            data-testid="button-delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -1551,9 +1603,20 @@ export default function Bills() {
               </div>
 
               {viewBillDetails.description && (
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">Items / Description</p>
-                  <p className="text-sm whitespace-pre-wrap">{viewBillDetails.description}</p>
+                <div className="bg-muted/30 p-3 rounded-lg max-h-60 overflow-y-auto">
+                  <p className="text-xs text-muted-foreground mb-2 font-semibold">Items</p>
+                  <div className="space-y-1">
+                    {viewBillDetails.description.split(',').map((item, index) => {
+                      const trimmedItem = item.trim();
+                      if (!trimmedItem) return null;
+                      return (
+                        <div key={index} className="flex items-center gap-2 text-sm py-1 border-b border-border/30 last:border-0">
+                          <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                          <span>{trimmedItem}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
