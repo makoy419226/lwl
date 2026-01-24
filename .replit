@@ -46,4 +46,4 @@ integrations = ["resend:1.0.0"]
 [userenv.shared]
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = "587"
-ADMIN_REPORT_EMAIL = "liquidewashesruwais@gmail.com"
+ADMIN_REPORT_EMAIL = "shussaingazi@yahoo.com"
