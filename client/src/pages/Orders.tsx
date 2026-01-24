@@ -1828,6 +1828,9 @@ export default function Orders() {
                             <TableHead className="w-[80px] lg:w-[100px]">
                               Status
                             </TableHead>
+                            <TableHead className="hidden xl:table-cell w-[90px]">
+                              Ready
+                            </TableHead>
                             <TableHead className="w-[100px] lg:w-[140px]">
                               Actions
                             </TableHead>
@@ -2083,6 +2086,9 @@ export default function Orders() {
                                     </TableCell>
                                     <TableCell>
                                       {getStatusBadge(order)}
+                                    </TableCell>
+                                    <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
+                                      {order.packingDate ? format(new Date(order.packingDate), "dd/MM HH:mm") : "-"}
                                     </TableCell>
                                     <TableCell className="p-2 sm:p-3 lg:p-4">
                                       <div className="action-buttons">
