@@ -1754,7 +1754,10 @@ export default function Products() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0 z-[200]" align="start">
-                  <Command>
+                  <Command filter={(value, search) => {
+                    if (value.toLowerCase().includes(search.toLowerCase())) return 1;
+                    return 0;
+                  }}>
                     <CommandInput placeholder="Search clients..." className="h-9" />
                     <CommandList>
                       <CommandEmpty>No client found.</CommandEmpty>
