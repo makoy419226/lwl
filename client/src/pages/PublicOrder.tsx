@@ -154,6 +154,14 @@ export default function PublicOrder() {
           </CardContent>
         </Card>
 
+        <Button
+          className="w-full"
+          onClick={() => setLocation("/dashboard")}
+          data-testid="button-go-dashboard"
+        >
+          Go to Dashboard
+        </Button>
+
         <div className="text-center text-xs text-muted-foreground py-4">
           <p>Centra Market D/109, Al Dhanna City, Al Ruwais</p>
           <p>Abu Dhabi, UAE</p>
