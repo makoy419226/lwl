@@ -292,7 +292,7 @@ export default function Login({ onLogin }: LoginProps) {
                   key={index}
                   className={`${service.color} text-white rounded-lg p-4 text-center font-semibold shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer relative overflow-hidden`}
                   style={{ animationDelay: `${index * 100}ms` }}
-                  onClick={(e) => {
+                  onMouseEnter={(e) => {
                     const image = getProductImage(service.name);
                     if (image) {
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -301,6 +301,7 @@ export default function Login({ onLogin }: LoginProps) {
                       setFullScreenImage({ name: service.name, image, origin: { x, y } });
                     }
                   }}
+                  onMouseLeave={() => setFullScreenImage(null)}
                   data-testid={`service-box-${index}`}
                 >
                   {service.name}
@@ -445,8 +446,7 @@ export default function Login({ onLogin }: LoginProps) {
 
       {fullScreenImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 cursor-pointer animate-in fade-in duration-200"
-          onClick={() => setFullScreenImage(null)}
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 pointer-events-none animate-in fade-in duration-150"
           data-testid="fullscreen-image-overlay"
         >
           <div 
@@ -455,7 +455,6 @@ export default function Login({ onLogin }: LoginProps) {
               '--origin-x': `${fullScreenImage.origin.x}px`,
               '--origin-y': `${fullScreenImage.origin.y}px`,
             } as React.CSSProperties}
-            onClick={(e) => e.stopPropagation()}
           >
             <img 
               src={fullScreenImage.image} 
