@@ -1056,6 +1056,102 @@ export async function registerRoutes(
     }
   });
 
+  // Update order items and recalculate bill
+  app.post("/api/orders/:id/update-items", async (req, res) => {
+    try {
+      const orderId = Number(req.params.id);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      
+      const { items, staffPin, staffName } = req.body;
+      if (!items || !staffPin) {
+        return res.status(400).json({ message: "Items and staff PIN are required" });
+      }
+      
+      // Verify PIN
+      const packingWorkers = await storage.getPackingWorkers();
+      const worker = packingWorkers.find((w: any) => w.pin === staffPin);
+      if (!worker) {
+        return res.status(401).json({ message: "Invalid staff PIN" });
+      }
+      
+      // Get current order
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Calculate new total from items
+      const allProducts = await storage.getProducts();
+      let newTotal = 0;
+      const itemsArray: string[] = [];
+      
+      for (const item of items) {
+        const product = allProducts.find((p: any) => p.name === item.name);
+        if (product) {
+          const price = parseFloat(product.price || "0");
+          newTotal += price * item.quantity;
+          itemsArray.push(`${item.quantity}x ${item.name}`);
+        } else {
+          // Custom item - parse price from existing item if possible
+          itemsArray.push(`${item.quantity}x ${item.name}`);
+        }
+      }
+      
+      const newItemsText = itemsArray.join(", ");
+      
+      // Check if urgent - multiply by 2
+      const isUrgent = order.urgent === true;
+      const subtotal = isUrgent ? newTotal * 2 : newTotal;
+      
+      // Apply discount if any
+      const discountPercent = parseFloat(order.discountPercent || "0");
+      const discountAmount = (subtotal * discountPercent) / 100;
+      const tips = parseFloat(order.tips || "0");
+      const finalAmount = subtotal - discountAmount + tips;
+      
+      // Update order
+      const updatedOrder = await storage.updateOrder(orderId, {
+        items: newItemsText,
+        totalAmount: newTotal.toFixed(2),
+        finalAmount: finalAmount.toFixed(2),
+        notes: `${order.notes || ""}\n[${new Date().toLocaleString()}] Items updated by ${worker.name}`,
+      });
+      
+      // Update associated bill if exists
+      if (order.billId) {
+        const bill = await storage.getBill(order.billId);
+        if (bill) {
+          // Recalculate bill total from all orders in this bill
+          const billOrders = await storage.getOrders();
+          const ordersInBill = billOrders.filter((o: any) => o.billId === order.billId);
+          
+          let billTotal = 0;
+          for (const billOrder of ordersInBill) {
+            if (billOrder.id === orderId) {
+              billTotal += finalAmount;
+            } else {
+              billTotal += parseFloat(billOrder.finalAmount || billOrder.totalAmount || "0");
+            }
+          }
+          
+          await storage.updateBill(order.billId, {
+            amount: billTotal.toFixed(2),
+          });
+        }
+      }
+      
+      res.json({ 
+        order: updatedOrder, 
+        message: "Items updated successfully",
+        updatedBy: worker.name 
+      });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
   app.delete("/api/orders/:id", async (req, res) => {
     const orderId = Number(req.params.id);
     if (isNaN(orderId)) {

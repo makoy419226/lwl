@@ -80,6 +80,7 @@ import {
   RotateCcw,
   MapPin,
   Phone,
+  Edit,
 } from "lucide-react";
 
 const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
@@ -191,6 +192,12 @@ export default function Orders() {
     order: Order;
     stage: "tagging" | "washing" | "sorting" | "folding" | "packing";
   } | null>(null);
+
+  const [editItemsDialog, setEditItemsDialog] = useState<Order | null>(null);
+  const [editItemsQuantities, setEditItemsQuantities] = useState<Record<string, number>>({});
+  const [editItemsPin, setEditItemsPin] = useState("");
+  const [editItemsPinError, setEditItemsPinError] = useState("");
+  const [isEditingItems, setIsEditingItems] = useState(false);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -1078,6 +1085,74 @@ export default function Orders() {
     setIncidentReason("");
     setIncidentNotes("");
     setReporterName("");
+  };
+
+  const handleEditItems = (order: Order) => {
+    const parsedItems = parseOrderItems(order.items);
+    const quantities: Record<string, number> = {};
+    parsedItems.forEach((item) => {
+      quantities[item.name] = item.quantity;
+    });
+    setEditItemsQuantities(quantities);
+    setEditItemsDialog(order);
+    setEditItemsPin("");
+    setEditItemsPinError("");
+  };
+
+  const handleUpdateItemQuantity = (itemName: string, delta: number) => {
+    setEditItemsQuantities((prev) => {
+      const newQty = Math.max(0, (prev[itemName] || 0) + delta);
+      if (newQty === 0) {
+        const { [itemName]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [itemName]: newQty };
+    });
+  };
+
+  const submitEditItems = async () => {
+    if (!editItemsDialog) return;
+    if (editItemsPin.length !== 5) {
+      setEditItemsPinError("PIN must be 5 digits");
+      return;
+    }
+
+    const items = Object.entries(editItemsQuantities)
+      .filter(([_, qty]) => qty > 0)
+      .map(([name, quantity]) => ({ name, quantity }));
+
+    if (items.length === 0) {
+      setEditItemsPinError("Order must have at least one item");
+      return;
+    }
+
+    setIsEditingItems(true);
+    try {
+      const res = await fetch(`/api/orders/${editItemsDialog.id}/update-items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items, staffPin: editItemsPin }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setEditItemsPinError(data.message || "Failed to update items");
+        return;
+      }
+
+      const data = await res.json();
+      toast({
+        title: "Items Updated",
+        description: `Order items updated by ${data.updatedBy}. Bill has been recalculated.`,
+      });
+      setEditItemsDialog(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+    } catch (err) {
+      setEditItemsPinError("Failed to update items");
+    } finally {
+      setIsEditingItems(false);
+    }
   };
 
   const handleReportIncident = (order: Order) => {
@@ -2114,6 +2189,18 @@ export default function Orders() {
                                               <Tag className="w-3 h-3 sm:mr-1" />
                                               <span className="hidden sm:inline">
                                                 Print Tag
+                                              </span>
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="bg-amber-100 text-amber-700 border-amber-300 whitespace-nowrap touch-manipulation"
+                                              onClick={() => handleEditItems(order)}
+                                              data-testid={`button-edit-items-${order.id}`}
+                                            >
+                                              <Edit className="w-3 h-3 sm:mr-1" />
+                                              <span className="hidden sm:inline">
+                                                Edit Items
                                               </span>
                                             </Button>
                                             <DropdownMenu>
@@ -3302,6 +3389,120 @@ export default function Orders() {
                   Go to Bills
                 </Button>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Items Dialog */}
+      <Dialog
+        open={!!editItemsDialog}
+        onOpenChange={(open) => !open && setEditItemsDialog(null)}
+      >
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-amber-500" />
+              Edit Order Items
+            </DialogTitle>
+            <DialogDescription>
+              Adjust item quantities for order #{editItemsDialog?.orderNumber}. The bill will be recalculated automatically.
+            </DialogDescription>
+          </DialogHeader>
+          {editItemsDialog && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Order:</span>
+                  <span className="font-medium">{editItemsDialog.orderNumber}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Customer:</span>
+                  <span className="font-medium">
+                    {clients?.find((c) => c.id === editItemsDialog.clientId)?.name || editItemsDialog.customerName || "Walk-in"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Current Total:</span>
+                  <span className="font-medium">AED {editItemsDialog.finalAmount || editItemsDialog.totalAmount}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Items</Label>
+                <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
+                  {parseOrderItems(editItemsDialog.items).map((item) => (
+                    <div key={item.name} className="flex items-center justify-between p-3">
+                      <div className="flex items-center gap-2">
+                        {getCategoryIcon(products?.find(p => p.name === item.name)?.category || null, "w-4 h-4")}
+                        <span className="font-medium text-sm">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateItemQuantity(item.name, -1)}
+                          data-testid={`button-decrease-${item.name}`}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">
+                          {editItemsQuantities[item.name] || 0}
+                        </span>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => handleUpdateItemQuantity(item.name, 1)}
+                          data-testid={`button-increase-${item.name}`}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Staff PIN (5 digits)</Label>
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={5}
+                  placeholder="Enter your 5-digit PIN"
+                  value={editItemsPin}
+                  onChange={(e) => {
+                    setEditItemsPin(e.target.value.replace(/\D/g, "").slice(0, 5));
+                    setEditItemsPinError("");
+                  }}
+                  data-testid="input-edit-items-pin"
+                />
+                {editItemsPinError && (
+                  <p className="text-sm text-destructive">{editItemsPinError}</p>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditItemsDialog(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={submitEditItems}
+                  disabled={isEditingItems || editItemsPin.length !== 5}
+                  data-testid="button-submit-edit-items"
+                >
+                  {isEditingItems ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Items"
+                  )}
+                </Button>
+              </DialogFooter>
             </div>
           )}
         </DialogContent>
