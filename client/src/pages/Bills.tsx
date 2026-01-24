@@ -1076,32 +1076,26 @@ export default function Bills() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const unpaidBills = clientData.bills?.filter(b => {
+                                const allBills = clientData.bills || [];
+                                const unpaidBills = allBills.filter(b => {
                                   const amount = parseFloat(b.amount || '0');
                                   const paid = parseFloat(b.paidAmount || '0');
                                   return amount - paid > 0;
-                                }) || [];
+                                });
+                                const isFullyPaid = unpaidBills.length === 0 && allBills.length > 0;
                                 
-                                if (unpaidBills.length === 0) {
-                                  toast({
-                                    title: "No unpaid bills",
-                                    description: "All bills for this client have been paid.",
-                                    variant: "default"
-                                  });
-                                  return;
-                                }
-
                                 const client = clients?.find(c => c.id === clientData.clientId);
-                                const totalUnpaidAmount = unpaidBills.reduce((sum, b) => sum + parseFloat(b.amount || '0'), 0);
-                                const totalUnpaidPaid = unpaidBills.reduce((sum, b) => sum + parseFloat(b.paidAmount || '0'), 0);
-                                const totalUnpaidDue = totalUnpaidAmount - totalUnpaidPaid;
+                                const billsToPrint = isFullyPaid ? allBills : unpaidBills;
+                                const totalBillAmount = billsToPrint.reduce((sum, b) => sum + parseFloat(b.amount || '0'), 0);
+                                const totalBillPaid = billsToPrint.reduce((sum, b) => sum + parseFloat(b.paidAmount || '0'), 0);
+                                const totalBillDue = totalBillAmount - totalBillPaid;
 
                                 const printContent = `
                                   <html>
                                     <head>
                                       <title>Invoice - ${clientData.clientName}</title>
                                       <style>
-                                        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+                                        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; position: relative; }
                                         .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1e5aa8; padding-bottom: 15px; }
                                         .header img { max-width: 120px; height: auto; margin-bottom: 10px; }
                                         .header h1 { margin: 0; font-size: 20px; color: #1e5aa8; }
@@ -1121,12 +1115,15 @@ export default function Bills() {
                                         th:nth-child(4), th:nth-child(5), th:nth-child(6) { width: 60px; }
                                         .text-right { text-align: right; }
                                         .total-row { background: #f5f5f5; font-weight: bold; }
-                                        .grand-total { font-size: 18px; font-weight: bold; text-align: center; margin: 20px 0; padding: 15px; background: #1e5aa8; color: white; border-radius: 5px; }
+                                        .grand-total { font-size: 18px; font-weight: bold; text-align: center; margin: 20px 0; padding: 15px; background: ${isFullyPaid ? '#22c55e' : '#1e5aa8'}; color: white; border-radius: 5px; }
                                         .footer { text-align: center; font-size: 10px; color: #999; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; }
                                         .description { word-wrap: break-word; overflow-wrap: break-word; font-size: 9px; line-height: 1.3; }
+                                        .paid-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-25deg); font-size: 80px; font-weight: bold; color: rgba(34, 197, 94, 0.25); border: 8px solid rgba(34, 197, 94, 0.25); padding: 20px 60px; border-radius: 15px; letter-spacing: 10px; pointer-events: none; z-index: 1000; }
+                                        @media print { .paid-watermark { position: fixed; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
                                       </style>
                                     </head>
                                     <body>
+                                      ${isFullyPaid ? '<div class="paid-watermark">PAID</div>' : ''}
                                       <div class="header">
                                         <img src="${window.location.origin}/attached_assets/company_logo.png" alt="Liquid Washes Laundry" onerror="this.style.display='none'" />
                                         <h1>LIQUIDE WASHES LAUNDRY</h1>
@@ -1135,7 +1132,7 @@ export default function Bills() {
                                           <span>Tel: 026 815 824</span>
                                           <span>Mobile: +971 56 338 0001</span>
                                         </div>
-                                        <p style="margin-top: 10px;">Outstanding Bills Invoice</p>
+                                        <p style="margin-top: 10px;">${isFullyPaid ? 'Payment Receipt' : 'Outstanding Bills Invoice'}</p>
                                         <p>Date: ${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
                                       </div>
                                       <div class="client-info">
@@ -1143,7 +1140,7 @@ export default function Bills() {
                                         ${client?.phone ? `<p>Phone: ${client.phone}</p>` : ''}
                                         ${client?.address && client.address !== 'n/a' ? `<p>Address: ${client.address}</p>` : ''}
                                       </div>
-                                      <div class="invoice-title">Unpaid Bills Summary</div>
+                                      <div class="invoice-title">${isFullyPaid ? 'Paid Bills Summary' : 'Unpaid Bills Summary'}</div>
                                       <table>
                                         <thead>
                                           <tr>
@@ -1156,7 +1153,7 @@ export default function Bills() {
                                           </tr>
                                         </thead>
                                         <tbody>
-                                          ${unpaidBills.map(bill => {
+                                          ${billsToPrint.map(bill => {
                                             const amount = parseFloat(bill.amount || '0');
                                             const paid = parseFloat(bill.paidAmount || '0');
                                             const due = amount - paid;
@@ -1172,19 +1169,19 @@ export default function Bills() {
                                             `;
                                           }).join('')}
                                           <tr class="total-row">
-                                            <td colspan="3">Total (${unpaidBills.length} bills)</td>
-                                            <td class="text-right">${totalUnpaidAmount.toFixed(2)}</td>
-                                            <td class="text-right">${totalUnpaidPaid.toFixed(2)}</td>
-                                            <td class="text-right">${totalUnpaidDue.toFixed(2)}</td>
+                                            <td colspan="3">Total (${billsToPrint.length} bills)</td>
+                                            <td class="text-right">${totalBillAmount.toFixed(2)}</td>
+                                            <td class="text-right">${totalBillPaid.toFixed(2)}</td>
+                                            <td class="text-right">${totalBillDue.toFixed(2)}</td>
                                           </tr>
                                         </tbody>
                                       </table>
                                       <div class="grand-total">
-                                        TOTAL AMOUNT DUE: ${totalUnpaidDue.toFixed(2)} AED
+                                        ${isFullyPaid ? 'FULLY PAID - THANK YOU!' : `TOTAL AMOUNT DUE: ${totalBillDue.toFixed(2)} AED`}
                                       </div>
                                       <div class="footer">
                                         <p>Thank you for your business!</p>
-                                        <p>Please settle outstanding balance at your earliest convenience.</p>
+                                        ${isFullyPaid ? '<p>All bills have been settled.</p>' : '<p>Please settle outstanding balance at your earliest convenience.</p>'}
                                       </div>
                                     </body>
                                   </html>
@@ -1199,7 +1196,7 @@ export default function Bills() {
                               data-testid="button-print-client-invoice"
                             >
                               <Printer className="w-4 h-4 mr-2" />
-                              Print Unpaid Invoice
+                              {totalDue > 0 ? 'Print Unpaid Invoice' : 'Print Invoice'}
                             </Button>
                           </div>
                           <Table>
