@@ -321,6 +321,49 @@ export default function Orders() {
     return product?.imageUrl || getStockProductImage(productName);
   };
 
+  // Get item price from item name format like "Abaya [N] (folding)" or "Jacket (Large) @ 8 AED"
+  const getItemPrice = (itemName: string): number => {
+    // Check for custom price format: "ProductName (Size) @ price AED"
+    const customPriceMatch = itemName.match(/(.+?)\s*@\s*([\d.]+)\s*AED/i);
+    if (customPriceMatch) {
+      return parseFloat(customPriceMatch[2]);
+    }
+    
+    // Check for dry clean service [D]
+    const isDryClean = itemName.includes('[D]');
+    
+    // Extract base product name by removing service indicator and packaging type
+    const baseProductName = itemName
+      .replace(/\s*\[N\]\s*/g, '')
+      .replace(/\s*\[D\]\s*/g, '')
+      .replace(/\s*\(folding\)\s*/gi, '')
+      .replace(/\s*\(hanger\)\s*/gi, '')
+      .trim();
+    
+    const product = products?.find((p) => p.name.toLowerCase() === baseProductName.toLowerCase());
+    if (product) {
+      return isDryClean 
+        ? parseFloat(product.dryCleanPrice || product.price || "0")
+        : parseFloat(product.price || "0");
+    }
+    
+    return 0;
+  };
+
+  // Calculate total from edit items quantities
+  const calculateEditItemsTotal = (): number => {
+    if (!editItemsDialog) return 0;
+    let total = 0;
+    Object.entries(editItemsQuantities).forEach(([name, qty]) => {
+      total += getItemPrice(name) * qty;
+    });
+    // Apply urgent 2x multiplier if order is urgent
+    if (editItemsDialog.urgent) {
+      total *= 2;
+    }
+    return total;
+  };
+
   useEffect(() => {
     if (dueSoonOrders && dueSoonOrders.length > 0) {
       toast({
@@ -3594,42 +3637,56 @@ export default function Orders() {
                   <span className="text-muted-foreground">Current Total:</span>
                   <span className="font-medium">AED {editItemsDialog.finalAmount || editItemsDialog.totalAmount}</span>
                 </div>
+                <div className="flex justify-between text-sm border-t pt-2 mt-2">
+                  <span className="text-muted-foreground">New Total:</span>
+                  <span className="font-bold text-primary">AED {calculateEditItemsTotal().toFixed(2)}</span>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label>Items</Label>
                 <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
-                  {parseOrderItems(editItemsDialog.items).map((item) => (
-                    <div key={item.name} className="flex items-center justify-between p-3">
-                      <div className="flex items-center gap-2">
-                        {getCategoryIcon(products?.find(p => p.name === item.name)?.category || null, "w-4 h-4")}
-                        <span className="font-medium text-sm">{item.name}</span>
+                  {parseOrderItems(editItemsDialog.items).map((item) => {
+                    const itemPrice = getItemPrice(item.name);
+                    const qty = editItemsQuantities[item.name] || 0;
+                    const lineTotal = itemPrice * qty;
+                    return (
+                      <div key={item.name} className="flex items-center justify-between p-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {getCategoryIcon(products?.find(p => p.name === item.name)?.category || null, "w-4 h-4")}
+                            <span className="font-medium text-sm truncate">{item.name}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5 ml-6">
+                            {itemPrice.toFixed(2)} AED each = <span className="font-medium text-foreground">{lineTotal.toFixed(2)} AED</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-2">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => handleUpdateItemQuantity(item.name, -1)}
+                            data-testid={`button-decrease-${item.name}`}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="w-8 text-center font-medium">
+                            {qty}
+                          </span>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => handleUpdateItemQuantity(item.name, 1)}
+                            data-testid={`button-increase-${item.name}`}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateItemQuantity(item.name, -1)}
-                          data-testid={`button-decrease-${item.name}`}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="w-8 text-center font-medium">
-                          {editItemsQuantities[item.name] || 0}
-                        </span>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="h-8 w-8"
-                          onClick={() => handleUpdateItemQuantity(item.name, 1)}
-                          data-testid={`button-increase-${item.name}`}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
