@@ -1157,11 +1157,21 @@ export default function Bills() {
                                             const amount = parseFloat(bill.amount || '0');
                                             const paid = parseFloat(bill.paidAmount || '0');
                                             const due = amount - paid;
+                                            // Parse description to show items on separate lines
+                                            let formattedDesc = bill.description || '-';
+                                            if (formattedDesc.includes(': ')) {
+                                              const parts = formattedDesc.split(': ');
+                                              const orderNum = parts[0];
+                                              const itemsStr = parts.slice(1).join(': ');
+                                              // Split by comma followed by a number (e.g., ", 1x" or ", 2x")
+                                              const items = itemsStr.split(/,\s*(?=\d+x\s)/);
+                                              formattedDesc = `<strong>${orderNum}</strong><br/>` + items.map(item => `• ${item.trim()}`).join('<br/>');
+                                            }
                                             return `
                                               <tr>
                                                 <td>#${bill.id}</td>
                                                 <td>${format(new Date(bill.billDate), "dd/MM/yyyy")}</td>
-                                                <td class="description">${bill.description || '-'}</td>
+                                                <td class="description">${formattedDesc}</td>
                                                 <td class="text-right">${amount.toFixed(2)}</td>
                                                 <td class="text-right">${paid.toFixed(2)}</td>
                                                 <td class="text-right">${due.toFixed(2)}</td>
