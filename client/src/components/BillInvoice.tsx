@@ -38,7 +38,7 @@ export function BillInvoice({
   orderNumber,
   onClose,
 }: BillInvoiceProps) {
-  const trackingUrl = orderNumber ? `${window.location.origin}/track-order` : null;
+  const trackingUrl = orderNumber ? `lwl.software/track` : null;
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {

@@ -560,7 +560,7 @@ export default function Bills() {
       )
       .join("%0A");
 
-    const trackingUrl = `${window.location.origin}/track-order`;
+    const trackingUrl = `lwl.software/track`;
     const message =
       `*LIQUID WASHES LAUNDRY*%0A` +
       `Centra Market D/109, Al Dhanna City%0A` +
@@ -1170,7 +1170,7 @@ export default function Bills() {
                 Track your order at this link:
               </div>
               <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold' }}>
-                {window.location.origin}/track-order
+                lwl.software/track
               </div>
               <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#333', marginTop: '4px' }}>
                 Order Number: {createdBill?.bill.referenceNumber}
@@ -1345,7 +1345,7 @@ export default function Bills() {
                 Track your order at this link:
               </div>
               <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold' }}>
-                {window.location.origin}/track-order
+                lwl.software/track
               </div>
               <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#333', marginTop: '4px' }}>
                 Order Number: {viewBillPDF?.referenceNumber}
