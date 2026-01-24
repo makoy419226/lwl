@@ -136,7 +136,7 @@ export default function Products() {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [isWalkIn, setIsWalkIn] = useState(false);
   const [walkInName, setWalkInName] = useState("");
-  const [walkInPhone, setWalkInPhone] = useState("");
+  const [walkInPhone, setWalkInPhone] = useState("+971");
   const [walkInAddress, setWalkInAddress] = useState("");
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
   const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery">("pickup");
@@ -147,7 +147,7 @@ export default function Products() {
   const [showCartPopup, setShowCartPopup] = useState(false);
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [newClientName, setNewClientName] = useState("");
-  const [newClientPhone, setNewClientPhone] = useState("");
+  const [newClientPhone, setNewClientPhone] = useState("+971");
   const [newClientAddress, setNewClientAddress] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientContact, setNewClientContact] = useState("");
@@ -717,7 +717,7 @@ export default function Products() {
     setSelectedClientId(null);
     setIsWalkIn(false);
     setWalkInName("");
-    setWalkInPhone("");
+    setWalkInPhone("+971");
     setWalkInAddress("");
     setDiscountPercent("");
     setTips("");
@@ -813,7 +813,7 @@ export default function Products() {
           }
           setShowNewClientDialog(false);
           setNewClientName("");
-          setNewClientPhone("");
+          setNewClientPhone("+971");
           setNewClientAddress("");
           setNewClientEmail("");
           setNewClientContact("");
@@ -1299,12 +1299,20 @@ export default function Products() {
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Phone *</Label>
                 <Input
-                  placeholder="Phone number (e.g. 0501234567 or +971501234567)"
-                  value={newClientPhone}
+                  placeholder="+971XXXXXXXXX"
+                  value={newClientPhone.startsWith("+971") ? newClientPhone : "+971" + newClientPhone.replace(/^\+971/, "")}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    setNewClientPhone(value);
-                    checkExistingClientByPhone(value);
+                    let value = e.target.value;
+                    // Ensure +971 prefix is always present
+                    if (!value.startsWith("+971")) {
+                      value = "+971";
+                    }
+                    // Only allow digits after +971
+                    const prefix = "+971";
+                    const rest = value.slice(4).replace(/\D/g, "");
+                    const phoneValue = prefix + rest;
+                    setNewClientPhone(phoneValue);
+                    checkExistingClientByPhone(phoneValue);
                   }}
                   data-testid="input-new-client-phone"
                 />
@@ -1337,7 +1345,7 @@ export default function Products() {
                         setShowNewClientDialog(false);
                         setSuggestedExistingClient(null);
                         setNewClientName("");
-                        setNewClientPhone("");
+                        setNewClientPhone("+971");
                         setNewClientAddress("");
                         setNewClientEmail("");
                         setNewClientContact("");
@@ -1422,7 +1430,7 @@ export default function Products() {
                   setShowNewClientDialog(false);
                   setSuggestedExistingClient(null);
                   setNewClientName("");
-                  setNewClientPhone("");
+                  setNewClientPhone("+971");
                   setNewClientAddress("");
                   setNewClientEmail("");
                   setNewClientContact("");
@@ -1821,9 +1829,19 @@ export default function Products() {
                   <Label className="text-xs font-semibold">Phone Number <span className="text-destructive">*</span></Label>
                   <Input
                     className={`h-8 text-xs mt-1 ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
-                    placeholder="Enter phone number..."
-                    value={walkInPhone}
-                    onChange={(e) => setWalkInPhone(e.target.value)}
+                    placeholder="+971XXXXXXXXX"
+                    value={walkInPhone.startsWith("+971") ? walkInPhone : "+971" + walkInPhone.replace(/^\+971/, "")}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      // Ensure +971 prefix is always present
+                      if (!value.startsWith("+971")) {
+                        value = "+971";
+                      }
+                      // Only allow digits after +971
+                      const prefix = "+971";
+                      const rest = value.slice(4).replace(/\D/g, "");
+                      setWalkInPhone(prefix + rest);
+                    }}
                     data-testid="popup-input-walkin-phone"
                   />
                 </div>
@@ -1847,7 +1865,7 @@ export default function Products() {
                             setCustomerPhone(clientMatch.client.phone || "");
                             setWalkInAddress(clientMatch.client.address || "");
                             setWalkInName("");
-                            setWalkInPhone("");
+                            setWalkInPhone("+971");
                           }}
                         >
                           Use existing: {clientMatch.client.name}

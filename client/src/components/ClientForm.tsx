@@ -32,7 +32,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
       name: client?.name || "",
       email: client?.email || "",
       address: client?.address || "",
-      phone: client?.phone || "",
+      phone: client?.phone || "+971",
       amount: client?.amount || "0",
       deposit: client?.deposit || "0",
       balance: client?.balance || "0",
@@ -231,7 +231,22 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
             <FormItem>
               <FormLabel>Phone Number *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter phone number" {...field} data-testid="input-phone" />
+                <Input 
+                  placeholder="+971XXXXXXXXX" 
+                  value={field.value.startsWith("+971") ? field.value : "+971" + field.value.replace(/^\+971/, "")}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    // Ensure +971 prefix is always present
+                    if (!value.startsWith("+971")) {
+                      value = "+971";
+                    }
+                    // Only allow digits after +971
+                    const prefix = "+971";
+                    const rest = value.slice(4).replace(/\D/g, "");
+                    field.onChange(prefix + rest);
+                  }}
+                  data-testid="input-phone" 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
