@@ -2066,6 +2066,37 @@ export default function Bills() {
                 </div>
               )}
 
+              {/* Payment breakdown for partial payments after item recount */}
+              {!viewBillDetails.isPaid && parseFloat(viewBillDetails.paidAmount || "0") > 0 && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
+                  <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold mb-2">Payment Breakdown</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Previously Paid:</span>
+                      <span className="font-medium text-green-600">{parseFloat(viewBillDetails.paidAmount || "0").toFixed(2)} AED</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">New Total:</span>
+                      <span className="font-medium">{parseFloat(viewBillDetails.amount || "0").toFixed(2)} AED</span>
+                    </div>
+                    <div className="flex justify-between border-t border-amber-200 dark:border-amber-700 pt-1 mt-1">
+                      <span className="font-semibold text-amber-700 dark:text-amber-400">Amount Due:</span>
+                      <span className="font-bold text-red-600">{(parseFloat(viewBillDetails.amount || "0") - parseFloat(viewBillDetails.paidAmount || "0")).toFixed(2)} AED</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* History notes if available */}
+              {(viewBillDetails as any).notes && (
+                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg">
+                  <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold mb-2">History</p>
+                  <div className="text-xs text-blue-600 dark:text-blue-300 whitespace-pre-wrap">
+                    {(viewBillDetails as any).notes}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2">
                 {!viewBillDetails.isPaid && (
                   <Button

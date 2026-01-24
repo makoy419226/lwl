@@ -1255,17 +1255,25 @@ export async function registerRoutes(
           // Update the bill with new amount
           // Keep paidAmount as is - it shows what was already paid
           // The due amount is calculated as: amount - paidAmount
+          
+          // Build history note if items were added to a paid bill
+          let updatedNotes = bill.notes || "";
+          if (wasPreviouslyPaid && !isNowPaid && amountDifference > 0) {
+            const historyEntry = `\n[${new Date().toLocaleString()}] ITEM RECOUNT: Original bill ${previousBillAmount.toFixed(2)} AED (PAID). Added items worth ${amountDifference.toFixed(2)} AED. New total: ${billTotal.toFixed(2)} AED. Amount due: ${newDueAmount.toFixed(2)} AED`;
+            updatedNotes += historyEntry;
+            console.log(`Bill #${order.billId} was fully paid (${previousPaidAmount} AED) but now has additional due of ${newDueAmount.toFixed(2)} AED after item recount`);
+          } else if (amountDifference !== 0) {
+            const historyEntry = `\n[${new Date().toLocaleString()}] Items updated: Amount changed from ${previousBillAmount.toFixed(2)} to ${billTotal.toFixed(2)} AED`;
+            updatedNotes += historyEntry;
+          }
+          
           await storage.updateBill(order.billId, {
             amount: billTotal.toFixed(2),
             isPaid: isNowPaid,
             description: `Order #${order.orderNumber}: ${newItemsText}`,
+            notes: updatedNotes.trim(),
           });
           billUpdated = true;
-          
-          // Log if a paid bill became unpaid due to item additions
-          if (wasPreviouslyPaid && !isNowPaid && amountDifference > 0) {
-            console.log(`Bill #${order.billId} was fully paid (${previousPaidAmount} AED) but now has additional due of ${newDueAmount.toFixed(2)} AED after item recount`);
-          }
         }
       }
       

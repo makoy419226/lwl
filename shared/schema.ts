@@ -71,6 +71,7 @@ export const bills = pgTable("bills", {
   isPaid: boolean("is_paid").default(false),
   paymentMethod: text("payment_method"),
   createdByWorkerId: integer("created_by_worker_id"),
+  notes: text("notes"),
 });
 
 export const billPayments = pgTable("bill_payments", {
