@@ -510,6 +510,7 @@ export default function Bills() {
                   body { margin: 0; padding: 20mm; }
                   th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                   tbody tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                  .tracking-section { background: #f0f9ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 }
               </style>
             </head>
@@ -559,6 +560,7 @@ export default function Bills() {
       )
       .join("%0A");
 
+    const trackingUrl = `${window.location.origin}/track-order`;
     const message =
       `*LIQUID WASHES LAUNDRY*%0A` +
       `Centra Market D/109, Al Dhanna City%0A` +
@@ -575,6 +577,9 @@ export default function Bills() {
       `${itemsList}%0A` +
       `--------------------------------%0A` +
       `*TOTAL: AED ${parseFloat(createdBill.bill.amount).toFixed(2)}*%0A` +
+      `--------------------------------%0A` +
+      `Track your order at: ${trackingUrl}%0A` +
+      `Order Number: ${createdBill.bill.referenceNumber}%0A` +
       `--------------------------------%0A` +
       `Thank you for your business!`;
 
@@ -1153,6 +1158,24 @@ export default function Bills() {
               </div>
             )}
             
+            <div style={{ 
+              marginTop: '15px', 
+              padding: '10px', 
+              background: '#f0f9ff', 
+              borderRadius: '6px', 
+              border: '1px dashed #1e40af',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '10px', color: '#1e40af', marginBottom: '4px' }}>
+                Track your order at this link:
+              </div>
+              <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold' }}>
+                {window.location.origin}/track-order
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#333', marginTop: '4px' }}>
+                Order Number: {createdBill?.bill.referenceNumber}
+              </div>
+            </div>
             <div className="text-center mt-4 text-xs">
               Thank you for your business!
             </div>
@@ -1310,6 +1333,24 @@ export default function Bills() {
               </div>
             )}
             
+            <div style={{ 
+              marginTop: '15px', 
+              padding: '10px', 
+              background: '#f0f9ff', 
+              borderRadius: '6px', 
+              border: '1px dashed #1e40af',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '10px', color: '#1e40af', marginBottom: '4px' }}>
+                Track your order at this link:
+              </div>
+              <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold' }}>
+                {window.location.origin}/track-order
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#333', marginTop: '4px' }}>
+                Order Number: {viewBillPDF?.referenceNumber}
+              </div>
+            </div>
             <div className="text-center mt-4 text-xs">
               Thank you for your business!
             </div>

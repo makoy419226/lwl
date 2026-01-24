@@ -14,6 +14,7 @@ interface InvoiceProps {
   totalAmount: number;
   paidAmount: number;
   paymentMethod?: string;
+  orderNumber?: string;
   onClose?: () => void;
 }
 
@@ -34,8 +35,10 @@ export function Invoice({
   totalAmount,
   paidAmount,
   paymentMethod = "Cash",
+  orderNumber,
   onClose,
 }: InvoiceProps) {
+  const trackingUrl = orderNumber ? `${window.location.origin}/track-order` : null;
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
@@ -83,6 +86,10 @@ export function Invoice({
               .footer p { font-size: 9px; color: #666; margin-bottom: 4px; }
               .footer .contact { font-weight: bold; color: #1e40af; font-size: 10px; }
               .payment-badge { display: inline-block; background: #16a34a; color: white; padding: 5px 12px; border-radius: 15px; font-size: 10px; margin-top: 8px; font-weight: bold; }
+              .tracking-section { margin-top: 15px; padding: 10px; background: #f0f9ff; border-radius: 6px; border: 1px dashed #1e40af; }
+              .tracking-section p { font-size: 10px; color: #1e40af; margin-bottom: 4px; }
+              .tracking-link { font-size: 11px; color: #1e40af; font-weight: bold; word-break: break-all; }
+              .order-number { font-size: 12px; font-weight: bold; color: #333; margin-top: 4px; }
               @media print { 
                 body { padding: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
                 .no-print { display: none; }
@@ -212,6 +219,14 @@ export function Invoice({
               {balance <= 0 ? "PAID IN FULL" : "PARTIAL PAYMENT"}
             </span>
           </div>
+
+          {trackingUrl && orderNumber && (
+            <div className="tracking-section">
+              <p>Track your order at this link:</p>
+              <div className="tracking-link">{trackingUrl}</div>
+              <div className="order-number">Order Number: {orderNumber}</div>
+            </div>
+          )}
 
           <div className="footer">
             <p>Thank you for your business!</p>
