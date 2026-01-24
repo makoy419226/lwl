@@ -285,7 +285,27 @@ export default function Login({ onLogin }: LoginProps) {
           </Card>
 
           <div className="hidden lg:block flex-1">
-            <h2 className="text-2xl font-bold text-center mb-6 text-foreground">Our Laundry Services</h2>
+            <div className="h-52 flex items-center justify-center mb-2">
+              {fullScreenImage ? (
+                <div 
+                  className="w-48 h-48 genie-popup"
+                  style={{
+                    '--origin-x': `${fullScreenImage.origin.x}px`,
+                    '--origin-y': `${fullScreenImage.origin.y}px`,
+                  } as React.CSSProperties}
+                >
+                  <img 
+                    src={fullScreenImage.image} 
+                    alt={fullScreenImage.name}
+                    className="w-full h-full object-contain drop-shadow-xl"
+                    data-testid="img-fullscreen-service"
+                  />
+                </div>
+              ) : (
+                <div className="w-48 h-48" />
+              )}
+            </div>
+            <h2 className="text-2xl font-bold text-center mb-4 text-foreground">Our Laundry Services</h2>
             <div className="grid grid-cols-3 gap-3">
               {services.map((service, index) => (
                 <div
@@ -443,28 +463,6 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
         </DialogContent>
       </Dialog>
-
-      {fullScreenImage && (
-        <div 
-          className="fixed top-20 right-8 z-50 pointer-events-none lg:right-[calc(50%-280px)]"
-          data-testid="fullscreen-image-overlay"
-        >
-          <div 
-            className="w-48 h-48 relative text-center genie-popup"
-            style={{
-              '--origin-x': `${fullScreenImage.origin.x}px`,
-              '--origin-y': `${fullScreenImage.origin.y}px`,
-            } as React.CSSProperties}
-          >
-            <img 
-              src={fullScreenImage.image} 
-              alt={fullScreenImage.name}
-              className="w-full h-full object-contain drop-shadow-xl"
-              data-testid="img-fullscreen-service"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
