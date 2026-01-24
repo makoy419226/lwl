@@ -7,7 +7,7 @@ import { db } from "./db";
 import { users, passwordResetTokens, stageChecklists } from "@shared/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
-import { sendDailySalesReportEmailSMTP, type DailySalesData } from "./smtp";
+import { sendDailySalesReportEmailSMTP, sendSalesReportEmailSMTP, type DailySalesData, type SalesReportData, type ReportPeriod } from "./smtp";
 import PDFDocument from "pdfkit";
 
 import { seedDatabase } from "./seed";
@@ -1252,6 +1252,135 @@ export async function registerRoutes(
   // Get admin report email setting
   app.get("/api/admin/report-email", async (req, res) => {
     res.json({ email: ADMIN_REPORT_EMAIL });
+  });
+
+  // Generate sales data for a date range
+  async function generateSalesReportData(startDate: Date, endDate: Date, period: ReportPeriod): Promise<SalesReportData> {
+    const orders = await storage.getOrders();
+    
+    const filteredOrders = orders.filter(order => {
+      const orderDate = new Date(order.entryDate);
+      return orderDate >= startDate && orderDate <= endDate;
+    });
+    
+    const totalOrders = filteredOrders.length;
+    const totalRevenue = filteredOrders.reduce((sum, o) => sum + parseFloat(o.finalAmount || "0"), 0);
+    const paidAmount = filteredOrders.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
+    const pendingAmount = totalRevenue - paidAmount;
+    const normalOrders = filteredOrders.filter(o => !o.urgent).length;
+    const urgentOrders = filteredOrders.filter(o => o.urgent).length;
+    const pickupOrders = filteredOrders.filter(o => o.deliveryType === "pickup").length;
+    const deliveryOrders = filteredOrders.filter(o => o.deliveryType === "delivery").length;
+    
+    const itemCounts: Record<string, number> = {};
+    filteredOrders.forEach(order => {
+      const itemsMatch = (order.items || '').match(/(\d+)x\s+([^,()]+)/g);
+      if (itemsMatch) {
+        itemsMatch.forEach(item => {
+          const match = item.match(/(\d+)x\s+(.+)/);
+          if (match) {
+            const count = parseInt(match[1]);
+            const name = match[2].trim();
+            itemCounts[name] = (itemCounts[name] || 0) + count;
+          }
+        });
+      }
+    });
+    
+    const topItems = Object.entries(itemCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, count]) => ({ name, count }));
+    
+    const formatDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    let dateRange = '';
+    if (period === 'daily') {
+      dateRange = formatDate(startDate);
+    } else if (period === 'yearly') {
+      dateRange = `Year ${startDate.getFullYear()}`;
+    } else {
+      dateRange = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+    }
+    
+    return {
+      period,
+      dateRange,
+      totalOrders,
+      totalRevenue,
+      paidAmount,
+      pendingAmount,
+      normalOrders,
+      urgentOrders,
+      pickupOrders,
+      deliveryOrders,
+      topItems
+    };
+  }
+
+  // Send periodic sales report (admin protected)
+  app.post("/api/admin/send-report", async (req, res) => {
+    const { adminPassword, period } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ success: false, message: "Invalid admin password" });
+    }
+    
+    const validPeriods: ReportPeriod[] = ['daily', 'weekly', 'monthly', 'yearly'];
+    if (!period || !validPeriods.includes(period)) {
+      return res.status(400).json({ success: false, message: "Invalid period. Must be daily, weekly, monthly, or yearly." });
+    }
+    
+    try {
+      const now = new Date();
+      let startDate: Date = new Date(now);
+      let endDate: Date = new Date(now);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const reportPeriod = period as ReportPeriod;
+      
+      switch (reportPeriod) {
+        case 'daily':
+          startDate = new Date(now);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'weekly':
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'monthly':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'yearly':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+      }
+      
+      const salesData = await generateSalesReportData(startDate, endDate, reportPeriod);
+      await sendSalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
+      
+      const periodLabels: Record<ReportPeriod, string> = {
+        daily: 'Daily',
+        weekly: 'Weekly', 
+        monthly: 'Monthly',
+        yearly: 'Yearly'
+      };
+      
+      res.json({ 
+        success: true, 
+        message: `${periodLabels[reportPeriod]} sales report sent to ${ADMIN_REPORT_EMAIL}`,
+        data: salesData
+      });
+    } catch (err: any) {
+      console.error(`Failed to send ${period} report:`, err);
+      res.status(500).json({ 
+        success: false, 
+        message: `Failed to send ${period} report: ` + err.message 
+      });
+    }
   });
 
   // Packing Workers routes

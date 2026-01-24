@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Settings, AlertTriangle, RotateCcw, Loader2, Mail, Send, Trash2 } from "lucide-react";
+import { Settings, AlertTriangle, RotateCcw, Loader2, Mail, Send, Trash2, Calendar, CalendarDays, CalendarRange } from "lucide-react";
+
+type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export default function AdminSettings() {
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -16,6 +19,7 @@ export default function AdminSettings() {
   const [showSendReportDialog, setShowSendReportDialog] = useState(false);
   const [reportPassword, setReportPassword] = useState("");
   const [reportError, setReportError] = useState("");
+  const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('daily');
   const { toast } = useToast();
 
   const resetAllMutation = useMutation({
@@ -45,8 +49,8 @@ export default function AdminSettings() {
   });
 
   const sendReportMutation = useMutation({
-    mutationFn: async (password: string) => {
-      const res = await apiRequest("POST", "/api/admin/send-daily-report", { adminPassword: password });
+    mutationFn: async ({ password, period }: { password: string; period: ReportPeriod }) => {
+      const res = await apiRequest("POST", "/api/admin/send-report", { adminPassword: password, period });
       return res.json();
     },
     onSuccess: (data) => {
@@ -55,13 +59,27 @@ export default function AdminSettings() {
       setReportError("");
       toast({
         title: "Report Sent",
-        description: data.message || "Daily sales report sent successfully!",
+        description: data.message || "Sales report sent successfully!",
       });
     },
     onError: (error: any) => {
       setReportError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to send report");
     },
   });
+
+  const periodLabels: Record<ReportPeriod, string> = {
+    daily: 'Daily',
+    weekly: 'Weekly',
+    monthly: 'Monthly',
+    yearly: 'Yearly'
+  };
+
+  const periodDescriptions: Record<ReportPeriod, string> = {
+    daily: "Today's sales",
+    weekly: "This week's sales (Sunday to today)",
+    monthly: "This month's sales",
+    yearly: "This year's sales"
+  };
 
   const handleResetAll = () => {
     if (adminPassword) {
@@ -184,91 +202,112 @@ export default function AdminSettings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-primary">
               <Mail className="w-5 h-5" />
-              Daily Sales Report
+              Sales Reports
             </CardTitle>
             <CardDescription>
-              Daily sales reports are automatically sent to liquidewashesruwais@gmail.com at 1:00 AM UAE time.
+              Send sales reports to liquidewashesruwais@gmail.com. Daily reports are also sent automatically at 1:00 AM UAE time.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">
-                  Click the button to manually send today's sales report to the admin email.
-                </p>
-              </div>
-              <Dialog open={showSendReportDialog} onOpenChange={(open) => {
-                setShowSendReportDialog(open);
-                if (!open) {
-                  setReportPassword("");
-                  setReportError("");
-                }
-              }}>
-                <DialogTrigger asChild>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {(['daily', 'weekly', 'monthly', 'yearly'] as ReportPeriod[]).map((period) => (
                   <Button
-                    variant="default"
-                    className="gap-2"
-                    data-testid="button-send-report"
+                    key={period}
+                    variant={reportPeriod === period ? "default" : "outline"}
+                    className="flex flex-col h-auto py-3 gap-1"
+                    onClick={() => setReportPeriod(period)}
+                    data-testid={`button-period-${period}`}
                   >
-                    <Send className="w-4 h-4" />
-                    Send Report Now
+                    {period === 'daily' && <Calendar className="w-5 h-5" />}
+                    {period === 'weekly' && <CalendarDays className="w-5 h-5" />}
+                    {period === 'monthly' && <CalendarRange className="w-5 h-5" />}
+                    {period === 'yearly' && <CalendarRange className="w-5 h-5" />}
+                    <span className="text-sm font-semibold">{periodLabels[period]}</span>
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Mail className="w-5 h-5 text-primary" />
-                      Send Daily Sales Report
-                    </DialogTitle>
-                    <DialogDescription>
-                      This will send today's sales report to liquidewashesruwais@gmail.com. Enter the admin password to confirm.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="report-password">Admin Password</Label>
-                      <Input
-                        id="report-password"
-                        type="password"
-                        placeholder="Enter admin password..."
-                        value={reportPassword}
-                        onChange={(e) => {
-                          setReportPassword(e.target.value);
+                ))}
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-4 rounded-lg bg-muted/50">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{periodLabels[reportPeriod]} Report</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {periodDescriptions[reportPeriod]}
+                  </p>
+                </div>
+                <Dialog open={showSendReportDialog} onOpenChange={(open) => {
+                  setShowSendReportDialog(open);
+                  if (!open) {
+                    setReportPassword("");
+                    setReportError("");
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="default"
+                      className="gap-2"
+                      data-testid="button-send-report"
+                    >
+                      <Send className="w-4 h-4" />
+                      Send {periodLabels[reportPeriod]} Report
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Mail className="w-5 h-5 text-primary" />
+                        Send {periodLabels[reportPeriod]} Sales Report
+                      </DialogTitle>
+                      <DialogDescription>
+                        This will send the {periodLabels[reportPeriod].toLowerCase()} sales report ({periodDescriptions[reportPeriod].toLowerCase()}) to liquidewashesruwais@gmail.com. Enter the admin password to confirm.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="report-password">Admin Password</Label>
+                        <Input
+                          id="report-password"
+                          type="password"
+                          placeholder="Enter admin password..."
+                          value={reportPassword}
+                          onChange={(e) => {
+                            setReportPassword(e.target.value);
+                            setReportError("");
+                          }}
+                          data-testid="input-report-password"
+                        />
+                        {reportError && (
+                          <p className="text-sm text-destructive">{reportError}</p>
+                        )}
+                      </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowSendReportDialog(false);
+                          setReportPassword("");
                           setReportError("");
                         }}
-                        data-testid="input-report-password"
-                      />
-                      {reportError && (
-                        <p className="text-sm text-destructive">{reportError}</p>
-                      )}
-                    </div>
-                  </div>
-                  <DialogFooter className="gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowSendReportDialog(false);
-                        setReportPassword("");
-                        setReportError("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={() => sendReportMutation.mutate(reportPassword)}
-                      disabled={!reportPassword || sendReportMutation.isPending}
-                      data-testid="button-confirm-send-report"
-                    >
-                      {sendReportMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4 mr-2" />
-                      )}
-                      Send Report
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => sendReportMutation.mutate({ password: reportPassword, period: reportPeriod })}
+                        disabled={!reportPassword || sendReportMutation.isPending}
+                        data-testid="button-confirm-send-report"
+                      >
+                        {sendReportMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4 mr-2" />
+                        )}
+                        Send Report
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </CardContent>
         </Card>
