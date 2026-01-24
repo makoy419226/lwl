@@ -1001,6 +1001,125 @@ export default function Bills() {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
+                          <div className="flex justify-end mb-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const unpaidBills = clientData.bills?.filter(b => {
+                                  const amount = parseFloat(b.amount || '0');
+                                  const paid = parseFloat(b.paidAmount || '0');
+                                  return amount - paid > 0;
+                                }) || [];
+                                
+                                if (unpaidBills.length === 0) {
+                                  toast({
+                                    title: "No unpaid bills",
+                                    description: "All bills for this client have been paid.",
+                                    variant: "default"
+                                  });
+                                  return;
+                                }
+
+                                const client = clients?.find(c => c.id === clientData.clientId);
+                                const totalUnpaidAmount = unpaidBills.reduce((sum, b) => sum + parseFloat(b.amount || '0'), 0);
+                                const totalUnpaidPaid = unpaidBills.reduce((sum, b) => sum + parseFloat(b.paidAmount || '0'), 0);
+                                const totalUnpaidDue = totalUnpaidAmount - totalUnpaidPaid;
+
+                                const printContent = `
+                                  <html>
+                                    <head>
+                                      <title>Invoice - ${clientData.clientName}</title>
+                                      <style>
+                                        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+                                        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+                                        .header h1 { margin: 0; font-size: 20px; }
+                                        .header p { margin: 5px 0; font-size: 12px; color: #666; }
+                                        .client-info { margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; }
+                                        .client-info h3 { margin: 0 0 5px 0; font-size: 16px; }
+                                        .client-info p { margin: 2px 0; font-size: 12px; }
+                                        .invoice-title { font-size: 18px; font-weight: bold; margin: 20px 0 10px 0; text-align: center; }
+                                        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                                        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 11px; }
+                                        th { background: #f0f0f0; font-weight: bold; }
+                                        .text-right { text-align: right; }
+                                        .total-row { background: #f5f5f5; font-weight: bold; }
+                                        .grand-total { font-size: 18px; font-weight: bold; text-align: center; margin: 20px 0; padding: 15px; background: #e0e0e0; border-radius: 5px; }
+                                        .footer { text-align: center; font-size: 10px; color: #999; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; }
+                                        .description { max-width: 250px; word-wrap: break-word; }
+                                      </style>
+                                    </head>
+                                    <body>
+                                      <div class="header">
+                                        <h1>LIQUID WASHES LAUNDRY</h1>
+                                        <p>Outstanding Bills Invoice</p>
+                                        <p>Date: ${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+                                      </div>
+                                      <div class="client-info">
+                                        <h3>${clientData.clientName}</h3>
+                                        ${client?.phone ? `<p>Phone: ${client.phone}</p>` : ''}
+                                        ${client?.address && client.address !== 'n/a' ? `<p>Address: ${client.address}</p>` : ''}
+                                      </div>
+                                      <div class="invoice-title">Unpaid Bills Summary</div>
+                                      <table>
+                                        <thead>
+                                          <tr>
+                                            <th>Bill #</th>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th class="text-right">Amount</th>
+                                            <th class="text-right">Paid</th>
+                                            <th class="text-right">Due</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          ${unpaidBills.map(bill => {
+                                            const amount = parseFloat(bill.amount || '0');
+                                            const paid = parseFloat(bill.paidAmount || '0');
+                                            const due = amount - paid;
+                                            return `
+                                              <tr>
+                                                <td>#${bill.id}</td>
+                                                <td>${format(new Date(bill.billDate), "dd/MM/yyyy")}</td>
+                                                <td class="description">${bill.description || '-'}</td>
+                                                <td class="text-right">${amount.toFixed(2)}</td>
+                                                <td class="text-right">${paid.toFixed(2)}</td>
+                                                <td class="text-right">${due.toFixed(2)}</td>
+                                              </tr>
+                                            `;
+                                          }).join('')}
+                                          <tr class="total-row">
+                                            <td colspan="3">Total (${unpaidBills.length} bills)</td>
+                                            <td class="text-right">${totalUnpaidAmount.toFixed(2)}</td>
+                                            <td class="text-right">${totalUnpaidPaid.toFixed(2)}</td>
+                                            <td class="text-right">${totalUnpaidDue.toFixed(2)}</td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
+                                      <div class="grand-total">
+                                        TOTAL AMOUNT DUE: ${totalUnpaidDue.toFixed(2)} AED
+                                      </div>
+                                      <div class="footer">
+                                        <p>Thank you for your business!</p>
+                                        <p>Please settle outstanding balance at your earliest convenience.</p>
+                                      </div>
+                                    </body>
+                                  </html>
+                                `;
+                                const printWindow = window.open('', '_blank');
+                                if (printWindow) {
+                                  printWindow.document.write(printContent);
+                                  printWindow.document.close();
+                                  printWindow.print();
+                                }
+                              }}
+                              data-testid="button-print-client-invoice"
+                            >
+                              <Printer className="w-4 h-4 mr-2" />
+                              Print Unpaid Invoice
+                            </Button>
+                          </div>
                           <Table>
                             <TableHeader>
                               <TableRow>
