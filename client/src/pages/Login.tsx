@@ -442,26 +442,28 @@ export default function Login({ onLogin }: LoginProps) {
 
       {fullScreenImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 cursor-pointer"
           onClick={() => setFullScreenImage(null)}
           data-testid="fullscreen-image-overlay"
         >
-          <button
-            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
-            onClick={() => setFullScreenImage(null)}
-            data-testid="button-close-fullscreen"
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 max-w-sm w-full relative"
+            onClick={(e) => e.stopPropagation()}
           >
-            <X className="w-8 h-8" />
-          </button>
-          <div className="text-center max-w-4xl w-full">
+            <button
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+              onClick={() => setFullScreenImage(null)}
+              data-testid="button-close-fullscreen"
+            >
+              <X className="w-5 h-5" />
+            </button>
             <img 
               src={fullScreenImage.image} 
               alt={fullScreenImage.name}
-              className="max-w-full max-h-[80vh] mx-auto object-contain rounded-lg shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+              className="w-full h-64 object-contain rounded-lg"
               data-testid="img-fullscreen-service"
             />
-            <h3 className="text-white text-2xl font-bold mt-4">{fullScreenImage.name}</h3>
+            <h3 className="text-center text-xl font-bold mt-3 text-foreground">{fullScreenImage.name}</h3>
           </div>
         </div>
       )}
