@@ -21,6 +21,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1169,6 +1170,15 @@ export default function Bills() {
               <div style={{ fontSize: '10px', color: '#1e40af', marginBottom: '4px' }}>
                 Track your order at this link:
               </div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                <div style={{ backgroundColor: 'white', padding: '6px', borderRadius: '4px' }}>
+                  <QRCodeSVG 
+                    value="https://lwl.software/track" 
+                    size={70}
+                    level="M"
+                  />
+                </div>
+              </div>
               <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold' }}>
                 lwl.software/track
               </div>
@@ -1343,6 +1353,15 @@ export default function Bills() {
             }}>
               <div style={{ fontSize: '10px', color: '#1e40af', marginBottom: '4px' }}>
                 Track your order at this link:
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                <div style={{ backgroundColor: 'white', padding: '6px', borderRadius: '4px' }}>
+                  <QRCodeSVG 
+                    value="https://lwl.software/track" 
+                    size={70}
+                    level="M"
+                  />
+                </div>
               </div>
               <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold' }}>
                 lwl.software/track
