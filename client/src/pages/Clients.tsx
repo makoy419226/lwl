@@ -25,6 +25,7 @@ import {
   Check,
   X,
   Pencil,
+  DollarSign,
 } from "lucide-react";
 import {
   Dialog,
@@ -89,6 +90,9 @@ export default function Clients() {
   const [payingBillId, setPayingBillId] = useState<number | null>(null);
   const [billPaymentAmount, setBillPaymentAmount] = useState("");
   const [billPaymentMethod, setBillPaymentMethod] = useState("cash");
+  const [showPayAllDialog, setShowPayAllDialog] = useState(false);
+  const [payAllAmount, setPayAllAmount] = useState("");
+  const [payAllMethod, setPayAllMethod] = useState("cash");
   const [showCashierPinDialog, setShowCashierPinDialog] = useState(false);
   const [cashierPin, setCashierPin] = useState("");
   const [cashierPinError, setCashierPinError] = useState("");
@@ -186,6 +190,52 @@ export default function Clients() {
       toast({
         title: "Payment recorded",
         description: "Bill payment has been recorded successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Payment failed",
+        description: error.message || "Failed to record payment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const payAllBillsMutation = useMutation({
+    mutationFn: async ({
+      clientId,
+      amount,
+      paymentMethod,
+      notes,
+    }: {
+      clientId: number;
+      amount: string;
+      paymentMethod: string;
+      notes?: string;
+    }) => {
+      const res = await apiRequest("POST", `/api/clients/${clientId}/pay-all-bills`, {
+        amount,
+        paymentMethod,
+        notes,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", transactionClient?.id, "transactions"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", transactionClient?.id, "unpaid-bills"],
+      });
+      setShowPayAllDialog(false);
+      setPayAllAmount("");
+      setPayAllMethod("cash");
+      toast({
+        title: "Payment recorded",
+        description: data.message || "All bills have been paid successfully.",
       });
     },
     onError: (error: any) => {
@@ -1133,20 +1183,39 @@ export default function Clients() {
 
               {unpaidBills && unpaidBills.length > 0 && (
                 <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <h4 className="font-semibold flex items-center gap-2 text-destructive">
                       <Receipt className="w-4 h-4" /> Unpaid Bills (
                       {unpaidBills.length})
                     </h4>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={generateCombinedInvoice}
-                      data-testid="button-generate-combined-invoice"
-                    >
-                      <Printer className="w-4 h-4 mr-1" />
-                      Print Combined Invoice
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => {
+                          const totalDue = unpaidBills.reduce((sum, bill) => {
+                            const amt = parseFloat(bill.amount || "0");
+                            const paid = parseFloat(bill.paidAmount || "0");
+                            return sum + (amt - paid);
+                          }, 0);
+                          setPayAllAmount(totalDue.toFixed(2));
+                          setShowPayAllDialog(true);
+                        }}
+                        data-testid="button-pay-all-bills"
+                      >
+                        <DollarSign className="w-4 h-4 mr-1" />
+                        Pay All Bills
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={generateCombinedInvoice}
+                        data-testid="button-generate-combined-invoice"
+                      >
+                        <Printer className="w-4 h-4 mr-1" />
+                        Print Combined Invoice
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     {unpaidBills.map((bill) => {
@@ -1869,6 +1938,96 @@ export default function Clients() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Pay All Bills Dialog */}
+      <Dialog open={showPayAllDialog} onOpenChange={(open) => {
+        setShowPayAllDialog(open);
+        if (!open) {
+          setPayAllAmount("");
+          setPayAllMethod("cash");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-primary" />
+              Pay All Outstanding Bills
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                {transactionClient?.name && (
+                  <span className="font-medium">{transactionClient.name}</span>
+                )}
+                {unpaidBills && (
+                  <span className="block mt-1">
+                    {unpaidBills.length} unpaid bill{unpaidBills.length !== 1 ? 's' : ''} totaling{' '}
+                    <span className="font-semibold text-destructive">
+                      {unpaidBills.reduce((sum, bill) => {
+                        const amt = parseFloat(bill.amount || "0");
+                        const paid = parseFloat(bill.paidAmount || "0");
+                        return sum + (amt - paid);
+                      }, 0).toFixed(2)} AED
+                    </span>
+                  </span>
+                )}
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="payAllAmount">Payment Amount (AED)</Label>
+              <Input
+                id="payAllAmount"
+                type="number"
+                step="0.01"
+                value={payAllAmount}
+                onChange={(e) => setPayAllAmount(e.target.value)}
+                placeholder="Enter payment amount"
+                data-testid="input-pay-all-amount"
+              />
+            </div>
+            <div>
+              <Label htmlFor="payAllMethod">Payment Method</Label>
+              <select
+                id="payAllMethod"
+                className="w-full p-2 border rounded-md bg-background"
+                value={payAllMethod}
+                onChange={(e) => setPayAllMethod(e.target.value)}
+                data-testid="select-pay-all-method"
+              >
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+              </select>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowPayAllDialog(false)}
+                data-testid="button-cancel-pay-all"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (transactionClient && payAllAmount && parseFloat(payAllAmount) > 0) {
+                    payAllBillsMutation.mutate({
+                      clientId: transactionClient.id,
+                      amount: payAllAmount,
+                      paymentMethod: payAllMethod,
+                      notes: `Bulk payment for all outstanding bills`,
+                    });
+                  }
+                }}
+                disabled={payAllBillsMutation.isPending || !payAllAmount || parseFloat(payAllAmount) <= 0}
+                data-testid="button-confirm-pay-all"
+              >
+                {payAllBillsMutation.isPending ? "Processing..." : "Pay Now"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
