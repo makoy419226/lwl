@@ -446,11 +446,11 @@ export default function Login({ onLogin }: LoginProps) {
 
       {fullScreenImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+          className="fixed top-20 right-8 z-50 pointer-events-none lg:right-[calc(50%-280px)]"
           data-testid="fullscreen-image-overlay"
         >
           <div 
-            className="w-64 h-64 relative text-center genie-popup"
+            className="w-48 h-48 relative text-center genie-popup"
             style={{
               '--origin-x': `${fullScreenImage.origin.x}px`,
               '--origin-y': `${fullScreenImage.origin.y}px`,
@@ -459,10 +459,10 @@ export default function Login({ onLogin }: LoginProps) {
             <img 
               src={fullScreenImage.image} 
               alt={fullScreenImage.name}
-              className="w-full h-full object-contain drop-shadow-2xl"
+              className="w-full h-full object-contain drop-shadow-xl"
               data-testid="img-fullscreen-service"
             />
-            <h3 className="text-foreground text-lg font-bold mt-2 drop-shadow-sm">{fullScreenImage.name}</h3>
+            <h3 className="text-foreground text-sm font-bold mt-1">{fullScreenImage.name}</h3>
           </div>
         </div>
       )}
