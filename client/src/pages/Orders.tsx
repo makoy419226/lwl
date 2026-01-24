@@ -3373,6 +3373,61 @@ export default function Orders() {
                 </div>
               )}
 
+              {/* Previous Unpaid Bills Section */}
+              {selectedBill.clientId && (() => {
+                const otherUnpaidBills = bills?.filter(
+                  (b) => b.clientId === selectedBill.clientId && 
+                         b.id !== selectedBill.id && 
+                         !b.isPaid
+                ) || [];
+                const totalPreviousDue = otherUnpaidBills.reduce((sum, b) => {
+                  return sum + (parseFloat(b.amount) - parseFloat(b.paidAmount || "0"));
+                }, 0);
+
+                if (otherUnpaidBills.length === 0) return null;
+
+                return (
+                  <div className="border-t pt-3">
+                    <div className="bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-700 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                          Previous Unpaid Bills ({otherUnpaidBills.length})
+                        </span>
+                      </div>
+                      <ScrollArea className="max-h-32">
+                        <div className="space-y-1">
+                          {otherUnpaidBills.map((bill) => {
+                            const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
+                            return (
+                              <div
+                                key={bill.id}
+                                className="flex justify-between items-center text-sm bg-white dark:bg-background rounded px-2 py-1"
+                              >
+                                <span className="text-muted-foreground">
+                                  Bill #{bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")}
+                                </span>
+                                <span className="font-medium text-destructive">
+                                  {due.toFixed(2)} AED
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-amber-300 dark:border-amber-700">
+                        <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                          Total Previous Due:
+                        </span>
+                        <span className="font-bold text-destructive">
+                          {totalPreviousDue.toFixed(2)} AED
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
