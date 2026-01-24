@@ -1033,27 +1033,36 @@ export default function Bills() {
                                       <title>Invoice - ${clientData.clientName}</title>
                                       <style>
                                         body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
-                                        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
-                                        .header h1 { margin: 0; font-size: 20px; }
+                                        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1e5aa8; padding-bottom: 15px; }
+                                        .header img { max-width: 120px; height: auto; margin-bottom: 10px; }
+                                        .header h1 { margin: 0; font-size: 20px; color: #1e5aa8; }
                                         .header p { margin: 5px 0; font-size: 12px; color: #666; }
+                                        .contact-info { display: flex; justify-content: center; gap: 20px; margin-top: 10px; font-size: 11px; color: #333; }
+                                        .contact-info span { display: flex; align-items: center; gap: 5px; }
                                         .client-info { margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; }
                                         .client-info h3 { margin: 0 0 5px 0; font-size: 16px; }
                                         .client-info p { margin: 2px 0; font-size: 12px; }
                                         .invoice-title { font-size: 18px; font-weight: bold; margin: 20px 0 10px 0; text-align: center; }
                                         table { width: 100%; border-collapse: collapse; margin: 15px 0; }
                                         th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 11px; }
-                                        th { background: #f0f0f0; font-weight: bold; }
+                                        th { background: #1e5aa8; color: white; font-weight: bold; }
                                         .text-right { text-align: right; }
                                         .total-row { background: #f5f5f5; font-weight: bold; }
-                                        .grand-total { font-size: 18px; font-weight: bold; text-align: center; margin: 20px 0; padding: 15px; background: #e0e0e0; border-radius: 5px; }
+                                        .grand-total { font-size: 18px; font-weight: bold; text-align: center; margin: 20px 0; padding: 15px; background: #1e5aa8; color: white; border-radius: 5px; }
                                         .footer { text-align: center; font-size: 10px; color: #999; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px; }
                                         .description { max-width: 250px; word-wrap: break-word; }
                                       </style>
                                     </head>
                                     <body>
                                       <div class="header">
-                                        <h1>LIQUID WASHES LAUNDRY</h1>
-                                        <p>Outstanding Bills Invoice</p>
+                                        <img src="${window.location.origin}/attached_assets/company_logo.png" alt="Liquid Washes Laundry" onerror="this.style.display='none'" />
+                                        <h1>LIQUIDE WASHES LAUNDRY</h1>
+                                        <p style="color: #3b82f6; font-size: 10px; margin-top: 2px;">SMARTNESS PARTNERS</p>
+                                        <div class="contact-info">
+                                          <span>Tel: 026 815 824</span>
+                                          <span>Mobile: +971 56 338 0001</span>
+                                        </div>
+                                        <p style="margin-top: 10px;">Outstanding Bills Invoice</p>
                                         <p>Date: ${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
                                       </div>
                                       <div class="client-info">

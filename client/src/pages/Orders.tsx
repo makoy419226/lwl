@@ -3479,22 +3479,30 @@ export default function Orders() {
                           <title>Bill Summary - ${client?.name || 'Customer'}</title>
                           <style>
                             body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
-                            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-                            .header h1 { margin: 0; font-size: 18px; }
+                            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1e5aa8; padding-bottom: 10px; }
+                            .header img { max-width: 100px; height: auto; margin-bottom: 8px; }
+                            .header h1 { margin: 0; font-size: 18px; color: #1e5aa8; }
                             .header p { margin: 5px 0; font-size: 12px; color: #666; }
+                            .contact-info { display: flex; justify-content: center; gap: 15px; margin-top: 8px; font-size: 10px; color: #333; }
                             .section { margin-bottom: 15px; }
                             .section-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
                             .row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
                             .row.bold { font-weight: bold; }
-                            .total-box { background: #f0f0f0; padding: 10px; border-radius: 5px; margin-top: 10px; }
+                            .total-box { background: #1e5aa8; color: white; padding: 10px; border-radius: 5px; margin-top: 10px; }
                             .grand-total { font-size: 16px; font-weight: bold; text-align: center; }
                             .footer { text-align: center; font-size: 10px; color: #999; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
                           </style>
                         </head>
                         <body>
                           <div class="header">
-                            <h1>LIQUID WASHES LAUNDRY</h1>
-                            <p>Bill Summary</p>
+                            <img src="${window.location.origin}/attached_assets/company_logo.png" alt="LWL" onerror="this.style.display='none'" />
+                            <h1>LIQUIDE WASHES LAUNDRY</h1>
+                            <p style="color: #3b82f6; font-size: 9px; margin-top: 2px;">SMARTNESS PARTNERS</p>
+                            <div class="contact-info">
+                              <span>Tel: 026 815 824</span>
+                              <span>Mobile: +971 56 338 0001</span>
+                            </div>
+                            <p style="margin-top: 8px;">Bill Summary</p>
                             <p>${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
                           </div>
                           <div class="section">
