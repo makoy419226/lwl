@@ -104,16 +104,18 @@ export default function TrackOrder() {
           <img src={logoImage} alt="Liquid Washes" className="h-20 mx-auto mb-3" data-testid="img-track-logo" />
           <h1 className="text-2xl font-bold text-blue-800 dark:text-blue-300">Liquid Washes Laundry</h1>
           <p className="text-muted-foreground mt-1">Customer Order Tracking</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-3"
-            onClick={handleClose}
-            data-testid="button-close-tracking"
-          >
-            <X className="h-4 w-4 mr-1" />
-            {isLoggedIn ? "Go to Dashboard" : "Close"}
-          </Button>
+          {isLoggedIn && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={handleClose}
+              data-testid="button-close-tracking"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Go to Dashboard
+            </Button>
+          )}
         </div>
 
         <Card>
