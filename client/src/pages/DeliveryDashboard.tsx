@@ -445,7 +445,7 @@ export default function DeliveryDashboard() {
                 Delivery Address
               </Label>
               <Textarea
-                value={pinDialogOrder?.deliveryAddress || getClient(pinDialogOrder!)?.address || "n/a"}
+                value={pinDialogOrder?.deliveryAddress || (pinDialogOrder ? getClient(pinDialogOrder)?.address : "") || "n/a"}
                 readOnly
                 className="resize-none bg-muted"
                 rows={2}
