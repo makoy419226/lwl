@@ -435,7 +435,7 @@ export default function TodaysWork() {
                       {getClientName(order)}
                     </span>
                   </div>
-                  <span className="text-sm font-bold shrink-0" data-testid={`text-order-amount-${order.id}`}>{parseFloat(order.totalAmount || "0").toFixed(0)} AED</span>
+                  {!isStaff && <span className="text-sm font-bold shrink-0" data-testid={`text-order-amount-${order.id}`}>{parseFloat(order.totalAmount || "0").toFixed(0)} AED</span>}
                 </div>
               ))
             )}
@@ -485,9 +485,11 @@ export default function TodaysWork() {
                         )}
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-bold text-lg" data-testid={`text-dialog-amount-${order.id}`}>{parseFloat(order.totalAmount || "0").toFixed(0)} AED</p>
-                    </div>
+                    {!isStaff && (
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-lg" data-testid={`text-dialog-amount-${order.id}`}>{parseFloat(order.totalAmount || "0").toFixed(0)} AED</p>
+                      </div>
+                    )}
                   </div>
                 </Card>
               ))
