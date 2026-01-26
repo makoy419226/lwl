@@ -1752,6 +1752,9 @@ export default function Bills() {
               {viewBillPDF.customerPhone && (
                 <div>Phone: {viewBillPDF.customerPhone}</div>
               )}
+              {viewBillPDF.createdBy && (
+                <div>Billed by: {viewBillPDF.createdBy}</div>
+              )}
             </div>
             
             {(() => {
