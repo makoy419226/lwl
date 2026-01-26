@@ -1043,6 +1043,11 @@ export default function Orders() {
         const nextOrder =
           pendingTagOrders.length > 0 ? pendingTagOrders[0] : null;
 
+        // Close dialog immediately
+        setTagPinDialog(null);
+        setTagPin("");
+        setTagPinError("");
+        
         updateOrderMutation.mutate(
           {
             id: currentOrderId,
@@ -1054,23 +1059,10 @@ export default function Orders() {
           },
           {
             onSuccess: () => {
-              if (nextOrder) {
-                setTagPinDialog({ orderId: nextOrder.id });
-                setTagPin("");
-                setTagPinError("");
-                toast({
-                  title: "Tag Complete",
-                  description: `Moving to next order: ${nextOrder.orderNumber}`,
-                });
-              } else {
-                setTagPinDialog(null);
-                setTagPin("");
-                setTagPinError("");
-                toast({
-                  title: "All Done",
-                  description: "No more orders pending for tagging",
-                });
-              }
+              toast({
+                title: "Tag Complete",
+                description: `Order tagged successfully by ${data.worker.name}`,
+              });
             },
           },
         );
@@ -3054,12 +3046,12 @@ export default function Orders() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Tag className="w-5 h-5 text-orange-500" />
-              Enter Tag PIN
+              Enter Staff PIN
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Enter your PIN to confirm all tags are done for this order.
+              Enter your staff PIN to confirm all tags are done for this order.
             </p>
             <Input
               id="tag-pin"
