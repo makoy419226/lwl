@@ -3235,7 +3235,7 @@ export default function Orders() {
             )}
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Enter Cashier PIN</Label>
+              <Label className="text-sm font-medium">Enter Staff PIN</Label>
               <Input
                 id="delivery-pin"
                 type="tel"

@@ -1970,7 +1970,7 @@ export async function registerRoutes(
     }
   });
 
-  // Verify delivery worker PIN - Admin PIN works as universal PIN
+  // Verify delivery staff PIN - Admin PIN works as universal PIN
   app.post("/api/delivery/verify-pin", async (req, res) => {
     const { pin } = req.body;
     if (!pin || !/^\d{4,5}$/.test(pin)) {
@@ -1985,11 +1985,18 @@ export async function registerRoutes(
       return res.json({ success: true, worker: { id: 0, name: "Admin" } });
     }
     
+    // Check for staff user PIN
+    const user = await storage.verifyUserPin(pin);
+    if (user && user.role === "staff") {
+      return res.json({ success: true, worker: { id: user.id, name: user.name } });
+    }
+    
+    // Also allow packing workers for backward compatibility
     const worker = await storage.verifyDeliveryWorkerPin(pin);
     if (worker) {
       res.json({ success: true, worker: { id: worker.id, name: worker.name } });
     } else {
-      res.status(401).json({ success: false, message: "Invalid PIN" });
+      res.status(401).json({ success: false, message: "Invalid Staff PIN" });
     }
   });
 
