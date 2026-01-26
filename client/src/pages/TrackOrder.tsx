@@ -20,6 +20,8 @@ interface TrackOrderData {
   packingDone: boolean;
   packingDate: string | null;
   delivered: boolean;
+  deliveryBy: string | null;
+  deliveryDate: string | null;
   urgent: boolean;
   expectedDeliveryAt: string | null;
 }
@@ -227,7 +229,7 @@ export default function TrackOrder() {
                   </div>
                 </div>
 
-                {order.packingDone && order.packingDate && (
+                {order.packingDone && order.packingDate && !order.delivered && (
                   <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
                     <p className="text-sm text-green-700 dark:text-green-300 font-medium">
                       Packing Completed
@@ -235,6 +237,24 @@ export default function TrackOrder() {
                     <p className="text-lg font-bold text-green-800 dark:text-green-200">
                       {format(new Date(order.packingDate), "dd/MM/yyyy 'at' hh:mm a")}
                     </p>
+                  </div>
+                )}
+                
+                {order.delivered && (
+                  <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
+                    <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                      {order.deliveryType === "Delivery" ? "Delivered" : "Picked Up"}
+                    </p>
+                    {order.deliveryDate && (
+                      <p className="text-lg font-bold text-green-800 dark:text-green-200">
+                        {format(new Date(order.deliveryDate), "dd/MM/yyyy 'at' hh:mm a")}
+                      </p>
+                    )}
+                    {order.deliveryBy && (
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                        {order.deliveryType === "Delivery" ? "Delivered by: " : "Released by: "}{order.deliveryBy}
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>

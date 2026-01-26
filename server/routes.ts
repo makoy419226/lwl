@@ -2104,6 +2104,8 @@ export async function registerRoutes(
       packingDone: order.packingDone,
       packingDate: order.packingDate,
       delivered: order.delivered,
+      deliveryBy: order.deliveryBy,
+      deliveryDate: order.deliveryDate,
       urgent: order.urgent,
       expectedDeliveryAt: order.expectedDeliveryAt,
     });
@@ -2182,6 +2184,7 @@ export async function registerRoutes(
       status: "delivered",
       deliveryDate: new Date().toISOString(),
       deliveredByWorkerId: matchingDriver.id,
+      deliveryBy: matchingDriver.name || matchingDriver.username,
     });
 
     res.json(updatedOrder);

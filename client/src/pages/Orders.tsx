@@ -1895,15 +1895,22 @@ export default function Orders() {
 
                             {order.delivered && (
                               <>
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="flex-1 bg-green-600 hover:bg-green-600 cursor-default"
-                                  disabled
-                                >
-                                  <CheckCircle2 className="w-4 h-4 mr-1" />
-                                  {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
-                                </Button>
+                                <div className="flex-1 flex flex-col">
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="w-full bg-green-600 hover:bg-green-600 cursor-default"
+                                    disabled
+                                  >
+                                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                                    {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
+                                  </Button>
+                                  {order.deliveryBy && (
+                                    <span className="text-xs text-muted-foreground text-center mt-1">
+                                      by: {order.deliveryBy}
+                                    </span>
+                                  )}
+                                </div>
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -2464,17 +2471,24 @@ export default function Orders() {
                                           )}
                                         {order.delivered && (
                                           <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                                            <Button
-                                              size="sm"
-                                              variant="default"
-                                              className="bg-green-600 hover:bg-green-600 cursor-default whitespace-nowrap"
-                                              disabled
-                                            >
-                                              <CheckCircle2 className="w-3 h-3 sm:mr-1" />
-                                              <span className="hidden sm:inline">
-                                                {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
-                                              </span>
-                                            </Button>
+                                            <div className="flex flex-col">
+                                              <Button
+                                                size="sm"
+                                                variant="default"
+                                                className="bg-green-600 hover:bg-green-600 cursor-default whitespace-nowrap"
+                                                disabled
+                                              >
+                                                <CheckCircle2 className="w-3 h-3 sm:mr-1" />
+                                                <span className="hidden sm:inline">
+                                                  {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
+                                                </span>
+                                              </Button>
+                                              {order.deliveryBy && (
+                                                <span className="text-xs text-muted-foreground mt-1">
+                                                  by: {order.deliveryBy}
+                                                </span>
+                                              )}
+                                            </div>
                                             <Button
                                               size="icon"
                                               variant="ghost"
