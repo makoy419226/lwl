@@ -26,6 +26,7 @@ import {
   RefreshCw,
   Camera,
   AlertTriangle,
+  User,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -162,8 +163,8 @@ export default function DeliveryDashboard() {
                       </div>
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center gap-2">
-                          <Package className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{order.customerName}</span>
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium">{order.customerName || client?.name || "Unknown Customer"}</span>
                         </div>
                         {(order.deliveryAddress || client?.address) && (
                           <div className="flex items-center gap-2">
