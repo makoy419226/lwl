@@ -2137,6 +2137,7 @@ export default function Products() {
                 className="h-9 text-xs"
                 value={expectedDeliveryAt}
                 onChange={(e) => setExpectedDeliveryAt(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
                 data-testid="popup-input-expected-datetime"
               />
             </div>
