@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useContext } from "react";
+import { UserContext } from "@/App";
 import { useSearch, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getProductImage as getStockProductImage } from "@/lib/productImages";
@@ -115,6 +116,8 @@ import html2pdf from "html2pdf.js";
 import * as XLSX from "xlsx";
 
 export default function Orders() {
+  const user = useContext(UserContext);
+  const canDeliver = user?.role === "driver" || user?.role === "admin";
   const searchParams = useSearch();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const [searchTerm, setSearchTerm] = useState(urlSearch);
@@ -1863,7 +1866,7 @@ export default function Orders() {
                               </>
                             )}
 
-                            {order.packingDone &&
+                            {canDeliver && order.packingDone &&
                               !order.delivered &&
                               order.deliveryType === "delivery" && (
                                 <Button
@@ -1880,7 +1883,7 @@ export default function Orders() {
                                 </Button>
                               )}
 
-                            {order.packingDone &&
+                            {canDeliver && order.packingDone &&
                               !order.delivered &&
                               order.deliveryType !== "delivery" && (
                                 <Button
@@ -2378,7 +2381,7 @@ export default function Orders() {
                                               </Button>
                                             </>
                                           )}
-                                        {order.packingDone &&
+                                        {canDeliver && order.packingDone &&
                                           !order.delivered &&
                                           order.deliveryType === "delivery" && (
                                             <Button
@@ -2396,7 +2399,7 @@ export default function Orders() {
                                               </span>
                                             </Button>
                                           )}
-                                        {order.packingDone &&
+                                        {canDeliver && order.packingDone &&
                                           !order.delivered &&
                                           order.deliveryType !== "delivery" && (
                                             <Button
