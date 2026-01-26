@@ -92,6 +92,30 @@ function parseDescriptionItems(description: string, products?: Product[]): { nam
 }
 
 export default function Bills() {
+  const storedUser = localStorage.getItem("user");
+  const userInfo = storedUser ? JSON.parse(storedUser) : null;
+  const userRole = userInfo?.role || "cashier";
+  
+  if (userRole === "staff") {
+    return (
+      <div className="flex flex-col h-full items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <CardTitle className="text-xl text-destructive">Access Restricted</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">
+              User is restricted in this section. Please contact your administrator for access.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const searchParams = useSearch();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const [searchTerm, setSearchTerm] = useState(urlSearch);
