@@ -118,6 +118,7 @@ import * as XLSX from "xlsx";
 export default function Orders() {
   const user = useContext(UserContext);
   const canDeliver = user?.role === "driver" || user?.role === "admin";
+  const canConfirmPickup = true; // All roles can confirm pickup
   const searchParams = useSearch();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const [searchTerm, setSearchTerm] = useState(urlSearch);
@@ -1892,11 +1893,7 @@ export default function Orders() {
                                   size="sm"
                                   variant="default"
                                   className="flex-1"
-                                  onClick={() =>
-                                    canDeliver && handleDeliveryWithPin(order.id)
-                                  }
-                                  disabled={!canDeliver}
-                                  title={!canDeliver ? "Only drivers can confirm pickup" : ""}
+                                  onClick={() => handleDeliveryWithPin(order.id)}
                                   data-testid={`button-mobile-pickup-${order.id}`}
                                 >
                                   <Package className="w-4 h-4 mr-1" />
@@ -2412,11 +2409,7 @@ export default function Orders() {
                                               size="sm"
                                               variant="default"
                                               className="whitespace-nowrap touch-manipulation"
-                                              onClick={() =>
-                                                canDeliver && handleDeliveryWithPin(order.id)
-                                              }
-                                              disabled={!canDeliver}
-                                              title={!canDeliver ? "Only drivers can confirm pickup" : ""}
+                                              onClick={() => handleDeliveryWithPin(order.id)}
                                               data-testid={`button-pickup-${order.id}`}
                                             >
                                               <Package className="w-3 h-3 sm:mr-1" />
