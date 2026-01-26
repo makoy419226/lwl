@@ -28,19 +28,19 @@ import logoImage from "@assets/image_1767220512226.png";
 export const UserContext = createContext<UserInfo | null>(null);
 
 const rolePermissions: Record<string, string[]> = {
-  "/": ["admin", "manager", "cashier"],
-  "/dashboard": ["admin", "manager", "cashier"],
-  "/inventory": ["admin", "manager", "cashier"],
-  "/products": ["admin", "manager", "cashier"],
-  "/clients": ["admin", "manager", "cashier"],
-  "/bills": ["admin", "manager", "cashier"],
-  "/orders": ["admin", "manager", "cashier"],
+  "/": ["admin", "manager"],
+  "/dashboard": ["admin", "manager"],
+  "/inventory": ["admin", "manager"],
+  "/products": ["admin", "manager"],
+  "/clients": ["admin", "manager"],
+  "/bills": ["admin", "manager"],
+  "/orders": ["admin", "manager", "staff"],
   "/workers": ["admin"],
   "/sales-reports": ["admin"],
-  "/incidents": ["admin", "manager"],
-  "/due-customers": ["admin", "manager", "cashier"],
-  "/contact": ["admin", "manager", "cashier"],
-  "/track": ["admin", "manager"],
+  "/incidents": ["admin", "manager", "staff"],
+  "/due-customers": ["admin", "manager"],
+  "/contact": ["admin", "manager", "staff"],
+  "/track": ["admin", "manager", "staff"],
   "/admin-settings": ["admin"],
 };
 
@@ -50,7 +50,7 @@ function ProtectedRoute({ path, component: Component, allowedRoles }: {
   allowedRoles: string[];
 }) {
   const user = useContext(UserContext);
-  const userRole = user?.role || "cashier";
+  const userRole = user?.role || "manager";
   
   if (!allowedRoles.includes(userRole)) {
     return <Redirect to="/" />;
@@ -61,7 +61,7 @@ function ProtectedRoute({ path, component: Component, allowedRoles }: {
 
 function Router() {
   const user = useContext(UserContext);
-  const userRole = user?.role || "cashier";
+  const userRole = user?.role || "manager";
   
   return (
     <Switch>
