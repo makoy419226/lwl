@@ -56,6 +56,8 @@ import {
   Lock,
   Key,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -114,6 +116,34 @@ export default function Workers() {
     role: "cashier",
     pin: "",
   });
+  
+  // Visibility toggles for password/PIN per user
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<number>>(new Set());
+  const [visiblePins, setVisiblePins] = useState<Set<number>>(new Set());
+  
+  const togglePasswordVisibility = (userId: number) => {
+    setVisiblePasswords(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  };
+  
+  const togglePinVisibility = (userId: number) => {
+    setVisiblePins(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  };
 
   const { data: workers, isLoading } = useQuery<PackingWorker[]>({
     queryKey: ["/api/packing-workers"],
@@ -1012,7 +1042,8 @@ export default function Workers() {
                                 <TableRow>
                                   <TableHead>Username</TableHead>
                                   <TableHead>Name</TableHead>
-                                  <TableHead>Email</TableHead>
+                                  <TableHead>Password</TableHead>
+                                  <TableHead>PIN</TableHead>
                                   <TableHead className="text-center">Active</TableHead>
                                   <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -1023,12 +1054,26 @@ export default function Workers() {
                                     <TableCell className="font-medium">{user.username}</TableCell>
                                     <TableCell>{user.name || "-"}</TableCell>
                                     <TableCell>
-                                      {user.email ? (
-                                        <span className="flex items-center gap-1">
-                                          <Mail className="w-3 h-3 text-muted-foreground" />
-                                          {user.email}
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-sm">
+                                          {visiblePasswords.has(user.id) ? user.password : "••••••"}
                                         </span>
-                                      ) : <span className="text-muted-foreground">Not set</span>}
+                                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePasswordVisibility(user.id)}>
+                                          {visiblePasswords.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-sm">
+                                          {visiblePins.has(user.id) ? (user.pin || "-") : (user.pin ? "•••••" : "-")}
+                                        </span>
+                                        {user.pin && (
+                                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePinVisibility(user.id)}>
+                                            {visiblePins.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                          </Button>
+                                        )}
+                                      </div>
                                     </TableCell>
                                     <TableCell className="text-center">
                                       <div className="flex items-center justify-center gap-2">
@@ -1072,7 +1117,8 @@ export default function Workers() {
                                 <TableRow>
                                   <TableHead>Username</TableHead>
                                   <TableHead>Name</TableHead>
-                                  <TableHead>Email</TableHead>
+                                  <TableHead>Password</TableHead>
+                                  <TableHead>PIN</TableHead>
                                   <TableHead className="text-center">Active</TableHead>
                                   <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -1083,12 +1129,26 @@ export default function Workers() {
                                     <TableCell className="font-medium">{user.username}</TableCell>
                                     <TableCell>{user.name || "-"}</TableCell>
                                     <TableCell>
-                                      {user.email ? (
-                                        <span className="flex items-center gap-1">
-                                          <Mail className="w-3 h-3 text-muted-foreground" />
-                                          {user.email}
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-sm">
+                                          {visiblePasswords.has(user.id) ? user.password : "••••••"}
                                         </span>
-                                      ) : <span className="text-muted-foreground">Not set</span>}
+                                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePasswordVisibility(user.id)}>
+                                          {visiblePasswords.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-sm">
+                                          {visiblePins.has(user.id) ? (user.pin || "-") : (user.pin ? "•••••" : "-")}
+                                        </span>
+                                        {user.pin && (
+                                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePinVisibility(user.id)}>
+                                            {visiblePins.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                          </Button>
+                                        )}
+                                      </div>
                                     </TableCell>
                                     <TableCell className="text-center">
                                       <div className="flex items-center justify-center gap-2">
@@ -1132,7 +1192,8 @@ export default function Workers() {
                                 <TableRow>
                                   <TableHead>Username</TableHead>
                                   <TableHead>Name</TableHead>
-                                  <TableHead>Email</TableHead>
+                                  <TableHead>Password</TableHead>
+                                  <TableHead>PIN</TableHead>
                                   <TableHead className="text-center">Active</TableHead>
                                   <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -1143,12 +1204,26 @@ export default function Workers() {
                                     <TableCell className="font-medium">{user.username}</TableCell>
                                     <TableCell>{user.name || "-"}</TableCell>
                                     <TableCell>
-                                      {user.email ? (
-                                        <span className="flex items-center gap-1">
-                                          <Mail className="w-3 h-3 text-muted-foreground" />
-                                          {user.email}
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-sm">
+                                          {visiblePasswords.has(user.id) ? user.password : "••••••"}
                                         </span>
-                                      ) : <span className="text-muted-foreground">Not set</span>}
+                                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePasswordVisibility(user.id)}>
+                                          {visiblePasswords.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-sm">
+                                          {visiblePins.has(user.id) ? (user.pin || "-") : (user.pin ? "•••••" : "-")}
+                                        </span>
+                                        {user.pin && (
+                                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePinVisibility(user.id)}>
+                                            {visiblePins.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                          </Button>
+                                        )}
+                                      </div>
                                     </TableCell>
                                     <TableCell className="text-center">
                                       <div className="flex items-center justify-center gap-2">
