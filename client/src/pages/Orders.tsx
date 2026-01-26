@@ -3491,6 +3491,13 @@ export default function Orders() {
                     <Badge variant="destructive">Unpaid</Badge>
                   )}
                 </div>
+
+                {selectedBill.createdBy && (
+                  <>
+                    <div className="text-muted-foreground">Billed by:</div>
+                    <div className="font-medium">{selectedBill.createdBy}</div>
+                  </>
+                )}
               </div>
 
               {selectedBill.description && (
@@ -3644,6 +3651,7 @@ export default function Orders() {
                             <div class="row"><span>Total Amount:</span><span>${parseFloat(selectedBill.amount).toFixed(2)} AED</span></div>
                             <div class="row"><span>Paid:</span><span>${parseFloat(selectedBill.paidAmount || "0").toFixed(2)} AED</span></div>
                             <div class="row bold"><span>Balance:</span><span>${currentBillDue.toFixed(2)} AED</span></div>
+                            ${selectedBill.createdBy ? `<div class="row"><span>Billed by:</span><span>${selectedBill.createdBy}</span></div>` : ''}
                           </div>
                           ${otherUnpaidBills.length > 0 ? `
                           <div class="section">
