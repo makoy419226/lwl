@@ -1,20 +1,16 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Order, BillPayment, Bill, Client } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle, AlertTriangle, ArrowUp, ArrowDown, Minus, Timer, X } from "lucide-react";
 import { format, isToday, isBefore, startOfDay, subDays } from "date-fns";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 
 type OrderWithClient = Order & { clientName?: string };
 
 export default function TodaysWork() {
-  const { toast } = useToast();
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<OrderWithClient[]>([]);
   const [dialogTitle, setDialogTitle] = useState("");
@@ -33,16 +29,6 @@ export default function TodaysWork() {
 
   const { data: bills = [] } = useQuery<Bill[]>({
     queryKey: ["/api/bills"],
-  });
-
-  const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return apiRequest("PATCH", `/api/orders/${id}`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      toast({ title: "Order status updated" });
-    },
   });
 
   const getClientName = (order: Order): string => {
@@ -492,20 +478,6 @@ export default function TodaysWork() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-bold text-lg" data-testid={`text-dialog-amount-${order.id}`}>{parseFloat(order.totalAmount || "0").toFixed(0)} AED</p>
-                      <Select
-                        value={order.status || "entry"}
-                        onValueChange={(value) => updateOrderMutation.mutate({ id: order.id, status: value })}
-                      >
-                        <SelectTrigger className="text-xs w-28 mt-1" data-testid={`select-status-${order.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending" data-testid="option-status-pending">Pending</SelectItem>
-                          <SelectItem value="tagging" data-testid="option-status-tagging">Tagging</SelectItem>
-                          <SelectItem value="packing" data-testid="option-status-packing">Packing</SelectItem>
-                          <SelectItem value="delivered" data-testid="option-status-delivered">Delivered</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                 </Card>
