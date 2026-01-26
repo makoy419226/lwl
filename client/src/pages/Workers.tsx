@@ -448,6 +448,7 @@ export default function Workers() {
         name: "",
         email: "",
         role: "cashier",
+        pin: "",
       });
       toast({ title: "User Created", description: "New user account added" });
     },
@@ -473,6 +474,7 @@ export default function Workers() {
         name: "",
         email: "",
         role: "cashier",
+        pin: "",
       });
       toast({ title: "User Updated", description: "User details updated" });
     },
@@ -532,7 +534,13 @@ export default function Workers() {
             <Users className="w-6 h-6 text-primary" />
             Staff Members
           </h1>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <Dialog open={isCreateOpen} onOpenChange={(open) => {
+              if (open) {
+                const staffCount = workers?.length || 0;
+                setFormData({ name: `staff${staffCount + 1}`, role: "Reception", pin: "" });
+              }
+              setIsCreateOpen(open);
+            }}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-worker">
                 <Plus className="w-4 h-4 mr-2" />
