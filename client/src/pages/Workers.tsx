@@ -55,6 +55,7 @@ import {
   Mail,
   Lock,
   Key,
+  AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -729,19 +730,56 @@ export default function Workers() {
                             <TableRow>
                               <TableHead>Username</TableHead>
                               <TableHead>Name</TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Receipt className="w-4 h-4 text-cyan-500" />
+                                  Transactions
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Package className="w-4 h-4 text-green-500" />
+                                  Orders
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <AlertCircle className="w-4 h-4 text-red-500" />
+                                  Unpaid
+                                </div>
+                              </TableHead>
                               <TableHead className="text-center">Status</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {systemUsers?.filter(u => u.role === "manager").map((user) => (
-                              <TableRow key={user.id}>
-                                <TableCell className="font-medium">{user.username}</TableCell>
-                                <TableCell>{user.name || "-"}</TableCell>
-                                <TableCell className="text-center">
-                                  <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                            {systemUsers?.filter(u => u.role === "manager").map((user) => {
+                              const userBills = bills?.filter(b => b.notes?.includes(user.name || user.username)) || [];
+                              const unpaidBills = userBills.filter(b => !b.isPaid);
+                              return (
+                                <TableRow key={user.id}>
+                                  <TableCell className="font-medium">{user.username}</TableCell>
+                                  <TableCell>{user.name || "-"}</TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300">
+                                      {userBills.length}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                                      {userBills.length}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                                      {unpaidBills.length}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
                           </TableBody>
                         </Table>
                       )}
@@ -766,19 +804,56 @@ export default function Workers() {
                             <TableRow>
                               <TableHead>Username</TableHead>
                               <TableHead>Name</TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Receipt className="w-4 h-4 text-cyan-500" />
+                                  Transactions
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Package className="w-4 h-4 text-green-500" />
+                                  Orders
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <AlertCircle className="w-4 h-4 text-red-500" />
+                                  Unpaid
+                                </div>
+                              </TableHead>
                               <TableHead className="text-center">Status</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {systemUsers?.filter(u => u.role === "cashier").map((user) => (
-                              <TableRow key={user.id}>
-                                <TableCell className="font-medium">{user.username}</TableCell>
-                                <TableCell>{user.name || "-"}</TableCell>
-                                <TableCell className="text-center">
-                                  <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                            {systemUsers?.filter(u => u.role === "cashier").map((user) => {
+                              const userBills = bills?.filter(b => b.notes?.includes(user.name || user.username)) || [];
+                              const unpaidBills = userBills.filter(b => !b.isPaid);
+                              return (
+                                <TableRow key={user.id}>
+                                  <TableCell className="font-medium">{user.username}</TableCell>
+                                  <TableCell>{user.name || "-"}</TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300">
+                                      {userBills.length}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                                      {userBills.length}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                                      {unpaidBills.length}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
                           </TableBody>
                         </Table>
                       )}
