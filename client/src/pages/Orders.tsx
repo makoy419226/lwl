@@ -1618,13 +1618,20 @@ export default function Orders() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="font-medium text-left justify-start gap-2"
+                                    className="font-medium text-left justify-start gap-2 h-auto py-1"
                                     data-testid={`button-mobile-client-${order.id}`}
                                   >
                                     <User className="w-4 h-4 text-primary shrink-0" />
-                                    <span className="truncate max-w-[140px]">
-                                      {displayName}
-                                    </span>
+                                    <div className="flex flex-col items-start">
+                                      <span className="truncate max-w-[140px]">
+                                        {displayName}
+                                      </span>
+                                      {(order.deliveryAddress || client?.address) && (
+                                        <span className="text-xs text-muted-foreground font-normal truncate max-w-[140px]">
+                                          {order.deliveryAddress || client?.address}
+                                        </span>
+                                      )}
+                                    </div>
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-72" align="start">
@@ -1638,6 +1645,12 @@ export default function Orders() {
                                         <p className="text-sm text-muted-foreground">
                                           {client?.phone || "No phone"}
                                         </p>
+                                        {(order.deliveryAddress || client?.address) && (
+                                          <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
+                                            <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+                                            <span>{order.deliveryAddress || client?.address}</span>
+                                          </p>
+                                        )}
                                       </div>
                                     </div>
                                     {client && (

@@ -172,10 +172,10 @@ export default function DeliveryDashboard() {
                             </a>
                           </div>
                         )}
-                        {client?.address && (
+                        {(order.deliveryAddress || client?.address) && (
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">{client.address}</span>
+                            <span className="text-muted-foreground">{order.deliveryAddress || client?.address}</span>
                           </div>
                         )}
                         {order.expectedDeliveryAt && (
