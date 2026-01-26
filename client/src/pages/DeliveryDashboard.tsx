@@ -171,18 +171,18 @@ export default function DeliveryDashboard() {
                           <Package className="w-4 h-4 text-muted-foreground" />
                           <span className="font-medium">{order.customerName}</span>
                         </div>
+                        {(order.deliveryAddress || client?.address) && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">{order.deliveryAddress || client?.address}</span>
+                          </div>
+                        )}
                         {client?.phone && (
                           <div className="flex items-center gap-2">
                             <Phone className="w-4 h-4 text-muted-foreground" />
                             <a href={`tel:${client.phone}`} className="text-blue-600 hover:underline">
                               {client.phone}
                             </a>
-                          </div>
-                        )}
-                        {(order.deliveryAddress || client?.address) && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">{order.deliveryAddress || client?.address}</span>
                           </div>
                         )}
                         {order.expectedDeliveryAt && (
