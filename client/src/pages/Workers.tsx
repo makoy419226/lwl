@@ -90,7 +90,7 @@ export default function Workers() {
   const [isCustomRole, setIsCustomRole] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   
-  const predefinedRoles = ["Reception", "Packer", "Delivery Driver", "Manager", "Supervisor"];
+  const predefinedRoles = ["Reception", "Packer", "Delivery Driver", "Manager", "Supervisor", "Staff"];
   const [activeTab, setActiveTab] = useState("stats");
   const [dateFilter, setDateFilter] = useState("today");
   const [customFromDate, setCustomFromDate] = useState("");
