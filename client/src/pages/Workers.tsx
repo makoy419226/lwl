@@ -23,6 +23,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -771,7 +777,6 @@ export default function Workers() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Staff Name</TableHead>
-                          <TableHead>Role</TableHead>
                           <TableHead className="text-center">
                             <div className="flex items-center justify-center gap-1">
                               <Tag className="w-4 h-4 text-orange-500" />
@@ -812,9 +817,6 @@ export default function Workers() {
                                   Inactive
                                 </Badge>
                               )}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {s.worker.role || "Staff"}
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge
@@ -922,11 +924,7 @@ export default function Workers() {
                                   variant="ghost"
                                   onClick={() => {
                                     setEditWorker(worker);
-                                    const workerRole = worker.role || "Reception";
-                                    const isPredefined = predefinedRoles.includes(workerRole);
-                                    setFormData({ name: worker.name, role: workerRole, pin: "" });
-                                    setIsCustomRole(!isPredefined);
-                                    setCustomRole(isPredefined ? "" : workerRole);
+                                    setFormData({ name: worker.name, role: "", pin: "" });
                                   }}
                                   data-testid={`button-edit-${worker.id}`}
                                 >
@@ -987,95 +985,187 @@ export default function Workers() {
                       No user accounts found
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Username</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead className="text-center">Active</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {systemUsers.map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell className="font-medium">
-                              {user.username}
-                            </TableCell>
-                            <TableCell>{user.name || "-"}</TableCell>
-                            <TableCell>
-                              {user.email ? (
-                                <span className="flex items-center gap-1">
-                                  <Mail className="w-3 h-3 text-muted-foreground" />
-                                  {user.email}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground">
-                                  Not set
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{user.role}</Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <Switch
-                                  checked={user.active}
-                                  onCheckedChange={() => toggleUserActive(user)}
-                                  data-testid={`switch-user-active-${user.id}`}
-                                />
-                                <Badge
-                                  variant={
-                                    user.active ? "default" : "secondary"
-                                  }
-                                >
-                                  {user.active ? "Active" : "Inactive"}
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex justify-end gap-1">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setEditUser(user);
-                                    setUserFormData({
-                                      username: user.username,
-                                      password: "",
-                                      name: user.name || "",
-                                      email: user.email || "",
-                                      role: user.role,
-                                    });
-                                  }}
-                                  data-testid={`button-edit-user-${user.id}`}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="text-destructive"
-                                  onClick={() => {
-                                    if (
-                                      confirm(`Delete user "${user.username}"?`)
-                                    ) {
-                                      deleteUserMutation.mutate(user.id);
-                                    }
-                                  }}
-                                  data-testid={`button-delete-user-${user.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <Accordion type="multiple" defaultValue={["managers", "cashiers", "staff"]} className="space-y-2">
+                      <AccordionItem value="managers" className="border rounded-lg px-4">
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Manager</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ({systemUsers.filter(u => u.role === "manager").length} users)
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          {systemUsers.filter(u => u.role === "manager").length === 0 ? (
+                            <p className="text-center text-muted-foreground py-4">No managers found</p>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Username</TableHead>
+                                  <TableHead>Name</TableHead>
+                                  <TableHead>Email</TableHead>
+                                  <TableHead className="text-center">Active</TableHead>
+                                  <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {systemUsers.filter(u => u.role === "manager").map((user) => (
+                                  <TableRow key={user.id}>
+                                    <TableCell className="font-medium">{user.username}</TableCell>
+                                    <TableCell>{user.name || "-"}</TableCell>
+                                    <TableCell>
+                                      {user.email ? (
+                                        <span className="flex items-center gap-1">
+                                          <Mail className="w-3 h-3 text-muted-foreground" />
+                                          {user.email}
+                                        </span>
+                                      ) : <span className="text-muted-foreground">Not set</span>}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Switch checked={user.active} onCheckedChange={() => toggleUserActive(user)} />
+                                        <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex justify-end gap-1">
+                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role }); }}>
+                                          <Pencil className="w-4 h-4" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Delete user "${user.username}"?`)) { deleteUserMutation.mutate(user.id); } }}>
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="cashiers" className="border rounded-lg px-4">
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Cashier</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ({systemUsers.filter(u => u.role === "cashier").length} users)
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          {systemUsers.filter(u => u.role === "cashier").length === 0 ? (
+                            <p className="text-center text-muted-foreground py-4">No cashiers found</p>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Username</TableHead>
+                                  <TableHead>Name</TableHead>
+                                  <TableHead>Email</TableHead>
+                                  <TableHead className="text-center">Active</TableHead>
+                                  <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {systemUsers.filter(u => u.role === "cashier").map((user) => (
+                                  <TableRow key={user.id}>
+                                    <TableCell className="font-medium">{user.username}</TableCell>
+                                    <TableCell>{user.name || "-"}</TableCell>
+                                    <TableCell>
+                                      {user.email ? (
+                                        <span className="flex items-center gap-1">
+                                          <Mail className="w-3 h-3 text-muted-foreground" />
+                                          {user.email}
+                                        </span>
+                                      ) : <span className="text-muted-foreground">Not set</span>}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Switch checked={user.active} onCheckedChange={() => toggleUserActive(user)} />
+                                        <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex justify-end gap-1">
+                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role }); }}>
+                                          <Pencil className="w-4 h-4" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Delete user "${user.username}"?`)) { deleteUserMutation.mutate(user.id); } }}>
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="staff" className="border rounded-lg px-4">
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Staff</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ({systemUsers.filter(u => u.role === "staff").length} users)
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          {systemUsers.filter(u => u.role === "staff").length === 0 ? (
+                            <p className="text-center text-muted-foreground py-4">No staff found</p>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Username</TableHead>
+                                  <TableHead>Name</TableHead>
+                                  <TableHead>Email</TableHead>
+                                  <TableHead className="text-center">Active</TableHead>
+                                  <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {systemUsers.filter(u => u.role === "staff").map((user) => (
+                                  <TableRow key={user.id}>
+                                    <TableCell className="font-medium">{user.username}</TableCell>
+                                    <TableCell>{user.name || "-"}</TableCell>
+                                    <TableCell>
+                                      {user.email ? (
+                                        <span className="flex items-center gap-1">
+                                          <Mail className="w-3 h-3 text-muted-foreground" />
+                                          {user.email}
+                                        </span>
+                                      ) : <span className="text-muted-foreground">Not set</span>}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Switch checked={user.active} onCheckedChange={() => toggleUserActive(user)} />
+                                        <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex justify-end gap-1">
+                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role }); }}>
+                                          <Pencil className="w-4 h-4" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Delete user "${user.username}"?`)) { deleteUserMutation.mutate(user.id); } }}>
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   )}
                 </CardContent>
               </Card>
