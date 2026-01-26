@@ -137,16 +137,10 @@ export default function DeliveryDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="p-4 text-center">
-          <div className="text-3xl font-bold text-blue-600">{pickupOrders.length}</div>
-          <div className="text-sm text-muted-foreground">Ready for Pickup</div>
-        </Card>
-        <Card className="p-4 text-center">
-          <div className="text-3xl font-bold text-green-600">{deliveryOrders.length}</div>
-          <div className="text-sm text-muted-foreground">Ready for Delivery</div>
-        </Card>
-      </div>
+      <Card className="p-4 text-center w-fit">
+        <div className="text-3xl font-bold text-green-600">{deliveryOrders.length}</div>
+        <div className="text-sm text-muted-foreground">Ready for Delivery</div>
+      </Card>
 
       {deliveryOrders.length > 0 && (
         <div className="space-y-3">
