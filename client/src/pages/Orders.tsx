@@ -1935,7 +1935,7 @@ export default function Orders() {
                   {/* Desktop Table Layout */}
                   <Card className="responsive-card hidden md:block">
                     <div className="overflow-x-auto">
-                      <Table className="w-full table-fixed">
+                      <Table className="min-w-[1200px]">
                         <TableHeader>
                           <TableRow className="transition-all duration-200">
                             <TableHead className="w-[70px] lg:w-[90px]">
