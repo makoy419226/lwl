@@ -902,18 +902,6 @@ export default function Workers() {
                                   Packed
                                 </div>
                               </TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Truck className="w-4 h-4 text-purple-500" />
-                                  Delivered
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Receipt className="w-4 h-4 text-cyan-500" />
-                                  Bills
-                                </div>
-                              </TableHead>
                               <TableHead className="text-center">Total</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -947,24 +935,8 @@ export default function Workers() {
                                     {s.packedCount}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-center">
-                                  <Badge
-                                    variant="outline"
-                                    className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
-                                  >
-                                    {s.deliveredCount}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <Badge
-                                    variant="outline"
-                                    className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
-                                  >
-                                    {s.billsCreated} ({s.billsTotal.toFixed(0)})
-                                  </Badge>
-                                </TableCell>
                                 <TableCell className="text-center font-bold">
-                                  {s.totalTasks}
+                                  {s.taggedCount + s.packedCount}
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -981,9 +953,24 @@ export default function Workers() {
                         <span className="text-sm text-muted-foreground">
                           ({driverStats.length} drivers) - {driverTotals.delivered} deliveries
                         </span>
+                        {orders && (
+                          <Badge className="bg-orange-500 text-white">
+                            {orders.filter(o => o.packingDone && !o.delivered && o.deliveryType === 'delivery').length} Ready
+                          </Badge>
+                        )}
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
+                      {orders && orders.filter(o => o.packingDone && !o.delivered && o.deliveryType === 'delivery').length > 0 && (
+                        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                          <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                            <Package className="w-5 h-5" />
+                            <span className="font-semibold">
+                              {orders.filter(o => o.packingDone && !o.delivered && o.deliveryType === 'delivery').length} orders ready for delivery
+                            </span>
+                          </div>
+                        </div>
+                      )}
                       {driverStats.length === 0 ? (
                         <p className="text-center text-muted-foreground py-4">No drivers found</p>
                       ) : (
@@ -994,7 +981,7 @@ export default function Workers() {
                               <TableHead className="text-center">
                                 <div className="flex items-center justify-center gap-1">
                                   <Truck className="w-4 h-4 text-green-500" />
-                                  Deliveries
+                                  Delivered
                                 </div>
                               </TableHead>
                               <TableHead className="text-center">Status</TableHead>
