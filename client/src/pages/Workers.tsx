@@ -408,7 +408,7 @@ export default function Workers() {
 
   const handleUpdate = () => {
     if (!editWorker || !formData.name) return;
-    const updates: any = { name: formData.name };
+    const updates: any = { name: formData.name, role: formData.role };
     if (formData.pin && formData.pin.length === 5) {
       updates.pin = formData.pin;
     }
