@@ -1,10 +1,12 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,8 @@ import {
   Eye,
   Search,
   RefreshCw,
+  Camera,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +40,9 @@ export default function DeliveryDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [pinDialogOrder, setPinDialogOrder] = useState<Order | null>(null);
   const [deliveryPin, setDeliveryPin] = useState("");
+  const [itemCountConfirmed, setItemCountConfirmed] = useState(false);
+  const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const { data: orders, isLoading: ordersLoading, refetch } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -343,33 +350,144 @@ export default function DeliveryDashboard() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!pinDialogOrder} onOpenChange={() => { setPinDialogOrder(null); setDeliveryPin(""); }}>
-        <DialogContent className="max-w-sm">
+      <Dialog open={!!pinDialogOrder} onOpenChange={() => { 
+        setPinDialogOrder(null); 
+        setDeliveryPin(""); 
+        setItemCountConfirmed(false);
+        setDeliveryPhoto(null);
+      }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Confirm Delivery</DialogTitle>
-            <DialogDescription>
-              Enter your Driver PIN to confirm delivery for order #{pinDialogOrder?.orderNumber}
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="w-5 h-5" />
+              Confirm Delivery
+            </DialogTitle>
           </DialogHeader>
+          
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-amber-800 dark:text-amber-200">This action cannot be undone</p>
+                <p className="text-amber-700 dark:text-amber-300">Order status and delivery type cannot be changed after confirmation.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <div>
-              <Label>Driver PIN</Label>
-              <Input
-                type="password"
-                placeholder="Enter your PIN"
-                value={deliveryPin}
-                onChange={(e) => setDeliveryPin(e.target.value)}
-                data-testid="input-driver-pin"
+              <Label className="flex items-center gap-2 mb-2">
+                <Camera className="w-4 h-4" />
+                Delivery Photo (Optional)
+              </Label>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => setDeliveryPhoto(reader.result as string);
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              {deliveryPhoto ? (
+                <div className="relative">
+                  <img src={deliveryPhoto} alt="Delivery" className="w-full h-32 object-cover rounded-lg" />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="absolute top-2 right-2"
+                    onClick={() => setDeliveryPhoto(null)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full h-20 border-dashed"
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  <Camera className="w-5 h-5 mr-2" />
+                  Tap to open camera
+                </Button>
+              )}
+            </div>
+
+            <div className="border rounded-lg p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Item Count at Intake</span>
+                <Badge variant="outline" className="text-lg px-3">
+                  {pinDialogOrder?.items ? JSON.parse(pinDialogOrder.items).reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) : 0} items
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="confirm-items"
+                  checked={itemCountConfirmed}
+                  onCheckedChange={(checked) => setItemCountConfirmed(checked as boolean)}
+                  data-testid="checkbox-confirm-items"
+                />
+                <label htmlFor="confirm-items" className="text-sm cursor-pointer">
+                  I confirm all items are present and match intake
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <Label className="flex items-center gap-2 mb-2">
+                <MapPin className="w-4 h-4" />
+                Delivery Address
+              </Label>
+              <Textarea
+                value={pinDialogOrder?.deliveryAddress || getClient(pinDialogOrder!)?.address || "n/a"}
+                readOnly
+                className="resize-none bg-muted"
+                rows={2}
               />
             </div>
-            <Button
-              className="w-full"
-              onClick={handlePinSubmit}
-              disabled={deliverMutation.isPending || !deliveryPin}
-              data-testid="button-submit-delivery"
-            >
-              {deliverMutation.isPending ? "Confirming..." : "Confirm Delivery"}
-            </Button>
+
+            <div>
+              <Label className="mb-2 block">Enter Driver PIN</Label>
+              <Input
+                type="password"
+                placeholder="Enter 5-digit PIN"
+                value={deliveryPin}
+                onChange={(e) => setDeliveryPin(e.target.value)}
+                maxLength={5}
+                className="text-center text-lg tracking-widest"
+                data-testid="input-driver-pin"
+              />
+              <p className="text-xs text-amber-600 mt-1">Please verify item count before confirming delivery</p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setPinDialogOrder(null);
+                  setDeliveryPin("");
+                  setItemCountConfirmed(false);
+                  setDeliveryPhoto(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-amber-500 hover:bg-amber-600"
+                onClick={handlePinSubmit}
+                disabled={deliverMutation.isPending || !deliveryPin || !itemCountConfirmed}
+                data-testid="button-submit-delivery"
+              >
+                {deliverMutation.isPending ? "Confirming..." : "Confirm Delivery"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
