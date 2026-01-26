@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Order, BillPayment, Bill, Client } from "@shared/schema";
 import { Card } from "@/components/ui/card";
@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle, AlertTriangle, ArrowUp, ArrowDown, Minus, Timer, X } from "lucide-react";
 import { format, isToday, isBefore, startOfDay, subDays } from "date-fns";
+import { UserContext } from "@/App";
 
 type OrderWithClient = Order & { clientName?: string };
 
 export default function TodaysWork() {
+  const user = useContext(UserContext);
+  const isStaff = user?.role === "staff";
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<OrderWithClient[]>([]);
   const [dialogTitle, setDialogTitle] = useState("");
@@ -334,67 +337,73 @@ export default function TodaysWork() {
           <p className="text-xs text-muted-foreground">Completed today</p>
         </Card>
 
-        <Card 
-          className="p-4" 
-          data-testid="card-unpaid-bills"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <AlertCircle className="w-5 h-5 text-red-500" />
-            <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" data-testid="text-unpaid-amount">
-              {totalUnpaidAmount.toFixed(0)} AED
-            </Badge>
-          </div>
-          <h3 className="font-semibold text-sm text-foreground">UNPAID BILLS</h3>
-          <p className="text-xs text-muted-foreground" data-testid="text-unpaid-count">{unpaidBills.length} bills pending</p>
-        </Card>
+        {!isStaff && (
+          <Card 
+            className="p-4" 
+            data-testid="card-unpaid-bills"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" data-testid="text-unpaid-amount">
+                {totalUnpaidAmount.toFixed(0)} AED
+              </Badge>
+            </div>
+            <h3 className="font-semibold text-sm text-foreground">UNPAID BILLS</h3>
+            <p className="text-xs text-muted-foreground" data-testid="text-unpaid-count">{unpaidBills.length} bills pending</p>
+          </Card>
+        )}
 
-        <Card 
-          className="p-4 cursor-pointer hover-elevate" 
-          onClick={() => openCardDialog("Today's Orders", todaysOrders)}
-          data-testid="card-total-sales"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" data-testid="badge-sales-amount">
-              {totalRevenue.toFixed(0)} AED
-            </Badge>
-          </div>
-          <h3 className="font-semibold text-sm text-foreground">TOTAL SALES</h3>
-          <p className="text-xs text-muted-foreground">{todaysOrders.length} orders today</p>
-        </Card>
+        {!isStaff && (
+          <Card 
+            className="p-4 cursor-pointer hover-elevate" 
+            onClick={() => openCardDialog("Today's Orders", todaysOrders)}
+            data-testid="card-total-sales"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <TrendingUp className="w-5 h-5 text-green-600" />
+              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" data-testid="badge-sales-amount">
+                {totalRevenue.toFixed(0)} AED
+              </Badge>
+            </div>
+            <h3 className="font-semibold text-sm text-foreground">TOTAL SALES</h3>
+            <p className="text-xs text-muted-foreground">{todaysOrders.length} orders today</p>
+          </Card>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-            <h2 className="font-bold text-foreground">Today's Summary</h2>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-sm">Orders Billed Today</span>
-              <div className="text-right">
-                <span className="font-bold text-lg" data-testid="text-orders-billed">{totalRevenue.toFixed(0)} AED</span>
-                <div><ComparisonBadge current={totalRevenue} previous={yesterdayRevenue} label="AED" /></div>
+      <div className={`grid grid-cols-1 ${isStaff ? '' : 'lg:grid-cols-2'} gap-4`}>
+        {!isStaff && (
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-green-600" />
+              <h2 className="font-bold text-foreground">Today's Summary</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground text-sm">Orders Billed Today</span>
+                <div className="text-right">
+                  <span className="font-bold text-lg" data-testid="text-orders-billed">{totalRevenue.toFixed(0)} AED</span>
+                  <div><ComparisonBadge current={totalRevenue} previous={yesterdayRevenue} label="AED" /></div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground text-sm">Payments Received Today</span>
+                <span className="font-bold text-lg text-green-600" data-testid="text-payments-received">{paidAmount.toFixed(0)} AED</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-muted-foreground text-sm">Total Outstanding</span>
+                <span className="font-bold text-lg text-red-600" data-testid="text-total-outstanding">{totalUnpaidAmount.toFixed(0)} AED</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-muted-foreground text-sm">Orders Count</span>
+                <div className="text-right">
+                  <span className="font-bold text-lg" data-testid="text-orders-count">{todaysOrders.length}</span>
+                  <div><ComparisonBadge current={todaysOrders.length} previous={yesterdaysOrders.length} label="orders" /></div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-sm">Payments Received Today</span>
-              <span className="font-bold text-lg text-green-600" data-testid="text-payments-received">{paidAmount.toFixed(0)} AED</span>
-            </div>
-            <div className="flex justify-between items-center pt-2 border-t">
-              <span className="text-muted-foreground text-sm">Total Outstanding</span>
-              <span className="font-bold text-lg text-red-600" data-testid="text-total-outstanding">{totalUnpaidAmount.toFixed(0)} AED</span>
-            </div>
-            <div className="flex justify-between items-center pt-2 border-t">
-              <span className="text-muted-foreground text-sm">Orders Count</span>
-              <div className="text-right">
-                <span className="font-bold text-lg" data-testid="text-orders-count">{todaysOrders.length}</span>
-                <div><ComparisonBadge current={todaysOrders.length} previous={yesterdaysOrders.length} label="orders" /></div>
-              </div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         <Card className="p-4">
           <div className="flex items-center gap-2 mb-4">
