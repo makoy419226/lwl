@@ -1962,6 +1962,13 @@ export async function registerRoutes(
       return res.json({ success: true, worker: { id: 0, name: "Admin" } });
     }
     
+    // Check for user PIN (admin, manager, cashier, staff roles)
+    const user = await storage.verifyUserPin(pin);
+    if (user) {
+      return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
+    }
+    
+    // Also check packing workers
     const worker = await storage.verifyPackingWorkerPin(pin);
     if (worker) {
       res.json({ success: true, worker: { id: worker.id, name: worker.name } });
