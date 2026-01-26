@@ -111,6 +111,7 @@ export default function Workers() {
     name: "",
     email: "",
     role: "cashier",
+    pin: "",
   });
 
   const { data: workers, isLoading } = useQuery<PackingWorker[]>({
@@ -512,6 +513,7 @@ export default function Workers() {
     if (userFormData.email) updates.email = userFormData.email;
     if (userFormData.password) updates.password = userFormData.password;
     if (userFormData.role) updates.role = userFormData.role;
+    if (userFormData.pin && /^\d{5}$/.test(userFormData.pin)) updates.pin = userFormData.pin;
     updateUserMutation.mutate({ id: editUser.id, updates });
   };
 
@@ -1030,7 +1032,7 @@ export default function Workers() {
                                     </TableCell>
                                     <TableCell>
                                       <div className="flex justify-end gap-1">
-                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role }); }}>
+                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); }}>
                                           <Pencil className="w-4 h-4" />
                                         </Button>
                                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Delete user "${user.username}"?`)) { deleteUserMutation.mutate(user.id); } }}>
@@ -1090,7 +1092,7 @@ export default function Workers() {
                                     </TableCell>
                                     <TableCell>
                                       <div className="flex justify-end gap-1">
-                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role }); }}>
+                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); }}>
                                           <Pencil className="w-4 h-4" />
                                         </Button>
                                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Delete user "${user.username}"?`)) { deleteUserMutation.mutate(user.id); } }}>
@@ -1150,7 +1152,7 @@ export default function Workers() {
                                     </TableCell>
                                     <TableCell>
                                       <div className="flex justify-end gap-1">
-                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role }); }}>
+                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); }}>
                                           <Pencil className="w-4 h-4" />
                                         </Button>
                                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Delete user "${user.username}"?`)) { deleteUserMutation.mutate(user.id); } }}>
@@ -1389,6 +1391,24 @@ export default function Workers() {
                   setUserFormData({ ...userFormData, password: e.target.value })
                 }
                 data-testid="input-edit-user-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                New PIN (leave empty to keep current)
+              </Label>
+              <Input
+                type="tel"
+                maxLength={5}
+                placeholder="Enter 5-digit PIN"
+                value={userFormData.pin}
+                autoComplete="off"
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, pin: e.target.value.replace(/\D/g, "").slice(0, 5) })
+                }
+                className="text-center tracking-widest"
+                data-testid="input-edit-user-pin"
               />
             </div>
             <div className="space-y-2">
