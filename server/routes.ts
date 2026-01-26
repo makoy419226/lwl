@@ -4,8 +4,8 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
-import { users, passwordResetTokens, stageChecklists } from "@shared/schema";
-import { eq, and, gt } from "drizzle-orm";
+import { users, passwordResetTokens, stageChecklists, packingWorkers } from "@shared/schema";
+import { eq, and, gt, ne } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
 import { sendDailySalesReportEmailSMTP, sendSalesReportEmailSMTP, type DailySalesData, type SalesReportData, type ReportPeriod } from "./smtp";
 import PDFDocument from "pdfkit";
@@ -206,8 +206,24 @@ export async function registerRoutes(
 
   // Create user
   app.post("/api/users", async (req, res) => {
-    const { username, password, role, name, email } = req.body;
+    const { username, password, role, name, email, pin } = req.body;
     try {
+      // Check if PIN is provided and validate uniqueness
+      if (pin) {
+        if (!/^\d{5}$/.test(pin)) {
+          return res.status(400).json({ message: "PIN must be 5 digits" });
+        }
+        // Check if PIN is already used by another user
+        const existingUser = await db.select().from(users).where(eq(users.pin, pin)).limit(1);
+        if (existingUser.length > 0) {
+          return res.status(400).json({ message: "This PIN is used by other user" });
+        }
+        // Check if PIN is already used by a worker
+        const existingWorker = await db.select().from(packingWorkers).where(eq(packingWorkers.pin, pin)).limit(1);
+        if (existingWorker.length > 0) {
+          return res.status(400).json({ message: "This PIN is used by other user" });
+        }
+      }
       const [newUser] = await db
         .insert(users)
         .values({
@@ -216,6 +232,7 @@ export async function registerRoutes(
           role: role || "cashier",
           name,
           email: email || null,
+          pin: pin || "12345",
           active: true,
         })
         .returning();
@@ -235,11 +252,29 @@ export async function registerRoutes(
 
   // Update user
   app.put("/api/users/:id", async (req, res) => {
-    const { username, password, role, name, email, active } = req.body;
+    const { username, password, role, name, email, active, pin } = req.body;
     const userId = Number(req.params.id);
     if (isNaN(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
+    
+    // Check if PIN is provided and validate uniqueness
+    if (pin) {
+      if (!/^\d{5}$/.test(pin)) {
+        return res.status(400).json({ message: "PIN must be 5 digits" });
+      }
+      // Check if PIN is already used by another user (excluding current user)
+      const existingUser = await db.select().from(users).where(and(eq(users.pin, pin), ne(users.id, userId))).limit(1);
+      if (existingUser.length > 0) {
+        return res.status(400).json({ message: "This PIN is used by other user" });
+      }
+      // Check if PIN is already used by a worker
+      const existingWorker = await db.select().from(packingWorkers).where(eq(packingWorkers.pin, pin)).limit(1);
+      if (existingWorker.length > 0) {
+        return res.status(400).json({ message: "This PIN is used by other user" });
+      }
+    }
+    
     const updates: any = {};
     if (username) updates.username = username;
     if (password) updates.password = password;
@@ -247,6 +282,7 @@ export async function registerRoutes(
     if (name !== undefined) updates.name = name;
     if (email !== undefined) updates.email = email || null;
     if (active !== undefined) updates.active = active;
+    if (pin) updates.pin = pin;
 
     const [updated] = await db
       .update(users)
@@ -1663,6 +1699,16 @@ export async function registerRoutes(
         .json({ message: "Name and 5-digit PIN are required" });
     }
     try {
+      // Check if PIN is already used by another worker
+      const existingWorker = await db.select().from(packingWorkers).where(eq(packingWorkers.pin, pin)).limit(1);
+      if (existingWorker.length > 0) {
+        return res.status(400).json({ message: "This PIN is used by other user" });
+      }
+      // Check if PIN is already used by a user
+      const existingUser = await db.select().from(users).where(eq(users.pin, pin)).limit(1);
+      if (existingUser.length > 0) {
+        return res.status(400).json({ message: "This PIN is used by other user" });
+      }
       const worker = await storage.createPackingWorker({ name, pin });
       res
         .status(201)
@@ -1688,6 +1734,18 @@ export async function registerRoutes(
       const workerId = Number(req.params.id);
       if (isNaN(workerId)) {
         return res.status(400).json({ message: "Invalid worker ID" });
+      }
+      // Check if PIN is already used by another worker (excluding current worker)
+      if (pin) {
+        const existingWorker = await db.select().from(packingWorkers).where(and(eq(packingWorkers.pin, pin), ne(packingWorkers.id, workerId))).limit(1);
+        if (existingWorker.length > 0) {
+          return res.status(400).json({ message: "This PIN is used by other user" });
+        }
+        // Check if PIN is already used by a user
+        const existingUser = await db.select().from(users).where(eq(users.pin, pin)).limit(1);
+        if (existingUser.length > 0) {
+          return res.status(400).json({ message: "This PIN is used by other user" });
+        }
       }
       const worker = await storage.updatePackingWorker(workerId, updates);
       res.json({ id: worker.id, name: worker.name, active: worker.active });
