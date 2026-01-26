@@ -1286,21 +1286,6 @@ export default function Workers() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                <Mail className="w-3 h-3" />
-                Email (for password reset)
-              </Label>
-              <Input
-                type="email"
-                placeholder="email@example.com"
-                value={userFormData.email}
-                onChange={(e) =>
-                  setUserFormData({ ...userFormData, email: e.target.value })
-                }
-                data-testid="input-new-email"
-              />
-            </div>
-            <div className="space-y-2">
               <Label>Role</Label>
               <Select
                 value={userFormData.role}
@@ -1372,21 +1357,6 @@ export default function Workers() {
                   setUserFormData({ ...userFormData, name: e.target.value })
                 }
                 data-testid="input-edit-user-name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                <Mail className="w-3 h-3" />
-                Email (for password reset)
-              </Label>
-              <Input
-                type="email"
-                placeholder="email@example.com"
-                value={userFormData.email}
-                onChange={(e) =>
-                  setUserFormData({ ...userFormData, email: e.target.value })
-                }
-                data-testid="input-edit-user-email"
               />
             </div>
             <div className="space-y-2">
