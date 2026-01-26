@@ -621,7 +621,7 @@ export default function Workers() {
             <TabsList className="mb-4">
               <TabsTrigger value="stats" data-testid="tab-stats">
                 <BarChart3 className="w-4 h-4 mr-1" />
-                Staff Stats
+                User Stats
               </TabsTrigger>
               <TabsTrigger value="manage" data-testid="tab-manage">
                 <Users className="w-4 h-4 mr-1" />
@@ -783,107 +783,182 @@ export default function Workers() {
                   </Card>
                 </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Staff Performance</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Staff Name</TableHead>
-                          <TableHead className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Tag className="w-4 h-4 text-orange-500" />
-                              Tagged
-                            </div>
-                          </TableHead>
-                          <TableHead className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Package className="w-4 h-4 text-green-500" />
-                              Packed
-                            </div>
-                          </TableHead>
-                          <TableHead className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Truck className="w-4 h-4 text-purple-500" />
-                              Delivered
-                            </div>
-                          </TableHead>
-                          <TableHead className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Receipt className="w-4 h-4 text-cyan-500" />
-                              Bills
-                            </div>
-                          </TableHead>
-                          <TableHead className="text-center">Total</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredStats.map((s) => (
-                          <TableRow
-                            key={s.worker.id}
-                            data-testid={`row-stats-${s.worker.id}`}
-                          >
-                            <TableCell className="font-medium">
-                              {s.worker.name}
-                              {!s.worker.active && (
-                                <Badge variant="secondary" className="ml-2">
-                                  Inactive
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge
-                                variant="outline"
-                                className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
+                <Accordion type="multiple" defaultValue={["managers", "cashiers", "staff"]} className="space-y-2">
+                  <AccordionItem value="managers" className="border rounded-lg">
+                    <AccordionTrigger className="hover:no-underline px-4">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Manager</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          ({systemUsers?.filter(u => u.role === "manager").length || 0} users)
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      {!systemUsers?.filter(u => u.role === "manager").length ? (
+                        <p className="text-center text-muted-foreground py-4">No managers found</p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Username</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead className="text-center">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {systemUsers?.filter(u => u.role === "manager").map((user) => (
+                              <TableRow key={user.id}>
+                                <TableCell className="font-medium">{user.username}</TableCell>
+                                <TableCell>{user.name || "-"}</TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="cashiers" className="border rounded-lg">
+                    <AccordionTrigger className="hover:no-underline px-4">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Cashier</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          ({systemUsers?.filter(u => u.role === "cashier").length || 0} users)
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      {!systemUsers?.filter(u => u.role === "cashier").length ? (
+                        <p className="text-center text-muted-foreground py-4">No cashiers found</p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Username</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead className="text-center">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {systemUsers?.filter(u => u.role === "cashier").map((user) => (
+                              <TableRow key={user.id}>
+                                <TableCell className="font-medium">{user.username}</TableCell>
+                                <TableCell>{user.name || "-"}</TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="staff" className="border rounded-lg">
+                    <AccordionTrigger className="hover:no-underline px-4">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Staff</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          ({filteredStats.length} workers)
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      {filteredStats.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-4">No staff workers found</p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Staff Name</TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Tag className="w-4 h-4 text-orange-500" />
+                                  Tagged
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Package className="w-4 h-4 text-green-500" />
+                                  Packed
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Truck className="w-4 h-4 text-purple-500" />
+                                  Delivered
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Receipt className="w-4 h-4 text-cyan-500" />
+                                  Bills
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredStats.map((s) => (
+                              <TableRow
+                                key={s.worker.id}
+                                data-testid={`row-stats-${s.worker.id}`}
                               >
-                                {s.taggedCount}
-                              </Badge>
+                                <TableCell className="font-medium">
+                                  {s.worker.name}
+                                  {!s.worker.active && (
+                                    <Badge variant="secondary" className="ml-2">
+                                      Inactive
+                                    </Badge>
+                                  )}
                             </TableCell>
-                            <TableCell className="text-center">
-                              <Badge
-                                variant="outline"
-                                className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                              >
-                                {s.packedCount}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge
-                                variant="outline"
-                                className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
-                              >
-                                {s.deliveredCount}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge
-                                variant="outline"
-                                className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
-                              >
-                                {s.billsCreated} ({s.billsTotal.toFixed(0)})
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center font-bold">
-                              {s.totalTasks}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {filteredStats.length === 0 && (
-                          <TableRow>
-                            <TableCell
-                              colSpan={7}
-                              className="text-center text-muted-foreground py-8"
-                            >
-                              No worker stats found for selected period
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
+                                  >
+                                    {s.taggedCount}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                                  >
+                                    {s.packedCount}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                                  >
+                                    {s.deliveredCount}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
+                                  >
+                                    {s.billsCreated} ({s.billsTotal.toFixed(0)})
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center font-bold">
+                                  {s.totalTasks}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
             </TabsContent>
 
