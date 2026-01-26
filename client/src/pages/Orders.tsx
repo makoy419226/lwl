@@ -631,17 +631,6 @@ export default function Orders() {
             : ""
         }
         
-        ${
-          order.notes
-            ? `
-        <div style="background: #e8f4fd; border: 1px solid #90cdf4; border-radius: 4px; padding: 8px; margin-bottom: 10px;">
-          <div style="font-size: 9px; font-weight: bold; color: #2b6cb0; margin-bottom: 3px;">ORDER NOTES</div>
-          <div style="font-size: 10px;">${order.notes}</div>
-        </div>
-        `
-            : ""
-        }
-        
         <div style="display: flex; justify-content: space-between; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc;">
           <div>
             <div style="font-size: 8px; color: #888;">Packing</div>
