@@ -638,26 +638,36 @@ export default function Bills() {
     window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
   };
 
-  // Verify cashier PIN before allowing payment
-  const verifyCashierPin = () => {
-    const matchedWorker = workers.find(w => w.pin === cashierPin && w.active);
-    if (matchedWorker) {
-      setVerifiedCashier(matchedWorker.name);
-      setShowPinDialog(false);
-      setCashierPin("");
-      setPinError("");
-      
-      // Execute the pending payment action
-      if (pendingPaymentAction) {
-        if (pendingPaymentAction.type === 'bill' && pendingPaymentAction.bill) {
-          proceedWithPayment(pendingPaymentAction.bill);
-        } else if (pendingPaymentAction.type === 'client' && pendingPaymentAction.client) {
-          proceedWithClientPayment(pendingPaymentAction.client, pendingPaymentAction.totalDue || 0);
+  // Verify cashier PIN before allowing payment (supports admin, manager, cashier, staff PINs)
+  const verifyCashierPin = async () => {
+    try {
+      const res = await fetch("/api/workers/verify-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: cashierPin }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setVerifiedCashier(data.worker?.name || "Staff");
+        setShowPinDialog(false);
+        setCashierPin("");
+        setPinError("");
+        
+        // Execute the pending payment action
+        if (pendingPaymentAction) {
+          if (pendingPaymentAction.type === 'bill' && pendingPaymentAction.bill) {
+            proceedWithPayment(pendingPaymentAction.bill);
+          } else if (pendingPaymentAction.type === 'client' && pendingPaymentAction.client) {
+            proceedWithClientPayment(pendingPaymentAction.client, pendingPaymentAction.totalDue || 0);
+          }
+          setPendingPaymentAction(null);
         }
-        setPendingPaymentAction(null);
+      } else {
+        setPinError("Invalid PIN. Please try again.");
       }
-    } else {
-      setPinError("Invalid PIN. Please try again.");
+    } catch (err) {
+      setPinError("Failed to verify PIN. Please try again.");
     }
   };
 
