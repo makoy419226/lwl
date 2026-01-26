@@ -1562,9 +1562,6 @@ export default function Bills() {
             <div className="text-center font-bold text-lg mb-3">INVOICE</div>
             <div className="text-sm mb-3">
               <div>Ref: {createdBill?.bill.referenceNumber}</div>
-              {createdBill?.bill.createdBy && (
-                <div>Created by: {createdBill.bill.createdBy}</div>
-              )}
               <div>
                 Date:{" "}
                 {createdBill?.bill.billDate
@@ -1575,6 +1572,12 @@ export default function Bills() {
                   : ""}
               </div>
               <div>Customer: {createdBill?.bill.customerName}</div>
+              {createdBill?.bill.customerPhone && (
+                <div>Phone: {createdBill.bill.customerPhone}</div>
+              )}
+              {createdBill?.bill.createdBy && (
+                <div>Billed by: {createdBill.bill.createdBy}</div>
+              )}
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', fontSize: '12px' }}>
               <thead>
@@ -2210,7 +2213,7 @@ export default function Bills() {
             <DialogDescription className="space-y-1">
               <div>{viewBillDetails?.referenceNumber && `Reference: ${viewBillDetails.referenceNumber}`}</div>
               {viewBillDetails?.createdBy && (
-                <div className="text-xs">Created by: {viewBillDetails.createdBy}</div>
+                <div className="text-xs">Billed by: {viewBillDetails.createdBy}</div>
               )}
             </DialogDescription>
           </DialogHeader>
