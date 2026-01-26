@@ -1015,6 +1015,7 @@ export async function registerRoutes(
         deliveryAddress,
         createNewBill,
         billId: requestBillId,
+        createdBy,
       } = req.body;
 
       // // Validate required fields
@@ -1128,6 +1129,7 @@ export async function registerRoutes(
             description: `Order #${order.orderNumber}: ${order.items || "Items"}`,
             billDate: new Date(),
             referenceNumber: `BILL-${order.orderNumber}`,
+            createdBy: createdBy || undefined,
           });
           assignedBillId = newBill.id;
         } else {
@@ -1141,6 +1143,7 @@ export async function registerRoutes(
             description: `Order #${order.orderNumber}: ${order.items || "Items"}`,
             billDate: new Date(),
             referenceNumber: `BILL-${order.orderNumber}`,
+            createdBy: createdBy || undefined,
           });
           assignedBillId = newBill.id;
         }

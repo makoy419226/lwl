@@ -3969,6 +3969,7 @@ function OrderForm({
   isLoading,
   initialClientId,
   initialBillId,
+  createdByUser,
 }: {
   clients: Client[];
   bills: Bill[];
@@ -3976,6 +3977,7 @@ function OrderForm({
   isLoading: boolean;
   initialClientId?: string;
   initialBillId?: string;
+  createdByUser?: string;
 }) {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -4172,6 +4174,7 @@ function OrderForm({
       paymentOption: formData.paymentOption,
       expectedDeliveryAt: formData.expectedDeliveryAt || null,
       createNewBill: formData.billOption === "new",
+      createdBy: createdByUser,
     });
   };
 

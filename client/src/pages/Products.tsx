@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useContext } from "react";
 import { useSearch } from "wouter";
+import { UserContext } from "@/App";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients, useCreateClient } from "@/hooks/use-clients";
 import { useBills } from "@/hooks/use-bills";
@@ -92,6 +93,7 @@ const getCategoryIcon = (category: string | null, size: string = "w-5 h-5") => {
 };
 
 export default function Products() {
+  const user = useContext(UserContext);
   const searchParams = useSearch();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const urlClientId = new URLSearchParams(searchParams).get("clientId");
@@ -730,6 +732,7 @@ export default function Products() {
         serviceType: hasDryCleanItems ? "dry_clean" : "normal",
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
+        createdBy: data.worker?.name || user?.name || "Staff",
         notes: `Address: ${walkInAddress.trim() || "n/a"}`,
       });
 
