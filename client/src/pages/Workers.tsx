@@ -873,7 +873,7 @@ export default function Workers() {
             <TabsContent value="manage">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Workers List</CardTitle>
+                  <CardTitle className="text-lg">Staff List</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {!workers || workers.length === 0 ? (
