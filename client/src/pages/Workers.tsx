@@ -85,7 +85,7 @@ interface SystemUser {
 export default function Workers() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editWorker, setEditWorker] = useState<PackingWorker | null>(null);
-  const [formData, setFormData] = useState({ name: "", pin: "" });
+  const [formData, setFormData] = useState({ name: "", role: "Staff", pin: "" });
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("stats");
   const [dateFilter, setDateFilter] = useState("today");
@@ -343,13 +343,13 @@ export default function Workers() {
   );
 
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; pin: string }) => {
+    mutationFn: async (data: { name: string; role: string; pin: string }) => {
       return apiRequest("POST", "/api/packing-workers", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
       setIsCreateOpen(false);
-      setFormData({ name: "", pin: "" });
+      setFormData({ name: "", role: "Staff", pin: "" });
       toast({ title: "Staff Created", description: "New staff member added" });
     },
     onError: (err: any) => {
@@ -368,7 +368,7 @@ export default function Workers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
       setEditWorker(null);
-      setFormData({ name: "", pin: "" });
+      setFormData({ name: "", role: "Staff", pin: "" });
       toast({ title: "Staff Updated", description: "Staff details updated" });
     },
   });
@@ -537,6 +537,17 @@ export default function Workers() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     data-testid="input-worker-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Input
+                    placeholder="e.g. Delivery Driver, Admin Staff"
+                    value={formData.role}
+                    onChange={(e) =>
+                      setFormData({ ...formData, role: e.target.value })
+                    }
+                    data-testid="input-worker-role"
                   />
                 </div>
                 <div className="space-y-2">
@@ -763,6 +774,7 @@ export default function Workers() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Staff Name</TableHead>
+                          <TableHead>Role</TableHead>
                           <TableHead className="text-center">
                             <div className="flex items-center justify-center gap-1">
                               <Tag className="w-4 h-4 text-orange-500" />
@@ -804,6 +816,9 @@ export default function Workers() {
                                 </Badge>
                               )}
                             </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {s.worker.role || "Staff"}
+                            </TableCell>
                             <TableCell className="text-center">
                               <Badge
                                 variant="outline"
@@ -844,7 +859,7 @@ export default function Workers() {
                         {filteredStats.length === 0 && (
                           <TableRow>
                             <TableCell
-                              colSpan={6}
+                              colSpan={7}
                               className="text-center text-muted-foreground py-8"
                             >
                               No worker stats found for selected period
@@ -910,7 +925,7 @@ export default function Workers() {
                                   variant="ghost"
                                   onClick={() => {
                                     setEditWorker(worker);
-                                    setFormData({ name: worker.name, pin: "" });
+                                    setFormData({ name: worker.name, role: worker.role || "Staff", pin: "" });
                                   }}
                                   data-testid={`button-edit-${worker.id}`}
                                 >
@@ -1086,6 +1101,17 @@ export default function Workers() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 data-testid="input-edit-worker-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Input
+                placeholder="e.g. Delivery Driver, Admin Staff"
+                value={formData.role}
+                onChange={(e) =>
+                  setFormData({ ...formData, role: e.target.value })
+                }
+                data-testid="input-edit-worker-role"
               />
             </div>
             <div className="space-y-2">

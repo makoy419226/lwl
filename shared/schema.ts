@@ -162,6 +162,7 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
 export const packingWorkers = pgTable("packing_workers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  role: text("role").default("Staff"),
   pin: text("pin").notNull(), // 5-digit PIN
   active: boolean("active").default(true),
 });
