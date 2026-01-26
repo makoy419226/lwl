@@ -1645,12 +1645,12 @@ export default function Clients() {
           <DialogHeader>
             <DialogTitle className="text-center flex items-center justify-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
-              Cashier PIN Required
+              Manager/Cashier PIN Required
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-center text-muted-foreground">
-              Enter your 5-digit cashier PIN to accept this cash payment.
+              Enter your 5-digit Manager/Cashier PIN to accept this cash payment.
             </p>
             <div className="space-y-2">
               <Label htmlFor="cashier-pin">PIN</Label>

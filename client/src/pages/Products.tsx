@@ -1368,7 +1368,7 @@ export default function Products() {
           <DialogHeader>
             <DialogTitle className="text-center flex items-center justify-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
-              Enter Cashier PIN
+              Enter Manager/Cashier PIN
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">

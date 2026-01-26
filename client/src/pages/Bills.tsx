@@ -2015,10 +2015,10 @@ export default function Bills() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="w-5 h-5 text-primary" />
-              Cashier PIN Required
+              Manager/Cashier PIN Required
             </DialogTitle>
             <DialogDescription>
-              Enter your cashier PIN to process this payment
+              Enter your Manager/Cashier PIN to process this payment
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

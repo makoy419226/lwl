@@ -2,12 +2,25 @@ import { useState, useContext } from "react";
 import { TopBar } from "@/components/TopBar";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/use-products";
-import { Loader2, PackageOpen, Phone, Mail, Globe } from "lucide-react";
+import { Loader2, PackageOpen, Phone, Mail, Globe, ClipboardList, Tag, Package, Truck, CheckCircle } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProductForm } from "@/components/ProductForm";
 import { UserContext } from "@/App";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
+
+interface Order {
+  id: number;
+  orderNumber: string;
+  status: string;
+  customerName?: string;
+  entryDate: string;
+  items?: any[];
+}
 
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,6 +28,12 @@ export default function Dashboard() {
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const user = useContext(UserContext);
   const isAdmin = user?.role === "admin";
+  const isStaff = user?.role === "staff";
+  
+  const { data: orders } = useQuery<Order[]>({
+    queryKey: ["/api/orders"],
+    enabled: isStaff,
+  });
 
   const container = {
     hidden: { opacity: 0 },
@@ -30,6 +49,138 @@ export default function Dashboard() {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
   };
+
+  // Staff dashboard - simplified order progress view
+  const pendingOrders = orders?.filter(o => o.status === "Pending") || [];
+  const taggingOrders = orders?.filter(o => o.status === "Tagging") || [];
+  const packingOrders = orders?.filter(o => o.status === "Packing") || [];
+  const deliveredOrders = orders?.filter(o => o.status === "Delivered") || [];
+
+  if (isStaff) {
+    return (
+      <div className="flex flex-col h-screen">
+        <div className="bg-primary text-white overflow-hidden">
+          <div className="animate-marquee whitespace-nowrap py-2 flex gap-16">
+            <span className="flex items-center gap-2">
+              <Phone className="w-4 h-4 animate-blink" />
+              <span className="animate-blink font-bold">Tel: 026 815 824</span>
+            </span>
+            <span className="flex items-center gap-2">
+              <Phone className="w-4 h-4 animate-blink" />
+              <span className="animate-blink font-bold">Phone: +971 56 338 0001</span>
+            </span>
+            <span className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Email: info@lwl.ae
+            </span>
+            <span className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              www.lwl.ae
+            </span>
+          </div>
+        </div>
+        
+        <div className="p-4 border-b bg-card">
+          <h1 className="text-2xl font-bold">Staff Dashboard</h1>
+          <p className="text-muted-foreground">Order Progress Overview</p>
+        </div>
+
+        <main className="flex-1 container mx-auto px-4 py-8 overflow-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-orange-500" />
+                  Pending
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-600">{pendingOrders.length}</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-blue-500" />
+                  Tagging
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">{taggingOrders.length}</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-purple-200 bg-purple-50 dark:bg-purple-950/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Package className="w-4 h-4 text-purple-500" />
+                  Packing
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600">{packingOrders.length}</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-green-500" />
+                  Delivered
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">{deliveredOrders.length}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5" />
+                Orders Needing Attention
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {[...pendingOrders, ...taggingOrders, ...packingOrders].length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
+                  <p>All orders are up to date!</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {[...pendingOrders, ...taggingOrders, ...packingOrders].slice(0, 10).map((order) => (
+                    <Link href="/orders" key={order.id}>
+                      <div className="flex items-center justify-between p-3 rounded-lg border hover-elevate cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono font-bold">{order.orderNumber}</span>
+                          <span className="text-muted-foreground">{order.customerName || "Walk-in"}</span>
+                        </div>
+                        <Badge variant={
+                          order.status === "Pending" ? "destructive" :
+                          order.status === "Tagging" ? "default" : "secondary"
+                        }>
+                          {order.status}
+                        </Badge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </main>
+
+        <footer className="bg-primary/5 border-t border-border py-4 px-4">
+          <p className="text-center text-xs text-muted-foreground">
+            © 2024 Liquid Washes. All Rights Reserved.
+          </p>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">

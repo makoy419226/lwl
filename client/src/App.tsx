@@ -28,8 +28,8 @@ import logoImage from "@assets/image_1767220512226.png";
 export const UserContext = createContext<UserInfo | null>(null);
 
 const rolePermissions: Record<string, string[]> = {
-  "/": ["admin", "manager"],
-  "/dashboard": ["admin", "manager"],
+  "/": ["admin", "manager", "staff"],
+  "/dashboard": ["admin", "manager", "staff"],
   "/inventory": ["admin", "manager"],
   "/products": ["admin", "manager"],
   "/clients": ["admin", "manager"],
