@@ -1358,9 +1358,8 @@ export default function Workers() {
               <Input
                 placeholder="Enter username"
                 value={userFormData.username}
-                onChange={(e) =>
-                  setUserFormData({ ...userFormData, username: e.target.value })
-                }
+                disabled
+                className="bg-muted"
                 data-testid="input-edit-username"
               />
             </div>
