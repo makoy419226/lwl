@@ -21,6 +21,7 @@ import Login, { type UserInfo } from "@/pages/Login";
 import PublicOrder from "@/pages/PublicOrder";
 import TrackOrder from "@/pages/TrackOrder";
 import AdminSettings from "@/pages/AdminSettings";
+import DeliveryDashboard from "@/pages/DeliveryDashboard";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -28,8 +29,9 @@ import logoImage from "@assets/image_1767220512226.png";
 export const UserContext = createContext<UserInfo | null>(null);
 
 const rolePermissions: Record<string, string[]> = {
-  "/": ["admin", "manager", "staff"],
+  "/": ["admin", "manager", "staff", "driver"],
   "/dashboard": ["admin", "manager", "staff"],
+  "/delivery": ["driver"],
   "/inventory": ["admin", "manager"],
   "/products": ["admin", "manager"],
   "/clients": ["admin", "manager"],
@@ -37,10 +39,10 @@ const rolePermissions: Record<string, string[]> = {
   "/orders": ["admin", "manager", "staff"],
   "/workers": ["admin"],
   "/sales-reports": ["admin"],
-  "/incidents": ["admin", "manager", "staff"],
+  "/incidents": ["admin", "manager", "staff", "driver"],
   "/due-customers": ["admin", "manager"],
-  "/contact": ["admin", "manager", "staff"],
-  "/track": ["admin", "manager", "staff"],
+  "/contact": ["admin", "manager", "staff", "driver"],
+  "/track": ["admin", "manager", "staff", "driver"],
   "/admin-settings": ["admin"],
 };
 
@@ -63,11 +65,26 @@ function Router() {
   const user = useContext(UserContext);
   const userRole = user?.role || "manager";
   
+  // Driver users should be redirected to delivery dashboard as home
+  if (userRole === "driver") {
+    return (
+      <Switch>
+        <Route path="/" component={DeliveryDashboard} />
+        <Route path="/delivery" component={DeliveryDashboard} />
+        <Route path="/incidents" component={Incidents} />
+        <Route path="/contact" component={Contact} />
+        <Route path="/track" component={TrackOrder} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
       <Route path="/" component={TodaysWork} />
       <Route path="/dashboard" component={TodaysWork} />
       <Route path="/todays-work" component={TodaysWork} />
+      {rolePermissions["/delivery"]?.includes(userRole) && <Route path="/delivery" component={DeliveryDashboard} />}
       <Route path="/inventory" component={Dashboard} />
       <Route path="/products" component={Products} />
       <Route path="/clients" component={Clients} />

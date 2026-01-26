@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -69,6 +69,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       collapsible: false,
       items: [
         { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "manager", "staff"] },
+        { href: "/delivery", icon: Truck, label: "Delivery Dashboard", active: location === "/delivery", testId: "nav-delivery", roles: ["driver"] },
         { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "manager"] },
         { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "staff"] },
       ]

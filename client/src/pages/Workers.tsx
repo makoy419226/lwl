@@ -1126,6 +1126,86 @@ export default function Workers() {
                           )}
                         </AccordionContent>
                       </AccordionItem>
+
+                      <AccordionItem value="driver" className="border rounded-lg px-4">
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Driver</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ({systemUsers.filter(u => u.role === "driver").length} users)
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          {systemUsers.filter(u => u.role === "driver").length === 0 ? (
+                            <p className="text-center text-muted-foreground py-4">No drivers found</p>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Username</TableHead>
+                                  <TableHead>Name</TableHead>
+                                  <TableHead>Password</TableHead>
+                                  <TableHead>PIN</TableHead>
+                                  <TableHead className="text-center">Active</TableHead>
+                                  <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {systemUsers.filter(u => u.role === "driver").map((user) => (
+                                  <TableRow key={user.id}>
+                                    <TableCell className="font-medium">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`w-2 h-2 rounded-full ${isUserOnline(user.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} title={isUserOnline(user.id) ? 'Online' : 'Offline'} />
+                                        {user.username}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>{user.name || "-"}</TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-sm">
+                                          {visiblePasswords.has(user.id) ? user.password : "••••••"}
+                                        </span>
+                                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePasswordVisibility(user.id)}>
+                                          {visiblePasswords.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-sm">
+                                          {visiblePins.has(user.id) ? (user.pin || "-") : (user.pin ? "•••••" : "-")}
+                                        </span>
+                                        {user.pin && (
+                                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePinVisibility(user.id)}>
+                                            {visiblePins.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Switch checked={user.active} onCheckedChange={() => toggleUserActive(user)} />
+                                        <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex justify-end gap-1">
+                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); }}>
+                                          <Pencil className="w-4 h-4" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Delete user "${user.username}"?`)) { deleteUserMutation.mutate(user.id); } }}>
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
                     </Accordion>
                   )}
                 </CardContent>
@@ -1253,6 +1333,7 @@ export default function Workers() {
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="driver">Delivery Driver</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1359,6 +1440,7 @@ export default function Workers() {
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="driver">Delivery Driver</SelectItem>
                 </SelectContent>
               </Select>
             </div>

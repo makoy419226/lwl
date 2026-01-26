@@ -2094,6 +2094,67 @@ export async function registerRoutes(
     res.json({ token: order.publicViewToken });
   });
 
+  // Driver delivery confirmation endpoint
+  app.post("/api/orders/:id/deliver-by-driver", async (req, res) => {
+    const orderId = Number(req.params.id);
+    const { pin } = req.body;
+
+    if (isNaN(orderId)) {
+      return res.status(400).json({ message: "Invalid order ID" });
+    }
+
+    if (!pin) {
+      return res.status(400).json({ message: "Driver PIN is required" });
+    }
+
+    // Verify driver PIN - check against ALL active driver users
+    const allUsers = await db.select().from(users);
+    const activeDrivers = allUsers.filter(u => u.role === 'driver' && u.active);
+    
+    // Find the driver whose PIN matches
+    let matchingDriver = activeDrivers.find(d => d.pin === pin);
+    
+    if (!matchingDriver) {
+      // Also check admin PIN as universal override
+      const adminUser = allUsers.find(u => u.role === 'admin');
+      if (adminUser && adminUser.pin === pin) {
+        // Use admin as the delivery confirmer
+        matchingDriver = adminUser;
+      } else {
+        return res.status(403).json({ message: "Invalid Driver PIN" });
+      }
+    }
+
+    // Get the order
+    const order = await storage.getOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Check if order is in ready state (packed but not delivered)
+    if (!order.packingDone) {
+      return res.status(400).json({ message: "Order is not ready for delivery yet" });
+    }
+
+    if (order.delivered) {
+      return res.status(400).json({ message: "Order already delivered" });
+    }
+
+    if (order.deliveryType !== 'delivery') {
+      return res.status(400).json({ message: "This order is for pickup, not delivery" });
+    }
+
+    // Mark order as delivered
+    const updatedOrder = await storage.updateOrder(orderId, {
+      delivered: true,
+      status: "delivered",
+      deliveryDate: new Date().toISOString(),
+      deliveredByWorkerId: matchingDriver.id,
+    });
+
+    res.json(updatedOrder);
+  });
+
   // Incident Routes
   app.get("/api/incidents", async (req, res) => {
     const search = req.query.search as string | undefined;
