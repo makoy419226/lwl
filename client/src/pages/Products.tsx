@@ -1368,12 +1368,12 @@ export default function Products() {
           <DialogHeader>
             <DialogTitle className="text-center flex items-center justify-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
-              Enter Staff PIN
+              Enter Cashier PIN
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="text-center text-sm text-muted-foreground mb-2">
-              Enter your 5-digit PIN to create order
+              Enter your 5-digit PIN to proceed
             </div>
             <Input
               id="staff-pin"
