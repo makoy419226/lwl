@@ -2240,6 +2240,13 @@ export default function Bills() {
                 </div>
               </div>
 
+              {viewBillDetails.createdBy && (
+                <div className="bg-muted/30 p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Created by</p>
+                  <p className="text-sm font-medium">{viewBillDetails.createdBy}</p>
+                </div>
+              )}
+
               {viewBillDetails.description && (
                 <div className="bg-muted/30 p-3 rounded-lg max-h-60 overflow-y-auto">
                   <p className="text-xs text-muted-foreground mb-2 font-semibold">Items</p>
