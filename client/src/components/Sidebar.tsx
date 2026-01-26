@@ -90,8 +90,8 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       items: [
         { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
         { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "manager", "staff"] },
-        { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "manager", "staff"] },
-        { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "manager", "staff"] },
+        { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "manager", "staff", "driver"] },
+        { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "manager", "staff", "driver"] },
       ]
     },
     {
