@@ -2060,13 +2060,27 @@ export default function Orders() {
                                             <PopoverTrigger asChild>
                                               <Button
                                                 variant="ghost"
-                                                className="w-full h-full justify-start px-1 lg:px-2 py-2 font-semibold hover-elevate touch-manipulation"
+                                                className="w-full h-auto justify-start px-1 lg:px-2 py-1 font-semibold hover-elevate touch-manipulation"
                                                 data-testid={`button-client-${client?.id || "walkin"}`}
                                               >
-                                                <User className="w-3 h-3 lg:w-4 lg:h-4 mr-1 shrink-0" />
-                                                <span className="truncate text-xs lg:text-sm max-w-[80px] lg:max-w-[120px]">
-                                                  {displayName}
-                                                </span>
+                                                <div className="flex flex-col items-start text-left w-full">
+                                                  <div className="flex items-center">
+                                                    <User className="w-3 h-3 lg:w-4 lg:h-4 mr-1 shrink-0" />
+                                                    <span className="truncate text-xs lg:text-sm max-w-[80px] lg:max-w-[120px] font-semibold">
+                                                      {displayName}
+                                                    </span>
+                                                  </div>
+                                                  {client?.address && (
+                                                    <span className="text-[10px] text-muted-foreground truncate max-w-[100px] lg:max-w-[140px]">
+                                                      {client.address}
+                                                    </span>
+                                                  )}
+                                                  {client?.phone && (
+                                                    <span className="text-[10px] text-muted-foreground truncate max-w-[100px] lg:max-w-[140px]">
+                                                      {client.phone}
+                                                    </span>
+                                                  )}
+                                                </div>
                                               </Button>
                                             </PopoverTrigger>
                                             <PopoverContent
