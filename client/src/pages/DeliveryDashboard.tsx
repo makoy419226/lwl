@@ -166,10 +166,10 @@ export default function DeliveryDashboard() {
                           <User className="w-4 h-4 text-muted-foreground" />
                           <span className="font-medium">{order.customerName || client?.name || "Unknown Customer"}</span>
                         </div>
-                        {(order.deliveryAddress || client?.address) && (
+                        {client?.address && (
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">{order.deliveryAddress || client?.address}</span>
+                            <span className="text-muted-foreground">{client.address}</span>
                           </div>
                         )}
                         {client?.phone && (
@@ -264,7 +264,7 @@ export default function DeliveryDashboard() {
                     <span>{format(new Date(selectedOrder.expectedDeliveryAt), "dd MMM yyyy, h:mm a")}</span>
                   </div>
                 )}
-                {selectedOrder.notes && (
+                {selectedOrder.notes && !selectedOrder.notes.toLowerCase().startsWith("address:") && (
                   <div className="pt-2 border-t">
                     <span className="text-muted-foreground">Notes:</span>
                     <p className="mt-1">{selectedOrder.notes}</p>
