@@ -1296,8 +1296,8 @@ export default function Workers() {
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="packer">Packer</SelectItem>
                   <SelectItem value="cashier">Cashier</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1401,8 +1401,8 @@ export default function Workers() {
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="packer">Packer</SelectItem>
                   <SelectItem value="cashier">Cashier</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
                 </SelectContent>
               </Select>
             </div>

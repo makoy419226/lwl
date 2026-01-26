@@ -70,7 +70,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       items: [
         { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "manager", "cashier"] },
         { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "manager", "cashier"] },
-        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "cashier"] },
+        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "manager", "cashier", "staff"] },
       ]
     },
     {
