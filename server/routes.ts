@@ -1488,12 +1488,14 @@ export async function registerRoutes(
   app.get("/api/admin/account", async (req, res) => {
     const adminUsername = process.env.ADMIN_USERNAME || "admin";
     const adminEmail = process.env.ADMIN_EMAIL || "shussaingazi@yahoo.com";
+    const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
     const adminPin = process.env.ADMIN_PIN || "";
     
     res.json({
       username: adminUsername,
       email: adminEmail,
-      pin: adminPin ? "****" : "",
+      password: adminPassword,
+      pin: adminPin,
       hasPin: !!adminPin
     });
   });

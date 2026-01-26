@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Settings, AlertTriangle, RotateCcw, Loader2, Mail, Send, Trash2, Calendar, CalendarDays, CalendarRange, User, Key, Lock, Pencil, Shield, Check } from "lucide-react";
+import { Settings, AlertTriangle, RotateCcw, Loader2, Mail, Send, Trash2, Calendar, CalendarDays, CalendarRange, User, Key, Lock, Pencil, Shield, Check, Eye, EyeOff } from "lucide-react";
 
 type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -37,10 +37,14 @@ export default function AdminSettings() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otpError, setOtpError] = useState("");
   
+  // Visibility toggles for admin password/PIN display
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [showAdminPin, setShowAdminPin] = useState(false);
+  
   const { toast } = useToast();
 
   // Fetch admin account settings
-  const { data: adminAccount } = useQuery<{ username: string; email: string; pin: string; hasPin: boolean }>({
+  const { data: adminAccount } = useQuery<{ username: string; email: string; pin: string; password: string; hasPin: boolean }>({
     queryKey: ["/api/admin/account"],
   });
 
@@ -237,17 +241,31 @@ export default function AdminSettings() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Password</p>
-                  <p className="font-medium flex items-center gap-2">
+                  <div className="font-medium flex items-center gap-2">
                     <Lock className="w-4 h-4 text-muted-foreground" />
-                    ••••••••
-                  </p>
+                    <span className="font-mono">
+                      {showAdminPassword ? (adminAccount?.password || "admin123") : "••••••••"}
+                    </span>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowAdminPassword(!showAdminPassword)}>
+                      {showAdminPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">PIN</p>
-                  <p className="font-medium flex items-center gap-2">
+                  <div className="font-medium flex items-center gap-2">
                     <Key className="w-4 h-4 text-muted-foreground" />
-                    {adminAccount?.hasPin ? "••••" : "Not set"}
-                  </p>
+                    <span className="font-mono">
+                      {adminAccount?.hasPin 
+                        ? (showAdminPin ? adminAccount?.pin : "••••") 
+                        : "Not set"}
+                    </span>
+                    {adminAccount?.hasPin && (
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowAdminPin(!showAdminPin)}>
+                        {showAdminPin ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
 
