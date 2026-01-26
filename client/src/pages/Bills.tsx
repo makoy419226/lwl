@@ -2207,8 +2207,11 @@ export default function Bills() {
               <Receipt className="w-5 h-5 text-primary" />
               Bill Details
             </DialogTitle>
-            <DialogDescription>
-              {viewBillDetails?.referenceNumber && `Reference: ${viewBillDetails.referenceNumber}`}
+            <DialogDescription className="space-y-1">
+              <div>{viewBillDetails?.referenceNumber && `Reference: ${viewBillDetails.referenceNumber}`}</div>
+              {viewBillDetails?.createdBy && (
+                <div className="text-xs">Created by: {viewBillDetails.createdBy}</div>
+              )}
             </DialogDescription>
           </DialogHeader>
           {viewBillDetails && (
@@ -2239,13 +2242,6 @@ export default function Bills() {
                   </p>
                 </div>
               </div>
-
-              {viewBillDetails.createdBy && (
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Created by</p>
-                  <p className="text-sm font-medium">{viewBillDetails.createdBy}</p>
-                </div>
-              )}
 
               {viewBillDetails.description && (
                 <div className="bg-muted/30 p-3 rounded-lg max-h-60 overflow-y-auto">
