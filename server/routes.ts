@@ -1927,7 +1927,7 @@ export async function registerRoutes(
   // Verify staff user PIN (for bill creation, etc.) - Admin PIN works as universal PIN
   app.post("/api/workers/verify-pin", async (req, res) => {
     const { pin } = req.body;
-    if (!pin || !/^\d{4,5}$/.test(pin)) {
+    if (!pin || !/^\d{5}$/.test(pin)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid PIN format" });
@@ -1950,7 +1950,7 @@ export async function registerRoutes(
   // Verify packing worker PIN - Admin PIN works as universal PIN
   app.post("/api/packing/verify-pin", async (req, res) => {
     const { pin } = req.body;
-    if (!pin || !/^\d{4,5}$/.test(pin)) {
+    if (!pin || !/^\d{5}$/.test(pin)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid PIN format" });
@@ -1980,7 +1980,7 @@ export async function registerRoutes(
   // Verify delivery staff PIN - Admin PIN works as universal PIN
   app.post("/api/delivery/verify-pin", async (req, res) => {
     const { pin } = req.body;
-    if (!pin || !/^\d{4,5}$/.test(pin)) {
+    if (!pin || !/^\d{5}$/.test(pin)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid PIN format" });
