@@ -526,7 +526,7 @@ export default function Orders() {
 
     const content = document.createElement("div");
     content.innerHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 15px; max-width: 148mm; color: #000; background: #fff;">
+      <div style="font-family: Arial, sans-serif; padding: 15px; max-width: 190mm; color: #000; background: #fff;">
         <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
           <div style="font-size: 18px; font-weight: bold; letter-spacing: 1px;">LIQUID WASHES LAUNDRY</div>
           <div style="font-size: 10px; margin-top: 4px; color: #666;">Professional Laundry Services - UAE</div>
@@ -666,15 +666,16 @@ export default function Orders() {
     `;
 
     const opt = {
-      margin: 8,
+      margin: 10,
       filename: `Tag_${order.orderNumber}.pdf`,
       image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: {
         unit: "mm",
-        format: "a5" as const,
+        format: "a4" as const,
         orientation: "portrait" as const,
       },
+      pagebreak: { mode: 'avoid-all' as const },
     };
 
     html2pdf().set(opt).from(content).save();
