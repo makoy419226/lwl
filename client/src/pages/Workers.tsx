@@ -211,6 +211,11 @@ export default function Workers() {
     return systemUsers?.filter(u => u.role === 'staff') || [];
   }, [systemUsers]);
 
+  // Driver users for delivery stats
+  const driverUsers = useMemo(() => {
+    return systemUsers?.filter(u => u.role === 'driver') || [];
+  }, [systemUsers]);
+
   const workerStats = useMemo(() => {
     if (!staffUsers.length || !orders) return [];
     const { start, end } = getDateRange();
@@ -283,6 +288,41 @@ export default function Workers() {
       })
       .sort((a, b) => b.totalTasks - a.totalTasks);
   }, [staffUsers, orders, bills, dateFilter, customFromDate, customToDate]);
+
+  // Driver delivery stats
+  const driverStats = useMemo(() => {
+    if (!driverUsers.length || !orders) return [];
+    const { start, end } = getDateRange();
+
+    return driverUsers
+      .map((driver) => {
+        const deliveredOrders = orders.filter((o) => {
+          if (o.deliveredByWorkerId !== driver.id) return false;
+          if (!o.deliveryDate) return false;
+          try {
+            const delDate = new Date(o.deliveryDate);
+            return delDate >= start && delDate <= end;
+          } catch {
+            return false;
+          }
+        });
+
+        return {
+          driver,
+          deliveredCount: deliveredOrders.length,
+        };
+      })
+      .sort((a, b) => b.deliveredCount - a.deliveredCount);
+  }, [driverUsers, orders, dateFilter, customFromDate, customToDate]);
+
+  const driverTotals = useMemo(() => {
+    return driverStats.reduce(
+      (acc, s) => ({
+        delivered: acc.delivered + s.deliveredCount,
+      }),
+      { delivered: 0 },
+    );
+  }, [driverStats]);
 
   const totals = useMemo(() => {
     return workerStats.reduce(
@@ -758,7 +798,7 @@ export default function Workers() {
                   </Card>
                 </div>
 
-                <Accordion type="multiple" defaultValue={["managers", "staff"]} className="space-y-2">
+                <Accordion type="multiple" defaultValue={["managers", "staff", "drivers"]} className="space-y-2">
                   <AccordionItem value="managers" className="border rounded-lg">
                     <AccordionTrigger className="hover:no-underline px-4">
                       <div className="flex items-center gap-2">
@@ -933,6 +973,64 @@ export default function Workers() {
                       )}
                     </AccordionContent>
                   </AccordionItem>
+
+                  <AccordionItem value="drivers" className="border rounded-lg">
+                    <AccordionTrigger className="hover:no-underline px-4">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Drivers</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          ({driverStats.length} drivers) - {driverTotals.delivered} deliveries
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      {driverStats.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-4">No drivers found</p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Driver Name</TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Truck className="w-4 h-4 text-green-500" />
+                                  Deliveries
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {driverStats.map((s) => (
+                              <TableRow key={s.driver.id} data-testid={`row-driver-stats-${s.driver.id}`}>
+                                <TableCell className="font-medium">
+                                  {s.driver.name || s.driver.username}
+                                  {!s.driver.active && (
+                                    <Badge variant="secondary" className="ml-2">
+                                      Inactive
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                                  >
+                                    {s.deliveredCount}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant={s.driver.active ? "default" : "secondary"}>
+                                    {s.driver.active ? "Active" : "Inactive"}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </div>
             </TabsContent>
@@ -966,7 +1064,7 @@ export default function Workers() {
                       No user accounts found
                     </div>
                   ) : (
-                    <Accordion type="multiple" defaultValue={["managers", "staff"]} className="space-y-2">
+                    <Accordion type="multiple" defaultValue={["managers", "staff", "driver"]} className="space-y-2">
                       <AccordionItem value="managers" className="border rounded-lg px-4">
                         <AccordionTrigger className="hover:no-underline">
                           <div className="flex items-center gap-2">
