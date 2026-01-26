@@ -1941,7 +1941,7 @@ export default function Orders() {
                             <TableHead className="w-[70px] lg:w-[90px]">
                               Order
                             </TableHead>
-                            <TableHead className="hidden xl:table-cell w-[80px]">
+                            <TableHead className="hidden md:table-cell w-[80px]">
                               Bill
                             </TableHead>
                             <TableHead className="w-[100px] lg:w-[140px]">
@@ -1957,27 +1957,27 @@ export default function Orders() {
                                 Phone
                               </TableHead>
                             )}
-                            <TableHead className="hidden 2xl:table-cell w-[80px]">
+                            <TableHead className="hidden md:table-cell w-[80px]">
                               Due
                             </TableHead>
                             <TableHead className="w-[60px]">
                               Items
                             </TableHead>
                             {activeTab !== "create" && (
-                              <TableHead className="hidden lg:table-cell w-[80px]">
+                              <TableHead className="hidden md:table-cell w-[80px]">
                                 Amount
                               </TableHead>
                             )}
-                            <TableHead className="hidden xl:table-cell w-[90px]">
+                            <TableHead className="hidden md:table-cell w-[90px]">
                               Type
                             </TableHead>
-                            <TableHead className="hidden lg:table-cell w-[100px]">
+                            <TableHead className="hidden md:table-cell w-[100px]">
                               Expected D&T
                             </TableHead>
                             <TableHead className="w-[80px] lg:w-[100px]">
                               Status
                             </TableHead>
-                            <TableHead className="hidden xl:table-cell w-[100px]">
+                            <TableHead className="hidden md:table-cell w-[100px]">
                               READY D&T
                             </TableHead>
                             <TableHead className="w-[100px] lg:w-[140px]">
@@ -2024,7 +2024,7 @@ export default function Orders() {
                                     <TableCell className="font-mono font-bold text-xs lg:text-sm truncate">
                                       {order.orderNumber.replace("ORD-", "")}
                                     </TableCell>
-                                    <TableCell className="hidden xl:table-cell">
+                                    <TableCell className="hidden md:table-cell">
                                       {order.billId ? (
                                         <Button
                                           variant="ghost"
@@ -2196,7 +2196,7 @@ export default function Orders() {
                                         )}
                                         <TableCell
                                           rowSpan={orderCount}
-                                          className={`align-top font-semibold border-r hidden 2xl:table-cell text-xs ${client && getClientDueBalance(client.id) === 0 ? "text-green-600" : "text-red-600"}`}
+                                          className={`align-top font-semibold border-r hidden md:table-cell text-xs ${client && getClientDueBalance(client.id) === 0 ? "text-green-600" : "text-red-600"}`}
                                           data-testid={`text-client-due-${order.id}`}
                                         >
                                           {client ? getClientDueBalance(client.id).toFixed(0) : "0"} AED
@@ -2212,11 +2212,11 @@ export default function Orders() {
                                       </div>
                                     </TableCell>
                                     {activeTab !== "create" && (
-                                      <TableCell className="font-semibold hidden lg:table-cell text-xs">
+                                      <TableCell className="font-semibold hidden md:table-cell text-xs">
                                         {order.totalAmount} AED
                                       </TableCell>
                                     )}
-                                    <TableCell className="hidden xl:table-cell">
+                                    <TableCell className="hidden md:table-cell">
                                       <Select
                                         value={order.deliveryType || ""}
                                         onValueChange={(newType) => {
@@ -2250,7 +2250,7 @@ export default function Orders() {
                                         </SelectContent>
                                       </Select>
                                     </TableCell>
-                                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                                       {order.expectedDeliveryAt ? (
                                         <div>
                                           <div>{format(new Date(order.expectedDeliveryAt), "MMM d, yyyy")}</div>
