@@ -1866,7 +1866,7 @@ export default function Orders() {
                               </>
                             )}
 
-                            {canDeliver && order.packingDone &&
+                            {order.packingDone &&
                               !order.delivered &&
                               order.deliveryType === "delivery" && (
                                 <Button
@@ -1874,8 +1874,10 @@ export default function Orders() {
                                   variant="default"
                                   className="flex-1"
                                   onClick={() =>
-                                    handleDeliveryWithPin(order.id)
+                                    canDeliver && handleDeliveryWithPin(order.id)
                                   }
+                                  disabled={!canDeliver}
+                                  title={!canDeliver ? "Only drivers can confirm delivery" : ""}
                                   data-testid={`button-mobile-deliver-${order.id}`}
                                 >
                                   <Truck className="w-4 h-4 mr-1" />
@@ -1883,7 +1885,7 @@ export default function Orders() {
                                 </Button>
                               )}
 
-                            {canDeliver && order.packingDone &&
+                            {order.packingDone &&
                               !order.delivered &&
                               order.deliveryType !== "delivery" && (
                                 <Button
@@ -1891,8 +1893,10 @@ export default function Orders() {
                                   variant="default"
                                   className="flex-1"
                                   onClick={() =>
-                                    handleDeliveryWithPin(order.id)
+                                    canDeliver && handleDeliveryWithPin(order.id)
                                   }
+                                  disabled={!canDeliver}
+                                  title={!canDeliver ? "Only drivers can confirm pickup" : ""}
                                   data-testid={`button-mobile-pickup-${order.id}`}
                                 >
                                   <Package className="w-4 h-4 mr-1" />
@@ -2381,7 +2385,7 @@ export default function Orders() {
                                               </Button>
                                             </>
                                           )}
-                                        {canDeliver && order.packingDone &&
+                                        {order.packingDone &&
                                           !order.delivered &&
                                           order.deliveryType === "delivery" && (
                                             <Button
@@ -2389,8 +2393,10 @@ export default function Orders() {
                                               variant="default"
                                               className="whitespace-nowrap touch-manipulation"
                                               onClick={() =>
-                                                handleDeliveryWithPin(order.id)
+                                                canDeliver && handleDeliveryWithPin(order.id)
                                               }
+                                              disabled={!canDeliver}
+                                              title={!canDeliver ? "Only drivers can confirm delivery" : ""}
                                               data-testid={`button-deliver-${order.id}`}
                                             >
                                               <Truck className="w-3 h-3 sm:mr-1" />
@@ -2399,7 +2405,7 @@ export default function Orders() {
                                               </span>
                                             </Button>
                                           )}
-                                        {canDeliver && order.packingDone &&
+                                        {order.packingDone &&
                                           !order.delivered &&
                                           order.deliveryType !== "delivery" && (
                                             <Button
@@ -2407,8 +2413,10 @@ export default function Orders() {
                                               variant="default"
                                               className="whitespace-nowrap touch-manipulation"
                                               onClick={() =>
-                                                handleDeliveryWithPin(order.id)
+                                                canDeliver && handleDeliveryWithPin(order.id)
                                               }
+                                              disabled={!canDeliver}
+                                              title={!canDeliver ? "Only drivers can confirm pickup" : ""}
                                               data-testid={`button-pickup-${order.id}`}
                                             >
                                               <Package className="w-3 h-3 sm:mr-1" />
