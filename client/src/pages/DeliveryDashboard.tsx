@@ -361,7 +361,17 @@ export default function DeliveryDashboard() {
               <div className="flex items-center justify-between">
                 <span className="font-medium">Item Count at Intake</span>
                 <Badge variant="outline" className="text-lg px-3">
-                  {pinDialogOrder?.items ? JSON.parse(pinDialogOrder.items).reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) : 0} items
+                  {(() => {
+                    try {
+                      if (!pinDialogOrder?.items) return 0;
+                      const items = typeof pinDialogOrder.items === 'string' 
+                        ? JSON.parse(pinDialogOrder.items) 
+                        : pinDialogOrder.items;
+                      return Array.isArray(items) 
+                        ? items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) 
+                        : 0;
+                    } catch { return 0; }
+                  })()} items
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
