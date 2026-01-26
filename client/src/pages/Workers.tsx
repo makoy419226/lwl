@@ -89,6 +89,8 @@ interface SystemUser {
   name: string | null;
   email: string | null;
   active: boolean;
+  password?: string;
+  pin?: string | null;
 }
 
 export default function Workers() {
@@ -204,11 +206,16 @@ export default function Workers() {
     }
   };
 
+  // Use staff users from users table instead of old packing_workers table
+  const staffUsers = useMemo(() => {
+    return systemUsers?.filter(u => u.role === 'staff') || [];
+  }, [systemUsers]);
+
   const workerStats = useMemo(() => {
-    if (!workers || !orders) return [];
+    if (!staffUsers.length || !orders) return [];
     const { start, end } = getDateRange();
 
-    return workers
+    return staffUsers
       .map((worker) => {
         const taggedOrders = orders.filter((o) => {
           if (o.tagWorkerId !== worker.id) return false;
@@ -275,7 +282,7 @@ export default function Workers() {
         };
       })
       .sort((a, b) => b.totalTasks - a.totalTasks);
-  }, [workers, orders, bills, dateFilter, customFromDate, customToDate]);
+  }, [staffUsers, orders, bills, dateFilter, customFromDate, customToDate]);
 
   const totals = useMemo(() => {
     return workerStats.reduce(
@@ -396,7 +403,7 @@ export default function Workers() {
   };
 
   const filteredStats = workerStats.filter((s) =>
-    s.worker.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    (s.worker.name || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const createMutation = useMutation({
