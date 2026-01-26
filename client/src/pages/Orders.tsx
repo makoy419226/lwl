@@ -1934,7 +1934,7 @@ export default function Orders() {
 
                   {/* Desktop Table Layout */}
                   <Card className="responsive-card hidden md:block">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-auto touch-pinch-zoom" style={{ touchAction: 'pinch-zoom pan-x pan-y' }}>
                       <Table className="min-w-[1200px]">
                         <TableHeader>
                           <TableRow className="transition-all duration-200">
