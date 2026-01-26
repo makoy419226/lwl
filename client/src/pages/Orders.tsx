@@ -1829,16 +1829,6 @@ export default function Orders() {
                                       onClick={() =>
                                         setStageChecklistDialog({
                                           order,
-                                          stage: "tagging",
-                                        })
-                                      }
-                                    >
-                                      Tagging Checklist
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        setStageChecklistDialog({
-                                          order,
                                           stage: "packing",
                                         })
                                       }
@@ -2345,16 +2335,6 @@ export default function Orders() {
                                                   </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                  <DropdownMenuItem
-                                                    onClick={() =>
-                                                      setStageChecklistDialog({
-                                                        order,
-                                                        stage: "tagging",
-                                                      })
-                                                    }
-                                                  >
-                                                    Tagging Checklist
-                                                  </DropdownMenuItem>
                                                   <DropdownMenuItem
                                                     onClick={() =>
                                                       setStageChecklistDialog({
