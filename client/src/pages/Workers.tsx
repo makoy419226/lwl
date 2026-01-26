@@ -85,8 +85,12 @@ interface SystemUser {
 export default function Workers() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editWorker, setEditWorker] = useState<PackingWorker | null>(null);
-  const [formData, setFormData] = useState({ name: "", role: "Staff", pin: "" });
+  const [formData, setFormData] = useState({ name: "", role: "Reception", pin: "" });
+  const [customRole, setCustomRole] = useState("");
+  const [isCustomRole, setIsCustomRole] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const predefinedRoles = ["Reception", "Packer", "Delivery Driver", "Manager", "Supervisor"];
   const [activeTab, setActiveTab] = useState("stats");
   const [dateFilter, setDateFilter] = useState("today");
   const [customFromDate, setCustomFromDate] = useState("");
@@ -349,7 +353,9 @@ export default function Workers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
       setIsCreateOpen(false);
-      setFormData({ name: "", role: "Staff", pin: "" });
+      setFormData({ name: "", role: "Reception", pin: "" });
+      setCustomRole("");
+      setIsCustomRole(false);
       toast({ title: "Staff Created", description: "New staff member added" });
     },
     onError: (err: any) => {
@@ -368,7 +374,9 @@ export default function Workers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
       setEditWorker(null);
-      setFormData({ name: "", role: "Staff", pin: "" });
+      setFormData({ name: "", role: "Reception", pin: "" });
+      setCustomRole("");
+      setIsCustomRole(false);
       toast({ title: "Staff Updated", description: "Staff details updated" });
     },
   });
@@ -541,14 +549,43 @@ export default function Workers() {
                 </div>
                 <div className="space-y-2">
                   <Label>Role</Label>
-                  <Input
-                    placeholder="e.g. Delivery Driver, Admin Staff"
-                    value={formData.role}
-                    onChange={(e) =>
-                      setFormData({ ...formData, role: e.target.value })
-                    }
-                    data-testid="input-worker-role"
-                  />
+                  <Select
+                    value={isCustomRole ? "custom" : formData.role}
+                    onValueChange={(value) => {
+                      if (value === "custom") {
+                        setIsCustomRole(true);
+                        setFormData({ ...formData, role: customRole || "" });
+                      } else {
+                        setIsCustomRole(false);
+                        setCustomRole("");
+                        setFormData({ ...formData, role: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger data-testid="select-worker-role">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {predefinedRoles.map((role) => (
+                        <SelectItem key={role} value={role} data-testid={`option-role-${role.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom" data-testid="option-role-custom">+ Add Custom Role</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isCustomRole && (
+                    <Input
+                      placeholder="Enter custom role"
+                      value={customRole}
+                      onChange={(e) => {
+                        setCustomRole(e.target.value);
+                        setFormData({ ...formData, role: e.target.value });
+                      }}
+                      className="mt-2"
+                      data-testid="input-custom-role"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>5-Digit PIN</Label>
@@ -929,7 +966,11 @@ export default function Workers() {
                                   variant="ghost"
                                   onClick={() => {
                                     setEditWorker(worker);
-                                    setFormData({ name: worker.name, role: worker.role || "Staff", pin: "" });
+                                    const workerRole = worker.role || "Reception";
+                                    const isPredefined = predefinedRoles.includes(workerRole);
+                                    setFormData({ name: worker.name, role: workerRole, pin: "" });
+                                    setIsCustomRole(!isPredefined);
+                                    setCustomRole(isPredefined ? "" : workerRole);
                                   }}
                                   data-testid={`button-edit-${worker.id}`}
                                 >
@@ -1109,14 +1150,45 @@ export default function Workers() {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Input
-                placeholder="e.g. Delivery Driver, Admin Staff"
-                value={formData.role}
-                onChange={(e) =>
-                  setFormData({ ...formData, role: e.target.value })
-                }
-                data-testid="input-edit-worker-role"
-              />
+              <Select
+                value={isCustomRole ? "custom" : (predefinedRoles.includes(formData.role) ? formData.role : "custom")}
+                onValueChange={(value) => {
+                  if (value === "custom") {
+                    setIsCustomRole(true);
+                    if (!predefinedRoles.includes(formData.role)) {
+                      setCustomRole(formData.role);
+                    }
+                  } else {
+                    setIsCustomRole(false);
+                    setCustomRole("");
+                    setFormData({ ...formData, role: value });
+                  }
+                }}
+              >
+                <SelectTrigger data-testid="select-edit-worker-role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {predefinedRoles.map((role) => (
+                    <SelectItem key={role} value={role} data-testid={`option-edit-role-${role.toLowerCase().replace(/\s+/g, '-')}`}>
+                      {role}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="custom" data-testid="option-edit-role-custom">+ Add Custom Role</SelectItem>
+                </SelectContent>
+              </Select>
+              {(isCustomRole || !predefinedRoles.includes(formData.role)) && (
+                <Input
+                  placeholder="Enter custom role"
+                  value={customRole || formData.role}
+                  onChange={(e) => {
+                    setCustomRole(e.target.value);
+                    setFormData({ ...formData, role: e.target.value });
+                  }}
+                  className="mt-2"
+                  data-testid="input-edit-custom-role"
+                />
+              )}
             </div>
             <div className="space-y-2">
               <Label>New PIN (optional)</Label>
