@@ -2225,9 +2225,9 @@ export default function Orders() {
                                             updates: { deliveryType: newType },
                                           });
                                         }}
-                                        disabled={order.delivered === true || user?.role !== "admin"}
+                                        disabled={order.delivered === true}
                                       >
-                                        <SelectTrigger className={`w-20 h-7 text-xs ${order.delivered || user?.role !== "admin" ? "opacity-60 cursor-not-allowed" : ""}`}>
+                                        <SelectTrigger className={`w-20 h-7 text-xs ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}>
                                           <SelectValue>
                                             {order.deliveryType ===
                                             "delivery" ? (
