@@ -623,13 +623,9 @@ export default function Workers() {
                 <BarChart3 className="w-4 h-4 mr-1" />
                 User Stats
               </TabsTrigger>
-              <TabsTrigger value="manage" data-testid="tab-manage">
-                <Users className="w-4 h-4 mr-1" />
-                Manage Staff
-              </TabsTrigger>
               <TabsTrigger value="users" data-testid="tab-users">
                 <UserCog className="w-4 h-4 mr-1" />
-                User Accounts
+                User Account Management
               </TabsTrigger>
             </TabsList>
 
@@ -960,90 +956,6 @@ export default function Workers() {
                   </AccordionItem>
                 </Accordion>
               </div>
-            </TabsContent>
-
-            <TabsContent value="manage">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Staff List</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!workers || workers.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      No workers added yet. Add workers to enable PIN
-                      verification for packing.
-                    </p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead className="text-center">Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {workers.map((worker) => (
-                          <TableRow
-                            key={worker.id}
-                            data-testid={`row-worker-${worker.id}`}
-                          >
-                            <TableCell className="font-medium">
-                              {worker.name}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <Switch
-                                  checked={worker.active}
-                                  onCheckedChange={() => toggleActive(worker)}
-                                  data-testid={`switch-active-${worker.id}`}
-                                />
-                                <Badge
-                                  variant={
-                                    worker.active ? "default" : "secondary"
-                                  }
-                                >
-                                  {worker.active ? "Active" : "Inactive"}
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex justify-end gap-1">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setEditWorker(worker);
-                                    setFormData({ name: worker.name, role: "", pin: "" });
-                                  }}
-                                  data-testid={`button-edit-${worker.id}`}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="text-destructive"
-                                  onClick={() => {
-                                    if (
-                                      confirm(`Delete worker "${worker.name}"?`)
-                                    ) {
-                                      deleteMutation.mutate(worker.id);
-                                    }
-                                  }}
-                                  data-testid={`button-delete-${worker.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="users">
