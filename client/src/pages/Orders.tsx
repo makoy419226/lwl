@@ -504,7 +504,7 @@ export default function Orders() {
     const parsedItems = parseOrderItems(order.items);
 
     const previousBills =
-      bills?.filter((b) => b.clientId === order.clientId) || [];
+      bills?.filter((b) => b.clientId === order.clientId && b.id !== order.billId) || [];
     const unpaidBills = previousBills.filter((b) => !b.isPaid);
     const totalPreviousDue = unpaidBills.reduce((sum, b) => {
       const billTotal = parseFloat(b.amount) || 0;
@@ -626,6 +626,20 @@ export default function Orders() {
             <span style="font-size: 10px; font-weight: bold; color: #856404;">TOTAL PREVIOUS DUE:</span>
             <span style="font-size: 14px; font-weight: bold; color: #dc3545;">AED ${totalPreviousDue.toFixed(2)}</span>
           </div>
+        </div>
+        `
+            : ""
+        }
+        
+        ${
+          totalPreviousDue > 0
+            ? `
+        <div style="background: #dc3545; color: white; border-radius: 4px; padding: 12px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: bold;">GRAND TOTAL DUE:</span>
+            <span style="font-size: 18px; font-weight: bold;">AED ${(parseFloat(order.totalAmount) + totalPreviousDue).toFixed(2)}</span>
+          </div>
+          <div style="font-size: 9px; margin-top: 4px; opacity: 0.9;">(Current: ${parseFloat(order.totalAmount).toFixed(2)} + Previous: ${totalPreviousDue.toFixed(2)})</div>
         </div>
         `
             : ""
