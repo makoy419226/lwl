@@ -241,7 +241,7 @@ export default function DeliveryDashboard() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Customer:</span>
-                  <span className="font-medium">{selectedOrder.customerName}</span>
+                  <span className="font-medium">{selectedOrder.customerName || getClient(selectedOrder)?.name || "Walk-in"}</span>
                 </div>
                 {getClient(selectedOrder)?.phone && (
                   <div className="flex justify-between">
