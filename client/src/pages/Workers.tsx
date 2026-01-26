@@ -926,7 +926,6 @@ export default function Workers() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Name</TableHead>
-                          <TableHead>Role</TableHead>
                           <TableHead className="text-center">Status</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -939,9 +938,6 @@ export default function Workers() {
                           >
                             <TableCell className="font-medium">
                               {worker.name}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {worker.role || "Staff"}
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-2">
