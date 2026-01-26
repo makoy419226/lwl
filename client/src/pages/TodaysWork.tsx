@@ -72,7 +72,7 @@ export default function TodaysWork() {
   });
 
   const pendingOrders = todaysOrders.filter(
-    (order) => ["entry", "pending", "washing", "ironing", "packing"].includes(order.status || "")
+    (order) => ["pending", "tagging", "packing"].includes(order.status || "")
   );
 
   const readyForPickup = todaysOrders.filter(
@@ -130,12 +130,9 @@ export default function TodaysWork() {
   const revenueDiff = totalRevenue - yesterdayRevenue;
 
   const statusCounts = {
-    entry: todaysOrders.filter(o => o.status === "entry").length,
     pending: todaysOrders.filter(o => o.status === "pending").length,
-    washing: todaysOrders.filter(o => o.status === "washing").length,
-    ironing: todaysOrders.filter(o => o.status === "ironing").length,
+    tagging: todaysOrders.filter(o => o.status === "tagging").length,
     packing: todaysOrders.filter(o => o.status === "packing").length,
-    ready: todaysOrders.filter(o => o.status === "ready").length,
     delivered: todaysOrders.filter(o => o.status === "delivered").length,
   };
 
@@ -149,12 +146,9 @@ export default function TodaysWork() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "entry": return "bg-gray-500";
       case "pending": return "bg-blue-500";
-      case "washing": return "bg-cyan-500";
-      case "ironing": return "bg-yellow-500";
+      case "tagging": return "bg-amber-500";
       case "packing": return "bg-orange-500";
-      case "ready": return "bg-amber-500";
       case "delivered": return "bg-green-500";
       default: return "bg-gray-400";
     }
@@ -506,12 +500,9 @@ export default function TodaysWork() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="entry" data-testid="option-status-entry">Entry</SelectItem>
                           <SelectItem value="pending" data-testid="option-status-pending">Pending</SelectItem>
-                          <SelectItem value="washing" data-testid="option-status-washing">Washing</SelectItem>
-                          <SelectItem value="ironing" data-testid="option-status-ironing">Ironing</SelectItem>
+                          <SelectItem value="tagging" data-testid="option-status-tagging">Tagging</SelectItem>
                           <SelectItem value="packing" data-testid="option-status-packing">Packing</SelectItem>
-                          <SelectItem value="ready" data-testid="option-status-ready">Ready</SelectItem>
                           <SelectItem value="delivered" data-testid="option-status-delivered">Delivered</SelectItem>
                         </SelectContent>
                       </Select>
