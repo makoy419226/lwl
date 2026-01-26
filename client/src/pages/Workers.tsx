@@ -385,7 +385,7 @@ export default function Workers() {
         </table>
 
         <div style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 9px; color: #888;">
-          Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")} | Contact: +971 50 123 4567
+          Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")} | Tel: 026 815 824 | Mobile: +971 56 338 0001
         </div>
       </div>
     `;

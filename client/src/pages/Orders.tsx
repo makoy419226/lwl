@@ -526,7 +526,7 @@ export default function Orders() {
         <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
           <div style="font-size: 18px; font-weight: bold; letter-spacing: 1px;">LIQUID WASHES LAUNDRY</div>
           <div style="font-size: 10px; margin-top: 4px; color: #666;">Professional Laundry Services - UAE</div>
-          <div style="font-size: 9px; margin-top: 2px; color: #888;">For Orders/Delivery: +971 50 123 4567</div>
+          <div style="font-size: 9px; margin-top: 2px; color: #888;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
         </div>
         
         ${isUrgent ? `<div style="text-align: center; padding: 8px; margin: 10px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px; border-radius: 4px;">*** URGENT ORDER ***</div>` : ""}
@@ -655,7 +655,7 @@ export default function Orders() {
         
         <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #000; color: #888; font-size: 8px;">
           <div>Thank you for choosing Liquid Washes Laundry</div>
-          <div style="margin-top: 4px; font-weight: bold; color: #000; font-size: 9px;">For Orders/Delivery: +971 50 123 4567</div>
+          <div style="margin-top: 4px; font-weight: bold; color: #000; font-size: 9px;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
           <div style="margin-top: 3px;">Generated on ${format(new Date(), "dd MMM yyyy 'at' hh:mm a")}</div>
         </div>
       </div>
@@ -740,7 +740,7 @@ export default function Orders() {
         
         <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 2px dashed #000; font-size: 9px; color: #666;">
           <div>Printed: ${format(new Date(), "dd/MM/yyyy HH:mm")}</div>
-          <div style="font-weight: bold; color: #000; font-size: 10px; margin-top: 5px;">Orders/Delivery: +971 50 123 4567</div>
+          <div style="font-weight: bold; color: #000; font-size: 10px; margin-top: 5px;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
         </div>
       </div>
     `;
@@ -2794,7 +2794,7 @@ export default function Orders() {
                       <br />
                       Abu Dhabi, UAE
                       <br />
-                      +971 50 123 4567
+                      Tel: 026 815 824 | Mobile: +971 56 338 0001
                     </div>
                   </div>
                 </div>
@@ -2920,7 +2920,7 @@ export default function Orders() {
                       marginTop: "8px",
                     }}
                   >
-                    For Orders/Delivery: +971 50 123 4567
+                    Tel: 026 815 824 | Mobile: +971 56 338 0001
                   </p>
                 </div>
               </div>

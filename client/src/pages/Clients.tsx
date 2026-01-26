@@ -601,7 +601,7 @@ export default function Clients() {
             Generated on ${format(new Date(), "dd/MM/yyyy 'at' HH:mm")} | Thank you for your business!
           </p>
           <p style="font-size: 13px; font-weight: bold; color: #000; margin: 8px 0 0 0;">
-            For Orders/Delivery: +971 50 123 4567
+            Tel: 026 815 824 | Mobile: +971 56 338 0001
           </p>
         </div>
       </div>

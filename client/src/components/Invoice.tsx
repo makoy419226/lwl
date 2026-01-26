@@ -22,7 +22,7 @@ const companyInfo = {
   name: "Liquid Washes Laundry",
   address: "Centra Market D/109, Al Dhanna City, Al Ruwais",
   city: "Abu Dhabi, UAE",
-  phone: "+971 50 123 4567",
+  phone: "Tel: 026 815 824 | Mobile: +971 56 338 0001",
 };
 
 export function Invoice({

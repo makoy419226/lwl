@@ -262,7 +262,7 @@ export default function SalesReports() {
 
         <div style="margin-top: 30px; text-align: center; color: #666; font-size: 11px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
           <div>Generated on ${new Date().toLocaleString()}</div>
-          <div style="font-weight: bold; color: #000; font-size: 13px; margin-top: 8px;">For Orders/Delivery: +971 50 123 4567</div>
+          <div style="font-weight: bold; color: #000; font-size: 13px; margin-top: 8px;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
         </div>
       </div>
     `;
