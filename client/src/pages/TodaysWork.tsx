@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Order } from "@shared/schema";
+import type { Order, BillPayment } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle } from "lucide-react";
@@ -8,6 +8,10 @@ import { format } from "date-fns";
 export default function TodaysWork() {
   const { data: orders = [], isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
+  });
+
+  const { data: billPayments = [] } = useQuery<BillPayment[]>({
+    queryKey: ["/api/bill-payments"],
   });
 
   const today = new Date();
@@ -39,8 +43,13 @@ export default function TodaysWork() {
     return sum + parseFloat(order.totalAmount || "0");
   }, 0);
 
-  const paidAmount = todaysOrders.reduce((sum, order) => {
-    return sum + parseFloat(order.paidAmount || "0");
+  // Calculate amount received TODAY from bill payments
+  const paidAmount = billPayments.filter((payment) => {
+    const paymentDate = new Date(payment.paymentDate);
+    paymentDate.setHours(0, 0, 0, 0);
+    return paymentDate.getTime() === today.getTime();
+  }).reduce((sum, payment) => {
+    return sum + parseFloat(payment.amount || "0");
   }, 0);
 
   if (isLoading) {

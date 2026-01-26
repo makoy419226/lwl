@@ -644,6 +644,11 @@ export async function registerRoutes(
   });
 
   // Bill payments routes
+  app.get("/api/bill-payments", async (req, res) => {
+    const payments = await storage.getAllBillPayments();
+    res.json(payments);
+  });
+
   app.get("/api/bills/:id/payments", async (req, res) => {
     const billId = Number(req.params.id);
     if (isNaN(billId)) {

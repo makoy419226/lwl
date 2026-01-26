@@ -80,6 +80,7 @@ export interface IStorage {
   ): Promise<Bill>;
   deleteBill(id: number): Promise<void>;
   getBillPayments(billId: number): Promise<BillPayment[]>;
+  getAllBillPayments(): Promise<BillPayment[]>;
   getClientBillPayments(clientId: number): Promise<BillPayment[]>;
   createBillPayment(payment: InsertBillPayment): Promise<BillPayment>;
   payBill(
@@ -473,6 +474,13 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(billPayments)
       .where(eq(billPayments.billId, billId))
+      .orderBy(desc(billPayments.paymentDate));
+  }
+
+  async getAllBillPayments(): Promise<BillPayment[]> {
+    return await db
+      .select()
+      .from(billPayments)
       .orderBy(desc(billPayments.paymentDate));
   }
 
