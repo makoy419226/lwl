@@ -123,6 +123,9 @@ export default function Workers() {
   const [visiblePasswords, setVisiblePasswords] = useState<Set<number>>(new Set());
   const [visiblePins, setVisiblePins] = useState<Set<number>>(new Set());
   
+  // Driver delivery history dialog
+  const [selectedDriverHistory, setSelectedDriverHistory] = useState<{id: number; name: string} | null>(null);
+  
   const togglePasswordVisibility = (userId: number) => {
     setVisiblePasswords(prev => {
       const newSet = new Set(prev);
@@ -1001,7 +1004,9 @@ export default function Workers() {
                                 <TableCell className="text-center">
                                   <Badge
                                     variant="outline"
-                                    className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                                    className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40"
+                                    onClick={() => setSelectedDriverHistory({ id: s.driver.id, name: s.driver.name || s.driver.username })}
+                                    data-testid={`badge-driver-delivered-${s.driver.id}`}
                                   >
                                     {s.deliveredCount}
                                   </Badge>
@@ -1540,6 +1545,51 @@ export default function Workers() {
               )}
               Update User
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Driver Delivery History Dialog */}
+      <Dialog open={!!selectedDriverHistory} onOpenChange={() => setSelectedDriverHistory(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="w-5 h-5 text-green-600" />
+              Delivery History - {selectedDriverHistory?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {orders?.filter(order => 
+              order.delivered && order.deliveredByWorkerId === selectedDriverHistory?.id
+            ).sort((a, b) => {
+              const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : 0;
+              const dateB = b.deliveryDate ? new Date(b.deliveryDate).getTime() : 0;
+              return dateB - dateA;
+            }).map((order) => (
+              <Card key={order.id} className="p-3" data-testid={`card-driver-history-${order.id}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-bold">#{order.orderNumber}</div>
+                    <div className="text-sm text-muted-foreground">{order.customerName || "Walk-in"}</div>
+                  </div>
+                  <div className="text-right">
+                    <Badge className="bg-green-500 text-white mb-1">Delivered</Badge>
+                    {order.deliveryDate && (
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(order.deliveryDate), "dd MMM yyyy, h:mm a")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+            {(!orders?.filter(order => 
+              order.delivered && order.deliveredByWorkerId === selectedDriverHistory?.id
+            ).length) && (
+              <div className="text-center py-8 text-muted-foreground">
+                No deliveries found for this driver
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
