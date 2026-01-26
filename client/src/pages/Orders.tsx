@@ -2071,14 +2071,20 @@ export default function Orders() {
                                                     </span>
                                                   </div>
                                                   {client?.address && (
-                                                    <span className="text-[10px] text-muted-foreground truncate max-w-[100px] lg:max-w-[140px]">
-                                                      {client.address}
-                                                    </span>
+                                                    <div className="flex items-center gap-0.5">
+                                                      <MapPin className="w-2.5 h-2.5 text-muted-foreground shrink-0" />
+                                                      <span className="text-[10px] text-muted-foreground truncate max-w-[90px] lg:max-w-[130px]">
+                                                        {client.address}
+                                                      </span>
+                                                    </div>
                                                   )}
                                                   {client?.phone && (
-                                                    <span className="text-[10px] text-muted-foreground truncate max-w-[100px] lg:max-w-[140px]">
-                                                      {client.phone}
-                                                    </span>
+                                                    <div className="flex items-center gap-0.5">
+                                                      <Phone className="w-2.5 h-2.5 text-muted-foreground shrink-0" />
+                                                      <span className="text-[10px] text-muted-foreground truncate max-w-[90px] lg:max-w-[130px]">
+                                                        {client.phone}
+                                                      </span>
+                                                    </div>
                                                   )}
                                                 </div>
                                               </Button>
