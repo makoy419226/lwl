@@ -223,15 +223,17 @@ export async function registerRoutes(
     res.json({ success: true, message: "Password reset successfully" });
   });
 
-  // Get all users (admin only)
+  // Get all users (admin only) - includes password and PIN for admin view
   app.get("/api/users", async (req, res) => {
     const userList = await db
       .select({
         id: users.id,
         username: users.username,
+        password: users.password,
         role: users.role,
         name: users.name,
         email: users.email,
+        pin: users.pin,
         active: users.active,
       })
       .from(users);
