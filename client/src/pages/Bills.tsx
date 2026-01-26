@@ -62,7 +62,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear, isAfter, isSameDay } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Product, Client, Bill, Order } from "@shared/schema";
+import type { Product, Client, Bill, Order, PackingWorker } from "@shared/schema";
 import html2pdf from "html2pdf.js";
 import logoImage from "@assets/image_1769169126339.png";
 
@@ -161,8 +161,25 @@ export default function Bills() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [bulkPaymentClientId, setBulkPaymentClientId] = useState<number | null>(null);
+  
+  // Cashier PIN verification states
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [cashierPin, setCashierPin] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [pendingPaymentAction, setPendingPaymentAction] = useState<{
+    type: 'bill' | 'client';
+    bill?: Bill;
+    client?: Client;
+    totalDue?: number;
+  } | null>(null);
+  const [verifiedCashier, setVerifiedCashier] = useState<string | null>(null);
 
   const [, setLocation] = useLocation();
+
+  // Query for workers to verify cashier PIN
+  const { data: workers = [] } = useQuery<PackingWorker[]>({
+    queryKey: ["/api/packing-workers"],
+  });
 
   // Destructure refetch to ensure fresh data
   const { data: bills, isLoading, isError, refetch } = useBills();
@@ -597,7 +614,30 @@ export default function Bills() {
     window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
   };
 
-  const handlePayNow = (bill: Bill) => {
+  // Verify cashier PIN before allowing payment
+  const verifyCashierPin = () => {
+    const matchedWorker = workers.find(w => w.pin === cashierPin && w.active);
+    if (matchedWorker) {
+      setVerifiedCashier(matchedWorker.name);
+      setShowPinDialog(false);
+      setCashierPin("");
+      setPinError("");
+      
+      // Execute the pending payment action
+      if (pendingPaymentAction) {
+        if (pendingPaymentAction.type === 'bill' && pendingPaymentAction.bill) {
+          proceedWithPayment(pendingPaymentAction.bill);
+        } else if (pendingPaymentAction.type === 'client' && pendingPaymentAction.client) {
+          proceedWithClientPayment(pendingPaymentAction.client, pendingPaymentAction.totalDue || 0);
+        }
+        setPendingPaymentAction(null);
+      }
+    } else {
+      setPinError("Invalid PIN. Please try again.");
+    }
+  };
+
+  const proceedWithPayment = (bill: Bill) => {
     setSelectedBill(bill);
     const remainingAmount =
       parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
@@ -605,6 +645,14 @@ export default function Bills() {
     setPaymentNotes("");
     setPaymentMethod("cash");
     setShowPaymentDialog(true);
+  };
+
+  const handlePayNow = (bill: Bill) => {
+    // Require PIN verification first
+    setPendingPaymentAction({ type: 'bill', bill });
+    setShowPinDialog(true);
+    setCashierPin("");
+    setPinError("");
   };
 
   const payBillMutation = useMutation({
@@ -707,7 +755,7 @@ export default function Bills() {
     }
   };
 
-  const handlePayNowForClient = (client: Client, totalDue: number) => {
+  const proceedWithClientPayment = (client: Client, totalDue: number) => {
     // Find the oldest unpaid bill for this client that actually has a balance
     const clientUnpaidBills =
       bills?.filter((b) => {
@@ -733,6 +781,14 @@ export default function Bills() {
     setPaymentNotes(`Payment for ${client.name}'s outstanding balance (${clientUnpaidBills.length} bills)`);
     setPaymentMethod("cash");
     setShowPaymentDialog(true);
+  };
+
+  const handlePayNowForClient = (client: Client, totalDue: number) => {
+    // Require PIN verification first
+    setPendingPaymentAction({ type: 'client', client, totalDue });
+    setShowPinDialog(true);
+    setCashierPin("");
+    setPinError("");
   };
 
   const printBillPDF = async (bill: Bill) => {
@@ -1913,6 +1969,80 @@ export default function Bills() {
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
                 Create Bill
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cashier PIN Verification Dialog */}
+      <Dialog
+        open={showPinDialog}
+        onOpenChange={(open) => {
+          setShowPinDialog(open);
+          if (!open) {
+            setCashierPin("");
+            setPinError("");
+            setPendingPaymentAction(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-primary" />
+              Cashier PIN Required
+            </DialogTitle>
+            <DialogDescription>
+              Enter your cashier PIN to process this payment
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="cashier-pin">Enter PIN</Label>
+              <Input
+                id="cashier-pin"
+                type="password"
+                maxLength={5}
+                value={cashierPin}
+                onChange={(e) => {
+                  setCashierPin(e.target.value.replace(/\D/g, "").slice(0, 5));
+                  setPinError("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && cashierPin.length === 5) {
+                    verifyCashierPin();
+                  }
+                }}
+                placeholder="Enter 5-digit PIN"
+                className="text-center tracking-widest text-lg"
+                autoFocus
+                data-testid="input-cashier-pin"
+              />
+              {pinError && (
+                <p className="text-sm text-destructive mt-1">{pinError}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowPinDialog(false);
+                  setCashierPin("");
+                  setPinError("");
+                  setPendingPaymentAction(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={verifyCashierPin}
+                disabled={cashierPin.length !== 5}
+                data-testid="button-verify-pin"
+              >
+                Verify & Proceed
               </Button>
             </div>
           </div>
