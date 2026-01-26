@@ -123,6 +123,27 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  // Send heartbeat to server to track online status
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+    
+    const sendHeartbeat = () => {
+      fetch("/api/auth/heartbeat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, username: user.username }),
+      }).catch(() => {});
+    };
+    
+    // Send immediately on login
+    sendHeartbeat();
+    
+    // Then send every 30 seconds
+    const interval = setInterval(sendHeartbeat, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isLoggedIn, user]);
+
   const checkSessionTimeout = useCallback(() => {
     const lastActivity = localStorage.getItem("lastActivity");
     if (lastActivity && isLoggedIn) {

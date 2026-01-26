@@ -163,6 +163,16 @@ export default function Workers() {
     queryKey: ["/api/users"],
   });
 
+  // Fetch active sessions to show online status
+  const { data: activeSessions } = useQuery<{ activeUserIds: number[] }>({
+    queryKey: ["/api/auth/active-sessions"],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const isUserOnline = (userId: number) => {
+    return activeSessions?.activeUserIds?.includes(userId) || false;
+  };
+
   const getNextUsername = (role: string) => {
     const roleUsers = systemUsers?.filter(u => u.role === role) || [];
     return `${role}${roleUsers.length + 1}`;
@@ -1051,7 +1061,12 @@ export default function Workers() {
                               <TableBody>
                                 {systemUsers.filter(u => u.role === "manager").map((user) => (
                                   <TableRow key={user.id}>
-                                    <TableCell className="font-medium">{user.username}</TableCell>
+                                    <TableCell className="font-medium">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`w-2 h-2 rounded-full ${isUserOnline(user.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} title={isUserOnline(user.id) ? 'Online' : 'Offline'} />
+                                        {user.username}
+                                      </div>
+                                    </TableCell>
                                     <TableCell>{user.name || "-"}</TableCell>
                                     <TableCell>
                                       <div className="flex items-center gap-1">
@@ -1126,7 +1141,12 @@ export default function Workers() {
                               <TableBody>
                                 {systemUsers.filter(u => u.role === "cashier").map((user) => (
                                   <TableRow key={user.id}>
-                                    <TableCell className="font-medium">{user.username}</TableCell>
+                                    <TableCell className="font-medium">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`w-2 h-2 rounded-full ${isUserOnline(user.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} title={isUserOnline(user.id) ? 'Online' : 'Offline'} />
+                                        {user.username}
+                                      </div>
+                                    </TableCell>
                                     <TableCell>{user.name || "-"}</TableCell>
                                     <TableCell>
                                       <div className="flex items-center gap-1">
@@ -1201,7 +1221,12 @@ export default function Workers() {
                               <TableBody>
                                 {systemUsers.filter(u => u.role === "staff").map((user) => (
                                   <TableRow key={user.id}>
-                                    <TableCell className="font-medium">{user.username}</TableCell>
+                                    <TableCell className="font-medium">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`w-2 h-2 rounded-full ${isUserOnline(user.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} title={isUserOnline(user.id) ? 'Online' : 'Offline'} />
+                                        {user.username}
+                                      </div>
+                                    </TableCell>
                                     <TableCell>{user.name || "-"}</TableCell>
                                     <TableCell>
                                       <div className="flex items-center gap-1">

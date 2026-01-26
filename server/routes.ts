@@ -19,6 +19,40 @@ export async function registerRoutes(
   // Seed database on startup
   await seedDatabase();
 
+  // Active session tracking (in-memory, stores userId -> lastActivity timestamp)
+  const activeSessions = new Map<number, { userId: number; username: string; lastActivity: Date }>();
+  const SESSION_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes - user is considered offline after this
+
+  // Heartbeat endpoint - called periodically by logged-in users
+  app.post("/api/auth/heartbeat", async (req, res) => {
+    const { userId, username } = req.body;
+    if (userId) {
+      activeSessions.set(userId, {
+        userId,
+        username: username || "",
+        lastActivity: new Date()
+      });
+    }
+    res.json({ success: true });
+  });
+
+  // Get active sessions (for admin to see who's online)
+  app.get("/api/auth/active-sessions", async (req, res) => {
+    const now = new Date();
+    const activeUserIds: number[] = [];
+    
+    // Clean up stale sessions and collect active ones
+    for (const [userId, session] of activeSessions.entries()) {
+      if (now.getTime() - session.lastActivity.getTime() > SESSION_TIMEOUT_MS) {
+        activeSessions.delete(userId);
+      } else {
+        activeUserIds.push(userId);
+      }
+    }
+    
+    res.json({ activeUserIds });
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     const { username, password } = req.body;
