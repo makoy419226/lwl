@@ -213,6 +213,25 @@ export default function Products() {
     );
   };
 
+  // Check if a product is selected (either in quantities or in customItems for sized items)
+  const isProductSelected = (product: { id: number; name: string }) => {
+    // Check if in regular quantities
+    if (quantities[product.id]) return true;
+    // Check if size-based product is in customItems
+    if (hasSizeOption(product.name)) {
+      return customItems.some(item => 
+        item.name.toLowerCase().startsWith(product.name.toLowerCase())
+      );
+    }
+    // Check if gutra product is in customItems
+    if (isGutraProduct(product.name)) {
+      return customItems.some(item => 
+        item.name.toLowerCase().includes("gutra")
+      );
+    }
+    return false;
+  };
+
   const normalizePhone = (phone: string): string => {
     const cleaned = phone.replace(/[\s\-\(\)]/g, "");
     if (cleaned.startsWith("+971")) {
@@ -1112,7 +1131,7 @@ export default function Products() {
                         <div
                           key={product.id}
                           className={`relative rounded-lg sm:rounded-xl border-2 p-2 sm:p-3 md:p-4 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
-                            quantities[product.id]
+                            isProductSelected(product)
                               ? "border-primary border-[3px] bg-primary/15 ring-2 ring-primary/50 shadow-lg shadow-primary/20"
                               : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60 hover:from-primary/5 hover:to-card"
                           }`}
@@ -1155,7 +1174,7 @@ export default function Products() {
                           <div 
                             className="flex flex-col items-center mt-0.5 sm:mt-1 gap-0.5 w-full"
                           >
-                            {quantities[product.id] ? (
+                            {isProductSelected(product) ? (
                               // Show price based on dry clean selection when item is added
                               <div
                                 className={`text-sm sm:text-lg font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${
@@ -1165,10 +1184,20 @@ export default function Products() {
                                 }`}
                                 data-testid={`text-product-active-price-${product.id}`}
                               >
-                                {dryCleanItems[product.id] 
-                                  ? (product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-")
-                                  : (product.price ? parseFloat(product.price).toFixed(0) : "-")
-                                } AED
+                                {(() => {
+                                  // For size-based items, show "Added" since price varies by size
+                                  if (hasSizeOption(product.name) && !quantities[product.id]) {
+                                    const sizedItem = customItems.find(item => 
+                                      item.name.toLowerCase().startsWith(product.name.toLowerCase())
+                                    );
+                                    return sizedItem ? `${sizedItem.quantity}x Added` : "Added";
+                                  }
+                                  // For regular items
+                                  return `${dryCleanItems[product.id] 
+                                    ? (product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-")
+                                    : (product.price ? parseFloat(product.price).toFixed(0) : "-")
+                                  } AED`;
+                                })()}
                               </div>
                             ) : (
                               // Show hint to tap when item not added
