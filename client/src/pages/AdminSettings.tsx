@@ -333,14 +333,14 @@ export default function AdminSettings() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-pin">PIN (4 digits)</Label>
+                    <Label htmlFor="edit-pin">PIN (5 digits)</Label>
                     <Input
                       id="edit-pin"
                       type="password"
-                      maxLength={4}
+                      maxLength={5}
                       placeholder="Enter new PIN or leave empty"
                       value={editPin}
-                      onChange={(e) => setEditPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      onChange={(e) => setEditPin(e.target.value.replace(/\D/g, "").slice(0, 5))}
                       data-testid="input-edit-admin-pin"
                     />
                   </div>
