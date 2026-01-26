@@ -548,46 +548,6 @@ export default function Workers() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select
-                    value={isCustomRole ? "custom" : formData.role}
-                    onValueChange={(value) => {
-                      if (value === "custom") {
-                        setIsCustomRole(true);
-                        setFormData({ ...formData, role: customRole || "" });
-                      } else {
-                        setIsCustomRole(false);
-                        setCustomRole("");
-                        setFormData({ ...formData, role: value });
-                      }
-                    }}
-                  >
-                    <SelectTrigger data-testid="select-worker-role">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {predefinedRoles.map((role) => (
-                        <SelectItem key={role} value={role} data-testid={`option-role-${role.toLowerCase().replace(/\s+/g, '-')}`}>
-                          {role}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom" data-testid="option-role-custom">+ Add Custom Role</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {isCustomRole && (
-                    <Input
-                      placeholder="Enter custom role"
-                      value={customRole}
-                      onChange={(e) => {
-                        setCustomRole(e.target.value);
-                        setFormData({ ...formData, role: e.target.value });
-                      }}
-                      className="mt-2"
-                      data-testid="input-custom-role"
-                    />
-                  )}
-                </div>
-                <div className="space-y-2">
                   <Label>5-Digit PIN</Label>
                   <Input
                     id="worker-pin"
@@ -1143,48 +1103,6 @@ export default function Workers() {
                 }
                 data-testid="input-edit-worker-name"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select
-                value={isCustomRole ? "custom" : (predefinedRoles.includes(formData.role) ? formData.role : "custom")}
-                onValueChange={(value) => {
-                  if (value === "custom") {
-                    setIsCustomRole(true);
-                    if (!predefinedRoles.includes(formData.role)) {
-                      setCustomRole(formData.role);
-                    }
-                  } else {
-                    setIsCustomRole(false);
-                    setCustomRole("");
-                    setFormData({ ...formData, role: value });
-                  }
-                }}
-              >
-                <SelectTrigger data-testid="select-edit-worker-role">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {predefinedRoles.map((role) => (
-                    <SelectItem key={role} value={role} data-testid={`option-edit-role-${role.toLowerCase().replace(/\s+/g, '-')}`}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="custom" data-testid="option-edit-role-custom">+ Add Custom Role</SelectItem>
-                </SelectContent>
-              </Select>
-              {(isCustomRole || !predefinedRoles.includes(formData.role)) && (
-                <Input
-                  placeholder="Enter custom role"
-                  value={customRole || formData.role}
-                  onChange={(e) => {
-                    setCustomRole(e.target.value);
-                    setFormData({ ...formData, role: e.target.value });
-                  }}
-                  className="mt-2"
-                  data-testid="input-edit-custom-role"
-                />
-              )}
             </div>
             <div className="space-y-2">
               <Label>New PIN (optional)</Label>
