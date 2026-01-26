@@ -56,6 +56,7 @@ export const clientTransactions = pgTable("client_transactions", {
   }).notNull(),
   paymentMethod: text("payment_method").default("cash"), // 'cash', 'card', 'bank'
   discount: numeric("discount", { precision: 12, scale: 2 }).default("0"),
+  processedBy: text("processed_by"), // Name of user who processed the transaction
 });
 
 export const bills = pgTable("bills", {
@@ -71,6 +72,7 @@ export const bills = pgTable("bills", {
   isPaid: boolean("is_paid").default(false),
   paymentMethod: text("payment_method"),
   createdByWorkerId: integer("created_by_worker_id"),
+  createdBy: text("created_by"), // Name of user who created the bill
   notes: text("notes"),
 });
 

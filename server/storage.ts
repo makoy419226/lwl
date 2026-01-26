@@ -88,6 +88,7 @@ export interface IStorage {
     amount: string,
     paymentMethod?: string,
     notes?: string,
+    processedBy?: string,
   ): Promise<{ bill: Bill; payment: BillPayment }>;
   getClientTransactions(clientId: number): Promise<ClientTransaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<ClientTransaction>;
@@ -515,6 +516,7 @@ export class DatabaseStorage implements IStorage {
     amount: string,
     paymentMethod?: string,
     notes?: string,
+    processedBy?: string,
   ): Promise<{ bill: Bill; payment: BillPayment }> {
     const bill = await this.getBill(billId);
     if (!bill) throw new Error("Bill not found");
@@ -619,6 +621,7 @@ export class DatabaseStorage implements IStorage {
           date: new Date(),
           runningBalance: newBalance.toFixed(2),
           paymentMethod: "deposit",
+          processedBy: processedBy,
         });
       }
     }
@@ -633,6 +636,7 @@ export class DatabaseStorage implements IStorage {
         date: new Date(),
         runningBalance: "0", // Not used for payment types
         paymentMethod: paymentMethod || "cash",
+        processedBy: processedBy,
       });
     }
 
@@ -648,7 +652,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTransaction(
-    transaction: InsertTransaction & { billId?: number },
+    transaction: InsertTransaction & { billId?: number; processedBy?: string },
   ): Promise<ClientTransaction> {
     const txData = {
       clientId: transaction.clientId,
@@ -660,6 +664,7 @@ export class DatabaseStorage implements IStorage {
       runningBalance: transaction.runningBalance.toString(),
       paymentMethod: transaction.paymentMethod || "cash",
       discount: transaction.discount?.toString() || "0",
+      processedBy: transaction.processedBy || null,
     };
     const [created] = await db
       .insert(clientTransactions)

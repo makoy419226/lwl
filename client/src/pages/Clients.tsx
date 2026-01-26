@@ -164,14 +164,17 @@ export default function Clients() {
       billId,
       amount,
       paymentMethod,
+      processedBy,
     }: {
       billId: number;
       amount: string;
       paymentMethod: string;
+      processedBy?: string;
     }) => {
       return apiRequest("POST", `/api/bills/${billId}/pay`, {
         amount,
         paymentMethod,
+        processedBy,
       });
     },
     onSuccess: () => {
@@ -258,6 +261,7 @@ export default function Clients() {
           billId: pendingCashPayment.billId,
           amount: pendingCashPayment.amount,
           paymentMethod: "cash",
+          processedBy: data.worker?.name || "Staff",
         });
         setShowCashierPinDialog(false);
         setCashierPin("");
@@ -1855,6 +1859,7 @@ export default function Clients() {
                           <TableHead>Type</TableHead>
                           <TableHead>Bill #</TableHead>
                           <TableHead>Description</TableHead>
+                          <TableHead>Processed By</TableHead>
                           <TableHead className="text-right">Amount</TableHead>
                           <TableHead className="text-right">Balance</TableHead>
                         </TableRow>
@@ -1890,6 +1895,9 @@ export default function Clients() {
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {tx.description}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {tx.processedBy || "-"}
                             </TableCell>
                             <TableCell className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}>
                               {tx.type === "deposit" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED

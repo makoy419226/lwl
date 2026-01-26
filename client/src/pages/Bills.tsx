@@ -340,6 +340,7 @@ export default function Bills() {
         createBillMutation.mutate({
           ...pendingBillData,
           createdByWorkerId: data.worker.id,
+          createdBy: data.worker.name,
         });
         setShowCreatorPinDialog(false);
         setCreatorPin("");
@@ -363,6 +364,7 @@ export default function Bills() {
       billDate: string;
       referenceNumber: string;
       createdByWorkerId?: number;
+      createdBy?: string;
     }) => {
       const res = await apiRequest("POST", "/api/bills", billData);
       return res.json();
@@ -1560,6 +1562,9 @@ export default function Bills() {
             <div className="text-center font-bold text-lg mb-3">INVOICE</div>
             <div className="text-sm mb-3">
               <div>Ref: {createdBill?.bill.referenceNumber}</div>
+              {createdBill?.bill.createdBy && (
+                <div>Created by: {createdBill.bill.createdBy}</div>
+              )}
               <div>
                 Date:{" "}
                 {createdBill?.bill.billDate

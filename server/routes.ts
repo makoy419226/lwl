@@ -741,7 +741,7 @@ export async function registerRoutes(
 
   app.post("/api/bills/:id/pay", async (req, res) => {
     try {
-      const { amount, paymentMethod, notes } = req.body;
+      const { amount, paymentMethod, notes, processedBy } = req.body;
       if (!amount || parseFloat(amount) <= 0) {
         return res
           .status(400)
@@ -756,6 +756,7 @@ export async function registerRoutes(
         amount,
         paymentMethod,
         notes,
+        processedBy,
       );
       res.status(201).json(result);
     } catch (err: any) {
