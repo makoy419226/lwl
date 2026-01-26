@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Order, BillPayment } from "@shared/schema";
+import type { Order, BillPayment, Bill } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle } from "lucide-react";
@@ -12,6 +12,10 @@ export default function TodaysWork() {
 
   const { data: billPayments = [] } = useQuery<BillPayment[]>({
     queryKey: ["/api/bill-payments"],
+  });
+
+  const { data: bills = [] } = useQuery<Bill[]>({
+    queryKey: ["/api/bills"],
   });
 
   const today = new Date();
@@ -50,6 +54,14 @@ export default function TodaysWork() {
     return paymentDate.getTime() === today.getTime();
   }).reduce((sum, payment) => {
     return sum + parseFloat(payment.amount || "0");
+  }, 0);
+
+  // Calculate TOTAL unpaid bills across all bills
+  const unpaidBills = bills.filter((bill) => !bill.isPaid);
+  const totalUnpaidAmount = unpaidBills.reduce((sum, bill) => {
+    const billTotal = parseFloat(bill.amount || "0");
+    const billPaid = parseFloat(bill.paidAmount || "0");
+    return sum + (billTotal - billPaid);
   }, 0);
 
   if (isLoading) {
@@ -109,17 +121,17 @@ export default function TodaysWork() {
         <Card className="p-6" data-testid="card-unpaid-bills">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-500" />
-              <h3 className="font-semibold text-foreground">UNPAID BILLS TODAY</h3>
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <h3 className="font-semibold text-foreground">TOTAL UNPAID BILLS</h3>
             </div>
-            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" data-testid="text-unpaid-bills">
-              {(totalRevenue - paidAmount).toFixed(0)} AED
+            <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" data-testid="text-unpaid-bills">
+              {totalUnpaidAmount.toFixed(0)} AED
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground text-center py-4">
-            {todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length === 0 
+            {unpaidBills.length === 0 
               ? "All bills paid" 
-              : `${todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length} unpaid bill${todaysOrders.filter(o => parseFloat(o.totalAmount || "0") > parseFloat(o.paidAmount || "0")).length !== 1 ? 's' : ''}`}
+              : `${unpaidBills.length} unpaid bill${unpaidBills.length !== 1 ? 's' : ''}`}
           </p>
         </Card>
 
