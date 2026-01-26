@@ -88,7 +88,7 @@ export default function DeliveryDashboard() {
     );
   });
 
-  const pickupOrders = filteredOrders.filter((o) => o.deliveryType === "pickup");
+  // Drivers only see delivery orders, not pickup orders
   const deliveryOrders = filteredOrders.filter((o) => o.deliveryType === "delivery");
 
   const handleDeliveryConfirm = (order: Order) => {
@@ -117,7 +117,7 @@ export default function DeliveryDashboard() {
             Delivery Dashboard
           </h1>
           <p className="text-muted-foreground text-sm">
-            Orders ready for pickup/delivery
+            Delivery orders ready for dispatch
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -223,66 +223,10 @@ export default function DeliveryDashboard() {
         </div>
       )}
 
-      {pickupOrders.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Package className="w-5 h-5 text-blue-600" />
-            Pickup Orders ({pickupOrders.length}) - View Only
-          </h2>
-          <div className="grid gap-3">
-            {pickupOrders.map((order) => {
-              const client = getClient(order);
-              return (
-                <Card key={order.id} className="p-4 bg-muted/30" data-testid={`card-pickup-${order.id}`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold text-lg">#{order.orderNumber}</span>
-                        <Badge variant="outline" className="border-blue-500 text-blue-600">Pickup</Badge>
-                        {order.urgent && <Badge className="bg-red-500 text-white">Urgent</Badge>}
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Package className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{order.customerName}</span>
-                        </div>
-                        {client?.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">{client.phone}</span>
-                          </div>
-                        )}
-                        {order.expectedDeliveryAt && (
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-blue-600">
-                              Expected: {format(new Date(order.expectedDeliveryAt), "dd MMM, h:mm a")}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedOrder(order)}
-                      data-testid={`button-view-pickup-${order.id}`}
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {filteredOrders.length === 0 && (
+      {deliveryOrders.length === 0 && (
         <Card className="p-8 text-center">
           <Truck className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">No orders ready for delivery/pickup</p>
+          <p className="text-muted-foreground">No orders ready for delivery</p>
         </Card>
       )}
 
