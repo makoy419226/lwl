@@ -22,6 +22,7 @@ import PublicOrder from "@/pages/PublicOrder";
 import TrackOrder from "@/pages/TrackOrder";
 import AdminSettings from "@/pages/AdminSettings";
 import DeliveryDashboard from "@/pages/DeliveryDashboard";
+import DeliveryHistory from "@/pages/DeliveryHistory";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -71,6 +72,7 @@ function Router() {
       <Switch>
         <Route path="/" component={DeliveryDashboard} />
         <Route path="/delivery" component={DeliveryDashboard} />
+        <Route path="/delivery-history" component={DeliveryHistory} />
         <Route path="/incidents" component={Incidents} />
         <Route path="/contact" component={Contact} />
         <Route path="/track" component={TrackOrder} />
