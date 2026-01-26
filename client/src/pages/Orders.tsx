@@ -2275,7 +2275,7 @@ export default function Orders() {
                                     <TableCell>
                                       {getStatusBadge(order)}
                                     </TableCell>
-                                    <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
+                                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                                       {order.packingDate ? (
                                         <div>
                                           <div>{format(new Date(order.packingDate), "MMMM d, yyyy")}</div>
