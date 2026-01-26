@@ -129,6 +129,8 @@ export interface IStorage {
   verifyPackingWorkerPin(pin: string): Promise<PackingWorker | null>;
   verifyDeliveryWorkerPin(pin: string): Promise<PackingWorker | null>;
   verifyUserPin(pin: string): Promise<User | null>;
+  getUserByUsername(username: string): Promise<User | null>;
+  updateUser(id: number, updates: Partial<User>): Promise<User>;
   getClientOrders(clientId: number): Promise<Order[]>;
   getIncidents(search?: string): Promise<Incident[]>;
   getIncident(id: number): Promise<Incident | undefined>;
@@ -1052,6 +1054,24 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return null;
+  }
+
+  async getUserByUsername(username: string): Promise<User | null> {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
+    return result[0] || null;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User> {
+    const result = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
   }
 
   async getClientOrders(clientId: number): Promise<Order[]> {

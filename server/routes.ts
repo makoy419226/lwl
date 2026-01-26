@@ -1489,7 +1489,13 @@ export async function registerRoutes(
     const adminUsername = process.env.ADMIN_USERNAME || "admin";
     const adminEmail = process.env.ADMIN_EMAIL || "shussaingazi@yahoo.com";
     const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-    const adminPin = process.env.ADMIN_PIN || "";
+    
+    // Get PIN from database user if exists
+    let adminPin = process.env.ADMIN_PIN || "";
+    const adminUser = await storage.getUserByUsername("admin");
+    if (adminUser && adminUser.pin) {
+      adminPin = adminUser.pin;
+    }
     
     res.json({
       username: adminUsername,
@@ -1509,15 +1515,33 @@ export async function registerRoutes(
       return res.status(401).json({ success: false, message: "Invalid admin password" });
     }
     
-    // In a real app, these would be saved to database
-    // For now, we just validate and acknowledge
-    // The actual values would need to be updated in environment variables
-    
-    res.json({
-      success: true,
-      message: "Admin settings updated. Note: Environment variables need to be updated manually for persistence.",
-      settings: { username, email, hasPin: !!pin }
-    });
+    try {
+      // Find admin user in database
+      const adminUser = await storage.getUserByUsername("admin");
+      if (adminUser) {
+        // Update admin user in database
+        const updates: any = {};
+        if (email) updates.email = email;
+        if (pin !== undefined) {
+          // Validate PIN is 5 digits if provided
+          if (pin && !/^\d{5}$/.test(pin)) {
+            return res.status(400).json({ success: false, message: "PIN must be exactly 5 digits" });
+          }
+          updates.pin = pin || null;
+        }
+        
+        await storage.updateUser(adminUser.id, updates);
+      }
+      
+      res.json({
+        success: true,
+        message: "Admin settings updated successfully.",
+        settings: { username, email, hasPin: !!pin }
+      });
+    } catch (error) {
+      console.error("Error updating admin settings:", error);
+      res.status(500).json({ success: false, message: "Failed to update admin settings" });
+    }
   });
 
   // Send OTP to admin email for password change
