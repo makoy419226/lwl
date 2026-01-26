@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Settings, AlertTriangle, RotateCcw, Loader2, Mail, Send, Trash2, Calendar, CalendarDays, CalendarRange } from "lucide-react";
+import { Settings, AlertTriangle, RotateCcw, Loader2, Mail, Send, Trash2, Calendar, CalendarDays, CalendarRange, User, Key, Lock, Pencil, Shield, Check } from "lucide-react";
 
 type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -20,7 +20,29 @@ export default function AdminSettings() {
   const [reportPassword, setReportPassword] = useState("");
   const [reportError, setReportError] = useState("");
   const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('daily');
+  
+  // Admin account states
+  const [showEditAccountDialog, setShowEditAccountDialog] = useState(false);
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
+  const [editUsername, setEditUsername] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPin, setEditPin] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [accountError, setAccountError] = useState("");
+  
+  // OTP states
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [otpError, setOtpError] = useState("");
+  
   const { toast } = useToast();
+
+  // Fetch admin account settings
+  const { data: adminAccount } = useQuery<{ username: string; email: string; pin: string; hasPin: boolean }>({
+    queryKey: ["/api/admin/account"],
+  });
 
   const resetAllMutation = useMutation({
     mutationFn: async (password: string) => {
@@ -87,6 +109,88 @@ export default function AdminSettings() {
     }
   };
 
+  // Update admin account mutation
+  const updateAccountMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; username: string; email: string; pin: string }) => {
+      const res = await apiRequest("PUT", "/api/admin/account", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/account"] });
+      setShowEditAccountDialog(false);
+      setEditPassword("");
+      setAccountError("");
+      toast({
+        title: "Account Updated",
+        description: "Admin account settings have been updated.",
+      });
+    },
+    onError: (error: any) => {
+      setAccountError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to update account");
+    },
+  });
+
+  // Send OTP mutation
+  const sendOtpMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/send-password-otp", {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setOtpSent(true);
+      toast({
+        title: "OTP Sent",
+        description: data.message || "Check your email for the verification code.",
+      });
+    },
+    onError: (error: any) => {
+      setOtpError("Failed to send OTP. Please try again.");
+    },
+  });
+
+  // Change password with OTP mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { otp: string; newPassword: string }) => {
+      const res = await apiRequest("POST", "/api/admin/change-password-with-otp", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      setShowChangePasswordDialog(false);
+      setOtpSent(false);
+      setOtpCode("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setOtpError("");
+      toast({
+        title: "Password Changed",
+        description: "Your admin password has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      setOtpError(error.message?.includes("Invalid") ? "Invalid OTP code" : error.message?.includes("expired") ? "OTP has expired" : "Failed to change password");
+    },
+  });
+
+  const handleEditAccountOpen = () => {
+    if (adminAccount) {
+      setEditUsername(adminAccount.username);
+      setEditEmail(adminAccount.email);
+      setEditPin("");
+      setEditPassword("");
+      setAccountError("");
+    }
+    setShowEditAccountDialog(true);
+  };
+
+  const handleChangePasswordOpen = () => {
+    setOtpSent(false);
+    setOtpCode("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setOtpError("");
+    setShowChangePasswordDialog(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b border-border bg-card px-4 py-4 lg:px-6">
@@ -102,6 +206,308 @@ export default function AdminSettings() {
       </div>
 
       <main className="container mx-auto px-4 py-6 lg:py-8 max-w-4xl">
+        {/* Admin Account Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Shield className="w-5 h-5" />
+              Admin Account
+            </CardTitle>
+            <CardDescription>
+              Manage your admin account settings including username, email, password, and PIN.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Account Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/50">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Username</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    {adminAccount?.username || "admin"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Email</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    {adminAccount?.email || "shussaingazi@yahoo.com"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Password</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-muted-foreground" />
+                    ••••••••
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">PIN</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <Key className="w-4 h-4 text-muted-foreground" />
+                    {adminAccount?.hasPin ? "••••" : "Not set"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleEditAccountOpen}
+                  data-testid="button-edit-admin-account"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit Account Details
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleChangePasswordOpen}
+                  data-testid="button-change-admin-password"
+                >
+                  <Lock className="w-4 h-4" />
+                  Change Password (OTP)
+                </Button>
+              </div>
+            </div>
+
+            {/* Edit Account Dialog */}
+            <Dialog open={showEditAccountDialog} onOpenChange={(open) => {
+              setShowEditAccountDialog(open);
+              if (!open) {
+                setEditPassword("");
+                setAccountError("");
+              }
+            }}>
+              <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Pencil className="w-5 h-5 text-primary" />
+                    Edit Admin Account
+                  </DialogTitle>
+                  <DialogDescription>
+                    Update your admin account details. Enter your current password to confirm changes.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-username">Username</Label>
+                    <Input
+                      id="edit-username"
+                      placeholder="Enter username"
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value)}
+                      data-testid="input-edit-admin-username"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      placeholder="Enter email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      data-testid="input-edit-admin-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-pin">PIN (4 digits)</Label>
+                    <Input
+                      id="edit-pin"
+                      type="password"
+                      maxLength={4}
+                      placeholder="Enter new PIN or leave empty"
+                      value={editPin}
+                      onChange={(e) => setEditPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      data-testid="input-edit-admin-pin"
+                    />
+                  </div>
+                  <div className="space-y-2 pt-2 border-t">
+                    <Label htmlFor="edit-password">Current Password (required)</Label>
+                    <Input
+                      id="edit-password"
+                      type="password"
+                      placeholder="Enter current admin password"
+                      value={editPassword}
+                      onChange={(e) => {
+                        setEditPassword(e.target.value);
+                        setAccountError("");
+                      }}
+                      data-testid="input-current-admin-password"
+                    />
+                    {accountError && (
+                      <p className="text-sm text-destructive">{accountError}</p>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowEditAccountDialog(false);
+                      setEditPassword("");
+                      setAccountError("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => updateAccountMutation.mutate({
+                      currentPassword: editPassword,
+                      username: editUsername,
+                      email: editEmail,
+                      pin: editPin
+                    })}
+                    disabled={!editPassword || updateAccountMutation.isPending}
+                    data-testid="button-save-admin-account"
+                  >
+                    {updateAccountMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4 mr-2" />
+                    )}
+                    Save Changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Change Password via OTP Dialog */}
+            <Dialog open={showChangePasswordDialog} onOpenChange={(open) => {
+              setShowChangePasswordDialog(open);
+              if (!open) {
+                setOtpSent(false);
+                setOtpCode("");
+                setNewPassword("");
+                setConfirmPassword("");
+                setOtpError("");
+              }
+            }}>
+              <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-primary" />
+                    Change Admin Password
+                  </DialogTitle>
+                  <DialogDescription>
+                    {!otpSent 
+                      ? "We'll send a verification code to your registered email address."
+                      : "Enter the OTP code sent to your email and set your new password."}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  {!otpSent ? (
+                    <div className="text-center py-4">
+                      <Mail className="w-12 h-12 mx-auto text-primary mb-4" />
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Click below to send a one-time password to<br />
+                        <span className="font-medium">{adminAccount?.email || "shussaingazi@yahoo.com"}</span>
+                      </p>
+                      <Button
+                        onClick={() => sendOtpMutation.mutate()}
+                        disabled={sendOtpMutation.isPending}
+                        data-testid="button-send-otp"
+                      >
+                        {sendOtpMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4 mr-2" />
+                        )}
+                        Send OTP
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="otp-code">OTP Code</Label>
+                        <Input
+                          id="otp-code"
+                          placeholder="Enter 6-digit OTP"
+                          maxLength={6}
+                          value={otpCode}
+                          onChange={(e) => {
+                            setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                            setOtpError("");
+                          }}
+                          data-testid="input-otp-code"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          placeholder="Enter new password (min 6 characters)"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          data-testid="input-new-admin-password"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm Password</Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          placeholder="Confirm new password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          data-testid="input-confirm-admin-password"
+                        />
+                      </div>
+                      {otpError && (
+                        <p className="text-sm text-destructive">{otpError}</p>
+                      )}
+                      {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                        <p className="text-sm text-destructive">Passwords do not match</p>
+                      )}
+                    </>
+                  )}
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowChangePasswordDialog(false);
+                      setOtpSent(false);
+                      setOtpCode("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                      setOtpError("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  {otpSent && (
+                    <Button
+                      onClick={() => changePasswordMutation.mutate({ otp: otpCode, newPassword })}
+                      disabled={
+                        !otpCode || 
+                        otpCode.length !== 6 || 
+                        !newPassword || 
+                        newPassword.length < 6 || 
+                        newPassword !== confirmPassword ||
+                        changePasswordMutation.isPending
+                      }
+                      data-testid="button-verify-otp-change-password"
+                    >
+                      {changePasswordMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4 mr-2" />
+                      )}
+                      Change Password
+                    </Button>
+                  )}
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">

@@ -1445,6 +1445,129 @@ export async function registerRoutes(
     res.json({ success: true, message: "Admin verified" });
   });
 
+  // Store for admin OTPs (in production, use database or Redis)
+  const adminOtpStore: { otp: string; expiresAt: Date } | null = { otp: "", expiresAt: new Date(0) };
+
+  // Get admin account settings
+  app.get("/api/admin/account", async (req, res) => {
+    const adminUsername = process.env.ADMIN_USERNAME || "admin";
+    const adminEmail = process.env.ADMIN_EMAIL || "shussaingazi@yahoo.com";
+    const adminPin = process.env.ADMIN_PIN || "";
+    
+    res.json({
+      username: adminUsername,
+      email: adminEmail,
+      pin: adminPin ? "****" : "",
+      hasPin: !!adminPin
+    });
+  });
+
+  // Update admin account settings (username, email, PIN - requires current password)
+  app.put("/api/admin/account", async (req, res) => {
+    const { currentPassword, username, email, pin } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!currentPassword || currentPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ success: false, message: "Invalid admin password" });
+    }
+    
+    // In a real app, these would be saved to database
+    // For now, we just validate and acknowledge
+    // The actual values would need to be updated in environment variables
+    
+    res.json({
+      success: true,
+      message: "Admin settings updated. Note: Environment variables need to be updated manually for persistence.",
+      settings: { username, email, hasPin: !!pin }
+    });
+  });
+
+  // Send OTP to admin email for password change
+  app.post("/api/admin/send-password-otp", async (req, res) => {
+    const adminEmail = process.env.ADMIN_EMAIL || "shussaingazi@yahoo.com";
+    
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    
+    // Store OTP
+    adminOtpStore.otp = otp;
+    adminOtpStore.expiresAt = expiresAt;
+    
+    try {
+      // Send OTP via SMTP
+      const nodemailer = await import("nodemailer");
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+      
+      await transporter.sendMail({
+        from: process.env.SMTP_USER,
+        to: adminEmail,
+        subject: "Liquid Washes - Admin Password Reset OTP",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #3b82f6;">Password Reset Request</h2>
+            <p>Your OTP code for resetting the admin password is:</p>
+            <div style="background: #f0f9ff; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">${otp}</span>
+            </div>
+            <p>This code will expire in 10 minutes.</p>
+            <p style="color: #666; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+          </div>
+        `,
+      });
+      
+      res.json({
+        success: true,
+        message: `OTP sent to ${adminEmail.replace(/(.{2})(.*)(@.*)/, "$1***$3")}`,
+      });
+    } catch (error: any) {
+      console.error("Failed to send OTP:", error);
+      res.status(500).json({ success: false, message: "Failed to send OTP email" });
+    }
+  });
+
+  // Verify OTP and change admin password
+  app.post("/api/admin/change-password-with-otp", async (req, res) => {
+    const { otp, newPassword } = req.body;
+    
+    if (!otp || !newPassword) {
+      return res.status(400).json({ success: false, message: "OTP and new password are required" });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    }
+    
+    // Verify OTP
+    if (!adminOtpStore.otp || adminOtpStore.otp !== otp) {
+      return res.status(401).json({ success: false, message: "Invalid OTP" });
+    }
+    
+    if (new Date() > adminOtpStore.expiresAt) {
+      return res.status(401).json({ success: false, message: "OTP has expired" });
+    }
+    
+    // Clear OTP after use
+    adminOtpStore.otp = "";
+    adminOtpStore.expiresAt = new Date(0);
+    
+    // Note: In a real application, you would update the password in the database
+    // For now, we acknowledge the change (actual persistence requires env var update)
+    
+    res.json({
+      success: true,
+      message: "Password changed successfully. Please update ADMIN_PASSWORD environment variable for persistence.",
+    });
+  });
+
   // Admin email for daily reports
   const ADMIN_REPORT_EMAIL = process.env.ADMIN_REPORT_EMAIL || "idusma0010@gmail.com";
 

@@ -47,3 +47,5 @@ integrations = ["resend:1.0.0"]
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = "587"
 ADMIN_REPORT_EMAIL = "shussaingazi@yahoo.com"
+ADMIN_EMAIL = "shussaingazi@yahoo.com"
+ADMIN_USERNAME = "admin"
