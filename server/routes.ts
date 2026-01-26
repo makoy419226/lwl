@@ -1886,14 +1886,21 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // Verify staff user PIN (for bill creation, etc.)
+  // Verify staff user PIN (for bill creation, etc.) - Admin PIN works as universal PIN
   app.post("/api/workers/verify-pin", async (req, res) => {
     const { pin } = req.body;
-    if (!pin || !/^\d{5}$/.test(pin)) {
+    if (!pin || !/^\d{4,5}$/.test(pin)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid PIN format" });
     }
+    
+    // Check if it's the admin universal PIN
+    const adminPin = process.env.ADMIN_PIN || "";
+    if (adminPin && pin === adminPin) {
+      return res.json({ success: true, worker: { id: 0, name: "Admin" } });
+    }
+    
     const user = await storage.verifyUserPin(pin);
     if (user) {
       res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
@@ -1902,14 +1909,21 @@ export async function registerRoutes(
     }
   });
 
-  // Verify packing worker PIN
+  // Verify packing worker PIN - Admin PIN works as universal PIN
   app.post("/api/packing/verify-pin", async (req, res) => {
     const { pin } = req.body;
-    if (!pin || !/^\d{5}$/.test(pin)) {
+    if (!pin || !/^\d{4,5}$/.test(pin)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid PIN format" });
     }
+    
+    // Check if it's the admin universal PIN
+    const adminPin = process.env.ADMIN_PIN || "";
+    if (adminPin && pin === adminPin) {
+      return res.json({ success: true, worker: { id: 0, name: "Admin" } });
+    }
+    
     const worker = await storage.verifyPackingWorkerPin(pin);
     if (worker) {
       res.json({ success: true, worker: { id: worker.id, name: worker.name } });
@@ -1918,14 +1932,21 @@ export async function registerRoutes(
     }
   });
 
-  // Verify delivery worker PIN
+  // Verify delivery worker PIN - Admin PIN works as universal PIN
   app.post("/api/delivery/verify-pin", async (req, res) => {
     const { pin } = req.body;
-    if (!pin || !/^\d{5}$/.test(pin)) {
+    if (!pin || !/^\d{4,5}$/.test(pin)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid PIN format" });
     }
+    
+    // Check if it's the admin universal PIN
+    const adminPin = process.env.ADMIN_PIN || "";
+    if (adminPin && pin === adminPin) {
+      return res.json({ success: true, worker: { id: 0, name: "Admin" } });
+    }
+    
     const worker = await storage.verifyDeliveryWorkerPin(pin);
     if (worker) {
       res.json({ success: true, worker: { id: worker.id, name: worker.name } });
