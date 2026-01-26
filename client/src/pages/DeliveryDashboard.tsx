@@ -225,6 +225,79 @@ export default function DeliveryDashboard() {
         </Card>
       )}
 
+      {/* Recently Delivered Section */}
+      {(() => {
+        const deliveredOrders = orders?.filter((order) => {
+          if (!order.delivered) return false;
+          // Admin sees all delivered orders, drivers see only their own
+          if (user?.role === "admin") return true;
+          // For drivers, show orders delivered by them (match by user id)
+          return order.deliveredByWorkerId === user?.id;
+        }).sort((a, b) => {
+          // Sort by delivery date descending
+          const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : 0;
+          const dateB = b.deliveryDate ? new Date(b.deliveryDate).getTime() : 0;
+          return dateB - dateA;
+        }).slice(0, 20) || [];
+
+        if (deliveredOrders.length === 0) return null;
+
+        return (
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-blue-600" />
+              Recently Delivered ({deliveredOrders.length})
+            </h2>
+            <div className="grid gap-3">
+              {deliveredOrders.map((order) => {
+                const client = getClient(order);
+                return (
+                  <Card key={order.id} className="p-4 bg-muted/30" data-testid={`card-delivered-${order.id}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-bold">#{order.orderNumber}</span>
+                          <Badge className="bg-blue-500 text-white">Delivered</Badge>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium">{order.customerName || client?.name || "Unknown"}</span>
+                          </div>
+                          {client?.address && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-muted-foreground truncate">{client.address}</span>
+                            </div>
+                          )}
+                          {order.deliveryDate && (
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-green-600">
+                                Delivered: {format(new Date(order.deliveryDate), "dd MMM, h:mm a")}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedOrder(order)}
+                        data-testid={`button-view-delivered-${order.id}`}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
