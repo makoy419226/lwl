@@ -126,6 +126,7 @@ export default function Clients() {
       amount: number;
       paid: number;
       due: number;
+      createdBy?: string;
     }>;
     totalDue: number;
   } | null>(null);
@@ -756,6 +757,7 @@ export default function Clients() {
       amount: parseFloat(bill.amount || "0"),
       paid: parseFloat(bill.paidAmount || "0"),
       due: parseFloat(bill.amount || "0") - parseFloat(bill.paidAmount || "0"),
+      createdBy: bill.createdBy || undefined,
     }));
     
     const totalDue = billItems.reduce((sum, item) => sum + item.due, 0);
@@ -1517,6 +1519,7 @@ export default function Clients() {
                     <TableRow>
                       <TableHead className="text-xs">Bill #</TableHead>
                       <TableHead className="text-xs">Date</TableHead>
+                      <TableHead className="text-xs">Billed by</TableHead>
                       <TableHead className="text-xs text-right">Amount</TableHead>
                       <TableHead className="text-xs text-right">Paid</TableHead>
                       <TableHead className="text-xs text-right">Due</TableHead>
@@ -1527,6 +1530,7 @@ export default function Clients() {
                       <TableRow key={bill.billId}>
                         <TableCell className="text-xs">#{bill.billId}</TableCell>
                         <TableCell className="text-xs">{bill.date}</TableCell>
+                        <TableCell className="text-xs">{bill.createdBy || "-"}</TableCell>
                         <TableCell className="text-xs text-right">{bill.amount.toFixed(2)}</TableCell>
                         <TableCell className="text-xs text-right text-green-600">{bill.paid.toFixed(2)}</TableCell>
                         <TableCell className="text-xs text-right text-destructive font-medium">{bill.due.toFixed(2)}</TableCell>
@@ -1587,6 +1591,7 @@ export default function Clients() {
                                 <tr>
                                   <th>Bill #</th>
                                   <th>Date</th>
+                                  <th>Billed by</th>
                                   <th class="text-right">Amount (AED)</th>
                                   <th class="text-right">Paid (AED)</th>
                                   <th class="text-right">Due (AED)</th>
@@ -1595,6 +1600,7 @@ export default function Clients() {
                                   <tr>
                                     <td>#${bill.billId}</td>
                                     <td>${bill.date}</td>
+                                    <td>${bill.createdBy || "-"}</td>
                                     <td class="text-right">${bill.amount.toFixed(2)}</td>
                                     <td class="text-right paid">${bill.paid.toFixed(2)}</td>
                                     <td class="text-right due">${bill.due.toFixed(2)}</td>
