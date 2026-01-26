@@ -132,6 +132,11 @@ export default function Workers() {
     queryKey: ["/api/users"],
   });
 
+  const getNextUsername = (role: string) => {
+    const roleUsers = systemUsers?.filter(u => u.role === role) || [];
+    return `${role}${roleUsers.length + 1}`;
+  };
+
   const getDateRange = () => {
     const now = new Date();
     switch (dateFilter) {
@@ -1238,7 +1243,13 @@ export default function Workers() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isUserCreateOpen} onOpenChange={setIsUserCreateOpen}>
+      <Dialog open={isUserCreateOpen} onOpenChange={(open) => {
+              if (open) {
+                const defaultRole = "cashier";
+                setUserFormData({ username: getNextUsername(defaultRole), password: "", name: "", email: "", role: defaultRole, pin: "" });
+              }
+              setIsUserCreateOpen(open);
+            }}>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1301,7 +1312,7 @@ export default function Workers() {
               <Select
                 value={userFormData.role}
                 onValueChange={(value) =>
-                  setUserFormData({ ...userFormData, role: value })
+                  setUserFormData({ ...userFormData, role: value, username: getNextUsername(value) })
                 }
               >
                 <SelectTrigger data-testid="select-new-role">
