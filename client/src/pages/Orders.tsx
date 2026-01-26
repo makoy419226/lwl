@@ -1955,6 +1955,16 @@ export default function Orders() {
                             <TableHead className="w-[100px] lg:w-[140px]">
                               Client
                             </TableHead>
+                            {activeTab === "for-delivery" && (
+                              <TableHead className="w-[120px] lg:w-[160px]">
+                                Address
+                              </TableHead>
+                            )}
+                            {activeTab === "for-delivery" && (
+                              <TableHead className="w-[100px]">
+                                Phone
+                              </TableHead>
+                            )}
                             <TableHead className="hidden 2xl:table-cell w-[80px]">
                               Due
                             </TableHead>
@@ -2170,6 +2180,28 @@ export default function Orders() {
                                             </PopoverContent>
                                           </Popover>
                                         </TableCell>
+                                        {activeTab === "for-delivery" && (
+                                          <TableCell
+                                            rowSpan={orderCount}
+                                            className="align-top text-xs text-muted-foreground border-r"
+                                          >
+                                            <div className="truncate max-w-[150px]" title={order.deliveryAddress || client?.address || ""}>
+                                              {order.deliveryAddress || client?.address || "-"}
+                                            </div>
+                                          </TableCell>
+                                        )}
+                                        {activeTab === "for-delivery" && (
+                                          <TableCell
+                                            rowSpan={orderCount}
+                                            className="align-top text-xs border-r"
+                                          >
+                                            {client?.phone ? (
+                                              <a href={`tel:${client.phone}`} className="text-blue-600 hover:underline">
+                                                {client.phone}
+                                              </a>
+                                            ) : "-"}
+                                          </TableCell>
+                                        )}
                                         <TableCell
                                           rowSpan={orderCount}
                                           className={`align-top font-semibold border-r hidden 2xl:table-cell text-xs ${client && getClientDueBalance(client.id) === 0 ? "text-green-600" : "text-red-600"}`}
