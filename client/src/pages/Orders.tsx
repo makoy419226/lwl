@@ -2033,24 +2033,34 @@ export default function Orders() {
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell">
                                       {order.billId ? (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="font-mono text-primary h-auto py-1 px-1 text-xs"
-                                          onClick={() => {
-                                            const bill = bills?.find(
-                                              (b) => b.id === order.billId,
-                                            );
-                                            if (bill) {
-                                              setSelectedBill(bill);
-                                              setShowBillDialog(true);
-                                            }
-                                          }}
-                                          data-testid={`button-bill-${order.billId}`}
-                                        >
-                                          <Receipt className="w-3 h-3" />
-                                          #{order.billId}
-                                        </Button>
+                                        <div className="flex flex-col items-start">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="font-mono text-primary h-auto py-1 px-1 text-xs"
+                                            onClick={() => {
+                                              const bill = bills?.find(
+                                                (b) => b.id === order.billId,
+                                              );
+                                              if (bill) {
+                                                setSelectedBill(bill);
+                                                setShowBillDialog(true);
+                                              }
+                                            }}
+                                            data-testid={`button-bill-${order.billId}`}
+                                          >
+                                            <Receipt className="w-3 h-3" />
+                                            #{order.billId}
+                                          </Button>
+                                          {(() => {
+                                            const bill = bills?.find((b) => b.id === order.billId);
+                                            return bill?.createdBy ? (
+                                              <span className="text-[10px] text-muted-foreground pl-1">
+                                                Billed by: {bill.createdBy}
+                                              </span>
+                                            ) : null;
+                                          })()}
+                                        </div>
                                       ) : (
                                         <span className="text-muted-foreground text-xs">
                                           -
