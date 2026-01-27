@@ -207,9 +207,16 @@ export default function DeliveryDashboard() {
                 <Card key={order.id} className="p-4" data-testid={`card-delivery-${order.id}`}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-lg">#{order.orderNumber}</span>
-                        <Badge className="bg-green-500 text-white">Delivery</Badge>
+                        <div className="flex flex-col items-start">
+                          <Badge className="bg-green-500 text-white">Delivery</Badge>
+                          {order.expectedDeliveryAt && (
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(order.expectedDeliveryAt), "dd MMM, h:mm a")}
+                            </span>
+                          )}
+                        </div>
                         {order.urgent && <Badge className="bg-red-500 text-white">Urgent</Badge>}
                       </div>
                       <div className="space-y-1 text-sm">
@@ -229,14 +236,6 @@ export default function DeliveryDashboard() {
                             <a href={`tel:${client.phone}`} className="text-blue-600 hover:underline">
                               {client.phone}
                             </a>
-                          </div>
-                        )}
-                        {order.expectedDeliveryAt && (
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-blue-600">
-                              Expected: {format(new Date(order.expectedDeliveryAt), "dd MMM, h:mm a")}
-                            </span>
                           </div>
                         )}
                       </div>
