@@ -386,7 +386,52 @@ export default function DeliveryDashboard() {
                   </div>
                 )}
               </div>
-              {selectedOrder.deliveryType === "delivery" && (
+              {selectedOrder.delivered ? (
+                <div className="space-y-3">
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-600 cursor-default"
+                    disabled
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Delivered
+                  </Button>
+                  {selectedOrder.deliveryBy && (
+                    <p className="text-sm text-center text-muted-foreground">
+                      Delivered by: {selectedOrder.deliveryBy}
+                    </p>
+                  )}
+                  {selectedOrder.deliveryDate && (
+                    <p className="text-sm text-center text-green-600">
+                      {format(new Date(selectedOrder.deliveryDate), "dd MMM yyyy, h:mm a")}
+                    </p>
+                  )}
+                  {((selectedOrder.deliveryPhotos && selectedOrder.deliveryPhotos.length > 0) || selectedOrder.deliveryPhoto) && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Camera className="w-4 h-4" />
+                        Delivery Proof Photos
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {selectedOrder.deliveryPhotos?.map((photo, idx) => (
+                          <img 
+                            key={idx} 
+                            src={photo} 
+                            alt={`Delivery proof ${idx + 1}`} 
+                            className="w-full h-32 object-cover rounded-lg border"
+                          />
+                        ))}
+                        {!selectedOrder.deliveryPhotos?.length && selectedOrder.deliveryPhoto && (
+                          <img 
+                            src={selectedOrder.deliveryPhoto} 
+                            alt="Delivery proof" 
+                            className="w-full h-32 object-cover rounded-lg border"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : selectedOrder.deliveryType === "delivery" ? (
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700"
                   onClick={() => {
@@ -398,7 +443,7 @@ export default function DeliveryDashboard() {
                   <CheckCircle className="w-4 h-4 mr-2" />
                   Confirm Delivery
                 </Button>
-              )}
+              ) : null}
             </div>
           )}
         </DialogContent>
