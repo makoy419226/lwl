@@ -716,14 +716,21 @@ export default function Products() {
     setPinError("");
 
     try {
-      const res = await fetch("/api/packing/verify-pin", {
+      // Use workers/verify-pin which only accepts admin, manager, and cashier PINs
+      const res = await fetch("/api/workers/verify-pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin: staffPin }),
       });
 
       if (!res.ok) {
-        setPinError("Invalid PIN");
+        // Try to get the error message from the response
+        try {
+          const errorData = await res.json();
+          setPinError(errorData.message || "This PIN has no billing rights. Use admin, manager or cashier PIN.");
+        } catch {
+          setPinError("This PIN has no billing rights. Use admin, manager or cashier PIN.");
+        }
         setIsVerifyingPin(false);
         return;
       }
