@@ -1618,8 +1618,13 @@ export default function Orders() {
                                 <Truck className="w-4 h-4 text-muted-foreground" />
                               )}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col items-end gap-1">
                               {getStatusBadge(order)}
+                              {order.packingDate && (
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(order.packingDate), "MMM d, h:mm a")}
+                                </span>
+                              )}
                             </div>
                           </CardHeader>
 
@@ -1759,12 +1764,6 @@ export default function Orders() {
                               </span>
                             </div>
 
-                            {/* Ready D&T - centered, no label */}
-                            {order.packingDate && (
-                              <div className="text-center text-xs text-muted-foreground">
-                                {format(new Date(order.packingDate), "MMM d, hh:mm a")}
-                              </div>
-                            )}
                           </CardContent>
 
                           {/* Card Footer - Actions */}
