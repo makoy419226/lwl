@@ -104,6 +104,9 @@ export default function Clients() {
   const [editingTransaction, setEditingTransaction] = useState<ClientTransaction | null>(null);
   const [editTransactionAmount, setEditTransactionAmount] = useState("");
   const [editTransactionDescription, setEditTransactionDescription] = useState("");
+  const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
+  const [clearHistoryPassword, setClearHistoryPassword] = useState("");
+  const [clearHistoryError, setClearHistoryError] = useState("");
   const [invoiceData, setInvoiceData] = useState<{
     invoiceNumber: string;
     date: string;
@@ -469,6 +472,34 @@ export default function Clients() {
         title: "Transaction updated",
         description: "Transaction has been updated and balance recalculated.",
       });
+    },
+  });
+
+  const clearHistoryMutation = useMutation({
+    mutationFn: async ({ clientId, password }: { clientId: number; password: string }) => {
+      return apiRequest("POST", `/api/clients/${clientId}/clear-transactions`, { password });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/clients", viewingClient?.id, "transactions"],
+      });
+      setShowClearHistoryDialog(false);
+      setClearHistoryPassword("");
+      setClearHistoryError("");
+      toast({
+        title: "History cleared",
+        description: "Transaction history has been cleared successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      let message = "Failed to clear history";
+      try {
+        const errorMsg = String(error.message || "");
+        const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+        if (msgMatch) message = msgMatch[1];
+      } catch {}
+      setClearHistoryError(message);
     },
   });
 
@@ -1881,6 +1912,20 @@ export default function Clients() {
                       <History className="w-5 h-5" />
                       Transaction History ({viewingClientTransactions.length})
                     </h3>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setClearHistoryPassword("");
+                          setClearHistoryError("");
+                          setShowClearHistoryDialog(true);
+                        }}
+                        data-testid="button-clear-history"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Clear History
+                      </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1992,6 +2037,7 @@ export default function Clients() {
                       <Printer className="w-4 h-4 mr-1" />
                       Print History
                     </Button>
+                    </div>
                   </div>
                   <div className="border rounded-lg overflow-hidden">
                     <Table>
@@ -2176,6 +2222,69 @@ export default function Clients() {
                 data-testid="button-confirm-pay-all"
               >
                 {payAllBillsMutation.isPending ? "Processing..." : "Pay Now"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear Transaction History Dialog */}
+      <Dialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              Clear Transaction History
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This will permanently delete all transaction history for{" "}
+              <strong>{viewingClient?.name}</strong>. This action cannot be undone.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="admin-password">Admin Password</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                placeholder="Enter admin password"
+                value={clearHistoryPassword}
+                onChange={(e) => {
+                  setClearHistoryPassword(e.target.value);
+                  setClearHistoryError("");
+                }}
+                data-testid="input-clear-history-password"
+              />
+              {clearHistoryError && (
+                <p className="text-sm text-destructive">{clearHistoryError}</p>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowClearHistoryDialog(false);
+                  setClearHistoryPassword("");
+                  setClearHistoryError("");
+                }}
+                data-testid="button-cancel-clear-history"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (viewingClient && clearHistoryPassword) {
+                    clearHistoryMutation.mutate({
+                      clientId: viewingClient.id,
+                      password: clearHistoryPassword,
+                    });
+                  }
+                }}
+                disabled={clearHistoryMutation.isPending || !clearHistoryPassword}
+                data-testid="button-confirm-clear-history"
+              >
+                {clearHistoryMutation.isPending ? "Clearing..." : "Clear History"}
               </Button>
             </div>
           </div>

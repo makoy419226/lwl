@@ -91,6 +91,7 @@ export interface IStorage {
     processedBy?: string,
   ): Promise<{ bill: Bill; payment: BillPayment }>;
   getClientTransactions(clientId: number): Promise<ClientTransaction[]>;
+  clearClientTransactions(clientId: number): Promise<void>;
   createTransaction(transaction: InsertTransaction): Promise<ClientTransaction>;
   updateClientTransaction(
     transactionId: number,
@@ -652,6 +653,12 @@ export class DatabaseStorage implements IStorage {
       .from(clientTransactions)
       .where(eq(clientTransactions.clientId, clientId))
       .orderBy(desc(clientTransactions.date));
+  }
+
+  async clearClientTransactions(clientId: number): Promise<void> {
+    await db
+      .delete(clientTransactions)
+      .where(eq(clientTransactions.clientId, clientId));
   }
 
   async createTransaction(

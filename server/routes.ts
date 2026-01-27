@@ -527,24 +527,69 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Invalid client ID" });
     }
     
-    // Check if client has any bills
+    // Check if client has any unpaid bills
     const clientBills = await storage.getClientBills(clientId);
-    if (clientBills.length > 0) {
+    const unpaidBills = clientBills.filter(b => !b.isPaid);
+    if (unpaidBills.length > 0) {
       return res.status(400).json({ 
-        message: `Cannot delete client: has ${clientBills.length} existing bill(s). Please delete the bills first.` 
+        message: `Cannot delete client: has ${unpaidBills.length} unpaid bill(s). Please collect payment first.` 
       });
     }
     
-    // Check if client has any transactions
-    const transactions = await storage.getClientTransactions(clientId);
-    if (transactions.length > 0) {
+    // Check client balance
+    const client = await storage.getClient(clientId);
+    if (client && parseFloat(client.balance || "0") !== 0) {
       return res.status(400).json({ 
-        message: `Cannot delete client: has ${transactions.length} transaction(s). Please clear the transaction history first.` 
+        message: `Cannot delete client: has outstanding balance of ${client.balance} AED. Please settle the balance first.` 
       });
     }
     
     await storage.deleteClient(clientId);
     res.status(204).send();
+  });
+
+  // Clear client transaction history (requires admin password)
+  app.post("/api/clients/:id/clear-transactions", async (req, res) => {
+    const clientId = Number(req.params.id);
+    if (isNaN(clientId)) {
+      return res.status(400).json({ message: "Invalid client ID" });
+    }
+    
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ message: "Admin password required" });
+    }
+    
+    // Verify admin password
+    const adminUser = await storage.getUserByUsername("admin");
+    if (!adminUser || adminUser.password !== password) {
+      return res.status(403).json({ message: "Invalid admin password" });
+    }
+    
+    // Check if client exists
+    const client = await storage.getClient(clientId);
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+    
+    // Check if client has any unpaid bills
+    const clientBills = await storage.getClientBills(clientId);
+    const unpaidBills = clientBills.filter(b => !b.isPaid);
+    if (unpaidBills.length > 0) {
+      return res.status(400).json({ 
+        message: `Cannot clear history: client has ${unpaidBills.length} unpaid bill(s)` 
+      });
+    }
+    
+    // Check if client has outstanding balance
+    if (parseFloat(client.balance || "0") !== 0) {
+      return res.status(400).json({ 
+        message: `Cannot clear history: client has outstanding balance of ${client.balance} AED` 
+      });
+    }
+    
+    await storage.clearClientTransactions(clientId);
+    res.status(200).json({ message: "Transaction history cleared successfully" });
   });
 
   // Product routes
