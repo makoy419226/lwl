@@ -1118,11 +1118,11 @@ export default function Clients() {
                   return sum + (total - paid);
                 }, 0) || 0;
                 
-                // Calculate credit balance from transactions (deposit - deposit_used)
+                // Calculate credit balance from transactions (deposit - deposit_used - bulk_deposit_used)
                 const creditBalance = transactions?.reduce((sum, tx) => {
                   if (tx.type === "deposit") {
                     return sum + parseFloat(tx.amount || "0");
-                  } else if (tx.type === "deposit_used") {
+                  } else if (tx.type === "deposit_used" || tx.type === "bulk_deposit_used") {
                     return sum - parseFloat(tx.amount || "0");
                   }
                   return sum;
@@ -1278,7 +1278,7 @@ export default function Clients() {
                               {(() => {
                                 const creditAvailable = transactions?.reduce((sum, tx) => {
                                   if (tx.type === "deposit") return sum + parseFloat(tx.amount || "0");
-                                  if (tx.type === "deposit_used") return sum - parseFloat(tx.amount || "0");
+                                  if (tx.type === "deposit_used" || tx.type === "bulk_deposit_used") return sum - parseFloat(tx.amount || "0");
                                   return sum;
                                 }, 0) || 0;
                                 
@@ -1400,10 +1400,10 @@ export default function Clients() {
                           );
                           let creditBalance = 0;
                           return sortedTx.map((tx) => {
-                            // deposit = credit added, deposit_used = credit used for payment
+                            // deposit = credit added, deposit_used/bulk_deposit_used = credit used for payment
                             if (tx.type === "deposit") {
                               creditBalance += parseFloat(tx.amount);
-                            } else if (tx.type === "deposit_used") {
+                            } else if (tx.type === "deposit_used" || tx.type === "bulk_deposit_used") {
                               creditBalance -= parseFloat(tx.amount);
                             }
                             // "payment" and "bill" types don't affect credit balance
@@ -1422,6 +1422,9 @@ export default function Clients() {
                               if (tx.type === "bulk_payment") {
                                 const method = tx.paymentMethod || "cash";
                                 return { label: `Bulk Payment (${method})`, color: "bg-amber-100 text-amber-700" };
+                              }
+                              if (tx.type === "bulk_deposit_used") {
+                                return { label: "Bulk Payment (Credit)", color: "bg-orange-100 text-orange-700" };
                               }
                               // For payment types, show the payment method
                               if (tx.type === "payment" || tx.paymentMethod) {
@@ -1451,9 +1454,9 @@ export default function Clients() {
                                   {tx.description}
                                 </TableCell>
                                 <TableCell
-                                  className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : tx.type === "deposit_used" ? "text-orange-600" : "text-muted-foreground"}`}
+                                  className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : (tx.type === "deposit_used" || tx.type === "bulk_deposit_used") ? "text-orange-600" : "text-muted-foreground"}`}
                                 >
-                                  {tx.type === "deposit" ? "+" : tx.type === "deposit_used" ? "-" : ""}
+                                  {tx.type === "deposit" ? "+" : (tx.type === "deposit_used" || tx.type === "bulk_deposit_used") ? "-" : ""}
                                   {parseFloat(tx.amount).toFixed(2)}
                                 </TableCell>
                                 <TableCell className={`text-right font-bold ${creditBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
@@ -2134,6 +2137,7 @@ export default function Clients() {
                 <option value="cash">Cash</option>
                 <option value="card">Card</option>
                 <option value="bank_transfer">Bank Transfer</option>
+                <option value="deposit">Credit (Use Balance)</option>
               </select>
             </div>
             <div className="flex gap-2 justify-end">

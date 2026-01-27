@@ -779,6 +779,20 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Valid payment amount is required" });
       }
       
+      // For deposit payments, check if client has enough credit
+      if (paymentMethod === "deposit") {
+        const client = await storage.getClient(clientId);
+        if (!client) {
+          return res.status(404).json({ message: "Client not found" });
+        }
+        const currentDeposit = parseFloat(client.deposit || "0");
+        if (currentDeposit < paymentAmount) {
+          return res.status(400).json({ 
+            message: `Insufficient credit balance. Available: ${currentDeposit.toFixed(2)} AED, Required: ${paymentAmount.toFixed(2)} AED` 
+          });
+        }
+      }
+      
       // Get all unpaid bills for this client
       const bills = await storage.getBills();
       const clientUnpaidBills = bills
@@ -797,6 +811,10 @@ export async function registerRoutes(
       let remainingPayment = paymentAmount;
       const paidBills: any[] = [];
       
+      // For deposit payments, we need to handle the deposit deduction ourselves
+      // and pass a different method to payBill to avoid individual deposit_used transactions
+      const billPaymentMethod = paymentMethod === "deposit" ? "bulk_deposit" : paymentMethod;
+      
       // Distribute payment across bills, starting with oldest
       for (const bill of clientUnpaidBills) {
         if (remainingPayment <= 0) break;
@@ -811,7 +829,7 @@ export async function registerRoutes(
           const result = await storage.payBill(
             bill.id,
             payForThisBill.toString(),
-            paymentMethod,
+            billPaymentMethod, // Use bulk_deposit to avoid individual deposit handling
             notes || `Bulk payment for client`,
             undefined, // processedBy
             true // skipTransaction - we'll create a single bulk_payment transaction
@@ -821,16 +839,36 @@ export async function registerRoutes(
         }
       }
       
+      // Handle deposit deduction for bulk deposit payments
+      if (paymentMethod === "deposit" && paidBills.length > 0) {
+        const client = await storage.getClient(clientId);
+        if (client) {
+          const currentDeposit = parseFloat(client.deposit || "0");
+          const currentAmount = parseFloat(client.amount || "0");
+          const newDeposit = Math.max(0, currentDeposit - paymentAmount);
+          const newBalance = currentAmount - newDeposit;
+          
+          await storage.updateClient(clientId, {
+            deposit: newDeposit.toFixed(2),
+            balance: newBalance.toFixed(2),
+          });
+        }
+      }
+      
       // Create a single bulk_payment transaction for the entire payment
       if (paidBills.length > 0) {
         const billIds = paidBills.map(b => `#${b.billId}`).join(", ");
+        const transactionType = paymentMethod === "deposit" ? "bulk_deposit_used" : "bulk_payment";
+        const client = await storage.getClient(clientId);
+        const newBalance = client ? parseFloat(client.balance || "0") : 0;
+        
         await storage.createTransaction({
           clientId: clientId,
-          type: "bulk_payment",
+          type: transactionType,
           amount: paymentAmount.toFixed(2),
           description: notes || `Bulk payment applied to ${paidBills.length} bills (${billIds})`,
           date: new Date(),
-          runningBalance: "0",
+          runningBalance: paymentMethod === "deposit" ? newBalance.toFixed(2) : "0",
           paymentMethod: paymentMethod || "cash",
         });
       }
