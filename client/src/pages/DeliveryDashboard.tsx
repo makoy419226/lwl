@@ -211,11 +211,11 @@ export default function DeliveryDashboard() {
                         <span className="font-bold text-lg">#{order.orderNumber}</span>
                         <div className="flex flex-col items-start">
                           <Badge className="bg-green-500 text-white">Delivery</Badge>
-                          {order.expectedDeliveryAt && (
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(order.expectedDeliveryAt), "dd MMM, h:mm a")}
-                            </span>
-                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {order.expectedDeliveryAt 
+                              ? format(new Date(order.expectedDeliveryAt), "dd MMM, h:mm a")
+                              : "No date set"}
+                          </span>
                         </div>
                         {order.urgent && <Badge className="bg-red-500 text-white">Urgent</Badge>}
                       </div>
