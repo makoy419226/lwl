@@ -1721,15 +1721,6 @@ export default function Orders() {
                                   )}
                                   {order.deliveryType === "pickup" ? "Pickup" : "Delivery"}
                                 </Badge>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => setDeliveryTypeDialog({ order })}
-                                  data-testid={`button-mobile-edit-delivery-${order.id}`}
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </Button>
                               </div>
                               <span className="text-xs text-muted-foreground">
                                 {getTimeRemaining(order.expectedDeliveryAt)}
