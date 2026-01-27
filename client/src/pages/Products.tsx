@@ -421,10 +421,16 @@ export default function Products() {
             description: `Stock quantity updated to ${newStock}`,
           });
         },
-        onError: () => {
+        onError: (error: any) => {
+          let message = "Failed to update stock";
+          try {
+            const errorMsg = String(error.message || "");
+            const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+            if (msgMatch) message = msgMatch[1];
+          } catch {}
           toast({
             title: "Error",
-            description: "Failed to update stock",
+            description: message,
             variant: "destructive",
           });
         },
@@ -1116,11 +1122,17 @@ export default function Products() {
               return;
             }
           } catch {
-            // Not a JSON error, continue with default
+            // Not a JSON error, try to extract message from error string
           }
+          let message = "Failed to create client.";
+          try {
+            const errorMsg = String(error.message || "");
+            const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+            if (msgMatch) message = msgMatch[1];
+          } catch {}
           toast({
             title: "Error",
-            description: "Failed to create client.",
+            description: message,
             variant: "destructive",
           });
         },

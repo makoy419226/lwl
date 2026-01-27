@@ -411,6 +411,19 @@ export default function Bills() {
             description: "The bill has been removed.",
           });
         },
+        onError: (error: Error) => {
+          let message = "Failed to delete bill";
+          try {
+            const errorMsg = String(error.message || "");
+            const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+            if (msgMatch) message = msgMatch[1];
+          } catch {}
+          toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+          });
+        },
       });
     }
   };

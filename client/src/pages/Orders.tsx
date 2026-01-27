@@ -406,6 +406,19 @@ export default function Orders() {
         description: "Status updated successfully",
       });
     },
+    onError: (error: any) => {
+      let message = "Failed to update order";
+      try {
+        const errorMsg = String(error.message || "");
+        const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+        if (msgMatch) message = msgMatch[1];
+      } catch {}
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    },
   });
 
   const createOrderMutation = useMutation({
