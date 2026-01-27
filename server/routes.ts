@@ -1154,16 +1154,6 @@ export async function registerRoutes(
         }
       }
 
-      // Update client address if delivery address is provided and different
-      if (clientId && deliveryAddress && deliveryAddress.trim()) {
-        const currentClient = await storage.getClient(clientId);
-        if (currentClient && (!currentClient.address || currentClient.address !== deliveryAddress.trim())) {
-          await storage.updateClient(clientId, {
-            address: deliveryAddress.trim()
-          });
-        }
-      }
-
       // Add stock immediately on order creation
       await storage.addStockForOrder(order.id);
 
