@@ -1086,7 +1086,7 @@ export async function registerRoutes(
         );
         if (matchedUser && !allowedBillCreatorRoles.includes(matchedUser.role?.toLowerCase() || "")) {
           return res.status(403).json({ 
-            message: `${createdBy} (${matchedUser.role}) cannot create orders. Only admin, manager, or cashier can create orders.` 
+            message: "This PIN has no billing rights. Use admin PIN or manager PIN only." 
           });
         }
       }
@@ -1098,14 +1098,14 @@ export async function registerRoutes(
       );
       if (isPacker) {
         return res.status(403).json({ 
-          message: "Packing staff cannot create orders with bills. Only admin, manager, or cashier can create orders." 
+          message: "This PIN has no billing rights. Use admin PIN or manager PIN only." 
         });
       }
       
       // Also validate creatorRole if provided
       if (creatorRole && !allowedBillCreatorRoles.includes(creatorRole.toLowerCase())) {
         return res.status(403).json({ 
-          message: "Only admin, manager, or cashier can create orders with bills." 
+          message: "This PIN has no billing rights. Use admin PIN or manager PIN only." 
         });
       }
 
