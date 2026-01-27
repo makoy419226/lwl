@@ -4,6 +4,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { Loader2, AlertCircle, UserCheck, CreditCard, Banknote, Building } from "lucide-react";
 import { insertClientSchema } from "@shared/schema";
 import { useCreateClient, useUpdateClient } from "@/hooks/use-clients";
@@ -214,26 +215,39 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
             <FormItem>
               <FormLabel>Phone Number *</FormLabel>
               <FormControl>
-                <div className="flex flex-col gap-1">
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center px-3 py-2 rounded-md border border-input bg-muted text-muted-foreground text-sm font-medium">
                       +971
                     </span>
-                    <Input 
-                      className={`rounded-l-none ${field.value.replace(/^\+971/, "").length >= 10 ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                      placeholder="XXXXXXXXXX" 
-                      value={field.value.replace(/^\+971/, "")}
-                      onChange={(e) => {
-                        // Only allow digits, max 10
-                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-                        field.onChange("+971" + digits);
-                      }}
+                    <InputOTP
                       maxLength={10}
-                      data-testid="input-phone" 
-                    />
+                      value={field.value.replace(/^\+971/, "").replace(/\D/g, "")}
+                      onChange={(value) => field.onChange("+971" + value)}
+                      data-testid="input-phone"
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                      </InputOTPGroup>
+                      <InputOTPSeparator />
+                      <InputOTPGroup>
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                      <InputOTPSeparator />
+                      <InputOTPGroup>
+                        <InputOTPSlot index={6} />
+                        <InputOTPSlot index={7} />
+                        <InputOTPSlot index={8} />
+                        <InputOTPSlot index={9} />
+                      </InputOTPGroup>
+                    </InputOTP>
                   </div>
                   {field.value.replace(/^\+971/, "").length >= 10 && (
-                    <p className="text-xs text-red-500">Maximum 10 digits reached</p>
+                    <p className="text-xs text-green-600 font-medium">Phone number complete</p>
                   )}
                 </div>
               </FormControl>
