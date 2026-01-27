@@ -526,6 +526,23 @@ export async function registerRoutes(
     if (isNaN(clientId)) {
       return res.status(400).json({ message: "Invalid client ID" });
     }
+    
+    // Check if client has any bills
+    const clientBills = await storage.getClientBills(clientId);
+    if (clientBills.length > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete client: has ${clientBills.length} existing bill(s). Please delete the bills first.` 
+      });
+    }
+    
+    // Check if client has any transactions
+    const transactions = await storage.getClientTransactions(clientId);
+    if (transactions.length > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete client: has ${transactions.length} transaction(s). Please clear the transaction history first.` 
+      });
+    }
+    
     await storage.deleteClient(clientId);
     res.status(204).send();
   });
