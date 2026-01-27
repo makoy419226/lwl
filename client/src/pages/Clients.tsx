@@ -498,7 +498,7 @@ export default function Clients() {
       setClearHistoryClient(null);
       toast({
         title: "History cleared",
-        description: "Transaction history has been cleared successfully. You can now delete the client.",
+        description: `Transaction history for ${clearHistoryClient?.name || viewingClient?.name} has been cleared. Client is still saved.`,
       });
     },
     onError: (error: Error) => {
