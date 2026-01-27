@@ -321,9 +321,17 @@ export default function DeliveryDashboard() {
                               <span className="text-muted-foreground truncate">{client.address}</span>
                             </div>
                           )}
-                          {order.deliveryDate && (
+                          {order.expectedDeliveryAt && (
                             <div className="flex items-center gap-2">
                               <Clock className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-blue-600">
+                                Expected: {format(new Date(order.expectedDeliveryAt), "dd MMM, h:mm a")}
+                              </span>
+                            </div>
+                          )}
+                          {order.deliveryDate && (
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
                               <span className="text-green-600">
                                 Delivered: {format(new Date(order.deliveryDate), "dd MMM, h:mm a")}
                               </span>
