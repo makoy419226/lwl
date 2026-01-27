@@ -214,21 +214,27 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
             <FormItem>
               <FormLabel>Phone Number *</FormLabel>
               <FormControl>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                    +971
-                  </span>
-                  <Input 
-                    className="rounded-l-none"
-                    placeholder="XXXXXXXXX" 
-                    value={field.value.replace(/^\+971/, "")}
-                    onChange={(e) => {
-                      // Only allow digits
-                      const digits = e.target.value.replace(/\D/g, "");
-                      field.onChange("+971" + digits);
-                    }}
-                    data-testid="input-phone" 
-                  />
+                <div className="flex flex-col gap-1">
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                      +971
+                    </span>
+                    <Input 
+                      className={`rounded-l-none ${field.value.replace(/^\+971/, "").length >= 10 ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                      placeholder="XXXXXXXXXX" 
+                      value={field.value.replace(/^\+971/, "")}
+                      onChange={(e) => {
+                        // Only allow digits, max 10
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        field.onChange("+971" + digits);
+                      }}
+                      maxLength={10}
+                      data-testid="input-phone" 
+                    />
+                  </div>
+                  {field.value.replace(/^\+971/, "").length >= 10 && (
+                    <p className="text-xs text-red-500">Maximum 10 digits reached</p>
+                  )}
                 </div>
               </FormControl>
               <FormMessage />

@@ -3996,7 +3996,7 @@ function OrderForm({
     billOption: (initialBillId ? "existing" : "new") as "new" | "existing",
     selectedBillId: initialBillId || "",
     customerName: "",
-    customerPhone: "",
+    customerPhone: "+971",
   });
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [productSearch, setProductSearch] = useState("");
@@ -4193,7 +4193,7 @@ function OrderForm({
         selectedBillId: "",
         billOption: "new",
         customerName: "",
-        customerPhone: "",
+        customerPhone: "+971",
         deliveryAddress: "",
       });
     } else {
@@ -4204,7 +4204,7 @@ function OrderForm({
         selectedBillId: "",
         billOption: "new",
         customerName: client?.name || "",
-        customerPhone: client?.phone || "",
+        customerPhone: client?.phone || "+971",
         deliveryAddress: client?.address || "",
       });
     }
@@ -4245,12 +4245,27 @@ function OrderForm({
           </div>
           <div className="space-y-2">
             <Label>Phone Number</Label>
-            <Input
-              placeholder="Enter phone number"
-              value={formData.customerPhone}
-              onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-              data-testid="input-customer-phone"
-            />
+            <div className="flex flex-col gap-1">
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                  +971
+                </span>
+                <Input
+                  className={`rounded-l-none ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 10 ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                  placeholder="XXXXXXXXXX"
+                  value={formData.customerPhone?.replace(/^\+971/, "") || ""}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    setFormData({ ...formData, customerPhone: "+971" + digits });
+                  }}
+                  maxLength={10}
+                  data-testid="input-customer-phone"
+                />
+              </div>
+              {(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 10 && (
+                <p className="text-xs text-red-500">Maximum 10 digits reached</p>
+              )}
+            </div>
             {clientMatch && (
               <div className="p-4 border-2 border-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg mt-2 animate-pulse">
                 <div className="flex items-center gap-2">
