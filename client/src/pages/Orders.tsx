@@ -1702,64 +1702,40 @@ export default function Orders() {
                               </div>
                             )}
 
-                            {/* Items Row */}
-                            <div className="flex items-center justify-between gap-2">
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="gap-1.5"
-                                    data-testid={`button-mobile-items-${order.id}`}
+                            {/* Items Display */}
+                            <div className="space-y-1" data-testid={`mobile-items-${order.id}`}>
+                              {items.map((item, i) => {
+                                const imageUrl = getProductImage(item.name);
+                                return (
+                                  <div
+                                    key={i}
+                                    className="flex items-center gap-2 p-1.5 rounded bg-muted/50"
                                   >
-                                    <Package className="w-3.5 h-3.5" />
-                                    <span>{totalItems} items</span>
-                                    <ChevronDown className="w-3 h-3" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                  className="w-64 p-2"
-                                  align="start"
-                                >
-                                  <ScrollArea className="max-h-48">
-                                    <div className="space-y-1">
-                                      {items.map((item, i) => {
-                                        const imageUrl = getProductImage(
-                                          item.name,
-                                        );
-                                        return (
-                                          <div
-                                            key={i}
-                                            className="flex items-center gap-2 p-1.5 rounded bg-muted/50"
-                                          >
-                                            {imageUrl ? (
-                                              <img
-                                                src={imageUrl}
-                                                alt=""
-                                                className="w-6 h-6 rounded object-cover"
-                                              />
-                                            ) : (
-                                              <Shirt className="w-5 h-5 text-muted-foreground" />
-                                            )}
-                                            <span className="text-sm flex-1 truncate">
-                                              {item.name}
-                                            </span>
-                                            <Badge
-                                              variant="secondary"
-                                              className="text-xs"
-                                            >
-                                              {item.quantity}
-                                            </Badge>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </ScrollArea>
-                                </PopoverContent>
-                              </Popover>
-                              <span className="text-xs text-muted-foreground">
-                                {getTimeRemaining(order.expectedDeliveryAt)}
-                              </span>
+                                    {imageUrl ? (
+                                      <img
+                                        src={imageUrl}
+                                        alt=""
+                                        className="w-6 h-6 rounded object-cover"
+                                      />
+                                    ) : (
+                                      <Shirt className="w-5 h-5 text-muted-foreground" />
+                                    )}
+                                    <span className="text-sm flex-1 truncate">
+                                      {item.name}
+                                    </span>
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      {item.quantity}
+                                    </Badge>
+                                  </div>
+                                );
+                              })}
+                              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                                <span>{totalItems} items total</span>
+                                <span>{getTimeRemaining(order.expectedDeliveryAt)}</span>
+                              </div>
                             </div>
                           </CardContent>
 
