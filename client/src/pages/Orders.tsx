@@ -1702,40 +1702,37 @@ export default function Orders() {
                               </div>
                             )}
 
-                            {/* Items Display */}
-                            <div className="space-y-1" data-testid={`mobile-items-${order.id}`}>
-                              {items.map((item, i) => {
-                                const imageUrl = getProductImage(item.name);
-                                return (
-                                  <div
-                                    key={i}
-                                    className="flex items-center gap-2 p-1.5 rounded bg-muted/50"
-                                  >
-                                    {imageUrl ? (
-                                      <img
-                                        src={imageUrl}
-                                        alt=""
-                                        className="w-6 h-6 rounded object-cover"
-                                      />
-                                    ) : (
-                                      <Shirt className="w-5 h-5 text-muted-foreground" />
-                                    )}
-                                    <span className="text-sm flex-1 truncate">
-                                      {item.name}
-                                    </span>
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      {item.quantity}
-                                    </Badge>
-                                  </div>
-                                );
-                              })}
-                              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                                <span>{totalItems} items total</span>
-                                <span>{getTimeRemaining(order.expectedDeliveryAt)}</span>
+                            {/* Items & Delivery Info Row */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="gap-1">
+                                  <Package className="w-3 h-3" />
+                                  {totalItems} items
+                                </Badge>
+                                <Badge 
+                                  variant={order.deliveryType === "pickup" ? "secondary" : "default"}
+                                  className="gap-1"
+                                >
+                                  {order.deliveryType === "pickup" ? (
+                                    <Store className="w-3 h-3" />
+                                  ) : (
+                                    <Truck className="w-3 h-3" />
+                                  )}
+                                  {order.deliveryType === "pickup" ? "Pickup" : "Delivery"}
+                                </Badge>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setDeliveryTypeDialog({ order })}
+                                  data-testid={`button-mobile-edit-delivery-${order.id}`}
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
                               </div>
+                              <span className="text-xs text-muted-foreground">
+                                {getTimeRemaining(order.expectedDeliveryAt)}
+                              </span>
                             </div>
                           </CardContent>
 
