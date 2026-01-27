@@ -3957,6 +3957,7 @@ function OrderForm({
   initialClientId,
   initialBillId,
   createdByUser,
+  creatorRole,
 }: {
   clients: Client[];
   bills: Bill[];
@@ -3965,8 +3966,15 @@ function OrderForm({
   initialClientId?: string;
   initialBillId?: string;
   createdByUser?: string;
+  creatorRole?: string;
 }) {
   const { toast } = useToast();
+  
+  // Get user role from localStorage for permission checking
+  const storedUser = localStorage.getItem("user");
+  const userInfo = storedUser ? JSON.parse(storedUser) : null;
+  const userRole = userInfo?.role || creatorRole || "";
+  
   const [formData, setFormData] = useState({
     clientId: initialClientId || "",
     orderType: "normal",
@@ -4161,7 +4169,8 @@ function OrderForm({
       paymentOption: formData.paymentOption,
       expectedDeliveryAt: formData.expectedDeliveryAt || null,
       createNewBill: formData.billOption === "new",
-      createdBy: createdByUser,
+      createdBy: createdByUser || userInfo?.name || userInfo?.username,
+      creatorRole: userRole,
     });
   };
 

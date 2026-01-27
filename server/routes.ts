@@ -1070,7 +1070,22 @@ export async function registerRoutes(
         createNewBill,
         billId: requestBillId,
         createdBy,
+        creatorRole,
       } = req.body;
+      
+      // Validate that the creator has permission to create bills
+      // Only admin, manager, and cashier roles can create bills
+      const allowedBillCreatorRoles = ["admin", "manager", "cashier"];
+      if (creatorRole && !allowedBillCreatorRoles.includes(creatorRole.toLowerCase())) {
+        // Check if createdBy is a packing worker - they cannot create bills
+        const packingWorkers = await storage.getPackingWorkers();
+        const isPacker = packingWorkers.some(pw => pw.name === createdBy);
+        if (isPacker) {
+          return res.status(403).json({ 
+            message: "Packing staff cannot create orders with bills. Please ask a manager or cashier to create the order." 
+          });
+        }
+      }
 
       // // Validate required fields
       // if (!customerName || !customerName.trim()) {
