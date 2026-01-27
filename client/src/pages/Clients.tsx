@@ -549,7 +549,9 @@ export default function Clients() {
     content.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: 0 auto;">
         <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e88e5; padding-bottom: 20px;">
-          <img src="${logoImage}" alt="Logo" style="max-width: 100px; height: auto; margin-bottom: 10px;" />
+          <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+            <img src="${logoImage}" alt="Logo" style="max-width: 100px; height: auto;" />
+          </div>
           <h1 style="color: #1e88e5; margin: 0; font-size: 28px;">LIQUID WASHES LAUNDRY</h1>
           <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">Centra Market D/109, Al Dhanna City, Al Ruwais, Abu Dhabi-UAE</p>
         </div>
@@ -1023,7 +1025,7 @@ export default function Clients() {
                           className="h-8 w-8 text-red-500"
                           onClick={() => downloadClientPDF(client)}
                           data-testid={`button-pdf-${client.id}`}
-                          title="Download PDF Summary"
+                          title="Print Client Summary"
                         >
                           <Download className="w-4 h-4" />
                         </Button>
@@ -2048,8 +2050,8 @@ export default function Clients() {
                   variant="outline"
                   onClick={() => downloadClientPDF(viewingClient)}
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Summary
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Client Summary
                 </Button>
                 <Button
                   variant="destructive"
