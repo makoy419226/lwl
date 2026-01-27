@@ -174,8 +174,17 @@ export default function DeliveryDashboard() {
               data-testid="input-search-delivery"
             />
           </div>
-          <Button variant="outline" size="icon" onClick={() => refetch()} data-testid="button-refresh">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              refetch();
+              toast({ title: "Refreshed", description: "Orders list updated" });
+            }} 
+            data-testid="button-refresh"
+            className="gap-2"
+          >
             <RefreshCw className="w-4 h-4" />
+            Refresh
           </Button>
         </div>
       </div>
