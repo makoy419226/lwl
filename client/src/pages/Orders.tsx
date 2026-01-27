@@ -82,6 +82,7 @@ import {
   MapPin,
   Phone,
   Edit,
+  Store,
 } from "lucide-react";
 
 const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
