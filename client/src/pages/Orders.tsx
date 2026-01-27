@@ -1758,6 +1758,13 @@ export default function Orders() {
                                 {getTimeRemaining(order.expectedDeliveryAt)}
                               </span>
                             </div>
+
+                            {/* Ready D&T - centered, no label */}
+                            {order.packingDate && (
+                              <div className="text-center text-xs text-muted-foreground">
+                                {format(new Date(order.packingDate), "MMM d, hh:mm a")}
+                              </div>
+                            )}
                           </CardContent>
 
                           {/* Card Footer - Actions */}
