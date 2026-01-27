@@ -544,6 +544,14 @@ export async function registerRoutes(
       });
     }
     
+    // Check if client has any transaction history
+    const transactions = await storage.getClientTransactions(clientId);
+    if (transactions.length > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete client: has ${transactions.length} transaction(s) in history. Please clear the transaction history first.` 
+      });
+    }
+    
     await storage.deleteClient(clientId);
     res.status(204).send();
   });
