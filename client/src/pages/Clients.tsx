@@ -104,10 +104,10 @@ export default function Clients() {
   const [editingTransaction, setEditingTransaction] = useState<ClientTransaction | null>(null);
   const [editTransactionAmount, setEditTransactionAmount] = useState("");
   const [editTransactionDescription, setEditTransactionDescription] = useState("");
-  const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
-  const [clearHistoryPassword, setClearHistoryPassword] = useState("");
-  const [clearHistoryError, setClearHistoryError] = useState("");
-  const [clearHistoryClient, setClearHistoryClient] = useState<Client | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [invoiceData, setInvoiceData] = useState<{
     invoiceNumber: string;
     date: string;
@@ -476,39 +476,33 @@ export default function Clients() {
     },
   });
 
-  const clearHistoryMutation = useMutation({
+  const deleteClientWithPasswordMutation = useMutation({
     mutationFn: async ({ clientId, password }: { clientId: number; password: string }) => {
-      return apiRequest("POST", `/api/clients/${clientId}/clear-transactions`, { password });
+      return apiRequest("POST", `/api/clients/${clientId}/delete-with-password`, { password });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
-      if (viewingClient) {
-        queryClient.invalidateQueries({
-          queryKey: ["/api/clients", viewingClient.id, "transactions"],
-        });
+      const clientName = clientToDelete?.name || "";
+      setShowDeleteDialog(false);
+      setDeletePassword("");
+      setDeleteError("");
+      setClientToDelete(null);
+      if (viewingClient && viewingClient.id === clientToDelete?.id) {
+        setViewingClient(null);
       }
-      if (clearHistoryClient) {
-        queryClient.invalidateQueries({
-          queryKey: ["/api/clients", clearHistoryClient.id, "transactions"],
-        });
-      }
-      setShowClearHistoryDialog(false);
-      setClearHistoryPassword("");
-      setClearHistoryError("");
-      setClearHistoryClient(null);
       toast({
-        title: "History cleared",
-        description: `Transaction history for ${clearHistoryClient?.name || viewingClient?.name} has been cleared. Client is still saved.`,
+        title: "Client deleted",
+        description: `${clientName} has been removed.`,
       });
     },
     onError: (error: Error) => {
-      let message = "Failed to clear history";
+      let message = "Failed to delete client";
       try {
         const errorMsg = String(error.message || "");
         const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
         if (msgMatch) message = msgMatch[1];
       } catch {}
-      setClearHistoryError(message);
+      setDeleteError(message);
     },
   });
 
@@ -535,29 +529,10 @@ export default function Clients() {
   };
 
   const handleDelete = (client: Client) => {
-    if (confirm(`Are you sure you want to delete ${client.name}?`)) {
-      deleteClient(client.id, {
-        onSuccess: () => {
-          toast({
-            title: "Client deleted",
-            description: `${client.name} has been removed.`,
-          });
-        },
-        onError: (error: Error) => {
-          let message = "Failed to delete client";
-          try {
-            const errorMsg = String(error.message || "");
-            const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
-            if (msgMatch) message = msgMatch[1];
-          } catch {}
-          toast({
-            title: "Error",
-            description: message,
-            variant: "destructive",
-          });
-        },
-      });
-    }
+    setClientToDelete(client);
+    setDeletePassword("");
+    setDeleteError("");
+    setShowDeleteDialog(true);
   };
 
 
@@ -1123,23 +1098,9 @@ export default function Clients() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            setClearHistoryClient(client);
-                            setClearHistoryPassword("");
-                            setClearHistoryError("");
-                            setShowClearHistoryDialog(true);
-                          }}
-                          title="Clear Transaction History"
-                          data-testid={`button-clear-history-${client.id}`}
-                        >
-                          <History className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
                           className="h-8 w-8 text-destructive"
                           onClick={() => handleDelete(client)}
+                          title="Delete Client"
                           data-testid={`button-delete-${client.id}`}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1957,19 +1918,6 @@ export default function Clients() {
                       Transaction History ({viewingClientTransactions.length})
                     </h3>
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setClearHistoryPassword("");
-                          setClearHistoryError("");
-                          setShowClearHistoryDialog(true);
-                        }}
-                        data-testid="button-clear-history"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Clear History
-                      </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -2272,26 +2220,26 @@ export default function Clients() {
         </DialogContent>
       </Dialog>
 
-      {/* Clear Transaction History Dialog */}
-      <Dialog open={showClearHistoryDialog} onOpenChange={(open) => {
-        setShowClearHistoryDialog(open);
+      {/* Delete Client Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={(open) => {
+        setShowDeleteDialog(open);
         if (!open) {
-          setClearHistoryClient(null);
-          setClearHistoryPassword("");
-          setClearHistoryError("");
+          setClientToDelete(null);
+          setDeletePassword("");
+          setDeleteError("");
         }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="w-5 h-5" />
-              Clear Transaction History
+              Delete Client
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              This will permanently delete all transaction history for{" "}
-              <strong>{clearHistoryClient?.name || viewingClient?.name}</strong>. This action cannot be undone.
+              This will permanently delete{" "}
+              <strong>{clientToDelete?.name}</strong> and all their transaction history. This action cannot be undone.
             </p>
             <div className="space-y-2">
               <Label htmlFor="admin-password">Admin Password</Label>
@@ -2299,47 +2247,46 @@ export default function Clients() {
                 id="admin-password"
                 type="password"
                 placeholder="Enter admin password"
-                value={clearHistoryPassword}
+                value={deletePassword}
                 onChange={(e) => {
-                  setClearHistoryPassword(e.target.value);
-                  setClearHistoryError("");
+                  setDeletePassword(e.target.value);
+                  setDeleteError("");
                 }}
                 onKeyDown={(e) => e.stopPropagation()}
                 autoFocus
-                data-testid="input-clear-history-password"
+                data-testid="input-delete-password"
               />
-              {clearHistoryError && (
-                <p className="text-sm text-destructive">{clearHistoryError}</p>
+              {deleteError && (
+                <p className="text-sm text-destructive">{deleteError}</p>
               )}
             </div>
             <div className="flex gap-2 justify-end">
               <Button
                 variant="outline"
                 onClick={() => {
-                  setShowClearHistoryDialog(false);
-                  setClearHistoryClient(null);
-                  setClearHistoryPassword("");
-                  setClearHistoryError("");
+                  setShowDeleteDialog(false);
+                  setClientToDelete(null);
+                  setDeletePassword("");
+                  setDeleteError("");
                 }}
-                data-testid="button-cancel-clear-history"
+                data-testid="button-cancel-delete"
               >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => {
-                  const targetClient = clearHistoryClient || viewingClient;
-                  if (targetClient && clearHistoryPassword) {
-                    clearHistoryMutation.mutate({
-                      clientId: targetClient.id,
-                      password: clearHistoryPassword,
+                  if (clientToDelete && deletePassword) {
+                    deleteClientWithPasswordMutation.mutate({
+                      clientId: clientToDelete.id,
+                      password: deletePassword,
                     });
                   }
                 }}
-                disabled={clearHistoryMutation.isPending || !clearHistoryPassword}
-                data-testid="button-confirm-clear-history"
+                disabled={deleteClientWithPasswordMutation.isPending || !deletePassword}
+                data-testid="button-confirm-delete"
               >
-                {clearHistoryMutation.isPending ? "Clearing..." : "Clear History"}
+                {deleteClientWithPasswordMutation.isPending ? "Deleting..." : "Delete Client"}
               </Button>
             </div>
           </div>

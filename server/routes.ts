@@ -544,16 +544,62 @@ export async function registerRoutes(
       });
     }
     
-    // Check if client has any transaction history
+    // Delete all transaction history first
     const transactions = await storage.getClientTransactions(clientId);
     if (transactions.length > 0) {
-      return res.status(400).json({ 
-        message: `Cannot delete client: has ${transactions.length} transaction(s) in history. Please clear the transaction history first.` 
-      });
+      await storage.clearClientTransactions(clientId);
     }
     
     await storage.deleteClient(clientId);
     res.status(204).send();
+  });
+  
+  // Delete client with admin password verification
+  app.post("/api/clients/:id/delete-with-password", async (req, res) => {
+    const clientId = Number(req.params.id);
+    if (isNaN(clientId)) {
+      return res.status(400).json({ message: "Invalid client ID" });
+    }
+    
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ message: "Admin password required" });
+    }
+    
+    // Verify admin password
+    const adminUser = await storage.getUserByUsername("admin");
+    if (!adminUser || adminUser.password !== password) {
+      return res.status(401).json({ message: "Invalid admin password" });
+    }
+    
+    // Check if client has any unpaid bills
+    const clientBills = await storage.getClientBills(clientId);
+    const unpaidBills = clientBills.filter(b => !b.isPaid);
+    if (unpaidBills.length > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete client: has ${unpaidBills.length} unpaid bill(s). Please collect payment first.` 
+      });
+    }
+    
+    // Check client balance
+    const client = await storage.getClient(clientId);
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+    if (parseFloat(client.balance || "0") !== 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete client: has outstanding balance of ${client.balance} AED. Please settle the balance first.` 
+      });
+    }
+    
+    // Delete all transaction history first
+    const transactions = await storage.getClientTransactions(clientId);
+    if (transactions.length > 0) {
+      await storage.clearClientTransactions(clientId);
+    }
+    
+    await storage.deleteClient(clientId);
+    res.json({ message: "Client deleted successfully" });
   });
 
   // Clear client transaction history (requires admin password)
