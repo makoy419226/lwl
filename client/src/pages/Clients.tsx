@@ -529,7 +529,6 @@ export default function Clients() {
   };
 
   const handleDelete = (client: Client) => {
-    setSearchTerm(""); // Clear search to prevent autofill interference
     setClientToDelete(client);
     setDeletePassword("");
     setDeleteError("");
@@ -2244,6 +2243,14 @@ export default function Clients() {
             </p>
             <div className="space-y-2">
               <Label htmlFor="admin-password">Admin Password</Label>
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+                tabIndex={-1}
+                aria-hidden="true"
+              />
               <Input
                 id="admin-password"
                 type="password"
@@ -2254,7 +2261,7 @@ export default function Clients() {
                   setDeleteError("");
                 }}
                 onKeyDown={(e) => e.stopPropagation()}
-                autoComplete="off"
+                autoComplete="current-password"
                 autoFocus
                 data-testid="input-delete-password"
               />
