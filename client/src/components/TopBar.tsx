@@ -28,6 +28,7 @@ export function TopBar({ onSearch, searchValue, onAddClick, addButtonLabel, page
             placeholder={pageTitle === "Clients" ? "Search by name, phone..." : `Search...`}
             value={searchValue}
             onChange={(e) => onSearch(e.target.value)}
+            autoComplete="off"
             data-testid="input-search"
           />
         </div>

@@ -529,6 +529,7 @@ export default function Clients() {
   };
 
   const handleDelete = (client: Client) => {
+    setSearchTerm(""); // Clear search to prevent autofill interference
     setClientToDelete(client);
     setDeletePassword("");
     setDeleteError("");
