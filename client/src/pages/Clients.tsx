@@ -107,6 +107,7 @@ export default function Clients() {
   const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
   const [clearHistoryPassword, setClearHistoryPassword] = useState("");
   const [clearHistoryError, setClearHistoryError] = useState("");
+  const [clearHistoryClient, setClearHistoryClient] = useState<Client | null>(null);
   const [invoiceData, setInvoiceData] = useState<{
     invoiceNumber: string;
     date: string;
@@ -481,15 +482,23 @@ export default function Clients() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/clients", viewingClient?.id, "transactions"],
-      });
+      if (viewingClient) {
+        queryClient.invalidateQueries({
+          queryKey: ["/api/clients", viewingClient.id, "transactions"],
+        });
+      }
+      if (clearHistoryClient) {
+        queryClient.invalidateQueries({
+          queryKey: ["/api/clients", clearHistoryClient.id, "transactions"],
+        });
+      }
       setShowClearHistoryDialog(false);
       setClearHistoryPassword("");
       setClearHistoryError("");
+      setClearHistoryClient(null);
       toast({
         title: "History cleared",
-        description: "Transaction history has been cleared successfully.",
+        description: "Transaction history has been cleared successfully. You can now delete the client.",
       });
     },
     onError: (error: Error) => {
@@ -1090,6 +1099,21 @@ export default function Clients() {
                           data-testid={`button-edit-${client.id}`}
                         >
                           <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setClearHistoryClient(client);
+                            setClearHistoryPassword("");
+                            setClearHistoryError("");
+                            setShowClearHistoryDialog(true);
+                          }}
+                          title="Clear Transaction History"
+                          data-testid={`button-clear-history-${client.id}`}
+                        >
+                          <History className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -2229,7 +2253,14 @@ export default function Clients() {
       </Dialog>
 
       {/* Clear Transaction History Dialog */}
-      <Dialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
+      <Dialog open={showClearHistoryDialog} onOpenChange={(open) => {
+        setShowClearHistoryDialog(open);
+        if (!open) {
+          setClearHistoryClient(null);
+          setClearHistoryPassword("");
+          setClearHistoryError("");
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -2240,7 +2271,7 @@ export default function Clients() {
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               This will permanently delete all transaction history for{" "}
-              <strong>{viewingClient?.name}</strong>. This action cannot be undone.
+              <strong>{clearHistoryClient?.name || viewingClient?.name}</strong>. This action cannot be undone.
             </p>
             <div className="space-y-2">
               <Label htmlFor="admin-password">Admin Password</Label>
@@ -2264,6 +2295,7 @@ export default function Clients() {
                 variant="outline"
                 onClick={() => {
                   setShowClearHistoryDialog(false);
+                  setClearHistoryClient(null);
                   setClearHistoryPassword("");
                   setClearHistoryError("");
                 }}
@@ -2274,9 +2306,10 @@ export default function Clients() {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (viewingClient && clearHistoryPassword) {
+                  const targetClient = clearHistoryClient || viewingClient;
+                  if (targetClient && clearHistoryPassword) {
                     clearHistoryMutation.mutate({
-                      clientId: viewingClient.id,
+                      clientId: targetClient.id,
                       password: clearHistoryPassword,
                     });
                   }
