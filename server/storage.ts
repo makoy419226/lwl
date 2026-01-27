@@ -132,6 +132,7 @@ export interface IStorage {
   verifyUserPin(pin: string): Promise<User | null>;
   getUserByUsername(username: string): Promise<User | null>;
   updateUser(id: number, updates: Partial<User>): Promise<User>;
+  getUsers(): Promise<User[]>;
   getClientOrders(clientId: number): Promise<Order[]>;
   getIncidents(search?: string): Promise<Incident[]>;
   getIncident(id: number): Promise<Incident | undefined>;
@@ -1079,6 +1080,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return result[0];
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.active, true));
   }
 
   async getClientOrders(clientId: number): Promise<Order[]> {

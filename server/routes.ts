@@ -1075,7 +1075,23 @@ export async function registerRoutes(
       
       // Validate that the creator has permission to create bills
       // Only admin, manager, and cashier roles can create bills
-      // Check if createdBy is a packing worker name - they cannot create bills regardless of logged-in user
+      const allowedBillCreatorRoles = ["admin", "manager", "cashier"];
+      
+      // Check if createdBy matches a user with a non-allowed role
+      if (createdBy) {
+        const allUsers = await storage.getUsers();
+        const matchedUser = allUsers.find(u => 
+          (u.name && u.name.toLowerCase() === createdBy.toLowerCase()) ||
+          (u.username && u.username.toLowerCase() === createdBy.toLowerCase())
+        );
+        if (matchedUser && !allowedBillCreatorRoles.includes(matchedUser.role?.toLowerCase() || "")) {
+          return res.status(403).json({ 
+            message: `${createdBy} (${matchedUser.role}) cannot create orders. Only admin, manager, or cashier can create orders.` 
+          });
+        }
+      }
+      
+      // Check if createdBy is a packing worker name - they cannot create bills
       const packingWorkers = await storage.getPackingWorkers();
       const isPacker = packingWorkers.some(pw => 
         pw.name && createdBy && pw.name.toLowerCase() === createdBy.toLowerCase()
@@ -1087,7 +1103,6 @@ export async function registerRoutes(
       }
       
       // Also validate creatorRole if provided
-      const allowedBillCreatorRoles = ["admin", "manager", "cashier"];
       if (creatorRole && !allowedBillCreatorRoles.includes(creatorRole.toLowerCase())) {
         return res.status(403).json({ 
           message: "Only admin, manager, or cashier can create orders with bills." 
