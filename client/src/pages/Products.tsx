@@ -613,10 +613,46 @@ export default function Products() {
       setCreatedOrder(data);
       setShowPrintTagDialog(true);
     },
-    onError: () => {
+    onError: (error: any) => {
+      let cleanMessage = "Failed to create order";
+      let isCustomerExists = false;
+      let isBillingRights = false;
+      
+      try {
+        const errorMsg = String(error.message || error || "");
+        
+        // Format is typically "403: {json}" or "400: {json}"
+        // First try to extract the message directly using regex
+        const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+        if (msgMatch) {
+          cleanMessage = msgMatch[1];
+        } else {
+          // Try to find and parse JSON after status code
+          const jsonStartIdx = errorMsg.indexOf("{");
+          if (jsonStartIdx !== -1) {
+            const jsonStr = errorMsg.substring(jsonStartIdx);
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.message) {
+                cleanMessage = parsed.message;
+              }
+            } catch {
+              // If JSON parse fails, use the raw message
+            }
+          }
+        }
+        
+        isCustomerExists = cleanMessage.toLowerCase().includes("customer details already exist") ||
+                          cleanMessage.toLowerCase().includes("customer already exists");
+        isBillingRights = cleanMessage.toLowerCase().includes("billing rights") ||
+                          cleanMessage.toLowerCase().includes("admin pin");
+      } catch (err) {
+        // Keep default message
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to create order.",
+        title: isBillingRights ? "PIN Not Authorized" : (isCustomerExists ? "Customer Already Exists" : "Error"),
+        description: cleanMessage,
         variant: "destructive",
       });
     },
