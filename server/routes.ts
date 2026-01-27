@@ -2138,7 +2138,7 @@ export async function registerRoutes(
   // Driver delivery confirmation endpoint
   app.post("/api/orders/:id/deliver-by-driver", async (req, res) => {
     const orderId = Number(req.params.id);
-    const { pin } = req.body;
+    const { pin, deliveryPhoto } = req.body;
 
     if (isNaN(orderId)) {
       return res.status(400).json({ message: "Invalid order ID" });
@@ -2185,14 +2185,22 @@ export async function registerRoutes(
       return res.status(400).json({ message: "This order is for pickup, not delivery" });
     }
 
-    // Mark order as delivered
-    const updatedOrder = await storage.updateOrder(orderId, {
+    // Mark order as delivered with optional delivery photo
+    const updateData: any = {
       delivered: true,
       status: "delivered",
       deliveryDate: new Date().toISOString(),
       deliveredByWorkerId: matchingDriver.id,
       deliveryBy: matchingDriver.name || matchingDriver.username,
-    });
+    };
+
+    // Add delivery photo if provided
+    if (deliveryPhoto) {
+      updateData.deliveryPhoto = deliveryPhoto;
+      updateData.deliveryPhotos = [deliveryPhoto];
+    }
+
+    const updatedOrder = await storage.updateOrder(orderId, updateData);
 
     res.json(updatedOrder);
   });

@@ -54,14 +54,16 @@ export default function DeliveryDashboard() {
   });
 
   const deliverMutation = useMutation({
-    mutationFn: async ({ orderId, pin }: { orderId: number; pin: string }) => {
-      return apiRequest("POST", `/api/orders/${orderId}/deliver-by-driver`, { pin });
+    mutationFn: async ({ orderId, pin, photo }: { orderId: number; pin: string; photo: string | null }) => {
+      return apiRequest("POST", `/api/orders/${orderId}/deliver-by-driver`, { pin, deliveryPhoto: photo });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       toast({ title: "Success", description: "Order marked as delivered" });
       setPinDialogOrder(null);
       setDeliveryPin("");
+      setDeliveryPhoto(null);
+      setItemCountConfirmed(false);
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -98,7 +100,7 @@ export default function DeliveryDashboard() {
 
   const handlePinSubmit = () => {
     if (!pinDialogOrder || !deliveryPin) return;
-    deliverMutation.mutate({ orderId: pinDialogOrder.id, pin: deliveryPin });
+    deliverMutation.mutate({ orderId: pinDialogOrder.id, pin: deliveryPin, photo: deliveryPhoto });
   };
 
   if (ordersLoading) {
