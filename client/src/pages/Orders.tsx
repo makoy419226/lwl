@@ -437,44 +437,30 @@ export default function Orders() {
       
       try {
         const errorMsg = String(error.message || error || "");
-        console.log("Order error:", errorMsg);
+        console.log("Order error raw:", errorMsg);
         
-        // Try to extract JSON from "403: {...}" or "400: {...}" format
-        const jsonMatch = errorMsg.match(/\{[^{}]*"message"[^{}]*\}/);
-        if (jsonMatch) {
-          try {
-            const parsed = JSON.parse(jsonMatch[0]);
-            cleanMessage = parsed.message || cleanMessage;
-          } catch {
-            // If JSON parse fails, try extracting message directly
-            const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
-            if (msgMatch) {
-              cleanMessage = msgMatch[1];
-            }
-          }
+        // Format is typically "403: {json}" or "400: {json}"
+        // First try to extract the message directly using regex
+        const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+        if (msgMatch) {
+          cleanMessage = msgMatch[1];
         } else {
-          // Try to extract message field directly from string
-          const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
-          if (msgMatch) {
-            cleanMessage = msgMatch[1];
-          } else if (errorMsg.includes(":")) {
-            // Try to get text after status code - handle "403: {json}" format
-            const colonIdx = errorMsg.indexOf(":");
-            const afterColon = errorMsg.substring(colonIdx + 1).trim();
-            if (afterColon.startsWith("{")) {
-              try {
-                const parsed = JSON.parse(afterColon);
-                cleanMessage = parsed.message || cleanMessage;
-              } catch {
-                cleanMessage = afterColon || cleanMessage;
+          // Try to find and parse JSON after status code
+          const jsonStartIdx = errorMsg.indexOf("{");
+          if (jsonStartIdx !== -1) {
+            const jsonStr = errorMsg.substring(jsonStartIdx);
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.message) {
+                cleanMessage = parsed.message;
               }
-            } else {
-              cleanMessage = afterColon || cleanMessage;
+            } catch {
+              // If JSON parse fails, use the raw message
             }
-          } else {
-            cleanMessage = errorMsg || cleanMessage;
           }
         }
+        
+        console.log("Parsed message:", cleanMessage);
         
         isCustomerExists = cleanMessage.toLowerCase().includes("customer details already exist") ||
                           cleanMessage.toLowerCase().includes("customer already exists");
