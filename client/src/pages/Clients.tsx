@@ -549,6 +549,7 @@ export default function Clients() {
     content.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: 0 auto;">
         <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e88e5; padding-bottom: 20px;">
+          <img src="${logoImage}" alt="Logo" style="max-width: 100px; height: auto; margin-bottom: 10px;" />
           <h1 style="color: #1e88e5; margin: 0; font-size: 28px;">LIQUID WASHES LAUNDRY</h1>
           <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">Centra Market D/109, Al Dhanna City, Al Ruwais, Abu Dhabi-UAE</p>
         </div>
