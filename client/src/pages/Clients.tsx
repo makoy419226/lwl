@@ -1419,6 +1419,10 @@ export default function Clients() {
                               if (tx.type === "bill") {
                                 return { label: "Bill", color: "bg-blue-100 text-blue-700" };
                               }
+                              if (tx.type === "bulk_payment") {
+                                const method = tx.paymentMethod || "cash";
+                                return { label: `Bulk Payment (${method})`, color: "bg-amber-100 text-amber-700" };
+                              }
                               // For payment types, show the payment method
                               if (tx.type === "payment" || tx.paymentMethod) {
                                 const method = tx.paymentMethod || "cash";

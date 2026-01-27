@@ -517,6 +517,7 @@ export class DatabaseStorage implements IStorage {
     paymentMethod?: string,
     notes?: string,
     processedBy?: string,
+    skipTransaction?: boolean,
   ): Promise<{ bill: Bill; payment: BillPayment }> {
     const bill = await this.getBill(billId);
     if (!bill) throw new Error("Bill not found");
@@ -626,7 +627,8 @@ export class DatabaseStorage implements IStorage {
       }
     }
     // For cash/card/bank payments - record transaction for history but don't affect deposit
-    if (bill.clientId && paymentMethod !== "deposit") {
+    // Skip if skipTransaction is true (used for bulk payments that record a single transaction)
+    if (bill.clientId && paymentMethod !== "deposit" && !skipTransaction) {
       await this.createTransaction({
         clientId: bill.clientId,
         billId: billId,

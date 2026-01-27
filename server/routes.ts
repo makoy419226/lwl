@@ -812,11 +812,27 @@ export async function registerRoutes(
             bill.id,
             payForThisBill.toString(),
             paymentMethod,
-            notes || `Bulk payment for client`
+            notes || `Bulk payment for client`,
+            undefined, // processedBy
+            true // skipTransaction - we'll create a single bulk_payment transaction
           );
           paidBills.push({ billId: bill.id, amountPaid: payForThisBill, result });
           remainingPayment -= payForThisBill;
         }
+      }
+      
+      // Create a single bulk_payment transaction for the entire payment
+      if (paidBills.length > 0) {
+        const billIds = paidBills.map(b => `#${b.billId}`).join(", ");
+        await storage.createTransaction({
+          clientId: clientId,
+          type: "bulk_payment",
+          amount: paymentAmount.toFixed(2),
+          description: notes || `Bulk payment applied to ${paidBills.length} bills (${billIds})`,
+          date: new Date(),
+          runningBalance: "0",
+          paymentMethod: paymentMethod || "cash",
+        });
       }
       
       res.status(200).json({ 
