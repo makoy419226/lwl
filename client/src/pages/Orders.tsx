@@ -433,12 +433,13 @@ export default function Orders() {
     onError: (error: any) => {
       let cleanMessage = "Failed to create order";
       let isCustomerExists = false;
+      let isBillingRights = false;
       
       try {
         const errorMsg = String(error.message || error || "");
         console.log("Order error:", errorMsg);
         
-        // Try to extract JSON from "400: {...}" format - use greedy match for nested braces
+        // Try to extract JSON from "403: {...}" or "400: {...}" format
         const jsonMatch = errorMsg.match(/\{[^{}]*"message"[^{}]*\}/);
         if (jsonMatch) {
           try {
@@ -457,10 +458,18 @@ export default function Orders() {
           if (msgMatch) {
             cleanMessage = msgMatch[1];
           } else if (errorMsg.includes(":")) {
-            // Try to get text after status code
-            const parts = errorMsg.split(":");
-            if (parts.length > 1) {
-              cleanMessage = parts.slice(1).join(":").trim() || cleanMessage;
+            // Try to get text after status code - handle "403: {json}" format
+            const colonIdx = errorMsg.indexOf(":");
+            const afterColon = errorMsg.substring(colonIdx + 1).trim();
+            if (afterColon.startsWith("{")) {
+              try {
+                const parsed = JSON.parse(afterColon);
+                cleanMessage = parsed.message || cleanMessage;
+              } catch {
+                cleanMessage = afterColon || cleanMessage;
+              }
+            } else {
+              cleanMessage = afterColon || cleanMessage;
             }
           } else {
             cleanMessage = errorMsg || cleanMessage;
@@ -469,12 +478,14 @@ export default function Orders() {
         
         isCustomerExists = cleanMessage.toLowerCase().includes("customer details already exist") ||
                           cleanMessage.toLowerCase().includes("customer already exists");
+        isBillingRights = cleanMessage.toLowerCase().includes("billing rights") ||
+                          cleanMessage.toLowerCase().includes("admin pin");
       } catch (err) {
         console.error("Error parsing order error:", err);
       }
       
       toast({
-        title: isCustomerExists ? "Customer Already Exists" : "Order Error",
+        title: isBillingRights ? "PIN Not Authorized" : (isCustomerExists ? "Customer Already Exists" : "Error"),
         description: cleanMessage,
         variant: "destructive",
       });
