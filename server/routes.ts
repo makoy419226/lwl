@@ -1075,16 +1075,23 @@ export async function registerRoutes(
       
       // Validate that the creator has permission to create bills
       // Only admin, manager, and cashier roles can create bills
+      // Check if createdBy is a packing worker name - they cannot create bills regardless of logged-in user
+      const packingWorkers = await storage.getPackingWorkers();
+      const isPacker = packingWorkers.some(pw => 
+        pw.name && createdBy && pw.name.toLowerCase() === createdBy.toLowerCase()
+      );
+      if (isPacker) {
+        return res.status(403).json({ 
+          message: "Packing staff cannot create orders with bills. Only admin, manager, or cashier can create orders." 
+        });
+      }
+      
+      // Also validate creatorRole if provided
       const allowedBillCreatorRoles = ["admin", "manager", "cashier"];
       if (creatorRole && !allowedBillCreatorRoles.includes(creatorRole.toLowerCase())) {
-        // Check if createdBy is a packing worker - they cannot create bills
-        const packingWorkers = await storage.getPackingWorkers();
-        const isPacker = packingWorkers.some(pw => pw.name === createdBy);
-        if (isPacker) {
-          return res.status(403).json({ 
-            message: "Packing staff cannot create orders with bills. Please ask a manager or cashier to create the order." 
-          });
-        }
+        return res.status(403).json({ 
+          message: "Only admin, manager, or cashier can create orders with bills." 
+        });
       }
 
       // // Validate required fields
@@ -2012,6 +2019,7 @@ export async function registerRoutes(
   });
 
   // Verify staff user PIN (for bill creation, etc.) - Admin PIN works as universal PIN
+  // Only allows admin, manager, and cashier roles - NOT packing staff
   app.post("/api/workers/verify-pin", async (req, res) => {
     const { pin } = req.body;
     if (!pin || !/^\d{5}$/.test(pin)) {
@@ -2023,12 +2031,20 @@ export async function registerRoutes(
     // Check if it's the admin universal PIN
     const adminPin = process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, worker: { id: 0, name: "Admin" } });
+      return res.json({ success: true, worker: { id: 0, name: "Admin", role: "admin" } });
     }
     
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
+      // Only allow admin, manager, and cashier roles for bill creation
+      const allowedRoles = ["admin", "manager", "cashier"];
+      if (!allowedRoles.includes(user.role?.toLowerCase() || "")) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Only admin, manager, or cashier can create orders with bills" 
+        });
+      }
+      res.json({ success: true, worker: { id: user.id, name: user.name || user.username, role: user.role } });
     } else {
       res.status(401).json({ success: false, message: "Invalid PIN" });
     }
