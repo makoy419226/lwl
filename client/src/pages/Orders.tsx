@@ -4251,9 +4251,9 @@ function OrderForm({
                   +971
                 </span>
                 <Input
-                  className={`rounded-l-none ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 10 ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                  className={`rounded-l-none ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 10).length || 0) >= 10 ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   placeholder="XXXXXXXXXX"
-                  value={formData.customerPhone?.replace(/^\+971/, "") || ""}
+                  value={formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 10) || ""}
                   onChange={(e) => {
                     const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
                     setFormData({ ...formData, customerPhone: "+971" + digits });
