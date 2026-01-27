@@ -47,6 +47,8 @@ export default function DeliveryDashboard() {
 
   const { data: orders, isLoading: ordersLoading, refetch } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
+    refetchOnWindowFocus: true,
+    refetchInterval: 15000, // Refresh every 15 seconds for drivers
   });
 
   const { data: clients } = useQuery<Client[]>({

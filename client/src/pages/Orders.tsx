@@ -203,8 +203,10 @@ export default function Orders() {
   const [editItemsPinError, setEditItemsPinError] = useState("");
   const [isEditingItems, setIsEditingItems] = useState(false);
 
-  const { data: orders, isLoading } = useQuery<Order[]>({
+  const { data: orders, isLoading, refetch: refetchOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Refresh every 30 seconds to get latest delivery statuses
   });
 
   const { data: clients } = useQuery<Client[]>({
