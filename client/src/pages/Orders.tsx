@@ -47,7 +47,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import {
   Accordion,
   AccordionContent,
@@ -4247,39 +4246,23 @@ function OrderForm({
           <div className="space-y-2">
             <Label>Phone Number</Label>
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center px-3 py-2 rounded-md border border-input bg-muted text-muted-foreground text-sm font-medium">
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
                   +971
                 </span>
-                <InputOTP
+                <Input
+                  className="rounded-l-none"
+                  placeholder="XXXXXXXXXX"
+                  value={formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 10) || ""}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    setFormData({ ...formData, customerPhone: "+971" + digits });
+                  }}
+                  inputMode="numeric"
                   maxLength={10}
-                  value={formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "") || ""}
-                  onChange={(value) => setFormData({ ...formData, customerPhone: "+971" + value })}
                   data-testid="input-customer-phone"
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={6} />
-                    <InputOTPSlot index={7} />
-                    <InputOTPSlot index={8} />
-                    <InputOTPSlot index={9} />
-                  </InputOTPGroup>
-                </InputOTP>
+                />
               </div>
-              {(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 10 && (
-                <p className="text-xs text-green-600 font-medium">Phone number complete</p>
-              )}
             </div>
             {clientMatch && (
               <div className="p-4 border-2 border-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg mt-2 animate-pulse">
