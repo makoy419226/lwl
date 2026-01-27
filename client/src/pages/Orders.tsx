@@ -1710,17 +1710,39 @@ export default function Orders() {
                                   <Package className="w-3 h-3" />
                                   {totalItems} items
                                 </Badge>
-                                <Badge 
-                                  variant={order.deliveryType === "pickup" ? "secondary" : "default"}
-                                  className="gap-1"
+                                <Select
+                                  value={order.deliveryType || ""}
+                                  onValueChange={(newType) => {
+                                    updateOrderMutation.mutate({
+                                      id: order.id,
+                                      updates: { deliveryType: newType },
+                                    });
+                                  }}
+                                  disabled={order.delivered === true}
                                 >
-                                  {order.deliveryType === "pickup" ? (
-                                    <Store className="w-3 h-3" />
-                                  ) : (
-                                    <Truck className="w-3 h-3" />
-                                  )}
-                                  {order.deliveryType === "pickup" ? "Pickup" : "Delivery"}
-                                </Badge>
+                                  <SelectTrigger 
+                                    className={`w-24 h-7 text-xs ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}
+                                    data-testid={`select-mobile-delivery-type-${order.id}`}
+                                  >
+                                    <SelectValue>
+                                      {order.deliveryType === "delivery" ? (
+                                        <div className="flex items-center gap-1">
+                                          <Truck className="w-3 h-3" />
+                                          Delivery
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-1">
+                                          <Store className="w-3 h-3" />
+                                          Pickup
+                                        </div>
+                                      )}
+                                    </SelectValue>
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pickup">Pickup</SelectItem>
+                                    <SelectItem value="delivery">Delivery</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
                               <span className="text-xs text-muted-foreground">
                                 {getTimeRemaining(order.expectedDeliveryAt)}
