@@ -700,7 +700,6 @@ export default function Clients() {
       if (res.ok) {
         const clientTransactions: ClientTransaction[] = await res.json();
         if (clientTransactions && clientTransactions.length > 0) {
-          // Sort by date (oldest first)
           const sortedTransactions = [...clientTransactions].sort(
             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
           );
@@ -712,8 +711,7 @@ export default function Clients() {
             }
             return [
               idx + 1,
-              format(new Date(t.date), "dd/MM/yyyy"),
-              format(new Date(t.date), "HH:mm"),
+              format(new Date(t.date), "dd/MM/yyyy HH:mm"),
               t.type === "deposit" ? "PAYMENT" : "BILL",
               t.description || "-",
               parseFloat(t.amount).toFixed(2),
@@ -726,34 +724,49 @@ export default function Clients() {
       console.log("Could not fetch transactions");
     }
 
-    const data = [
-      ["LIQUID WASHES LAUNDRY", "", "", "", "", "", ""],
-      ["CLIENT ACCOUNT SUMMARY", "", "", "", "", "", ""],
-      ["", "", "", "", "", "", ""],
-      ["CLIENT INFORMATION", "", "", "", "", "", ""],
-      ["Client Name:", client.name, "", "Phone:", client.phone || "-", "", ""],
-      ["Address:", client.address || "-", "", "Account #:", client.billNumber || "-", "", ""],
-      ["", "", "", "", "", "", ""],
-      ["FINANCIAL SUMMARY", "", "", "", "", "", ""],
-      ["Total Bills:", totalBill.toFixed(2), "AED", "Total Payments:", totalDeposit.toFixed(2), "AED", ""],
-      ["Due Balance:", balance.toFixed(2), "AED", "", "", "", ""],
-      ["", "", "", "", "", "", ""],
-      ["TRANSACTION HISTORY", "", "", "", "", "", ""],
-      ["#", "Date", "Time", "Type", "Description", "Amount (AED)", "Balance (AED)"],
-      ...transactionData,
-      ["", "", "", "", "", "", ""],
-      ["Report Generated:", format(new Date(), "dd/MM/yyyy"), format(new Date(), "HH:mm"), "", "", "", ""],
-    ];
+    // Build clean data structure
+    const data: any[][] = [];
+    
+    // Header
+    data.push(["LIQUID WASHES LAUNDRY - CLIENT ACCOUNT SUMMARY"]);
+    data.push([""]);
+    
+    // Client Info Section
+    data.push(["CLIENT DETAILS"]);
+    data.push(["Name", client.name]);
+    data.push(["Phone", client.phone || "-"]);
+    data.push(["Address", client.address || "-"]);
+    data.push(["Account Number", client.billNumber || "-"]);
+    data.push([""]);
+    
+    // Financial Summary
+    data.push(["FINANCIAL SUMMARY"]);
+    data.push(["Total Bills", `${totalBill.toFixed(2)} AED`]);
+    data.push(["Total Payments", `${totalDeposit.toFixed(2)} AED`]);
+    data.push(["Due Balance", `${balance.toFixed(2)} AED`]);
+    data.push([""]);
+    
+    // Transaction History
+    data.push(["TRANSACTION HISTORY"]);
+    if (transactionData.length > 0) {
+      data.push(["#", "Date & Time", "Type", "Description", "Amount (AED)", "Balance (AED)"]);
+      transactionData.forEach(row => data.push(row));
+    } else {
+      data.push(["No transaction history available"]);
+    }
+    data.push([""]);
+    
+    // Footer
+    data.push(["Report Generated", format(new Date(), "dd/MM/yyyy HH:mm")]);
 
     const ws = XLSX.utils.aoa_to_sheet(data);
     ws["!cols"] = [
-      { wch: 15 }, // Column A - Labels / #
-      { wch: 25 }, // Column B - Values / Date
-      { wch: 10 }, // Column C - Units / Time
-      { wch: 15 }, // Column D - Type / Secondary labels
-      { wch: 40 }, // Column E - Description / Values
-      { wch: 15 }, // Column F - Amount
-      { wch: 15 }, // Column G - Balance
+      { wch: 20 }, // Column A
+      { wch: 45 }, // Column B
+      { wch: 12 }, // Column C
+      { wch: 45 }, // Column D
+      { wch: 15 }, // Column E
+      { wch: 15 }, // Column F
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Client Summary");
