@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { TopBar } from "@/components/TopBar";
+import logoImage from "@assets/image_1769169126339.png";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
 import {
   Loader2,
@@ -1853,10 +1854,123 @@ export default function Clients() {
               {/* Transaction History - shows where bill amounts came from */}
               {viewingClientTransactions && viewingClientTransactions.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
-                    <History className="w-5 h-5" />
-                    Transaction History ({viewingClientTransactions.length})
-                  </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <History className="w-5 h-5" />
+                      Transaction History ({viewingClientTransactions.length})
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const sortedTx = [...viewingClientTransactions].sort(
+                          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+                        );
+                        let runningBalance = 0;
+                        const txRows = sortedTx.map((tx) => {
+                          if (tx.type === "deposit") {
+                            runningBalance += parseFloat(tx.amount);
+                          } else {
+                            runningBalance -= parseFloat(tx.amount);
+                          }
+                          return `
+                            <tr>
+                              <td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 11px;">${format(new Date(tx.date), "dd/MM/yyyy HH:mm")}</td>
+                              <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                                <span style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: ${tx.type === "bill" ? "#dbeafe" : "#dcfce7"}; color: ${tx.type === "bill" ? "#1d4ed8" : "#16a34a"};">
+                                  ${tx.type === "bill" ? "Bill" : "Paid in Cash"}
+                                </span>
+                              </td>
+                              <td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 11px; max-width: 200px;">${tx.description || "-"}</td>
+                              <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: 500; color: ${tx.type === "deposit" ? "#16a34a" : "#2563eb"};">
+                                ${tx.type === "deposit" ? "+" : "-"}${parseFloat(tx.amount).toFixed(2)}
+                              </td>
+                              <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: ${runningBalance >= 0 ? "#16a34a" : "#dc2626"};">
+                                ${runningBalance.toFixed(2)}
+                              </td>
+                            </tr>
+                          `;
+                        }).join('');
+
+                        const printContent = `
+                          <html>
+                            <head>
+                              <title>Transaction History - ${viewingClient.name}</title>
+                              <style>
+                                @page { size: A4; margin: 15mm; }
+                                body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                                .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #1e40af; padding-bottom: 15px; }
+                                .logo { max-width: 100px; height: auto; margin-bottom: 10px; }
+                                .company-name { font-size: 20px; font-weight: bold; color: #1e40af; }
+                                .company-info { font-size: 11px; color: #666; margin-top: 5px; }
+                                .client-info { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+                                .client-name { font-size: 16px; font-weight: bold; }
+                                .client-details { font-size: 12px; color: #666; margin-top: 5px; }
+                                table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                                th { background: #1e40af; color: white; padding: 10px 8px; text-align: left; font-size: 11px; }
+                                th:nth-child(4), th:nth-child(5) { text-align: right; }
+                                .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 15px; }
+                                @media print {
+                                  body { padding: 0; }
+                                  th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="header">
+                                <img src="${logoImage}" class="logo" alt="Logo" />
+                                <div class="company-name">LIQUID WASHES LAUNDRY</div>
+                                <div class="company-info">
+                                  Centra Market D/109, Al Dhanna City, Al Ruwais<br/>
+                                  Abu Dhabi, UAE<br/>
+                                  Tel: 026 815 824 | Mobile: +971 56 338 0001
+                                </div>
+                              </div>
+                              <div style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
+                                TRANSACTION HISTORY
+                              </div>
+                              <div class="client-info">
+                                <div class="client-name">${viewingClient.name}</div>
+                                <div class="client-details">
+                                  ${viewingClient.phone ? `Phone: ${viewingClient.phone}` : ""}
+                                  ${viewingClient.address ? `<br/>Address: ${viewingClient.address}` : ""}
+                                </div>
+                              </div>
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Balance</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  ${txRows}
+                                </tbody>
+                              </table>
+                              <div class="footer">
+                                <p>Generated on ${format(new Date(), "dd MMM yyyy 'at' hh:mm a")}</p>
+                                <p style="margin-top: 5px;">Thank you for your business!</p>
+                              </div>
+                            </body>
+                          </html>
+                        `;
+                        const printWindow = window.open('', '_blank');
+                        if (printWindow) {
+                          printWindow.document.write(printContent);
+                          printWindow.document.close();
+                          printWindow.focus();
+                          setTimeout(() => printWindow.print(), 300);
+                        }
+                      }}
+                      data-testid="button-print-transaction-history"
+                    >
+                      <Printer className="w-4 h-4 mr-1" />
+                      Print History
+                    </Button>
+                  </div>
                   <div className="border rounded-lg overflow-hidden">
                     <Table>
                       <TableHeader>
