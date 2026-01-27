@@ -227,6 +227,16 @@ export default function Orders() {
     queryKey: ["/api/bills"],
   });
 
+  const { data: incidents } = useQuery<{ orderId: number }[]>({
+    queryKey: ["/api/incidents"],
+  });
+
+  // Check if an order has any incident
+  const orderHasIncident = (orderId: number): boolean => {
+    if (!incidents) return false;
+    return incidents.some(incident => incident.orderId === orderId);
+  };
+
   // Calculate client's due balance from actual orders (unpaid amounts)
   const getClientDueBalance = (clientId: number): number => {
     if (!orders) return 0;
@@ -1897,7 +1907,7 @@ export default function Orders() {
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="text-orange-500"
+                                  className={orderHasIncident(order.id) ? "text-orange-500" : "text-muted-foreground"}
                                   onClick={() => handleReportIncident(order)}
                                   data-testid={`button-mobile-report-incident-${order.id}`}
                                   title="Report Incident"
@@ -2473,7 +2483,7 @@ export default function Orders() {
                                             <Button
                                               size="icon"
                                               variant="ghost"
-                                              className="shrink-0 touch-manipulation text-orange-500"
+                                              className={`shrink-0 touch-manipulation ${orderHasIncident(order.id) ? "text-orange-500" : "text-muted-foreground"}`}
                                               onClick={() =>
                                                 handleReportIncident(order)
                                               }
