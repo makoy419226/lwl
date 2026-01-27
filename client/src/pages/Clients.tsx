@@ -2253,6 +2253,7 @@ export default function Clients() {
                   setDeleteError("");
                 }}
                 onKeyDown={(e) => e.stopPropagation()}
+                autoComplete="off"
                 autoFocus
                 data-testid="input-delete-password"
               />
