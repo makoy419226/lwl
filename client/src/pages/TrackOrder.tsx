@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, Search, ArrowLeft, AlertCircle, X } from "lucide-react";
+import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, Search, ArrowLeft, AlertCircle, X, Camera } from "lucide-react";
 import { format } from "date-fns";
 import logoImage from "@assets/image_1767220512226.png";
 
@@ -24,6 +24,8 @@ interface TrackOrderData {
   deliveryDate: string | null;
   urgent: boolean;
   expectedDeliveryAt: string | null;
+  deliveryPhotos: string[];
+  deliveryPhoto: string | null;
 }
 
 export default function TrackOrder() {
@@ -255,6 +257,33 @@ export default function TrackOrder() {
                         {order.deliveryType === "Delivery" ? "Delivered by: " : "Released by: "}{order.deliveryBy}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {order.delivered && ((order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto) && (
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Camera className="h-4 w-4 text-blue-600" />
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Delivery Proof Photos</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {order.deliveryPhotos && order.deliveryPhotos.length > 0 ? (
+                        order.deliveryPhotos.map((photo, index) => (
+                          <img
+                            key={index}
+                            src={photo}
+                            alt={`Delivery photo ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-md border"
+                          />
+                        ))
+                      ) : order.deliveryPhoto ? (
+                        <img
+                          src={order.deliveryPhoto}
+                          alt="Delivery photo"
+                          className="w-full h-32 object-cover rounded-md border col-span-2"
+                        />
+                      ) : null}
+                    </div>
                   </div>
                 )}
               </CardContent>

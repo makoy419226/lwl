@@ -2062,6 +2062,8 @@ export async function registerRoutes(
       delivered: order.delivered,
       urgent: order.urgent,
       clientName,
+      deliveryPhotos: order.deliveryPhotos || [],
+      deliveryPhoto: order.deliveryPhoto,
     });
   });
 
@@ -2111,6 +2113,8 @@ export async function registerRoutes(
       deliveryDate: order.deliveryDate,
       urgent: order.urgent,
       expectedDeliveryAt: order.expectedDeliveryAt,
+      deliveryPhotos: order.deliveryPhotos || [],
+      deliveryPhoto: order.deliveryPhoto,
     });
   });
 

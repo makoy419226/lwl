@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, X } from "lucide-react";
+import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoImage from "@assets/image_1767220512226.png";
 
@@ -17,6 +17,8 @@ interface PublicOrderData {
   delivered: boolean;
   urgent: boolean;
   clientName: string;
+  deliveryPhotos: string[];
+  deliveryPhoto: string | null;
 }
 
 export default function PublicOrder() {
@@ -188,6 +190,37 @@ export default function PublicOrder() {
             </div>
           </CardContent>
         </Card>
+
+        {order.delivered && ((order.deliveryPhotos && order.deliveryPhotos.length > 0) || order.deliveryPhoto) && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Delivery Proof Photos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                {order.deliveryPhotos && order.deliveryPhotos.length > 0 ? (
+                  order.deliveryPhotos.map((photo, index) => (
+                    <img
+                      key={index}
+                      src={photo}
+                      alt={`Delivery photo ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-md border"
+                    />
+                  ))
+                ) : order.deliveryPhoto ? (
+                  <img
+                    src={order.deliveryPhoto}
+                    alt="Delivery photo"
+                    className="w-full h-32 object-cover rounded-md border col-span-2"
+                  />
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Button
           className="w-full"
