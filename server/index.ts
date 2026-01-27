@@ -19,6 +19,7 @@ declare module "http" {
 
 app.use(
   express.json({
+    limit: '50mb', // Allow larger payloads for delivery photos
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
