@@ -2304,6 +2304,8 @@ export default function Clients() {
                   setClearHistoryPassword(e.target.value);
                   setClearHistoryError("");
                 }}
+                onKeyDown={(e) => e.stopPropagation()}
+                autoFocus
                 data-testid="input-clear-history-password"
               />
               {clearHistoryError && (
