@@ -112,6 +112,8 @@ export function Invoice({
   };
 
   const balance = totalAmount - paidAmount;
+  const isCredit = totalAmount === 0 && paidAmount > 0;
+  const creditAmount = paidAmount;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -198,25 +200,38 @@ export function Invoice({
           )}
 
           <div className="totals">
-            <div className="total-row">
-              <span>Total Amount:</span>
-              <span>{totalAmount.toFixed(2)} AED</span>
-            </div>
-            <div className="total-row" style={{ color: "#16a34a" }}>
-              <span>Amount Paid:</span>
-              <span>{paidAmount.toFixed(2)} AED</span>
-            </div>
-            <div className="total-row grand-total">
-              <span>Balance Due:</span>
-              <span style={{ color: balance > 0 ? "#dc2626" : "#16a34a" }}>
-                {balance.toFixed(2)} AED
-              </span>
-            </div>
+            {isCredit ? (
+              <>
+                <div className="total-row grand-total">
+                  <span>Credit Added to Account:</span>
+                  <span style={{ color: "#16a34a" }}>
+                    {creditAmount.toFixed(2)} AED
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="total-row">
+                  <span>Total Amount:</span>
+                  <span>{totalAmount.toFixed(2)} AED</span>
+                </div>
+                <div className="total-row" style={{ color: "#16a34a" }}>
+                  <span>Amount Paid:</span>
+                  <span>{paidAmount.toFixed(2)} AED</span>
+                </div>
+                <div className="total-row grand-total">
+                  <span>Balance Due:</span>
+                  <span style={{ color: balance > 0 ? "#dc2626" : "#16a34a" }}>
+                    {balance.toFixed(2)} AED
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           <div style={{ textAlign: "center", marginTop: "20px" }}>
             <span className="payment-badge">
-              {balance <= 0 ? "PAID IN FULL" : "PARTIAL PAYMENT"}
+              {isCredit ? "CREDIT ADDED" : (balance <= 0 ? "PAID IN FULL" : "PARTIAL PAYMENT")}
             </span>
           </div>
 
