@@ -1988,30 +1988,23 @@ export default function Clients() {
                           } else {
                             runningBalance -= parseFloat(tx.amount);
                           }
-                          // Truncate long descriptions for print
                           const desc = tx.description || "-";
-                          const truncatedDesc = desc.length > 80 ? desc.substring(0, 80) + "..." : desc;
+                          const truncatedDesc = desc.length > 60 ? desc.substring(0, 60) + "..." : desc;
                           const typeLabel = tx.type === "bill" ? "Bill" : tx.type === "deposit" ? "Deposit" : "Payment";
                           const typeColor = tx.type === "bill" ? "#dc2626" : "#16a34a";
                           const typeBg = tx.type === "bill" ? "#fee2e2" : "#dcfce7";
+                          const amountColor = tx.type === "deposit" ? "#16a34a" : "#2563eb";
+                          const balanceColor = runningBalance >= 0 ? "#16a34a" : "#dc2626";
                           return `
-                            <tr style="page-break-inside: avoid; break-inside: avoid;">
-                              <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 10px; text-align: center;">${index + 1}</td>
-                              <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 10px;">${format(new Date(tx.date), "dd/MM/yyyy")}</td>
-                              <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 10px;">${format(new Date(tx.date), "HH:mm")}</td>
-                              <td style="padding: 6px; border-bottom: 1px solid #eee;">
-                                <span style="padding: 2px 6px; border-radius: 8px; font-size: 9px; background: ${typeBg}; color: ${typeColor};">
-                                  ${typeLabel}
-                                </span>
-                              </td>
-                              <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 10px;">${truncatedDesc}</td>
-                              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right; font-weight: 500; color: ${tx.type === "deposit" ? "#16a34a" : "#2563eb"}; font-size: 10px;">
-                                ${tx.type === "deposit" ? "+" : ""}${parseFloat(tx.amount).toFixed(2)}<br/><span style="font-size: 8px; color: #888;">AED</span>
-                              </td>
-                              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: ${runningBalance >= 0 ? "#16a34a" : "#dc2626"}; font-size: 10px;">
-                                ${runningBalance.toFixed(2)}<br/><span style="font-size: 8px; color: #888;">AED</span>
-                              </td>
-                            </tr>
+                            <div class="tx-row">
+                              <div class="col-num">${index + 1}</div>
+                              <div class="col-date">${format(new Date(tx.date), "dd/MM/yyyy")}</div>
+                              <div class="col-time">${format(new Date(tx.date), "HH:mm")}</div>
+                              <div class="col-type"><span style="background: ${typeBg}; color: ${typeColor};" class="type-badge">${typeLabel}</span></div>
+                              <div class="col-desc">${truncatedDesc}</div>
+                              <div class="col-amount" style="color: ${amountColor};">${tx.type === "deposit" ? "+" : ""}${parseFloat(tx.amount).toFixed(2)} AED</div>
+                              <div class="col-balance" style="color: ${balanceColor};">${runningBalance.toFixed(2)} AED</div>
+                            </div>
                           `;
                         }).join('');
 
@@ -2020,26 +2013,32 @@ export default function Clients() {
                             <head>
                               <title>Transaction History - ${viewingClient.name}</title>
                               <style>
-                                @page { size: A4; margin: 15mm; }
-                                body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-                                .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #1e40af; padding-bottom: 15px; }
-                                .logo { max-width: 100px; height: auto; margin-bottom: 10px; }
-                                .company-name { font-size: 20px; font-weight: bold; color: #1e40af; }
-                                .company-info { font-size: 11px; color: #666; margin-top: 5px; }
-                                .client-info { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-                                .client-name { font-size: 16px; font-weight: bold; }
-                                .client-details { font-size: 12px; color: #666; margin-top: 5px; }
-                                table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                                th { background: #1e40af; color: white; padding: 8px 6px; text-align: left; font-size: 10px; }
-                                tr { page-break-inside: avoid; break-inside: avoid; }
-                                td { word-wrap: break-word; overflow-wrap: break-word; }
-                                thead { display: table-header-group; }
-                                .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 15px; page-break-inside: avoid; }
+                                @page { size: A4; margin: 12mm; }
+                                * { box-sizing: border-box; }
+                                body { font-family: Arial, sans-serif; padding: 15px; color: #333; font-size: 9px; }
+                                .header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #1e40af; padding-bottom: 10px; }
+                                .logo { max-width: 80px; height: auto; margin-bottom: 5px; }
+                                .company-name { font-size: 18px; font-weight: bold; color: #1e40af; }
+                                .company-info { font-size: 10px; color: #666; margin-top: 3px; }
+                                .client-info { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; page-break-inside: avoid; }
+                                .client-name { font-size: 14px; font-weight: bold; }
+                                .client-details { font-size: 11px; color: #666; margin-top: 3px; }
+                                .tx-header, .tx-row { display: flex; width: 100%; border-bottom: 1px solid #ddd; }
+                                .tx-header { background: #1e40af; color: white; font-weight: bold; font-size: 9px; padding: 6px 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                .tx-row { padding: 5px 0; page-break-inside: avoid; break-inside: avoid; }
+                                .col-num { width: 5%; text-align: center; padding: 2px; }
+                                .col-date { width: 12%; padding: 2px; }
+                                .col-time { width: 8%; padding: 2px; }
+                                .col-type { width: 10%; padding: 2px; }
+                                .col-desc { width: 35%; padding: 2px; overflow: hidden; }
+                                .col-amount { width: 15%; text-align: right; padding: 2px; font-weight: 500; }
+                                .col-balance { width: 15%; text-align: right; padding: 2px; font-weight: bold; }
+                                .type-badge { padding: 2px 5px; border-radius: 6px; font-size: 8px; }
+                                .footer { margin-top: 20px; text-align: center; font-size: 9px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; page-break-inside: avoid; }
                                 @media print {
                                   body { padding: 0; }
-                                  th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                  tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-                                  thead { display: table-header-group; }
+                                  .tx-header { background: #1e40af !important; color: white !important; }
+                                  .tx-row { page-break-inside: avoid !important; break-inside: avoid !important; }
                                 }
                               </style>
                             </head>
@@ -2048,37 +2047,30 @@ export default function Clients() {
                                 <img src="${logoImage}" class="logo" alt="Logo" />
                                 <div class="company-name">LIQUID WASHES LAUNDRY</div>
                                 <div class="company-info">
-                                  Centra Market D/109, Al Dhanna City, Al Ruwais<br/>
-                                  Abu Dhabi, UAE<br/>
+                                  Centra Market D/109, Al Dhanna City, Al Ruwais | Abu Dhabi, UAE<br/>
                                   Tel: 026 815 824 | Mobile: +971 56 338 0001
                                 </div>
                               </div>
-                              <div style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
+                              <div style="text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 10px;">
                                 TRANSACTION HISTORY
                               </div>
                               <div class="client-info">
                                 <div class="client-name">${viewingClient.name}</div>
                                 <div class="client-details">
                                   ${viewingClient.phone ? `Phone: ${viewingClient.phone}` : ""}
-                                  ${viewingClient.address ? `<br/>Address: ${viewingClient.address}` : ""}
+                                  ${viewingClient.address ? ` | Address: ${viewingClient.address}` : ""}
                                 </div>
                               </div>
-                              <table>
-                                <thead>
-                                  <tr>
-                                    <th style="width: 30px;">#</th>
-                                    <th style="width: 80px;">Date</th>
-                                    <th style="width: 50px;">Time</th>
-                                    <th style="width: 70px;">Type</th>
-                                    <th>Description</th>
-                                    <th style="width: 70px; text-align: right;">Amount</th>
-                                    <th style="width: 70px; text-align: right;">Balance</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  ${txRows}
-                                </tbody>
-                              </table>
+                              <div class="tx-header">
+                                <div class="col-num">#</div>
+                                <div class="col-date">Date</div>
+                                <div class="col-time">Time</div>
+                                <div class="col-type">Type</div>
+                                <div class="col-desc">Description</div>
+                                <div class="col-amount">Amount</div>
+                                <div class="col-balance">Balance</div>
+                              </div>
+                              ${txRows}
                               <div class="footer">
                                 <p>Generated on ${format(new Date(), "dd MMM yyyy 'at' hh:mm a")}</p>
                                 <p style="margin-top: 5px;">Thank you for your business!</p>
