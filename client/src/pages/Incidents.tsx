@@ -241,14 +241,11 @@ export default function Incidents() {
         return sum;
       }, 0);
       setMaxRefundAmount(selectedTotal);
-    } else if (formData.orderNumber && activeOrders) {
-      // If no items selected, use order total
-      const order = activeOrders.find(o => o.orderNumber === formData.orderNumber);
-      setMaxRefundAmount(order ? parseFloat(order.totalAmount) || 0 : 0);
     } else {
+      // No items selected = no max refund limit from items
       setMaxRefundAmount(0);
     }
-  }, [selectedItemIndices, formData.itemName, formData.orderNumber, activeOrders]);
+  }, [selectedItemIndices, formData.itemName]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
