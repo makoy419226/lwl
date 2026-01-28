@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -543,7 +543,7 @@ export default function Incidents() {
     }
   };
 
-  const IncidentForm = ({ isEdit = false }: { isEdit?: boolean }) => (
+  const renderIncidentForm = (isEdit: boolean = false) => (
     <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
       <div className="p-3 bg-muted/50 rounded-lg border space-y-3">
         <Label className="text-sm font-medium">Select Active Order</Label>
@@ -841,7 +841,7 @@ export default function Incidents() {
               <DialogHeader>
                 <DialogTitle>Record New Incident</DialogTitle>
               </DialogHeader>
-              <IncidentForm />
+              {renderIncidentForm(false)}
             </DialogContent>
           </Dialog>
         </div>
@@ -1003,7 +1003,7 @@ export default function Incidents() {
           <DialogHeader>
             <DialogTitle>Edit Incident</DialogTitle>
           </DialogHeader>
-          <IncidentForm isEdit />
+          {renderIncidentForm(true)}
         </DialogContent>
       </Dialog>
     </div>
