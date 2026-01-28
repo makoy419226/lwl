@@ -2234,10 +2234,11 @@ export async function registerRoutes(
         .json({ success: false, message: "Invalid PIN format" });
     }
     
-    // Check if it's the admin universal PIN
-    const adminPin = process.env.ADMIN_PIN || "";
+    // Check if it's the admin universal PIN (from database)
+    const adminUser = await storage.getUserByUsername("admin");
+    const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, worker: { id: 0, name: "Admin", role: "admin" } });
+      return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin", role: "admin" } });
     }
     
     const user = await storage.verifyUserPin(pin);
@@ -2265,10 +2266,11 @@ export async function registerRoutes(
         .json({ success: false, message: "Invalid PIN format" });
     }
     
-    // Check if it's the admin universal PIN
-    const adminPin = process.env.ADMIN_PIN || "";
+    // Check if it's the admin universal PIN (from database)
+    const adminUser = await storage.getUserByUsername("admin");
+    const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, worker: { id: 0, name: "Admin" } });
+      return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin" } });
     }
     
     // Check for user PIN (admin, manager, cashier, staff roles)
@@ -2295,16 +2297,17 @@ export async function registerRoutes(
         .json({ success: false, message: "Invalid PIN format" });
     }
     
-    // Check if it's the admin universal PIN
-    const adminPin = process.env.ADMIN_PIN || "";
+    // Check if it's the admin universal PIN (from database)
+    const adminUser = await storage.getUserByUsername("admin");
+    const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, worker: { id: 0, name: "Admin" } });
+      return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin" } });
     }
     
-    // Check for staff user PIN
+    // Check for any user PIN (admin, manager, staff, driver roles can all verify delivery)
     const user = await storage.verifyUserPin(pin);
-    if (user && user.role === "staff") {
-      return res.json({ success: true, worker: { id: user.id, name: user.name } });
+    if (user) {
+      return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
     }
     
     // Also allow packing workers for backward compatibility
@@ -2325,10 +2328,11 @@ export async function registerRoutes(
         .json({ success: false, message: "Invalid PIN format" });
     }
     
-    // Check if it's the admin universal PIN
-    const adminPin = process.env.ADMIN_PIN || "";
+    // Check if it's the admin universal PIN (from database)
+    const adminUser = await storage.getUserByUsername("admin");
+    const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, user: { id: 0, name: "Admin", type: "admin" } });
+      return res.json({ success: true, user: { id: adminUser?.id || 0, name: "Admin", type: "admin" } });
     }
     
     // Check for user PIN (admin, manager, cashier, staff roles)
