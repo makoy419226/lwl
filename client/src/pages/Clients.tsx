@@ -672,6 +672,7 @@ export default function Clients() {
     let totalBillsFromTx = 0;
     let totalDepositsFromTx = 0;
     let totalBillsPaid = 0;
+    let totalDepositsUsed = 0;
     
     // Format payment method
     const formatPaymentMethod = (method: string | null | undefined) => {
@@ -699,7 +700,10 @@ export default function Clients() {
             const amt = parseFloat(t.amount || "0");
             if (t.type === "deposit") {
               totalDepositsFromTx += amt;
-            } else if (t.type === "payment" || t.type === "deposit_used" || t.type === "bulk_deposit_used" || t.type === "bulk_payment") {
+            } else if (t.type === "deposit_used" || t.type === "bulk_deposit_used") {
+              totalBillsPaid += amt;
+              totalDepositsUsed += amt;
+            } else if (t.type === "payment" || t.type === "bulk_payment") {
               totalBillsPaid += amt;
             } else {
               totalBillsFromTx += amt;
@@ -750,7 +754,7 @@ export default function Clients() {
     
     // Summary at bottom
     const unpaidBillsAmount = Math.max(0, totalBillsFromTx - totalBillsPaid);
-    const creditsAvailable = Math.max(0, totalDepositsFromTx - (totalBillsPaid - Math.min(totalBillsPaid, totalBillsFromTx)));
+    const creditsAvailable = Math.max(0, totalDepositsFromTx - totalDepositsUsed);
     
     data.push(["Summary"]);
     data.push(["Unpaid Bills", `${unpaidBillsAmount.toFixed(2)} AED`]);
