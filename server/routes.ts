@@ -1747,16 +1747,13 @@ export async function registerRoutes(
 
   // Get admin account settings
   app.get("/api/admin/account", async (req, res) => {
-    const adminUsername = process.env.ADMIN_USERNAME || "admin";
-    const adminEmail = process.env.ADMIN_EMAIL || "idusma0010@gmail.com";
-    const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-    
-    // Get PIN from database user if exists
-    let adminPin = process.env.ADMIN_PIN || "";
     const adminUser = await storage.getUserByUsername("admin");
-    if (adminUser && adminUser.pin) {
-      adminPin = adminUser.pin;
-    }
+    
+    // Get values from database user first, fallback to env vars
+    const adminUsername = adminUser?.username || process.env.ADMIN_USERNAME || "admin";
+    const adminEmail = adminUser?.email || process.env.ADMIN_EMAIL || "idusma0010@gmail.com";
+    const adminPassword = adminUser?.password || process.env.ADMIN_PASSWORD || "admin123";
+    const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     
     res.json({
       username: adminUsername,
@@ -1770,25 +1767,26 @@ export async function registerRoutes(
   // Update admin account settings (username, email, PIN - requires current password)
   app.put("/api/admin/account", async (req, res) => {
     const { currentPassword, username, email, pin } = req.body;
-    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    // Get admin user from database to verify password
+    const adminUser = await storage.getUserByUsername("admin");
+    const ADMIN_PASSWORD = adminUser?.password || process.env.ADMIN_PASSWORD || "admin123";
     
     if (!currentPassword || currentPassword !== ADMIN_PASSWORD) {
       return res.status(401).json({ success: false, message: "Invalid admin password" });
     }
     
     try {
-      // Find admin user in database
-      const adminUser = await storage.getUserByUsername("admin");
       if (adminUser) {
         // Update admin user in database
         const updates: any = {};
         if (email) updates.email = email;
-        if (pin !== undefined) {
+        if (pin !== undefined && pin !== null && pin !== "") {
           // Validate PIN is 5 digits if provided
-          if (pin && !/^\d{5}$/.test(pin)) {
+          if (!/^\d{5}$/.test(pin)) {
             return res.status(400).json({ success: false, message: "PIN must be exactly 5 digits" });
           }
-          updates.pin = pin || null;
+          updates.pin = pin;
         }
         
         await storage.updateUser(adminUser.id, updates);
@@ -1807,7 +1805,8 @@ export async function registerRoutes(
 
   // Send OTP to admin email for password change
   app.post("/api/admin/send-password-otp", async (req, res) => {
-    const adminEmail = process.env.ADMIN_EMAIL || "idusma0010@gmail.com";
+    const adminUser = await storage.getUserByUsername("admin");
+    const adminEmail = adminUser?.email || process.env.ADMIN_EMAIL || "idusma0010@gmail.com";
     
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
