@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { Sidebar } from "@/components/Sidebar";
 import { QuickSearch } from "@/components/QuickSearch";
 import Dashboard from "@/pages/Dashboard";
@@ -278,37 +279,39 @@ function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <UserContext.Provider value={user}>
-          <div className="flex h-screen w-full bg-background">
-            <Sidebar user={user} onLogout={handleLogout} />
-            <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-              <header className="h-16 border-b border-border bg-card flex items-center justify-between gap-4 px-4 lg:px-6">
-                <div className="w-14 lg:hidden" />
-                <div className="flex-1 flex justify-center lg:justify-start">
-                  <QuickSearch />
-                </div>
-                <div className="flex flex-col items-center">
-                <img 
-                  src={logoImage} 
-                  alt="Liquide Washes Laundry" 
-                  className="h-8 lg:h-10 object-contain"
-                  data-testid="img-header-logo"
-                />
-                <span className="text-xs font-semibold text-primary mt-0.5">Liquide Washes</span>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <UserContext.Provider value={user}>
+            <div className="flex h-screen w-full bg-background">
+              <Sidebar user={user} onLogout={handleLogout} />
+              <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                <header className="h-16 border-b border-border bg-card flex items-center justify-between gap-4 px-4 lg:px-6">
+                  <div className="w-14 lg:hidden" />
+                  <div className="flex-1 flex justify-center lg:justify-start">
+                    <QuickSearch />
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <img 
+                      src={logoImage} 
+                      alt="Liquide Washes Laundry" 
+                      className="h-8 lg:h-10 object-contain"
+                      data-testid="img-header-logo"
+                    />
+                    <span className="text-xs font-semibold text-primary mt-0.5">Liquide Washes</span>
+                  </div>
+                  <div className="flex-1 lg:hidden" />
+                </header>
+                <main className="flex-1 overflow-auto">
+                  <Router />
+                </main>
               </div>
-              <div className="flex-1 lg:hidden" />
-            </header>
-            <main className="flex-1 overflow-auto">
-              <Router />
-            </main>
-          </div>
-        </div>
-        <Toaster />
-        </UserContext.Provider>
-      </TooltipProvider>
-    </QueryClientProvider>
+            </div>
+            <Toaster />
+          </UserContext.Provider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown, Truck, History } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown, Truck, History, Moon, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
+import { useTheme } from "./ThemeProvider";
 
 interface UserInfo {
   id: number;
@@ -22,6 +23,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -227,16 +229,31 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
                 </Badge>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="default" 
-              className="w-full gap-2 h-11 touch-manipulation"
-              onClick={onLogout}
-              data-testid="button-logout"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="default" 
+                className="flex-1 gap-2 h-11 touch-manipulation"
+                onClick={onLogout}
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-11 w-11 touch-manipulation"
+                onClick={toggleTheme}
+                data-testid="button-theme-toggle"
+              >
+                {theme === "light" ? (
+                  <Moon className="w-5 h-5" />
+                ) : (
+                  <Sun className="w-5 h-5" />
+                )}
+              </Button>
+            </div>
           </div>
         )}
 
