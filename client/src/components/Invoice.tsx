@@ -117,7 +117,7 @@ export function Invoice({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto bg-white">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto bg-card">
         <div className="flex items-center justify-between p-4 border-b bg-primary/5">
           <h2 className="text-lg font-semibold text-foreground">Payment Receipt</h2>
           <div className="flex items-center gap-2">

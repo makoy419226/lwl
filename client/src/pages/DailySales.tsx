@@ -82,7 +82,7 @@ export default function DailySales() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-border shadow-sm">
+      <div className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
         <div className="h-20 px-6 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-primary" />

@@ -118,7 +118,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="fixed top-3 left-3 z-50 lg:hidden h-12 w-12 bg-white shadow-md border"
+          className="fixed top-3 left-3 z-50 lg:hidden h-12 w-12 bg-background shadow-md border"
           onClick={() => setIsOpen(!isOpen)}
           data-testid="button-menu-toggle"
         >
@@ -135,7 +135,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
 
       <div className={`
         ${isMobile ? 'fixed left-0 top-0 z-40' : 'relative'} 
-        w-64 h-screen bg-white border-r border-border flex flex-col
+        w-64 h-screen bg-background border-r border-border flex flex-col
         transition-transform duration-300 ease-in-out
         ${isMobile && !isOpen ? '-translate-x-full' : 'translate-x-0'}
       `}>

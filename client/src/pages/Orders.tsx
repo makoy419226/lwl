@@ -2662,7 +2662,7 @@ export default function Orders() {
                         </div>
                         <div
                           ref={reportTableRef}
-                          className="border rounded-lg overflow-auto bg-white p-4"
+                          className="border rounded-lg overflow-auto bg-card p-4"
                         >
                           <h3 className="text-lg font-bold mb-4">
                             Item Quantity Report ({reportStartDate} to{" "}
@@ -2797,7 +2797,7 @@ export default function Orders() {
                 Close
               </Button>
             </div>
-            <div ref={pdfReceiptRef} className="bg-white p-6 rounded-lg border">
+            <div ref={pdfReceiptRef} className="bg-card p-6 rounded-lg border">
               <div style={{ fontFamily: "Arial, sans-serif", color: "#333" }}>
                 <div
                   style={{
@@ -3519,7 +3519,7 @@ export default function Orders() {
                                 return (
                                   <div
                                     key={bill.id}
-                                    className="flex justify-between items-center text-sm bg-white dark:bg-background rounded px-2 py-1"
+                                    className="flex justify-between items-center text-sm bg-background rounded px-2 py-1"
                                   >
                                     <span className="text-muted-foreground">
                                       Bill #{bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")}
@@ -4395,7 +4395,7 @@ function OrderForm({
             {clientUnpaidBills.map((bill) => (
               <div
                 key={bill.id}
-                className="flex justify-between items-center text-sm bg-white/50 dark:bg-black/20 rounded px-2 py-1"
+                className="flex justify-between items-center text-sm bg-muted/50 rounded px-2 py-1"
               >
                 <span className="text-muted-foreground">
                   Bill #{bill.referenceNumber || bill.id} -{" "}

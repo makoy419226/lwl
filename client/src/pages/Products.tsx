@@ -1157,7 +1157,7 @@ export default function Products() {
                 <Search className="w-4 h-4" />
               </div>
               <Input
-                className="pl-9 h-9 rounded-full border-2 border-primary/20 bg-white dark:bg-background focus:bg-white dark:focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm shadow-sm"
+                className="pl-9 h-9 rounded-full border-2 border-primary/20 bg-background focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm shadow-sm"
                 placeholder="Search items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -1381,7 +1381,7 @@ export default function Products() {
           >
             <div className="relative">
               <ShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-2 -right-2 w-5 h-5 bg-white text-primary text-xs font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 w-5 h-5 bg-background text-primary text-xs font-bold rounded-full flex items-center justify-center border border-primary/20">
                 {orderItems.length + customItems.length}
               </span>
             </div>

@@ -16,7 +16,7 @@ export function Navigation({ currentPage, onSearch, searchValue, onAddClick, add
   const [location] = useLocation();
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-border shadow-sm">
+    <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
       <div className="container mx-auto px-4">
         <div className="h-20 flex items-center justify-between gap-4">
           {/* Brand */}
@@ -37,7 +37,7 @@ export function Navigation({ currentPage, onSearch, searchValue, onAddClick, add
                 className={`rounded-full font-semibold ${
                   currentPage === "products" 
                     ? "bg-primary text-white shadow-md" 
-                    : "hover:bg-white/50"
+                    : "hover:bg-muted/50"
                 }`}
                 data-testid="nav-products"
               >
@@ -50,7 +50,7 @@ export function Navigation({ currentPage, onSearch, searchValue, onAddClick, add
                 className={`rounded-full font-semibold ${
                   currentPage === "clients" 
                     ? "bg-primary text-white shadow-md" 
-                    : "hover:bg-white/50"
+                    : "hover:bg-muted/50"
                 }`}
                 data-testid="nav-clients"
               >
@@ -65,7 +65,7 @@ export function Navigation({ currentPage, onSearch, searchValue, onAddClick, add
               <Search className="w-5 h-5" />
             </div>
             <Input 
-              className="pl-10 h-11 rounded-full border-2 border-muted bg-muted/30 focus:bg-white focus:border-primary/50 transition-all duration-300"
+              className="pl-10 h-11 rounded-full border-2 border-muted bg-muted/30 focus:bg-background focus:border-primary/50 transition-all duration-300"
               placeholder={currentPage === "products" ? "Search inventory..." : "Search clients..."} 
               value={searchValue}
               onChange={(e) => onSearch(e.target.value)}

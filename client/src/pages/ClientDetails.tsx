@@ -52,7 +52,7 @@ export default function ClientDetails() {
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-border p-6 flex items-center justify-between gap-4">
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border p-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/clients">
             <Button 

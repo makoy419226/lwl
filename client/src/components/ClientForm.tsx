@@ -265,7 +265,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
                 </p>
               </div>
             </div>
-            <div className="bg-white dark:bg-background/50 rounded-md p-3 space-y-1 border">
+            <div className="bg-card rounded-md p-3 space-y-1 border">
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-primary" />
                 <span className="font-medium">{existingClient.name}</span>

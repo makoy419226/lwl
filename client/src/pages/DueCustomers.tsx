@@ -261,7 +261,7 @@ export default function DueCustomers() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-border shadow-sm">
+      <div className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
         <div className="h-20 px-6 flex items-center gap-4">
           <CircleDollarSign className="w-6 h-6 text-destructive" />
           <div>

@@ -15,7 +15,7 @@ export function Header({ onSearch, searchValue }: HeaderProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-border shadow-sm">
+    <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between gap-4">
         {/* Brand */}
         <div className="flex items-center gap-2 mr-4 md:mr-8">
@@ -33,7 +33,7 @@ export function Header({ onSearch, searchValue }: HeaderProps) {
             <Search className="w-5 h-5" />
           </div>
           <Input 
-            className="pl-10 h-11 rounded-full border-2 border-muted bg-muted/30 focus:bg-white focus:border-primary/50 transition-all duration-300"
+            className="pl-10 h-11 rounded-full border-2 border-muted bg-muted/30 focus:bg-background focus:border-primary/50 transition-all duration-300"
             placeholder="Search inventory..." 
             value={searchValue}
             onChange={(e) => onSearch(e.target.value)}
