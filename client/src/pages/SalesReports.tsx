@@ -167,25 +167,56 @@ export default function SalesReports() {
       });
     }
     
+    // Format date and time for Excel
+    const formatDateTime = (dateStr: string) => {
+      const d = new Date(dateStr);
+      return d.toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+    
+    // Combine and sort all transactions by date
+    const allTx = [
+      ...data.bills.map(b => ({ ...b, txType: 'Bill' })),
+      ...data.deposits.map(d => ({ ...d, txType: 'Deposit' }))
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
     const summaryData = [
       ['Liquid Washes Laundry - Sales Report'],
       [`Period: ${periodLabel}`],
-      [`Generated: ${new Date().toLocaleString()}`],
+      [`Generated: ${new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}`],
       [],
       ['Summary'],
       ['Total Bills', `${data.totalBills.toFixed(2)} AED`],
       ['Total Deposits', `${data.totalDeposits.toFixed(2)} AED`],
-      ['Net Collection', `${data.totalDeposits.toFixed(2)} AED`],
-      ['Total Transactions', data.bills.length + data.deposits.length],
+      ['Net Collection', `${(data.totalDeposits - data.totalBills).toFixed(2)} AED`],
+      ['Total Transactions', allTx.length],
       [],
       ['All Transactions'],
       ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Date'],
-      ...data.bills.map(b => ['Bill', b.clientName, b.clientPhone || '', b.description || '', parseFloat(b.amount).toFixed(2), new Date(b.date).toLocaleDateString()]),
-      ...data.deposits.map(d => ['Deposit', d.clientName, d.clientPhone || '', d.description || '', parseFloat(d.amount).toFixed(2), new Date(d.date).toLocaleDateString()]),
+      ...allTx.map(tx => [
+        tx.txType,
+        tx.clientName || '',
+        tx.clientPhone || '',
+        tx.description || '',
+        parseFloat(tx.amount || "0").toFixed(2),
+        formatDateTime(tx.date)
+      ]),
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(summaryData);
-    ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 12 }];
+    ws['!cols'] = [
+      { wch: 10 },  // Type
+      { wch: 25 },  // Client
+      { wch: 15 },  // Phone
+      { wch: 35 },  // Description
+      { wch: 15 },  // Amount
+      { wch: 18 },  // Date
+    ];
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Sales Report');

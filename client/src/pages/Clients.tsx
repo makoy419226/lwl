@@ -663,13 +663,12 @@ export default function Clients() {
   };
 
   const downloadClientExcel = async (client: Client) => {
-    const totalBill = getClientTotalBills(client);
-    const totalDeposit = getClientTotalDeposits(client);
-    const balance = getClientBalanceDue(client);
-
     // Fetch all transactions for this client
     let transactionData: any[][] = [];
     let runningBalance = 0;
+    let totalBillsFromTx = 0;
+    let totalDepositsFromTx = 0;
+    
     try {
       const res = await fetch(`/api/clients/${client.id}/transactions`);
       if (res.ok) {
@@ -678,6 +677,17 @@ export default function Clients() {
           const sortedTransactions = [...clientTransactions].sort(
             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
           );
+          
+          // Calculate totals from transactions
+          sortedTransactions.forEach(t => {
+            const amt = parseFloat(t.amount || "0");
+            if (t.type === "deposit") {
+              totalDepositsFromTx += amt;
+            } else {
+              totalBillsFromTx += amt;
+            }
+          });
+          
           transactionData = sortedTransactions.map((t, idx) => {
             if (t.type === "deposit") {
               runningBalance += parseFloat(t.amount);
@@ -699,6 +709,9 @@ export default function Clients() {
       console.log("Could not fetch transactions");
     }
 
+    // Calculate balance due (negative runningBalance means customer owes money)
+    const balanceDue = Math.abs(runningBalance) * (runningBalance < 0 ? 1 : -1);
+
     // Build clean data structure
     const data: any[][] = [];
     
@@ -714,11 +727,11 @@ export default function Clients() {
     data.push(["Account Number", client.billNumber || "-"]);
     data.push([""]);
     
-    // Financial Summary
+    // Financial Summary - using transaction-based calculations
     data.push(["FINANCIAL SUMMARY"]);
-    data.push(["Total Bills", `${totalBill.toFixed(2)} AED`]);
-    data.push(["Total Payments", `${totalDeposit.toFixed(2)} AED`]);
-    data.push(["Due Balance", `${balance.toFixed(2)} AED`]);
+    data.push(["Total Bills", `${totalBillsFromTx.toFixed(2)} AED`]);
+    data.push(["Total Payments", `${totalDepositsFromTx.toFixed(2)} AED`]);
+    data.push(["Due Balance", `${(totalBillsFromTx - totalDepositsFromTx).toFixed(2)} AED`]);
     data.push([""]);
     
     // Transaction History
@@ -736,12 +749,12 @@ export default function Clients() {
 
     const ws = XLSX.utils.aoa_to_sheet(data);
     ws["!cols"] = [
-      { wch: 20 }, // Column A
-      { wch: 45 }, // Column B
-      { wch: 12 }, // Column C
-      { wch: 45 }, // Column D
-      { wch: 15 }, // Column E
-      { wch: 15 }, // Column F
+      { wch: 8 },  // Column A - #
+      { wch: 20 }, // Column B - Date & Time
+      { wch: 12 }, // Column C - Type
+      { wch: 40 }, // Column D - Description
+      { wch: 15 }, // Column E - Amount
+      { wch: 15 }, // Column F - Balance
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Client Summary");
