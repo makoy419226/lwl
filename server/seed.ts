@@ -802,19 +802,7 @@ export async function seedDatabase() {
     console.log("Default users created: admin, reception1, staff1, driver1");
   }
 
-  // Seed default packing/delivery workers if none exist
-  const existingWorkers = await db.select().from(packingWorkers);
-  if (existingWorkers.length === 0) {
-    console.log("Seeding default workers...");
-
-    const hashedPin = await bcrypt.hash("44444", 10);
-    await db.insert(packingWorkers).values({
-      name: "Delivery Driver",
-      pin: hashedPin,
-      active: true,
-    });
-    console.log("Default packing worker created with PIN: 44444");
-  }
+  // No default packing workers - staff users handle packing by default
 }
 
 // Export default users for reset functionality

@@ -1056,16 +1056,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async resetPackingWorkersToDefaults(): Promise<void> {
-    // Delete all packing workers
+    // Delete all packing workers - staff users handle packing by default
     await db.delete(packingWorkers);
-    
-    // Insert default packing worker with hashed PIN
-    const hashedPin = await bcrypt.hash("44444", 10);
-    await db.insert(packingWorkers).values({
-      name: "Delivery Driver",
-      pin: hashedPin,
-      active: true,
-    });
   }
 
   async getPackingWorkers(): Promise<PackingWorker[]> {
