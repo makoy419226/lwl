@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -205,6 +205,16 @@ export default function Incidents() {
     return staff;
   }, [users, workers, drivers]);
 
+  // Helper function to extract price from item string like "3 x White Shirt (AED 45.00)"
+  const extractItemPrice = (itemString: string): number => {
+    // Match patterns like "(AED 45.00)" or "AED 45.00" at end
+    const match = itemString.match(/\(?\s*AED\s*([\d,.]+)\s*\)?$/i);
+    if (match) {
+      return parseFloat(match[1].replace(',', '')) || 0;
+    }
+    return 0;
+  };
+
   interface ActiveOrder {
     id: number;
     orderNumber: string;
@@ -219,6 +229,26 @@ export default function Incidents() {
   const { data: activeOrders } = useQuery<ActiveOrder[]>({
     queryKey: ["/api/orders/active-with-clients"],
   });
+
+  // Update maxRefundAmount when selected items change
+  useEffect(() => {
+    if (formData.itemName && selectedItemIndices.length > 0) {
+      const items = formData.itemName.split(",").map(item => item.trim());
+      const selectedTotal = selectedItemIndices.reduce((sum, idx) => {
+        if (idx < items.length) {
+          return sum + extractItemPrice(items[idx]);
+        }
+        return sum;
+      }, 0);
+      setMaxRefundAmount(selectedTotal);
+    } else if (formData.orderNumber && activeOrders) {
+      // If no items selected, use order total
+      const order = activeOrders.find(o => o.orderNumber === formData.orderNumber);
+      setMaxRefundAmount(order ? parseFloat(order.totalAmount) || 0 : 0);
+    } else {
+      setMaxRefundAmount(0);
+    }
+  }, [selectedItemIndices, formData.itemName, formData.orderNumber, activeOrders]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -503,7 +533,6 @@ export default function Incidents() {
                 customerAddress: order.customerAddress,
                 itemName: order.items || "",
               }));
-              setMaxRefundAmount(parseFloat(order.totalAmount) || 0);
               setSelectedItemIndices([]);
             } else {
               setFormData(prev => ({
@@ -514,7 +543,6 @@ export default function Incidents() {
                 customerAddress: "",
                 itemName: "",
               }));
-              setMaxRefundAmount(0);
               setSelectedItemIndices([]);
             }
           }}
