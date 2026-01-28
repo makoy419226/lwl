@@ -80,6 +80,7 @@ export default function Clients() {
   );
   const [billAmount, setBillAmount] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
+  const [depositPaymentMethod, setDepositPaymentMethod] = useState("cash");
   const [billDescription, setBillDescription] = useState("");
   const [depositDescription, setDepositDescription] = useState("");
   const [filterFromDate, setFilterFromDate] = useState("");
@@ -360,14 +361,17 @@ export default function Clients() {
       clientId,
       amount,
       description,
+      paymentMethod,
     }: {
       clientId: number;
       amount: string;
       description: string;
+      paymentMethod: string;
     }) => {
       return apiRequest("POST", `/api/clients/${clientId}/deposit`, {
         amount,
         description,
+        paymentMethod,
       });
     },
     onSuccess: () => {
@@ -1234,6 +1238,19 @@ export default function Clients() {
                   onChange={(e) => setDepositAmount(e.target.value)}
                   data-testid="input-deposit-amount"
                 />
+                <Select
+                  value={depositPaymentMethod}
+                  onValueChange={setDepositPaymentMethod}
+                >
+                  <SelectTrigger data-testid="select-deposit-payment-method">
+                    <SelectValue placeholder="Payment Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="bank">Bank</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Input
                   placeholder="Description (optional)"
                   value={depositDescription}
@@ -1248,6 +1265,7 @@ export default function Clients() {
                         clientId: transactionClient.id,
                         amount: depositAmount,
                         description: depositDescription,
+                        paymentMethod: depositPaymentMethod,
                       });
                     }
                   }}

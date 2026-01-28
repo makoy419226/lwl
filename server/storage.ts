@@ -106,6 +106,7 @@ export interface IStorage {
     clientId: number,
     amount: string,
     description?: string,
+    paymentMethod?: string,
   ): Promise<ClientTransaction>;
   deleteClientTransaction(transactionId: number): Promise<void>;
   getOrders(search?: string): Promise<Order[]>;
@@ -741,6 +742,7 @@ export class DatabaseStorage implements IStorage {
     clientId: number,
     amount: string,
     description?: string,
+    paymentMethod?: string,
   ): Promise<ClientTransaction> {
     const client = await this.getClient(clientId);
     if (!client) throw new Error("Client not found");
@@ -763,6 +765,7 @@ export class DatabaseStorage implements IStorage {
       description: description || "Deposit received",
       date: new Date(),
       runningBalance: newBalance.toFixed(2),
+      paymentMethod: paymentMethod || "cash",
     });
   }
 

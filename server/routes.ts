@@ -1057,7 +1057,7 @@ export async function registerRoutes(
 
   app.post("/api/clients/:id/deposit", async (req, res) => {
     try {
-      const { amount, description } = req.body;
+      const { amount, description, paymentMethod } = req.body;
       const clientId = Number(req.params.id);
       if (isNaN(clientId)) {
         return res.status(400).json({ message: "Invalid client ID" });
@@ -1066,6 +1066,7 @@ export async function registerRoutes(
         clientId,
         amount,
         description,
+        paymentMethod || "cash",
       );
       res.status(201).json(transaction);
     } catch (err: any) {
