@@ -1982,8 +1982,8 @@ export default function Clients() {
                           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                         );
                         let runningBalance = 0;
-                        const ROWS_PER_PAGE_FIRST = 8;
-                        const ROWS_PER_PAGE = 15;
+                        const ROWS_PER_PAGE_FIRST = 5;
+                        const ROWS_PER_PAGE = 12;
                         
                         const allRows = sortedTx.map((tx, index) => {
                           if (tx.type === "deposit") {
@@ -1992,7 +1992,7 @@ export default function Clients() {
                             runningBalance -= parseFloat(tx.amount);
                           }
                           const desc = tx.description || "-";
-                          const truncatedDesc = desc.length > 35 ? desc.substring(0, 35) + "..." : desc;
+                          const truncatedDesc = desc.length > 25 ? desc.substring(0, 25) + "..." : desc;
                           const typeLabel = tx.type === "bill" ? "Bill" : tx.type === "deposit" ? "Deposit" : "Payment";
                           const typeColor = tx.type === "bill" ? "#dc2626" : "#16a34a";
                           const typeBg = tx.type === "bill" ? "#fee2e2" : "#dcfce7";
@@ -2085,9 +2085,10 @@ export default function Clients() {
                                 .client-info { margin: 8px 0; padding: 8px; background: #f8f9fa; border-radius: 4px; }
                                 .client-name { font-size: 12px; font-weight: bold; }
                                 .client-details { font-size: 10px; color: #666; margin-top: 2px; }
-                                table { width: 100%; border-collapse: collapse; font-size: 9px; }
-                                th, td { padding: 5px 4px; border-bottom: 1px solid #ddd; }
+                                table { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
+                                th, td { padding: 4px 3px; border-bottom: 1px solid #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                                 th { background: #1e40af; color: white; font-size: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                tr { height: 28px; max-height: 28px; }
                                 .footer { margin-top: 15px; text-align: center; font-size: 8px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
                                 @media print {
                                   .page { page-break-after: always; }
