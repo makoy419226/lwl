@@ -2120,20 +2120,27 @@ export default function Products() {
                 </div>
                 <div>
                   <Label className="text-xs font-semibold">Phone Number <span className="text-destructive">*</span></Label>
-                  <div className="flex mt-1">
-                    <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-xs h-8">
-                      +971
-                    </span>
-                    <Input
-                      className={`h-8 text-xs rounded-l-none ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
-                      placeholder="XXXXXXXXX"
-                      value={walkInPhone.replace(/^\+971/, "")}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "");
-                        setWalkInPhone("+971" + digits);
-                      }}
-                      data-testid="popup-input-walkin-phone"
-                    />
+                  <div className="flex flex-col gap-1 mt-1">
+                    <div className="flex">
+                      <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-xs h-8">
+                        +971
+                      </span>
+                      <Input
+                        className={`h-8 text-xs rounded-l-none ${walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
+                        placeholder="XXXXXXXXXX"
+                        value={walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 10)}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          setWalkInPhone("+971" + digits);
+                        }}
+                        inputMode="numeric"
+                        maxLength={10}
+                        data-testid="popup-input-walkin-phone"
+                      />
+                    </div>
+                    {walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 10 && (
+                      <p className="text-xs text-green-600 font-medium">10 digits - limit reached</p>
+                    )}
                   </div>
                 </div>
                 {clientMatch && (
