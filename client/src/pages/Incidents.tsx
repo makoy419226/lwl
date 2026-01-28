@@ -385,52 +385,37 @@ export default function Incidents() {
       <div className="p-3 bg-muted/50 rounded-lg border space-y-3">
         <Label className="text-sm font-medium">Select Active Order</Label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
           <Input
-            placeholder="Type order number to search..."
-            value={orderSearchTerm}
+            placeholder="Type order number or select..."
+            value={orderSearchTerm || formData.orderNumber}
             onChange={(e) => setOrderSearchTerm(e.target.value)}
-            className="pl-9 mb-2"
+            className="pl-9 pr-8"
             data-testid="input-order-search"
           />
+          {formData.orderNumber && (
+            <button
+              type="button"
+              onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  orderNumber: "",
+                  customerName: "",
+                  customerPhone: "",
+                  customerAddress: "",
+                  itemName: "",
+                }));
+                setOrderSearchTerm("");
+                setMaxRefundAmount(0);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <XCircle className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        <Select
-          value={formData.orderNumber || ""}
-          onValueChange={(value) => {
-            if (value === "none") {
-              setFormData(prev => ({
-                ...prev,
-                orderNumber: "",
-                customerName: "",
-                customerPhone: "",
-                customerAddress: "",
-              }));
-              setFoundOrder(null);
-              setOrderItems([]);
-              setSelectedItemIndices([]);
-              setMaxRefundAmount(0);
-              return;
-            }
-            const selectedOrder = activeOrders?.find(o => o.orderNumber === value);
-            if (selectedOrder) {
-              setFormData(prev => ({
-                ...prev,
-                orderNumber: selectedOrder.orderNumber,
-                customerName: selectedOrder.customerName,
-                customerPhone: selectedOrder.customerPhone,
-                customerAddress: selectedOrder.customerAddress,
-                itemName: selectedOrder.items || "",
-              }));
-              setMaxRefundAmount(parseFloat(selectedOrder.totalAmount) || 0);
-              setOrderSearchTerm("");
-            }
-          }}
-        >
-          <SelectTrigger data-testid="select-incident-order">
-            <SelectValue placeholder="Select an order..." />
-          </SelectTrigger>
-          <SelectContent className="max-h-60 overflow-y-auto">
-            <SelectItem value="none">-- No Order Selected --</SelectItem>
+        {(orderSearchTerm || !formData.orderNumber) && (
+          <div className="border rounded-md max-h-48 overflow-y-auto bg-background">
             {activeOrders
               ?.filter(order => 
                 orderSearchTerm === "" || 
@@ -438,19 +423,42 @@ export default function Incidents() {
                 order.customerName.toLowerCase().includes(orderSearchTerm.toLowerCase())
               )
               .map((order) => (
-              <SelectItem key={order.id} value={order.orderNumber}>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono">{order.orderNumber}</span>
-                  <span className="text-muted-foreground">-</span>
-                  <span>{order.customerName}</span>
-                  <Badge className={`text-xs ml-2 ${getStatusBadgeColor(order.status)}`}>
-                    {order.status}
-                  </Badge>
-                </div>
-              </SelectItem>
+              <div 
+                key={order.id}
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    orderNumber: order.orderNumber,
+                    customerName: order.customerName,
+                    customerPhone: order.customerPhone,
+                    customerAddress: order.customerAddress,
+                    itemName: order.items || "",
+                  }));
+                  setMaxRefundAmount(parseFloat(order.totalAmount) || 0);
+                  setOrderSearchTerm("");
+                }}
+                className="flex items-center gap-2 p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                data-testid={`order-option-${order.id}`}
+              >
+                <span className="font-mono text-sm">{order.orderNumber}</span>
+                <span className="text-muted-foreground">-</span>
+                <span className="text-sm">{order.customerName}</span>
+                <Badge className={`text-xs ml-auto ${getStatusBadgeColor(order.status)}`}>
+                  {order.status}
+                </Badge>
+              </div>
             ))}
-          </SelectContent>
-        </Select>
+            {activeOrders?.filter(order => 
+              orderSearchTerm === "" || 
+              order.orderNumber.toLowerCase().includes(orderSearchTerm.toLowerCase()) ||
+              order.customerName.toLowerCase().includes(orderSearchTerm.toLowerCase())
+            ).length === 0 && (
+              <div className="p-3 text-center text-muted-foreground text-sm">
+                No orders found
+              </div>
+            )}
+          </div>
+        )}
         {formData.orderNumber && formData.itemName && (
           <div className="mt-2 p-3 bg-muted/50 rounded-md border">
             <Label className="text-xs text-muted-foreground mb-2 block">Order Items:</Label>
