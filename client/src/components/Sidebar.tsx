@@ -243,15 +243,20 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
               <Button
                 variant="outline"
                 size="icon"
-                className="h-11 w-11 touch-manipulation"
+                className="h-11 w-11 touch-manipulation relative overflow-hidden"
                 onClick={toggleTheme}
                 data-testid="button-theme-toggle"
               >
-                {theme === "light" ? (
-                  <Moon className="w-5 h-5" />
-                ) : (
-                  <Sun className="w-5 h-5" />
-                )}
+                <Sun className={`w-5 h-5 absolute transition-all duration-300 ${
+                  theme === "dark" 
+                    ? "rotate-0 scale-100 opacity-100" 
+                    : "rotate-90 scale-0 opacity-0"
+                }`} />
+                <Moon className={`w-5 h-5 absolute transition-all duration-300 ${
+                  theme === "light" 
+                    ? "rotate-0 scale-100 opacity-100" 
+                    : "-rotate-90 scale-0 opacity-0"
+                }`} />
               </Button>
             </div>
           </div>
