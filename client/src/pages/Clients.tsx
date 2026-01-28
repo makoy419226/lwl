@@ -748,12 +748,14 @@ export default function Clients() {
     }
     data.push([""]);
     
-    // Summary at bottom (like sales report)
+    // Summary at bottom
+    const unpaidBillsAmount = Math.max(0, totalBillsFromTx - totalBillsPaid);
+    const creditsAvailable = Math.max(0, totalDepositsFromTx - (totalBillsPaid - Math.min(totalBillsPaid, totalBillsFromTx)));
+    
     data.push(["Summary"]);
-    data.push(["Total Bills", `${totalBillsFromTx.toFixed(2)} AED`]);
-    data.push(["Total Payments", `${(totalDepositsFromTx + totalBillsPaid).toFixed(2)} AED`]);
-    data.push(["Total Credits Received", `${totalDepositsFromTx.toFixed(2)} AED`]);
-    data.push(["Due Balance", `${(totalBillsFromTx - totalBillsPaid - totalDepositsFromTx).toFixed(2)} AED`]);
+    data.push(["Unpaid Bills", `${unpaidBillsAmount.toFixed(2)} AED`]);
+    data.push(["Total Paid", `${totalBillsPaid.toFixed(2)} AED`]);
+    data.push(["Credits Available", `${creditsAvailable.toFixed(2)} AED`]);
 
     const ws = XLSX.utils.aoa_to_sheet(data);
     ws["!cols"] = [
