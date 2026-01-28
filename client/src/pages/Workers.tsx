@@ -818,7 +818,6 @@ export default function Workers() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Username</TableHead>
                               <TableHead>Name</TableHead>
                               <TableHead className="text-center">
                                 <div className="flex items-center justify-center gap-1">
@@ -847,8 +846,7 @@ export default function Workers() {
                               const unpaidBills = userBills.filter(b => !b.isPaid);
                               return (
                                 <TableRow key={user.id}>
-                                  <TableCell className="font-medium">{user.username}</TableCell>
-                                  <TableCell>{user.name || "-"}</TableCell>
+                                  <TableCell className="font-medium">{user.name || "-"}</TableCell>
                                   <TableCell className="text-center">
                                     <Badge variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300">
                                       {userBills.length}
