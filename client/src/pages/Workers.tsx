@@ -543,7 +543,7 @@ export default function Workers() {
         password: "",
         name: "",
         email: "",
-        role: "cashier",
+        role: "reception",
         pin: "",
       });
       toast({ title: "User Created", description: "New user account added" });
@@ -569,7 +569,7 @@ export default function Workers() {
         password: "",
         name: "",
         email: "",
-        role: "cashier",
+        role: "reception",
         pin: "",
       });
       toast({ title: "User Updated", description: "User details updated" });

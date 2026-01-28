@@ -406,7 +406,7 @@ export async function registerRoutes(
         .values({
           username,
           password,
-          role: role || "cashier",
+          role: role || "reception",
           name,
           email: email || null,
           pin: pin || "12345",
@@ -1386,8 +1386,8 @@ export async function registerRoutes(
       } = req.body;
       
       // Validate that the creator has permission to create bills
-      // Only admin, reception, and cashier roles can create bills
-      const allowedBillCreatorRoles = ["admin", "reception", "cashier"];
+      // Only admin and reception roles can create bills
+      const allowedBillCreatorRoles = ["admin", "reception"];
       
       // Check if createdBy matches a user with a non-allowed role
       if (createdBy) {
@@ -1398,7 +1398,7 @@ export async function registerRoutes(
         );
         if (matchedUser && !allowedBillCreatorRoles.includes(matchedUser.role?.toLowerCase() || "")) {
           return res.status(403).json({ 
-            message: "This PIN has no billing rights. Use admin or reception/cashier PIN only." 
+            message: "This PIN has no billing rights. Use admin or reception PIN only." 
           });
         }
       }
@@ -1410,14 +1410,14 @@ export async function registerRoutes(
       );
       if (isPacker) {
         return res.status(403).json({ 
-          message: "This PIN has no billing rights. Use admin or reception/cashier PIN only." 
+          message: "This PIN has no billing rights. Use admin or reception PIN only." 
         });
       }
       
       // Also validate creatorRole if provided
       if (creatorRole && !allowedBillCreatorRoles.includes(creatorRole.toLowerCase())) {
         return res.status(403).json({ 
-          message: "This PIN has no billing rights. Use admin or reception/cashier PIN only." 
+          message: "This PIN has no billing rights. Use admin or reception PIN only." 
         });
       }
 
@@ -2393,7 +2393,7 @@ export async function registerRoutes(
   });
 
   // Verify staff user PIN (for bill creation, etc.) - Admin PIN works as universal PIN
-  // Only allows admin, reception, and cashier roles - NOT packing staff
+  // Only allows admin and reception roles - NOT packing staff
   app.post("/api/workers/verify-pin", async (req, res) => {
     const { pin } = req.body;
     if (!pin || !/^\d{5}$/.test(pin)) {
@@ -2411,12 +2411,12 @@ export async function registerRoutes(
     
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      // Only allow admin, reception, and cashier roles for bill creation
-      const allowedRoles = ["admin", "reception", "cashier"];
+      // Only allow admin and reception roles for bill creation
+      const allowedRoles = ["admin", "reception"];
       if (!allowedRoles.includes(user.role?.toLowerCase() || "")) {
         return res.status(403).json({ 
           success: false, 
-          message: "Only admin or reception/cashier can create orders with bills" 
+          message: "Only admin or reception can create orders with bills" 
         });
       }
       res.json({ success: true, worker: { id: user.id, name: user.name || user.username, role: user.role } });
@@ -2441,7 +2441,7 @@ export async function registerRoutes(
       return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin" } });
     }
     
-    // Check for user PIN (admin, reception, cashier, staff roles)
+    // Check for user PIN (admin, reception, staff roles)
     const user = await storage.verifyUserPin(pin);
     if (user) {
       return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
@@ -2503,7 +2503,7 @@ export async function registerRoutes(
       return res.json({ success: true, user: { id: adminUser?.id || 0, name: "Admin", type: "admin" } });
     }
     
-    // Check for user PIN (admin, reception, cashier, staff roles)
+    // Check for user PIN (admin, reception, staff roles)
     const user = await storage.verifyUserPin(pin);
     if (user) {
       return res.json({ success: true, user: { id: user.id, name: user.name || user.username, type: "user" } });
