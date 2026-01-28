@@ -1951,8 +1951,15 @@ export async function registerRoutes(
     }
   });
 
-  // Admin email for daily reports
-  const ADMIN_REPORT_EMAIL = process.env.ADMIN_REPORT_EMAIL || "idusma0010@gmail.com";
+  // Get admin email dynamically from database for reports
+  async function getAdminReportEmail(): Promise<string> {
+    try {
+      const adminUser = await storage.getUserByUsername("admin");
+      return adminUser?.email || process.env.ADMIN_REPORT_EMAIL || "idusma0010@gmail.com";
+    } catch {
+      return process.env.ADMIN_REPORT_EMAIL || "idusma0010@gmail.com";
+    }
+  }
 
   // Generate daily sales data
   async function generateDailySalesData(date: Date): Promise<DailySalesData> {
@@ -2027,11 +2034,12 @@ export async function registerRoutes(
     try {
       const reportDate = date ? new Date(date) : new Date();
       const salesData = await generateDailySalesData(reportDate);
-      await sendDailySalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
+      const adminEmail = await getAdminReportEmail();
+      await sendDailySalesReportEmailSMTP(adminEmail, salesData);
       
       res.json({ 
         success: true, 
-        message: `Daily sales report sent to ${ADMIN_REPORT_EMAIL}`,
+        message: `Daily sales report sent to ${adminEmail}`,
         data: salesData
       });
     } catch (err: any) {
@@ -2043,9 +2051,10 @@ export async function registerRoutes(
     }
   });
 
-  // Get admin report email setting
+  // Get admin report email setting (dynamic from database)
   app.get("/api/admin/report-email", async (req, res) => {
-    res.json({ email: ADMIN_REPORT_EMAIL });
+    const email = await getAdminReportEmail();
+    res.json({ email });
   });
 
   // Generate sales data for a date range
@@ -2154,7 +2163,8 @@ export async function registerRoutes(
       }
       
       const salesData = await generateSalesReportData(startDate, endDate, reportPeriod);
-      await sendSalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
+      const adminEmail = await getAdminReportEmail();
+      await sendSalesReportEmailSMTP(adminEmail, salesData);
       
       const periodLabels: Record<ReportPeriod, string> = {
         daily: 'Daily',
@@ -2165,7 +2175,7 @@ export async function registerRoutes(
       
       res.json({ 
         success: true, 
-        message: `${periodLabels[reportPeriod]} sales report sent to ${ADMIN_REPORT_EMAIL}`,
+        message: `${periodLabels[reportPeriod]} sales report sent to ${adminEmail}`,
         data: salesData
       });
     } catch (err: any) {

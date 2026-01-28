@@ -768,7 +768,7 @@ export default function AdminSettings() {
               Sales Reports
             </CardTitle>
             <CardDescription>
-              Send sales reports to liquidewashesruwais@gmail.com. Reports are sent automatically: Daily at 11:59 PM, Weekly every Saturday, Monthly on the last day, and Yearly on December 31st.
+              Send sales reports to {adminAccount?.email || "admin email"}. Reports are sent automatically: Daily at 11:59 PM, Weekly every Saturday, Monthly on the last day, and Yearly on December 31st.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -822,7 +822,7 @@ export default function AdminSettings() {
                         Send {periodLabels[reportPeriod]} Sales Report
                       </DialogTitle>
                       <DialogDescription>
-                        This will send the {periodLabels[reportPeriod].toLowerCase()} sales report ({periodDescriptions[reportPeriod].toLowerCase()}) to liquidewashesruwais@gmail.com. Enter the admin password to confirm.
+                        This will send the {periodLabels[reportPeriod].toLowerCase()} sales report ({periodDescriptions[reportPeriod].toLowerCase()}) to {adminAccount?.email || "admin email"}. Enter the admin password to confirm.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">

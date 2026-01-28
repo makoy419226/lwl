@@ -99,8 +99,15 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 
-  // Daily sales report scheduler
-  const ADMIN_REPORT_EMAIL = process.env.ADMIN_REPORT_EMAIL || "idusma0010@gmail.com";
+  // Daily sales report scheduler - fetch admin email dynamically from database
+  async function getAdminReportEmail(): Promise<string> {
+    try {
+      const adminUser = await storage.getUserByUsername("admin");
+      return adminUser?.email || process.env.ADMIN_REPORT_EMAIL || "idusma0010@gmail.com";
+    } catch {
+      return process.env.ADMIN_REPORT_EMAIL || "idusma0010@gmail.com";
+    }
+  }
   
   async function generateDailySalesData(date: Date): Promise<DailySalesData> {
     const orders = await storage.getOrders();
@@ -167,8 +174,9 @@ app.use((req, res, next) => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const salesData = await generateDailySalesData(yesterday);
-      await sendDailySalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
-      log(`Daily sales report sent to ${ADMIN_REPORT_EMAIL}`, "scheduler");
+      const adminEmail = await getAdminReportEmail();
+      await sendDailySalesReportEmailSMTP(adminEmail, salesData);
+      log(`Daily sales report sent to ${adminEmail}`, "scheduler");
     } catch (err: any) {
       log(`Failed to send daily report: ${err.message}`, "scheduler");
     }
@@ -203,7 +211,9 @@ app.use((req, res, next) => {
 
   // Start the daily scheduler
   scheduleNextDailyReport();
-  log(`Daily sales report scheduler started (will send to ${ADMIN_REPORT_EMAIL} at 11:59 PM UAE time)`, "scheduler");
+  getAdminReportEmail().then(email => {
+    log(`Daily sales report scheduler started (will send to ${email} at 11:59 PM UAE time)`, "scheduler");
+  });
 
   // Generate sales data for any date range
   async function generateSalesReportData(startDate: Date, endDate: Date, period: ReportPeriod): Promise<SalesReportData> {
@@ -284,8 +294,9 @@ app.use((req, res, next) => {
       endOfWeek.setHours(23, 59, 59, 999);
       
       const salesData = await generateSalesReportData(startOfWeek, endOfWeek, 'weekly');
-      await sendSalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
-      log(`Weekly sales report sent to ${ADMIN_REPORT_EMAIL}`, "scheduler");
+      const adminEmail = await getAdminReportEmail();
+      await sendSalesReportEmailSMTP(adminEmail, salesData);
+      log(`Weekly sales report sent to ${adminEmail}`, "scheduler");
     } catch (err: any) {
       log(`Failed to send weekly report: ${err.message}`, "scheduler");
     }
@@ -301,8 +312,9 @@ app.use((req, res, next) => {
       endOfMonth.setHours(23, 59, 59, 999);
       
       const salesData = await generateSalesReportData(startOfMonth, endOfMonth, 'monthly');
-      await sendSalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
-      log(`Monthly sales report sent to ${ADMIN_REPORT_EMAIL}`, "scheduler");
+      const adminEmail = await getAdminReportEmail();
+      await sendSalesReportEmailSMTP(adminEmail, salesData);
+      log(`Monthly sales report sent to ${adminEmail}`, "scheduler");
     } catch (err: any) {
       log(`Failed to send monthly report: ${err.message}`, "scheduler");
     }
@@ -318,8 +330,9 @@ app.use((req, res, next) => {
       endOfYear.setHours(23, 59, 59, 999);
       
       const salesData = await generateSalesReportData(startOfYear, endOfYear, 'yearly');
-      await sendSalesReportEmailSMTP(ADMIN_REPORT_EMAIL, salesData);
-      log(`Yearly sales report sent to ${ADMIN_REPORT_EMAIL}`, "scheduler");
+      const adminEmail = await getAdminReportEmail();
+      await sendSalesReportEmailSMTP(adminEmail, salesData);
+      log(`Yearly sales report sent to ${adminEmail}`, "scheduler");
     } catch (err: any) {
       log(`Failed to send yearly report: ${err.message}`, "scheduler");
     }
