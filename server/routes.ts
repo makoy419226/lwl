@@ -1124,6 +1124,7 @@ export async function registerRoutes(
             customerName: clientInfo.name,
             customerPhone: clientInfo.phone,
             customerAddress: clientInfo.address,
+            items: order.items || "",
           };
         })
       );

@@ -69,6 +69,7 @@ export default function Incidents() {
     customerName: string;
     customerPhone: string;
     customerAddress: string;
+    items: string;
   }
 
   const { data: activeOrders } = useQuery<ActiveOrder[]>({
@@ -357,9 +358,8 @@ export default function Incidents() {
                 customerName: selectedOrder.customerName,
                 customerPhone: selectedOrder.customerPhone,
                 customerAddress: selectedOrder.customerAddress,
+                itemName: selectedOrder.items || "",
               }));
-              setOrderLookupNumber(selectedOrder.orderNumber);
-              lookupOrder();
             }
           }}
         >
@@ -382,101 +382,6 @@ export default function Incidents() {
             ))}
           </SelectContent>
         </Select>
-        {formData.orderNumber && (
-          <div className="text-xs text-muted-foreground space-y-1 p-2 bg-background rounded border">
-            <div><strong>Customer:</strong> {formData.customerName}</div>
-            {formData.customerPhone && <div><strong>Phone:</strong> {formData.customerPhone}</div>}
-            {formData.customerAddress && <div><strong>Address:</strong> {formData.customerAddress}</div>}
-          </div>
-        )}
-        {foundOrder && orderItems.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Select items from order <span className="font-mono font-bold">{foundOrder.orderNumber}</span> (select multiple):
-            </p>
-            <div className="max-h-32 overflow-y-auto border rounded-md">
-              {orderItems.map((item, idx) => (
-                <div 
-                  key={idx}
-                  className={`flex items-center gap-3 p-2 cursor-pointer border-b last:border-b-0 hover-elevate ${selectedItemIndices.includes(idx) ? 'bg-primary/10' : ''}`}
-                  onClick={() => toggleOrderItem(idx)}
-                  data-testid={`incident-item-select-${idx}`}
-                >
-                  <Checkbox 
-                    checked={selectedItemIndices.includes(idx)}
-                    onCheckedChange={() => toggleOrderItem(idx)}
-                    data-testid={`incident-checkbox-item-${idx}`}
-                  />
-                  <div className="flex-1">
-                    <span className="font-medium">{item.name}</span>
-                    <span className="text-muted-foreground ml-2">x{item.quantity}</span>
-                  </div>
-                  <Badge variant="outline">AED {(item.price * item.quantity).toFixed(2)}</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {foundOrder && orderItems.length === 0 && (
-          <p className="text-sm text-amber-600">No items found in this order</p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="customerName">Customer Name *</Label>
-          <Input
-            id="customerName"
-            value={formData.customerName}
-            onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-            placeholder="Enter customer name"
-            data-testid="input-incident-customer-name"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="customerPhone">Customer Phone</Label>
-          <Input
-            id="customerPhone"
-            value={formData.customerPhone}
-            onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-            placeholder="Phone number"
-            data-testid="input-incident-customer-phone"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="customerAddress">Customer Address</Label>
-        <Input
-          id="customerAddress"
-          value={formData.customerAddress}
-          onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-          placeholder="Customer address"
-          data-testid="input-incident-customer-address"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="orderNumber">Order Number</Label>
-          <Input
-            id="orderNumber"
-            value={formData.orderNumber}
-            onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
-            placeholder="Related order #"
-            data-testid="input-incident-order-number"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="itemName">Item Name</Label>
-          <Input
-            id="itemName"
-            value={formData.itemName}
-            onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
-            placeholder="Affected item"
-            data-testid="input-incident-item-name"
-          />
-        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
