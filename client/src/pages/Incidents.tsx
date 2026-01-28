@@ -664,6 +664,7 @@ export default function Incidents() {
                 }
               }}
               placeholder="0.00"
+              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               data-testid="input-incident-refund-amount"
             />
           </div>
