@@ -1099,8 +1099,9 @@ export async function registerRoutes(
   app.get("/api/orders/active-with-clients", async (req, res) => {
     try {
       const allOrders = await storage.getOrders();
-      const activeStatuses = ["pending", "tagging", "packing", "ready"];
-      const activeOrders = allOrders.filter(o => activeStatuses.includes(o.status || ""));
+      // Include "entry" status as well (shows as "Pending" in UI)
+      const activeStatuses = ["entry", "pending", "tagging", "packing", "ready"];
+      const activeOrders = allOrders.filter(o => activeStatuses.includes(o.status || "") && !o.delivered);
       
       // Get client info for each order
       const ordersWithClients = await Promise.all(
