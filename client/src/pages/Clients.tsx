@@ -1982,8 +1982,8 @@ export default function Clients() {
                           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                         );
                         let runningBalance = 0;
-                        const ROWS_PER_PAGE_FIRST = 5;
-                        const ROWS_PER_PAGE = 12;
+                        const ROWS_PER_PAGE_FIRST = 3;
+                        const ROWS_PER_PAGE = 3;
                         
                         const allRows = sortedTx.map((tx, index) => {
                           if (tx.type === "deposit") {
