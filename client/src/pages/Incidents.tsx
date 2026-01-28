@@ -366,7 +366,7 @@ export default function Incidents() {
           <SelectTrigger data-testid="select-incident-order">
             <SelectValue placeholder="Select an order..." />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-60 overflow-y-auto">
             <SelectItem value="none">-- No Order Selected --</SelectItem>
             {activeOrders?.map((order) => (
               <SelectItem key={order.id} value={order.orderNumber}>
