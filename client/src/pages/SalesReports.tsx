@@ -193,12 +193,14 @@ export default function SalesReports() {
       .sort((a, b) => new Date(a.entryDate || 0).getTime() - new Date(b.entryDate || 0).getTime())
       .map(order => {
         const client = allClients?.find(c => c.id === order.clientId);
+        const advanceDeposit = parseFloat(order.paidAmount || "0");
         return [
           order.urgent ? 'Bill (Urgent)' : 'Bill',
           order.customerName || client?.name || 'Walk-in',
           client?.phone || '',
-          `Order #${order.orderNumber || order.id}${order.items ? ` - ${order.items.substring(0, 50)}...` : ''}`,
+          `Order #${order.orderNumber || order.id}`,
           parseFloat(order.totalAmount || "0").toFixed(2),
+          advanceDeposit.toFixed(2),
           formatDateTime(order.entryDate ? String(order.entryDate) : new Date().toISOString())
         ];
       });
@@ -215,19 +217,20 @@ export default function SalesReports() {
       ['Total Orders', allOrdersList.length],
       [],
       ['All Transactions'],
-      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Date'],
+      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Advance Deposit', 'Date'],
       ...allTransactionRows,
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(summaryData);
     
-    // Set column widths - wider for first column to prevent overlap
+    // Set column widths
     ws['!cols'] = [
-      { wch: 18 },  // Type - wider to prevent overlap
-      { wch: 25 },  // Client
+      { wch: 15 },  // Type
+      { wch: 20 },  // Client
       { wch: 18 },  // Phone
-      { wch: 50 },  // Description
+      { wch: 20 },  // Description (Order # only)
       { wch: 15 },  // Amount
+      { wch: 18 },  // Advance Deposit
       { wch: 20 },  // Date
     ];
     
@@ -235,7 +238,7 @@ export default function SalesReports() {
     const headerRow = 11; // Row 12 in 0-indexed is row 11
     const lastRow = headerRow + allTransactionRows.length;
     if (allTransactionRows.length > 0) {
-      ws['!autofilter'] = { ref: `A${headerRow + 1}:F${lastRow + 1}` };
+      ws['!autofilter'] = { ref: `A${headerRow + 1}:G${lastRow + 1}` };
     }
     
     const wb = XLSX.utils.book_new();
