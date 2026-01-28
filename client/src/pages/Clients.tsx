@@ -2024,10 +2024,15 @@ export default function Clients() {
                                 table { width: 100%; border-collapse: collapse; margin-top: 15px; }
                                 th { background: #1e40af; color: white; padding: 10px 8px; text-align: left; font-size: 11px; }
                                 th:nth-child(4), th:nth-child(5) { text-align: right; }
-                                .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 15px; }
+                                tr { page-break-inside: avoid; break-inside: avoid; }
+                                td { word-wrap: break-word; overflow-wrap: break-word; }
+                                thead { display: table-header-group; }
+                                .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 15px; page-break-inside: avoid; }
                                 @media print {
                                   body { padding: 0; }
                                   th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                  tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+                                  thead { display: table-header-group; }
                                 }
                               </style>
                             </head>
