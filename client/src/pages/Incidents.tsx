@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export default function Incidents() {
   const [maxRefundAmount, setMaxRefundAmount] = useState<number>(0);
   const [orderSearchTerm, setOrderSearchTerm] = useState("");
   const [isOrderSearchFocused, setIsOrderSearchFocused] = useState(false);
+  const orderSearchRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -387,13 +388,15 @@ export default function Incidents() {
         <Label className="text-sm font-medium">Select Active Order</Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-          <Input
+          <input
+            ref={orderSearchRef}
+            type="text"
             placeholder="Type order number or select..."
             value={isOrderSearchFocused ? orderSearchTerm : (formData.orderNumber || orderSearchTerm)}
             onChange={(e) => setOrderSearchTerm(e.target.value)}
             onFocus={() => setIsOrderSearchFocused(true)}
             onBlur={() => setTimeout(() => setIsOrderSearchFocused(false), 200)}
-            className="pl-9 pr-8"
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9 pr-8"
             data-testid="input-order-search"
           />
           {formData.orderNumber && (
@@ -428,7 +431,8 @@ export default function Incidents() {
               .map((order) => (
               <div 
                 key={order.id}
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   setFormData(prev => ({
                     ...prev,
                     orderNumber: order.orderNumber,
@@ -439,6 +443,7 @@ export default function Incidents() {
                   }));
                   setMaxRefundAmount(parseFloat(order.totalAmount) || 0);
                   setOrderSearchTerm("");
+                  setIsOrderSearchFocused(false);
                 }}
                 className="flex items-center gap-2 p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
                 data-testid={`order-option-${order.id}`}
