@@ -34,7 +34,7 @@ import {
   type UpdateOrderRequest,
   type User,
 } from "@shared/schema";
-import { eq, ilike, or, desc, and, inArray, sql } from "drizzle-orm";
+import { eq, ilike, or, desc, and, inArray, sql, ne } from "drizzle-orm";
 
 export interface IStorage {
   getProducts(search?: string): Promise<Product[]>;
@@ -122,6 +122,8 @@ export interface IStorage {
   deleteAllBills(): Promise<void>;
   deleteAllClients(): Promise<void>;
   deleteAllIncidents(): Promise<void>;
+  resetUsersToDefaults(): Promise<void>;
+  resetPackingWorkersToDefaults(): Promise<void>;
   getPackingWorkers(): Promise<PackingWorker[]>;
   getPackingWorker(id: number): Promise<PackingWorker | undefined>;
   createPackingWorker(worker: InsertPackingWorker): Promise<PackingWorker>;
@@ -1006,6 +1008,64 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAllIncidents(): Promise<void> {
     await db.delete(incidents);
+  }
+
+  async resetUsersToDefaults(): Promise<void> {
+    // Delete all non-admin users
+    await db.delete(users).where(ne(users.role, 'admin'));
+    
+    // Get admin user to preserve their current settings
+    const [adminUser] = await db.select().from(users).where(eq(users.role, 'admin'));
+    
+    // If admin exists but doesn't have a PIN, set default PIN
+    if (adminUser && !adminUser.pin) {
+      await db.update(users).set({ pin: '00000' }).where(eq(users.id, adminUser.id));
+    }
+    
+    // Insert default non-admin users
+    const defaultUsers = [
+      {
+        username: "reception1",
+        password: "reception1234",
+        role: "reception",
+        name: "Reception",
+        pin: "11111",
+        active: true,
+      },
+      {
+        username: "staff1",
+        password: "staff123",
+        role: "staff",
+        name: "Staff",
+        pin: "22222",
+        active: true,
+      },
+      {
+        username: "driver1",
+        password: "driver123",
+        role: "driver",
+        name: "Driver",
+        pin: "33333",
+        active: true,
+      },
+    ];
+    
+    for (const user of defaultUsers) {
+      await db.insert(users).values(user);
+    }
+  }
+
+  async resetPackingWorkersToDefaults(): Promise<void> {
+    // Delete all packing workers
+    await db.delete(packingWorkers);
+    
+    // Insert default packing worker with hashed PIN
+    const hashedPin = await bcrypt.hash("44444", 10);
+    await db.insert(packingWorkers).values({
+      name: "Packing Staff",
+      pin: hashedPin,
+      active: true,
+    });
   }
 
   async getPackingWorkers(): Promise<PackingWorker[]> {

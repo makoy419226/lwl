@@ -767,20 +767,31 @@ export async function seedDatabase() {
         password: "admin123",
         role: "admin",
         name: "Administrator",
+        pin: "00000",
         active: true,
       },
       {
-        username: "reception",
-        password: "reception123",
+        username: "reception1",
+        password: "reception1234",
         role: "reception",
         name: "Reception",
+        pin: "11111",
         active: true,
       },
       {
-        username: "cashier",
-        password: "cashier123",
-        role: "cashier",
-        name: "Cashier",
+        username: "staff1",
+        password: "staff123",
+        role: "staff",
+        name: "Staff",
+        pin: "22222",
+        active: true,
+      },
+      {
+        username: "driver1",
+        password: "driver123",
+        role: "driver",
+        name: "Driver",
+        pin: "33333",
         active: true,
       },
     ];
@@ -788,7 +799,7 @@ export async function seedDatabase() {
     for (const user of defaultUsers) {
       await db.insert(users).values(user);
     }
-    console.log("Default users created: admin, reception, cashier");
+    console.log("Default users created: admin, reception1, staff1, driver1");
   }
 
   // Seed default packing/delivery workers if none exist
@@ -796,12 +807,48 @@ export async function seedDatabase() {
   if (existingWorkers.length === 0) {
     console.log("Seeding default workers...");
 
-    const hashedPin = await bcrypt.hash("12345", 10);
+    const hashedPin = await bcrypt.hash("44444", 10);
     await db.insert(packingWorkers).values({
-      name: "Delivery Driver",
+      name: "Packing Staff",
       pin: hashedPin,
       active: true,
     });
-    console.log("Default delivery worker created with PIN: 12345");
+    console.log("Default packing worker created with PIN: 44444");
   }
 }
+
+// Export default users for reset functionality
+export const defaultUsers = [
+  {
+    username: "admin",
+    password: "admin123",
+    role: "admin",
+    name: "Administrator",
+    pin: "00000",
+    active: true,
+  },
+  {
+    username: "reception1",
+    password: "reception1234",
+    role: "reception",
+    name: "Reception",
+    pin: "11111",
+    active: true,
+  },
+  {
+    username: "staff1",
+    password: "staff123",
+    role: "staff",
+    name: "Staff",
+    pin: "22222",
+    active: true,
+  },
+  {
+    username: "driver1",
+    password: "driver123",
+    role: "driver",
+    name: "Driver",
+    pin: "33333",
+    active: true,
+  },
+];
