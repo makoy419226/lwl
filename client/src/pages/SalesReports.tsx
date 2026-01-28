@@ -292,16 +292,16 @@ export default function SalesReports() {
       [`Period: ${periodLabel}`],
       [`Generated: ${new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}`],
       [],
+      ['All Transactions'],
+      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Payment Method', 'Date'],
+      ...allTransactionRows,
+      [],
       ['Summary'],
       ['Total Bills', `${totalBills.toFixed(2)} AED`],
       ['Total Paid', `${totalPaid.toFixed(2)} AED`],
       ['Total Pending', `${totalPending.toFixed(2)} AED`],
       ['Total Orders', allOrdersList.length],
       ['Total Credits Received', `${totalCreditsReceived.toFixed(2)} AED`],
-      [],
-      ['All Transactions'],
-      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Payment Method', 'Date'],
-      ...allTransactionRows,
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(summaryData);
@@ -318,7 +318,7 @@ export default function SalesReports() {
     ];
     
     // Add table styling by setting the range for auto-filter (creates table look)
-    const headerRow = 12; // Row 13 in 0-indexed is row 12 (after adding Total Credits Received row)
+    const headerRow = 5; // Row 6 in 0-indexed is row 5 (header row after title and period)
     const lastRow = headerRow + allTransactionRows.length;
     if (allTransactionRows.length > 0) {
       ws['!autofilter'] = { ref: `A${headerRow + 1}:G${lastRow + 1}` };
