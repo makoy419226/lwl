@@ -9,6 +9,7 @@ import { eq, and, gt, ne } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
 import { sendDailySalesReportEmailSMTP, sendSalesReportEmailSMTP, type DailySalesData, type SalesReportData, type ReportPeriod } from "./smtp";
 import PDFDocument from "pdfkit";
+import bcrypt from "bcryptjs";
 
 import { seedDatabase } from "./seed";
 
@@ -444,10 +445,12 @@ export async function registerRoutes(
       if (existingUser.length > 0) {
         return res.status(400).json({ message: "This PIN is used by other user" });
       }
-      // Check if PIN is already used by a worker
-      const existingWorker = await db.select().from(packingWorkers).where(eq(packingWorkers.pin, pin)).limit(1);
-      if (existingWorker.length > 0) {
-        return res.status(400).json({ message: "This PIN is used by other user" });
+      // Check if PIN is already used by a worker (must use bcrypt compare since worker PINs are hashed)
+      const allWorkers = await db.select().from(packingWorkers);
+      for (const worker of allWorkers) {
+        if (worker.pin && await bcrypt.compare(pin, worker.pin)) {
+          return res.status(400).json({ message: "This PIN is used by other user" });
+        }
       }
     }
     
@@ -2310,10 +2313,12 @@ export async function registerRoutes(
         .json({ message: "Name and 5-digit PIN are required" });
     }
     try {
-      // Check if PIN is already used by another worker
-      const existingWorker = await db.select().from(packingWorkers).where(eq(packingWorkers.pin, pin)).limit(1);
-      if (existingWorker.length > 0) {
-        return res.status(400).json({ message: "This PIN is used by other user" });
+      // Check if PIN is already used by another worker (must use bcrypt compare since worker PINs are hashed)
+      const allWorkers = await db.select().from(packingWorkers);
+      for (const worker of allWorkers) {
+        if (worker.pin && await bcrypt.compare(pin, worker.pin)) {
+          return res.status(400).json({ message: "This PIN is used by other user" });
+        }
       }
       // Check if PIN is already used by a user
       const existingUser = await db.select().from(users).where(eq(users.pin, pin)).limit(1);
@@ -2348,9 +2353,11 @@ export async function registerRoutes(
       }
       // Check if PIN is already used by another worker (excluding current worker)
       if (pin) {
-        const existingWorker = await db.select().from(packingWorkers).where(and(eq(packingWorkers.pin, pin), ne(packingWorkers.id, workerId))).limit(1);
-        if (existingWorker.length > 0) {
-          return res.status(400).json({ message: "This PIN is used by other user" });
+        const allWorkers = await db.select().from(packingWorkers).where(ne(packingWorkers.id, workerId));
+        for (const worker of allWorkers) {
+          if (worker.pin && await bcrypt.compare(pin, worker.pin)) {
+            return res.status(400).json({ message: "This PIN is used by other user" });
+          }
         }
         // Check if PIN is already used by a user
         const existingUser = await db.select().from(users).where(eq(users.pin, pin)).limit(1);
