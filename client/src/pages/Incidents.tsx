@@ -351,8 +351,17 @@ export default function Incidents() {
       toast({ title: "Error", description: "Customer name and reason are required", variant: "destructive" });
       return;
     }
+    
+    // Build selected items string from the order items
+    let selectedItemsString = formData.itemName;
+    if (formData.orderNumber && formData.itemName && selectedItemIndices.length > 0) {
+      const allItems = formData.itemName.split(",").map(s => s.trim());
+      selectedItemsString = selectedItemIndices.map(idx => allItems[idx]).filter(Boolean).join(", ");
+    }
+    
     const data = {
       ...formData,
+      itemName: selectedItemsString,
       refundAmount: formData.refundAmount || "0",
       itemValue: formData.itemValue || "0",
       responsibleStaffId: formData.responsibleStaffId ? parseInt(formData.responsibleStaffId) : null,
@@ -495,6 +504,7 @@ export default function Incidents() {
                 itemName: order.items || "",
               }));
               setMaxRefundAmount(parseFloat(order.totalAmount) || 0);
+              setSelectedItemIndices([]);
             } else {
               setFormData(prev => ({
                 ...prev,
@@ -505,20 +515,49 @@ export default function Incidents() {
                 itemName: "",
               }));
               setMaxRefundAmount(0);
+              setSelectedItemIndices([]);
             }
           }}
         />
         {formData.orderNumber && formData.itemName && (
           <div className="mt-2 p-3 bg-muted/50 rounded-md border">
-            <Label className="text-xs text-muted-foreground mb-2 block">Order Items:</Label>
-            <div className="text-sm space-y-1">
-              {formData.itemName.split(",").map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-                  <span>{item.trim()}</span>
-                </div>
-              ))}
+            <Label className="text-xs text-muted-foreground mb-2 block">Select Items for Incident:</Label>
+            <div className="text-sm space-y-2">
+              {formData.itemName.split(",").map((item, idx) => {
+                const itemTrimmed = item.trim();
+                const isSelected = selectedItemIndices.includes(idx);
+                return (
+                  <div 
+                    key={idx} 
+                    className={`flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted ${isSelected ? 'bg-primary/10 border border-primary/30' : ''}`}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedItemIndices(prev => prev.filter(i => i !== idx));
+                      } else {
+                        setSelectedItemIndices(prev => [...prev, idx]);
+                      }
+                    }}
+                  >
+                    <Checkbox 
+                      checked={isSelected}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedItemIndices(prev => [...prev, idx]);
+                        } else {
+                          setSelectedItemIndices(prev => prev.filter(i => i !== idx));
+                        }
+                      }}
+                    />
+                    <span>{itemTrimmed}</span>
+                  </div>
+                );
+              })}
             </div>
+            {selectedItemIndices.length > 0 && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                {selectedItemIndices.length} item(s) selected
+              </div>
+            )}
           </div>
         )}
       </div>
