@@ -1748,7 +1748,7 @@ export async function registerRoutes(
   // Get admin account settings
   app.get("/api/admin/account", async (req, res) => {
     const adminUsername = process.env.ADMIN_USERNAME || "admin";
-    const adminEmail = process.env.ADMIN_EMAIL || "shussaingazi@yahoo.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "idusma0010@gmail.com";
     const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
     
     // Get PIN from database user if exists
@@ -1807,7 +1807,7 @@ export async function registerRoutes(
 
   // Send OTP to admin email for password change
   app.post("/api/admin/send-password-otp", async (req, res) => {
-    const adminEmail = process.env.ADMIN_EMAIL || "shussaingazi@yahoo.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "idusma0010@gmail.com";
     
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -1882,13 +1882,29 @@ export async function registerRoutes(
     adminOtpStore.otp = "";
     adminOtpStore.expiresAt = new Date(0);
     
-    // Note: In a real application, you would update the password in the database
-    // For now, we acknowledge the change (actual persistence requires env var update)
-    
-    res.json({
-      success: true,
-      message: "Password changed successfully. Please update ADMIN_PASSWORD environment variable for persistence.",
-    });
+    try {
+      // Update admin password in database
+      const adminUser = await storage.getUserByUsername("admin");
+      if (adminUser) {
+        await storage.updateUser(adminUser.id, { password: newPassword });
+      } else {
+        // Create admin user if doesn't exist
+        await storage.createUser({
+          username: "admin",
+          password: newPassword,
+          role: "admin",
+          email: process.env.ADMIN_EMAIL || "idusma0010@gmail.com"
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: "Password changed successfully!",
+      });
+    } catch (error: any) {
+      console.error("Failed to update password:", error);
+      res.status(500).json({ success: false, message: "Failed to update password" });
+    }
   });
 
   // Admin email for daily reports
