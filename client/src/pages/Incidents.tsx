@@ -128,7 +128,6 @@ export default function Incidents() {
   const [foundOrder, setFoundOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedItemIndices, setSelectedItemIndices] = useState<number[]>([]);
-  const [maxRefundAmount, setMaxRefundAmount] = useState<number>(0);
   const [orderSearchTerm, setOrderSearchTerm] = useState("");
   const [isOrderSearchFocused, setIsOrderSearchFocused] = useState(false);
   const orderSearchRef = useRef<HTMLInputElement>(null);
@@ -141,12 +140,10 @@ export default function Incidents() {
     itemName: "",
     reason: "",
     notes: "",
-    refundAmount: "",
-    refundType: "credit", // "cash" or "credit"
     itemValue: "",
     responsibleStaffId: "",
     responsibleStaffName: "",
-    incidentType: "refund",
+    incidentType: "damage",
     incidentStage: "delivery",
     status: "open",
     incidentDate: new Date().toISOString().split('T')[0],
@@ -261,23 +258,6 @@ export default function Incidents() {
     queryKey: ["/api/orders/active-with-clients"],
   });
 
-  // Update maxRefundAmount when selected items change
-  useEffect(() => {
-    if (formData.itemName && selectedItemIndices.length > 0 && products) {
-      const items = formData.itemName.split(",").map(item => item.trim());
-      const selectedTotal = selectedItemIndices.reduce((sum, idx) => {
-        if (idx < items.length) {
-          return sum + getItemPrice(items[idx]);
-        }
-        return sum;
-      }, 0);
-      setMaxRefundAmount(selectedTotal);
-    } else {
-      // No items selected = no max refund limit from items
-      setMaxRefundAmount(0);
-    }
-  }, [selectedItemIndices, formData.itemName, products]);
-
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/incidents", data);
@@ -324,12 +304,10 @@ export default function Incidents() {
       itemName: "",
       reason: "",
       notes: "",
-      refundAmount: "",
-      refundType: "credit",
       itemValue: "",
       responsibleStaffId: "",
       responsibleStaffName: "",
-      incidentType: "refund",
+      incidentType: "damage",
       incidentStage: "delivery",
       status: "open",
       incidentDate: new Date().toISOString().split('T')[0],
@@ -424,8 +402,6 @@ export default function Incidents() {
       orderNumber: formData.orderNumber,
       itemName: selectedItemsString,
       reason: formData.reason,
-      refundAmount: formData.refundAmount || "0",
-      refundType: formData.refundType || "credit",
       incidentType: formData.incidentType,
       incidentStage: formData.incidentStage,
       status: formData.status,
@@ -440,7 +416,6 @@ export default function Incidents() {
     if (!editIncident) return;
     const data = {
       ...formData,
-      refundAmount: formData.refundAmount || "0",
       itemValue: formData.itemValue || "0",
       responsibleStaffId: formData.responsibleStaffId ? parseInt(formData.responsibleStaffId) : null,
       incidentDate: new Date(formData.incidentDate),
@@ -459,12 +434,10 @@ export default function Incidents() {
       itemName: incident.itemName || "",
       reason: incident.reason,
       notes: incident.notes || "",
-      refundAmount: incident.refundAmount || "",
-      refundType: (incident as any).refundType || "credit",
       itemValue: incident.itemValue || "",
       responsibleStaffId: incident.responsibleStaffId?.toString() || "",
       responsibleStaffName: incident.responsibleStaffName || "",
-      incidentType: incident.incidentType || "refund",
+      incidentType: incident.incidentType || "damage",
       incidentStage: incident.incidentStage || "delivery",
       status: incident.status || "open",
       incidentDate: incident.incidentDate ? new Date(incident.incidentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -499,8 +472,6 @@ export default function Incidents() {
     switch (type) {
       case "missing_item":
         return <Badge variant="outline" className="border-purple-500 text-purple-600">Missing Item</Badge>;
-      case "refund":
-        return <Badge variant="outline" className="border-red-500 text-red-600">Refund</Badge>;
       case "damage":
         return <Badge variant="outline" className="border-orange-500 text-orange-600">Damage</Badge>;
       case "complaint":
@@ -526,8 +497,6 @@ export default function Incidents() {
         return <Badge variant="secondary" className="text-xs">{stage}</Badge>;
     }
   };
-
-  const totalRefunds = filteredIncidents?.reduce((sum, i) => sum + parseFloat(i.refundAmount || "0"), 0) || 0;
 
   const selectActiveOrder = (order: ActiveOrder) => {
     setFormData(prev => ({
@@ -648,7 +617,6 @@ export default function Incidents() {
             <SelectContent>
               <SelectItem value="missing_item">Missing Item</SelectItem>
               <SelectItem value="damage">Damage</SelectItem>
-              <SelectItem value="refund">Refund</SelectItem>
               <SelectItem value="complaint">Complaint</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
@@ -696,59 +664,6 @@ export default function Incidents() {
           data-testid="input-incident-reason"
         />
       </div>
-
-      {formData.incidentType === "refund" && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="refundAmount">
-              Refund Amount (AED)
-              {maxRefundAmount > 0 && (
-                <span className="text-xs text-muted-foreground ml-2">
-                  (Max: {maxRefundAmount.toFixed(2)})
-                </span>
-              )}
-            </Label>
-            <Input
-              id="refundAmount"
-              type="number"
-              step="0.01"
-              max={maxRefundAmount > 0 ? maxRefundAmount : undefined}
-              value={formData.refundAmount}
-              onChange={(e) => {
-                const value = parseFloat(e.target.value) || 0;
-                if (maxRefundAmount > 0 && value > maxRefundAmount) {
-                  toast({ 
-                    title: "Refund Limit Exceeded", 
-                    description: `Refund cannot exceed order total of AED ${maxRefundAmount.toFixed(2)}`,
-                    variant: "destructive"
-                  });
-                  setFormData({ ...formData, refundAmount: maxRefundAmount.toString() });
-                } else {
-                  setFormData({ ...formData, refundAmount: e.target.value });
-                }
-              }}
-              placeholder="0.00"
-              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              data-testid="input-incident-refund-amount"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="refundType">Refund Method</Label>
-            <Select
-              value={formData.refundType}
-              onValueChange={(value) => setFormData({ ...formData, refundType: value })}
-            >
-              <SelectTrigger data-testid="select-refund-type">
-                <SelectValue placeholder="Select refund method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash">Refund as Cash</SelectItem>
-                <SelectItem value="credit">Add to Credit Available</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -885,19 +800,6 @@ export default function Incidents() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Refunds</p>
-                  <p className="text-2xl font-bold text-red-600">{totalRefunds.toFixed(2)} AED</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <Card>
@@ -945,7 +847,6 @@ export default function Incidents() {
                     <TableHead>Item</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Stage</TableHead>
-                    <TableHead>Refund</TableHead>
                     <TableHead>Staff</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -967,9 +868,6 @@ export default function Incidents() {
                       <TableCell>{incident.itemName || "-"}</TableCell>
                       <TableCell>{getTypeBadge(incident.incidentType)}</TableCell>
                       <TableCell>{getStageBadge(incident.incidentStage)}</TableCell>
-                      <TableCell className="font-semibold text-red-600">
-                        {parseFloat(incident.refundAmount || "0").toFixed(2)} AED
-                      </TableCell>
                       <TableCell>{incident.responsibleStaffName || "-"}</TableCell>
                       <TableCell>{getStatusBadge(incident.status)}</TableCell>
                       <TableCell className="text-right">

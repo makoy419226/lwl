@@ -1335,8 +1335,7 @@ export default function Clients() {
                     {unpaidBills.map((bill) => {
                       const remaining =
                         parseFloat(bill.amount) -
-                        parseFloat(bill.paidAmount || "0") -
-                        parseFloat(bill.refundedAmount || "0");
+                        parseFloat(bill.paidAmount || "0");
                       return (
                         <div
                           key={bill.id}
@@ -1347,11 +1346,6 @@ export default function Clients() {
                               <span className="font-medium">
                                 Bill #{bill.id}
                               </span>
-                              {bill.refunded && (
-                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700 text-xs">
-                                  Refunded {parseFloat(bill.refundedAmount || "0").toFixed(2)} AED
-                                </Badge>
-                              )}
                               <span className="text-xs text-muted-foreground">
                                 {format(new Date(bill.billDate), "dd/MM/yyyy")}
                               </span>

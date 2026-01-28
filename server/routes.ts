@@ -2475,53 +2475,6 @@ export async function registerRoutes(
   app.post("/api/incidents", async (req, res) => {
     try {
       const incident = await storage.createIncident(req.body);
-      
-      // If it's a refund incident with an amount, record the refund in client history
-      if (req.body.incidentType === "refund" && req.body.refundAmount && parseFloat(req.body.refundAmount) > 0) {
-        const refundAmount = parseFloat(req.body.refundAmount);
-        const refundType = req.body.refundType || "credit"; // "cash" or "credit"
-        
-        // Find the client by order number
-        if (req.body.orderNumber) {
-          const order = await storage.getOrderByNumber(req.body.orderNumber);
-          if (order && order.clientId) {
-            // Mark the bill as refunded if there's an associated bill
-            if (order.billId) {
-              const bill = await storage.getBill(order.billId);
-              if (bill) {
-                const existingRefunded = parseFloat(bill.refundedAmount || "0");
-                await storage.updateBill(order.billId, {
-                  refunded: true,
-                  refundedAmount: (existingRefunded + refundAmount).toString(),
-                });
-              }
-            }
-            
-            if (refundType === "credit") {
-              // Add to credit available - create a deposit transaction
-              await storage.createTransaction({
-                clientId: order.clientId,
-                type: "deposit",
-                amount: refundAmount.toString(),
-                description: `Refund added to credit - Incident #${incident.id} (Order ${req.body.orderNumber})`,
-                date: new Date().toISOString().split('T')[0],
-                processedBy: req.body.responsibleStaffName || "System",
-              });
-            } else {
-              // Cash refund - record as a note/payment transaction (not adding to credit)
-              await storage.createTransaction({
-                clientId: order.clientId,
-                type: "payment",
-                amount: refundAmount.toString(),
-                description: `Cash refund paid - Incident #${incident.id} (Order ${req.body.orderNumber})`,
-                date: new Date().toISOString().split('T')[0],
-                processedBy: req.body.responsibleStaffName || "System",
-              });
-            }
-          }
-        }
-      }
-      
       res.status(201).json(incident);
     } catch (err: any) {
       res.status(400).json({ message: err.message });

@@ -689,7 +689,7 @@ export default function Bills() {
   const proceedWithPayment = (bill: Bill) => {
     setSelectedBill(bill);
     const remainingAmount =
-      parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0") - parseFloat(bill.refundedAmount || "0");
+      parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
     setPaymentAmount(remainingAmount.toFixed(2));
     setPaymentNotes("");
     setPaymentMethod("cash");

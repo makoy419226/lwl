@@ -3515,7 +3515,7 @@ export default function Orders() {
                           <ScrollArea className="max-h-32">
                             <div className="space-y-1">
                               {otherUnpaidBills.map((bill) => {
-                                const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0") - parseFloat(bill.refundedAmount || "0");
+                                const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
                                 return (
                                   <div
                                     key={bill.id}
@@ -3636,7 +3636,7 @@ export default function Orders() {
                           <div class="section">
                             <div class="section-title">Previous Unpaid Bills (${otherUnpaidBills.length})</div>
                             ${otherUnpaidBills.map(bill => {
-                              const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0") - parseFloat(bill.refundedAmount || "0");
+                              const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
                               return `<div class="row"><span>Bill #${bill.id} (${format(new Date(bill.billDate), "dd/MM/yy")})</span><span>${due.toFixed(2)} AED</span></div>`;
                             }).join('')}
                             <div class="row bold" style="margin-top: 5px; border-top: 1px dashed #999; padding-top: 5px;"><span>Previous Total:</span><span>${totalPreviousDue.toFixed(2)} AED</span></div>
