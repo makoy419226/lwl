@@ -153,7 +153,8 @@ export default function SalesReports() {
   };
 
   const exportToExcel = () => {
-    const { data, label, filename } = getCurrentData();
+    const { label, filename } = getCurrentData();
+    const orderData = getCurrentOrderData();
     
     // Format period with full day name (e.g., "Wednesday, 28 January 2026")
     let periodLabel = label;
@@ -179,11 +180,28 @@ export default function SalesReports() {
       });
     };
     
-    // Combine and sort all transactions by date
-    const allTx = [
-      ...data.bills.map(b => ({ ...b, txType: 'Bill' })),
-      ...data.deposits.map(d => ({ ...d, txType: 'Deposit' }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Get orders as bills
+    const allOrdersList = [...orderData.deliveryOrders, ...orderData.takeawayOrders];
+    
+    // Calculate totals from orders
+    const totalBills = allOrdersList.reduce((sum, o) => sum + parseFloat(o.totalAmount || "0"), 0);
+    const totalPaid = allOrdersList.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
+    const totalPending = totalBills - totalPaid;
+    
+    // Map orders to transaction-like format
+    const allTransactionRows = allOrdersList
+      .sort((a, b) => new Date(a.entryDate || 0).getTime() - new Date(b.entryDate || 0).getTime())
+      .map(order => {
+        const client = allClients?.find(c => c.id === order.clientId);
+        return [
+          order.orderType === 'urgent' ? 'Bill (Urgent)' : 'Bill',
+          order.customerName || client?.name || 'Walk-in',
+          order.customerPhone || client?.phone || '',
+          `Order #${order.orderNumber || order.id}${order.items ? ` - ${order.items.substring(0, 50)}...` : ''}`,
+          parseFloat(order.totalAmount || "0").toFixed(2),
+          formatDateTime(order.entryDate || new Date().toISOString())
+        ];
+      });
     
     const summaryData = [
       ['Liquid Washes Laundry - Sales Report'],
@@ -191,29 +209,22 @@ export default function SalesReports() {
       [`Generated: ${new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}`],
       [],
       ['Summary'],
-      ['Total Bills', `${data.totalBills.toFixed(2)} AED`],
-      ['Total Deposits', `${data.totalDeposits.toFixed(2)} AED`],
-      ['Net Collection', `${(data.totalDeposits - data.totalBills).toFixed(2)} AED`],
-      ['Total Transactions', allTx.length],
+      ['Total Bills', `${totalBills.toFixed(2)} AED`],
+      ['Total Paid', `${totalPaid.toFixed(2)} AED`],
+      ['Total Pending', `${totalPending.toFixed(2)} AED`],
+      ['Total Orders', allOrdersList.length],
       [],
       ['All Transactions'],
       ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Date'],
-      ...allTx.map(tx => [
-        tx.txType,
-        tx.clientName || '',
-        tx.clientPhone || '',
-        tx.description || '',
-        parseFloat(tx.amount || "0").toFixed(2),
-        formatDateTime(tx.date)
-      ]),
+      ...allTransactionRows,
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(summaryData);
     ws['!cols'] = [
-      { wch: 10 },  // Type
+      { wch: 12 },  // Type
       { wch: 25 },  // Client
       { wch: 15 },  // Phone
-      { wch: 35 },  // Description
+      { wch: 45 },  // Description
       { wch: 15 },  // Amount
       { wch: 18 },  // Date
     ];
