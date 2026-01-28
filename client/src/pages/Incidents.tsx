@@ -62,6 +62,19 @@ export default function Incidents() {
     queryKey: ["/api/packing-workers"],
   });
 
+  interface ActiveOrder {
+    id: number;
+    orderNumber: string;
+    status: string;
+    customerName: string;
+    customerPhone: string;
+    customerAddress: string;
+  }
+
+  const { data: activeOrders } = useQuery<ActiveOrder[]>({
+    queryKey: ["/api/orders/active-with-clients"],
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/incidents", data);
@@ -294,8 +307,66 @@ export default function Incidents() {
 
   const totalRefunds = filteredIncidents?.reduce((sum, i) => sum + parseFloat(i.refundAmount || "0"), 0) || 0;
 
+  const selectActiveOrder = (order: ActiveOrder) => {
+    setFormData(prev => ({
+      ...prev,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      customerAddress: order.customerAddress,
+    }));
+    setOrderLookupNumber(order.orderNumber);
+    toast({ title: "Order Selected", description: `Selected order ${order.orderNumber}` });
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "pending": return "bg-blue-500";
+      case "tagging": return "bg-purple-500";
+      case "packing": return "bg-orange-500";
+      case "ready": return "bg-green-500";
+      default: return "bg-gray-500";
+    }
+  };
+
   const IncidentForm = ({ isEdit = false }: { isEdit?: boolean }) => (
     <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
+      {!isEdit && activeOrders && activeOrders.length > 0 && (
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-blue-600" />
+            Active Orders ({activeOrders.length})
+          </Label>
+          <p className="text-xs text-muted-foreground">Select an order to auto-fill customer details</p>
+          <div className="max-h-48 overflow-y-auto border rounded-md bg-background">
+            {activeOrders.map((order) => (
+              <div
+                key={order.id}
+                className="flex items-center gap-3 p-2 cursor-pointer border-b last:border-b-0 hover-elevate"
+                onClick={() => selectActiveOrder(order)}
+                data-testid={`active-order-${order.id}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-sm">{order.orderNumber}</span>
+                    <Badge className={`text-xs ${getStatusBadgeColor(order.status)}`}>
+                      {order.status}
+                    </Badge>
+                  </div>
+                  <div className="text-sm font-medium truncate">{order.customerName}</div>
+                  {order.customerPhone && (
+                    <div className="text-xs text-muted-foreground">{order.customerPhone}</div>
+                  )}
+                  {order.customerAddress && (
+                    <div className="text-xs text-muted-foreground truncate">{order.customerAddress}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="p-3 bg-muted/50 rounded-lg border space-y-3">
         <Label className="text-sm font-medium">Lookup Order (Optional)</Label>
         <div className="flex gap-2">
