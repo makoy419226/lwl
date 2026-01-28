@@ -382,6 +382,19 @@ export default function Incidents() {
             ))}
           </SelectContent>
         </Select>
+        {formData.orderNumber && formData.itemName && (
+          <div className="mt-2 p-3 bg-muted/50 rounded-md border">
+            <Label className="text-xs text-muted-foreground mb-2 block">Order Items:</Label>
+            <div className="text-sm space-y-1">
+              {formData.itemName.split(",").map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
+                  <span>{item.trim()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
