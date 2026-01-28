@@ -35,6 +35,7 @@ export default function Incidents() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedItemIndices, setSelectedItemIndices] = useState<number[]>([]);
   const [maxRefundAmount, setMaxRefundAmount] = useState<number>(0);
+  const [orderSearchTerm, setOrderSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -383,6 +384,16 @@ export default function Incidents() {
     <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
       <div className="p-3 bg-muted/50 rounded-lg border space-y-3">
         <Label className="text-sm font-medium">Select Active Order</Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Type order number to search..."
+            value={orderSearchTerm}
+            onChange={(e) => setOrderSearchTerm(e.target.value)}
+            className="pl-9 mb-2"
+            data-testid="input-order-search"
+          />
+        </div>
         <Select
           value={formData.orderNumber || ""}
           onValueChange={(value) => {
@@ -411,6 +422,7 @@ export default function Incidents() {
                 itemName: selectedOrder.items || "",
               }));
               setMaxRefundAmount(parseFloat(selectedOrder.totalAmount) || 0);
+              setOrderSearchTerm("");
             }
           }}
         >
@@ -419,7 +431,13 @@ export default function Incidents() {
           </SelectTrigger>
           <SelectContent className="max-h-60 overflow-y-auto">
             <SelectItem value="none">-- No Order Selected --</SelectItem>
-            {activeOrders?.map((order) => (
+            {activeOrders
+              ?.filter(order => 
+                orderSearchTerm === "" || 
+                order.orderNumber.toLowerCase().includes(orderSearchTerm.toLowerCase()) ||
+                order.customerName.toLowerCase().includes(orderSearchTerm.toLowerCase())
+              )
+              .map((order) => (
               <SelectItem key={order.id} value={order.orderNumber}>
                 <div className="flex items-center gap-2">
                   <span className="font-mono">{order.orderNumber}</span>
