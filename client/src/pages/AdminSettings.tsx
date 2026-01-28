@@ -262,7 +262,7 @@ export default function AdminSettings() {
                   <p className="text-xs text-muted-foreground mb-1">Email</p>
                   <p className="font-medium flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
-                    {adminAccount?.email || "shussaingazi@yahoo.com"}
+                    {adminAccount?.email || "idusma0010@gmail.com"}
                   </p>
                 </div>
                 <div>
@@ -449,7 +449,7 @@ export default function AdminSettings() {
                       <Mail className="w-12 h-12 mx-auto text-primary mb-4" />
                       <p className="text-sm text-muted-foreground mb-4">
                         Click below to send a one-time password to<br />
-                        <span className="font-medium">{adminAccount?.email || "shussaingazi@yahoo.com"}</span>
+                        <span className="font-medium">{adminAccount?.email || "idusma0010@gmail.com"}</span>
                       </p>
                       <Button
                         onClick={() => sendOtpMutation.mutate()}
