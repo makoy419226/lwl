@@ -854,7 +854,12 @@ export default function Incidents() {
                 </TableHeader>
                 <TableBody>
                   {filteredIncidents?.map((incident) => (
-                    <TableRow key={incident.id} data-testid={`row-incident-${incident.id}`}>
+                    <TableRow 
+                      key={incident.id} 
+                      data-testid={`row-incident-${incident.id}`}
+                      className="cursor-pointer hover-elevate"
+                      onClick={() => openEdit(incident)}
+                    >
                       <TableCell className="font-mono text-sm">
                         {incident.incidentDate ? format(new Date(incident.incidentDate), "dd/MM/yy HH:mm") : "-"}
                       </TableCell>
@@ -871,29 +876,20 @@ export default function Incidents() {
                       <TableCell>{incident.responsibleStaffName || "-"}</TableCell>
                       <TableCell>{getStatusBadge(incident.status)}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => openEdit(incident)}
-                            data-testid={`button-edit-incident-${incident.id}`}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="text-red-500"
-                            onClick={() => {
-                              if (confirm("Are you sure you want to delete this incident?")) {
-                                deleteMutation.mutate(incident.id);
-                              }
-                            }}
-                            data-testid={`button-delete-incident-${incident.id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-red-500"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Are you sure you want to delete this incident?")) {
+                              deleteMutation.mutate(incident.id);
+                            }
+                          }}
+                          data-testid={`button-delete-incident-${incident.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
