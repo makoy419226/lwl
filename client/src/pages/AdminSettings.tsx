@@ -563,7 +563,6 @@ export default function AdminSettings() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
             <Dialog open={showResetDialog} onOpenChange={(open) => {
               setShowResetDialog(open);
               if (!open) {
@@ -574,10 +573,10 @@ export default function AdminSettings() {
               <DialogTrigger asChild>
                 <Button
                   variant="destructive"
-                  className="gap-2"
+                  className="w-full sm:w-auto gap-2"
                   data-testid="button-reset-all"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-5 h-5" />
                   Reset All Data
                 </Button>
               </DialogTrigger>
@@ -647,82 +646,6 @@ export default function AdminSettings() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            
-            <Dialog open={showResetIncidentsDialog} onOpenChange={(open) => {
-              setShowResetIncidentsDialog(open);
-              if (!open) {
-                setIncidentsPassword("");
-                setIncidentsError("");
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto gap-2 border-orange-500 text-orange-600 hover:bg-orange-50"
-                  data-testid="button-reset-incidents"
-                >
-                  <AlertTriangle className="w-5 h-5" />
-                  Reset Incidents Only
-                </Button>
-              </DialogTrigger>
-              <DialogContent aria-describedby={undefined} className="max-w-md max-h-[85vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-orange-600">
-                    <AlertTriangle className="w-5 h-5" />
-                    Reset All Incidents
-                  </DialogTitle>
-                  <DialogDescription>
-                    This will permanently delete ALL incidents from the system.
-                    <p className="mt-3 font-semibold text-orange-600">This action cannot be undone!</p>
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="incidents-password">Admin Password</Label>
-                    <Input
-                      id="incidents-password"
-                      type="password"
-                      placeholder="Enter admin password..."
-                      value={incidentsPassword}
-                      onChange={(e) => {
-                        setIncidentsPassword(e.target.value);
-                        setIncidentsError("");
-                      }}
-                      data-testid="input-incidents-password"
-                    />
-                    {incidentsError && (
-                      <p className="text-sm text-destructive">{incidentsError}</p>
-                    )}
-                  </div>
-                </div>
-                <DialogFooter className="gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowResetIncidentsDialog(false);
-                      setIncidentsPassword("");
-                      setIncidentsError("");
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => resetIncidentsMutation.mutate(incidentsPassword)}
-                    disabled={!incidentsPassword || resetIncidentsMutation.isPending}
-                    data-testid="button-confirm-reset-incidents"
-                  >
-                    {resetIncidentsMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                    )}
-                    Reset Incidents
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            </div>
           </CardContent>
         </Card>
 
