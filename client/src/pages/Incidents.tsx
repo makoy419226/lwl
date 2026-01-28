@@ -75,9 +75,9 @@ export default function Incidents() {
   const allStaffMembers = useMemo(() => {
     const staff: { id: string; name: string; type: string }[] = [];
     
-    // Add managers and other users
+    // Add managers and other users (exclude inactive/merged accounts)
     users?.forEach(user => {
-      if (user.active !== false) {
+      if (user.active === true) {
         staff.push({
           id: `user-${user.id}`,
           name: user.name || user.username,
