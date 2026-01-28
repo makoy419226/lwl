@@ -729,18 +729,6 @@ export default function Incidents() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          placeholder="Additional notes"
-          rows={2}
-          data-testid="input-incident-notes"
-        />
-      </div>
-
       {isEdit && (
         <div className="space-y-2">
           <Label htmlFor="resolution">Resolution</Label>
