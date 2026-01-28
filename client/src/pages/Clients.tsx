@@ -1982,8 +1982,8 @@ export default function Clients() {
                           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                         );
                         let runningBalance = 0;
-                        const ROWS_PER_PAGE_FIRST = 12;
-                        const ROWS_PER_PAGE = 18;
+                        const ROWS_PER_PAGE_FIRST = 8;
+                        const ROWS_PER_PAGE = 15;
                         
                         const allRows = sortedTx.map((tx, index) => {
                           if (tx.type === "deposit") {
@@ -1992,7 +1992,7 @@ export default function Clients() {
                             runningBalance -= parseFloat(tx.amount);
                           }
                           const desc = tx.description || "-";
-                          const truncatedDesc = desc.length > 50 ? desc.substring(0, 50) + "..." : desc;
+                          const truncatedDesc = desc.length > 35 ? desc.substring(0, 35) + "..." : desc;
                           const typeLabel = tx.type === "bill" ? "Bill" : tx.type === "deposit" ? "Deposit" : "Payment";
                           const typeColor = tx.type === "bill" ? "#dc2626" : "#16a34a";
                           const typeBg = tx.type === "bill" ? "#fee2e2" : "#dcfce7";
