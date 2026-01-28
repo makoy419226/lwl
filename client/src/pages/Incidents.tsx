@@ -698,7 +698,7 @@ export default function Incidents() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={`grid ${isEdit ? "grid-cols-1" : "grid-cols-2"} gap-4`}>
         <div className="space-y-2">
           <Label htmlFor="responsibleStaff">Responsible Staff</Label>
           <Select
@@ -724,22 +724,24 @@ export default function Incidents() {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select
-            value={formData.status}
-            onValueChange={(value) => setFormData({ ...formData, status: value })}
-          >
-            <SelectTrigger data-testid="select-incident-status">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="resolved">Resolved</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {!isEdit && (
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => setFormData({ ...formData, status: value })}
+            >
+              <SelectTrigger data-testid="select-incident-status">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {isEdit && (
@@ -937,8 +939,28 @@ export default function Incidents() {
 
       <Dialog open={!!editIncident} onOpenChange={(open) => { if (!open) { setEditIncident(null); resetForm(); } }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="flex flex-row items-center justify-between gap-4">
             <DialogTitle>Edit Incident</DialogTitle>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => setFormData({ ...formData, status: value })}
+            >
+              <SelectTrigger 
+                className={`w-32 font-semibold ${
+                  formData.status === "open" ? "bg-red-100 text-red-700 border-red-300" :
+                  formData.status === "pending" ? "bg-yellow-100 text-yellow-700 border-yellow-300" :
+                  "bg-green-100 text-green-700 border-green-300"
+                }`}
+                data-testid="select-incident-status-header"
+              >
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open" className="text-red-600 font-medium">Open</SelectItem>
+                <SelectItem value="pending" className="text-yellow-600 font-medium">Pending</SelectItem>
+                <SelectItem value="resolved" className="text-green-600 font-medium">Resolved</SelectItem>
+              </SelectContent>
+            </Select>
           </DialogHeader>
           {renderIncidentForm(true)}
         </DialogContent>
