@@ -155,9 +155,21 @@ export default function SalesReports() {
   const exportToExcel = () => {
     const { data, label, filename } = getCurrentData();
     
+    // Format period with full day name (e.g., "Wednesday, 28 January 2026")
+    let periodLabel = label;
+    if (activeTab === 'daily') {
+      const dateObj = new Date(selectedDate);
+      periodLabel = dateObj.toLocaleDateString('en-GB', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+    }
+    
     const summaryData = [
       ['Liquid Washes Laundry - Sales Report'],
-      [`Period: ${label}`],
+      [`Period: ${periodLabel}`],
       [`Generated: ${new Date().toLocaleString()}`],
       [],
       ['Summary'],
@@ -165,9 +177,6 @@ export default function SalesReports() {
       ['Total Deposits', `${data.totalDeposits.toFixed(2)} AED`],
       ['Net Collection', `${data.totalDeposits.toFixed(2)} AED`],
       ['Total Transactions', data.bills.length + data.deposits.length],
-    ];
-
-    const transactionsData = [
       [],
       ['All Transactions'],
       ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Date'],
@@ -175,9 +184,8 @@ export default function SalesReports() {
       ...data.deposits.map(d => ['Deposit', d.clientName, d.clientPhone || '', d.description || '', parseFloat(d.amount).toFixed(2), new Date(d.date).toLocaleDateString()]),
     ];
 
-    const wsData = [...summaryData, ...transactionsData];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 12 }];
+    const ws = XLSX.utils.aoa_to_sheet(summaryData);
+    ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 12 }];
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Sales Report');
