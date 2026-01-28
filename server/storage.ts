@@ -1182,6 +1182,9 @@ export class DatabaseStorage implements IStorage {
     updates: Partial<InsertIncident>,
   ): Promise<Incident> {
     const updateData: any = { ...updates };
+    // Never update reporterName - it should only be set on creation
+    delete updateData.reporterName;
+    
     if (updates.refundAmount !== undefined)
       updateData.refundAmount = updates.refundAmount.toString();
     if (updates.itemValue !== undefined)
