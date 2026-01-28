@@ -1160,6 +1160,7 @@ export class DatabaseStorage implements IStorage {
       itemValue: insertIncident.itemValue?.toString() || "0",
       responsibleStaffId: null, // Staff ID is stored as string now
       responsibleStaffName: insertIncident.responsibleStaffName || null,
+      reporterName: insertIncident.reporterName || null,
       incidentType: insertIncident.incidentType || "refund",
       incidentStage: insertIncident.incidentStage || "delivery",
       status: insertIncident.status || "open",
