@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,50 @@ export default function Incidents() {
   const { data: workers } = useQuery<PackingWorker[]>({
     queryKey: ["/api/packing-workers"],
   });
+
+  const { data: users } = useQuery<any[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const { data: drivers } = useQuery<any[]>({
+    queryKey: ["/api/drivers"],
+  });
+
+  // Combine all staff types for the dropdown
+  const allStaffMembers = useMemo(() => {
+    const staff: { id: string; name: string; type: string }[] = [];
+    
+    // Add managers and other users
+    users?.forEach(user => {
+      if (user.active !== false) {
+        staff.push({
+          id: `user-${user.id}`,
+          name: user.name || user.username,
+          type: user.role || 'User'
+        });
+      }
+    });
+    
+    // Add staff workers
+    workers?.filter(w => w.active).forEach(worker => {
+      staff.push({
+        id: `worker-${worker.id}`,
+        name: worker.name,
+        type: 'Staff'
+      });
+    });
+    
+    // Add drivers
+    drivers?.filter((d: any) => d.active !== false).forEach((driver: any) => {
+      staff.push({
+        id: `driver-${driver.id}`,
+        name: driver.name,
+        type: 'Driver'
+      });
+    });
+    
+    return staff;
+  }, [users, workers, drivers]);
 
   interface ActiveOrder {
     id: number;
@@ -512,11 +556,11 @@ export default function Incidents() {
           <Select
             value={formData.responsibleStaffId}
             onValueChange={(value) => {
-              const worker = workers?.find(w => w.id.toString() === value);
+              const staffMember = allStaffMembers?.find(s => s.id === value);
               setFormData({
                 ...formData,
                 responsibleStaffId: value,
-                responsibleStaffName: worker?.name || ""
+                responsibleStaffName: staffMember?.name || ""
               });
             }}
           >
@@ -524,9 +568,9 @@ export default function Incidents() {
               <SelectValue placeholder="Select staff" />
             </SelectTrigger>
             <SelectContent>
-              {workers?.filter(w => w.active).map(worker => (
-                <SelectItem key={worker.id} value={worker.id.toString()}>
-                  {worker.name}
+              {allStaffMembers?.map(staff => (
+                <SelectItem key={staff.id} value={staff.id}>
+                  {staff.name} ({staff.type})
                 </SelectItem>
               ))}
             </SelectContent>
