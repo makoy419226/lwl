@@ -188,8 +188,16 @@ export default function SalesReports() {
     const totalPaid = allOrdersList.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
     const totalPending = totalBills - totalPaid;
     
-    // Map payment method to display name
-    const formatPaymentMethod = (method: string | null) => {
+    // Map payment method to display name, checking if paid
+    const formatPaymentMethod = (method: string | null, paidAmount: string | null, totalAmount: string | null) => {
+      const paid = parseFloat(paidAmount || "0");
+      const total = parseFloat(totalAmount || "0");
+      
+      // If not fully paid, show as Unpaid
+      if (paid < total) {
+        return 'Unpaid';
+      }
+      
       if (!method) return '-';
       switch (method.toLowerCase()) {
         case 'deposit': return 'Deduct from Credit';
@@ -211,7 +219,7 @@ export default function SalesReports() {
           client?.phone || '',
           `Order #${order.orderNumber || order.id}`,
           parseFloat(order.totalAmount || "0").toFixed(2),
-          formatPaymentMethod(order.paymentMethod),
+          formatPaymentMethod(order.paymentMethod, order.paidAmount, order.totalAmount),
           formatDateTime(order.entryDate ? String(order.entryDate) : new Date().toISOString())
         ];
       });
