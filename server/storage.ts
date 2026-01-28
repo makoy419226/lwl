@@ -1022,7 +1022,7 @@ export class DatabaseStorage implements IStorage {
       await db.update(users).set({ pin: '00000' }).where(eq(users.id, adminUser.id));
     }
     
-    // Insert default non-admin users
+    // Insert default non-admin users (matching current optimal state)
     const defaultUsers = [
       {
         username: "reception1",
