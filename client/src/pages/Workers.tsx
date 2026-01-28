@@ -1375,13 +1375,33 @@ export default function Workers() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Username</Label>
+              <Label>Role</Label>
+              <Select
+                value={userFormData.role}
+                onValueChange={(value) =>
+                  setUserFormData({ ...userFormData, role: value, username: getNextUsername(value) })
+                }
+              >
+                <SelectTrigger data-testid="select-new-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="driver">Delivery Driver</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Username (auto-generated)</Label>
               <Input
-                placeholder="Enter username"
+                placeholder="Username"
                 value={userFormData.username}
                 onChange={(e) =>
                   setUserFormData({ ...userFormData, username: e.target.value })
                 }
+                className="bg-muted"
                 data-testid="input-new-username"
               />
             </div>
@@ -1407,25 +1427,6 @@ export default function Workers() {
                 }
                 data-testid="input-new-name"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select
-                value={userFormData.role}
-                onValueChange={(value) =>
-                  setUserFormData({ ...userFormData, role: value, username: getNextUsername(value) })
-                }
-              >
-                <SelectTrigger data-testid="select-new-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="driver">Delivery Driver</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <Button
               className="w-full"
