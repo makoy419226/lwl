@@ -188,6 +188,18 @@ export default function SalesReports() {
     const totalPaid = allOrdersList.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
     const totalPending = totalBills - totalPaid;
     
+    // Map payment method to display name
+    const formatPaymentMethod = (method: string | null) => {
+      if (!method) return '-';
+      switch (method.toLowerCase()) {
+        case 'deposit': return 'Deduct from Credit';
+        case 'cash': return 'Cash';
+        case 'card': return 'Card';
+        case 'bank': return 'Bank';
+        default: return method;
+      }
+    };
+    
     // Map orders to transaction-like format
     const allTransactionRows = allOrdersList
       .sort((a, b) => new Date(a.entryDate || 0).getTime() - new Date(b.entryDate || 0).getTime())
@@ -201,6 +213,7 @@ export default function SalesReports() {
           client?.phone || '',
           `Order #${order.orderNumber || order.id}`,
           parseFloat(order.totalAmount || "0").toFixed(2),
+          formatPaymentMethod(order.paymentMethod),
           advancePaid.toFixed(2),
           formatDateTime(order.entryDate ? String(order.entryDate) : new Date().toISOString())
         ];
@@ -218,7 +231,7 @@ export default function SalesReports() {
       ['Total Orders', allOrdersList.length],
       [],
       ['All Transactions'],
-      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Advance Deposit', 'Date'],
+      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Payment Method', 'Advance Deposit', 'Date'],
       ...allTransactionRows,
     ];
 
@@ -231,6 +244,7 @@ export default function SalesReports() {
       { wch: 18 },  // Phone
       { wch: 20 },  // Description (Order # only)
       { wch: 15 },  // Amount
+      { wch: 20 },  // Payment Method
       { wch: 18 },  // Advance Deposit
       { wch: 20 },  // Date
     ];
@@ -239,7 +253,7 @@ export default function SalesReports() {
     const headerRow = 11; // Row 12 in 0-indexed is row 11
     const lastRow = headerRow + allTransactionRows.length;
     if (allTransactionRows.length > 0) {
-      ws['!autofilter'] = { ref: `A${headerRow + 1}:G${lastRow + 1}` };
+      ws['!autofilter'] = { ref: `A${headerRow + 1}:H${lastRow + 1}` };
     }
     
     const wb = XLSX.utils.book_new();
