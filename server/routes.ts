@@ -445,16 +445,20 @@ export async function registerRoutes(
       const [currentUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       const pinIsChanging = !currentUser || currentUser.pin !== pin;
       
+      console.log(`[DEBUG] User update PIN check: userId=${userId}, newPin=${pin}, currentPin=${currentUser?.pin}, pinIsChanging=${pinIsChanging}`);
+      
       if (pinIsChanging) {
         // Check if PIN is already used by another user (excluding current user)
         const existingUser = await db.select().from(users).where(and(eq(users.pin, pin), ne(users.id, userId))).limit(1);
         if (existingUser.length > 0) {
+          console.log(`[DEBUG] PIN ${pin} conflicts with user: ${existingUser[0].username}`);
           return res.status(400).json({ message: "This PIN is used by other user" });
         }
         // Check if PIN is already used by a worker (must use bcrypt compare since worker PINs are hashed)
         const allWorkers = await db.select().from(packingWorkers);
         for (const worker of allWorkers) {
           if (worker.pin && await bcrypt.compare(pin, worker.pin)) {
+            console.log(`[DEBUG] PIN ${pin} conflicts with packing worker: ${worker.name}`);
             return res.status(400).json({ message: "This PIN is used by other user" });
           }
         }
