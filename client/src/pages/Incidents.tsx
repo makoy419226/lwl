@@ -331,62 +331,64 @@ export default function Incidents() {
 
   const IncidentForm = ({ isEdit = false }: { isEdit?: boolean }) => (
     <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
-      {!isEdit && activeOrders && activeOrders.length > 0 && (
-        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-blue-600" />
-            Active Orders ({activeOrders.length})
-          </Label>
-          <p className="text-xs text-muted-foreground">Select an order to auto-fill customer details</p>
-          <div className="max-h-48 overflow-y-auto border rounded-md bg-background">
-            {activeOrders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center gap-3 p-2 cursor-pointer border-b last:border-b-0 hover-elevate"
-                onClick={() => selectActiveOrder(order)}
-                data-testid={`active-order-${order.id}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-sm">{order.orderNumber}</span>
-                    <Badge className={`text-xs ${getStatusBadgeColor(order.status)}`}>
-                      {order.status}
-                    </Badge>
-                  </div>
-                  <div className="text-sm font-medium truncate">{order.customerName}</div>
-                  {order.customerPhone && (
-                    <div className="text-xs text-muted-foreground">{order.customerPhone}</div>
-                  )}
-                  {order.customerAddress && (
-                    <div className="text-xs text-muted-foreground truncate">{order.customerAddress}</div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="p-3 bg-muted/50 rounded-lg border space-y-3">
-        <Label className="text-sm font-medium">Lookup Order (Optional)</Label>
-        <div className="flex gap-2">
-          <Input
-            value={orderLookupNumber}
-            onChange={(e) => setOrderLookupNumber(e.target.value)}
-            placeholder="Enter order number to lookup"
-            onKeyDown={(e) => e.key === "Enter" && lookupOrder()}
-            data-testid="input-lookup-incident-order"
-          />
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={lookupOrder} 
-            disabled={lookupLoading}
-            data-testid="button-lookup-incident-order"
-          >
-            {lookupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          </Button>
-        </div>
+        <Label className="text-sm font-medium">Select Active Order</Label>
+        <Select
+          value={formData.orderNumber || ""}
+          onValueChange={(value) => {
+            if (value === "none") {
+              setFormData(prev => ({
+                ...prev,
+                orderNumber: "",
+                customerName: "",
+                customerPhone: "",
+                customerAddress: "",
+              }));
+              setFoundOrder(null);
+              setOrderItems([]);
+              setSelectedItemIndices([]);
+              return;
+            }
+            const selectedOrder = activeOrders?.find(o => o.orderNumber === value);
+            if (selectedOrder) {
+              setFormData(prev => ({
+                ...prev,
+                orderNumber: selectedOrder.orderNumber,
+                customerName: selectedOrder.customerName,
+                customerPhone: selectedOrder.customerPhone,
+                customerAddress: selectedOrder.customerAddress,
+              }));
+              setOrderLookupNumber(selectedOrder.orderNumber);
+              lookupOrder();
+            }
+          }}
+        >
+          <SelectTrigger data-testid="select-incident-order">
+            <SelectValue placeholder="Select an order..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">-- No Order Selected --</SelectItem>
+            {activeOrders?.map((order) => (
+              <SelectItem key={order.id} value={order.orderNumber}>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono">{order.orderNumber}</span>
+                  <span className="text-muted-foreground">-</span>
+                  <span>{order.customerName}</span>
+                  <Badge className={`text-xs ml-2 ${getStatusBadgeColor(order.status)}`}>
+                    {order.status}
+                  </Badge>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {formData.orderNumber && (
+          <div className="text-xs text-muted-foreground space-y-1 p-2 bg-background rounded border">
+            <div><strong>Customer:</strong> {formData.customerName}</div>
+            {formData.customerPhone && <div><strong>Phone:</strong> {formData.customerPhone}</div>}
+            {formData.customerAddress && <div><strong>Address:</strong> {formData.customerAddress}</div>}
+          </div>
+        )}
         {foundOrder && orderItems.length > 0 && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
