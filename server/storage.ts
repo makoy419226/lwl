@@ -121,6 +121,7 @@ export interface IStorage {
   deleteAllTransactions(): Promise<void>;
   deleteAllBills(): Promise<void>;
   deleteAllClients(): Promise<void>;
+  deleteAllIncidents(): Promise<void>;
   getPackingWorkers(): Promise<PackingWorker[]>;
   getPackingWorker(id: number): Promise<PackingWorker | undefined>;
   createPackingWorker(worker: InsertPackingWorker): Promise<PackingWorker>;
@@ -999,6 +1000,10 @@ export class DatabaseStorage implements IStorage {
   async deleteAllClients(): Promise<void> {
     await db.delete(clientTransactions);
     await db.delete(clients);
+  }
+
+  async deleteAllIncidents(): Promise<void> {
+    await db.delete(incidents);
   }
 
   async getPackingWorkers(): Promise<PackingWorker[]> {

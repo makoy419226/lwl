@@ -14,8 +14,11 @@ type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export default function AdminSettings() {
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [showResetIncidentsDialog, setShowResetIncidentsDialog] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
+  const [incidentsPassword, setIncidentsPassword] = useState("");
   const [resetError, setResetError] = useState("");
+  const [incidentsError, setIncidentsError] = useState("");
   const [showSendReportDialog, setShowSendReportDialog] = useState(false);
   const [reportPassword, setReportPassword] = useState("");
   const [reportError, setReportError] = useState("");
@@ -59,6 +62,7 @@ export default function AdminSettings() {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
       
       setShowResetDialog(false);
       setAdminPassword("");
@@ -66,11 +70,33 @@ export default function AdminSettings() {
       
       toast({
         title: "System Reset Complete",
-        description: "All orders, bills, clients, transactions, and inventory have been reset.",
+        description: "All orders, bills, clients, transactions, incidents, and inventory have been reset.",
       });
     },
     onError: (error: any) => {
       setResetError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to reset data");
+    },
+  });
+
+  const resetIncidentsMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await apiRequest("POST", "/api/incidents/reset-all", { adminPassword: password });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      
+      setShowResetIncidentsDialog(false);
+      setIncidentsPassword("");
+      setIncidentsError("");
+      
+      toast({
+        title: "Incidents Reset Complete",
+        description: "All incidents have been deleted.",
+      });
+    },
+    onError: (error: any) => {
+      setIncidentsError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to reset incidents");
     },
   });
 
@@ -568,6 +594,7 @@ export default function AdminSettings() {
                       <li>All clients</li>
                       <li>All deposits and transaction history</li>
                       <li>All customer dues</li>
+                      <li>All incidents</li>
                       <li>Inventory stock (reset to zero)</li>
                     </ul>
                     <p className="mt-3 font-semibold text-destructive">This action cannot be undone!</p>
@@ -615,6 +642,81 @@ export default function AdminSettings() {
                       <RotateCcw className="w-4 h-4 mr-2" />
                     )}
                     Reset All Data
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={showResetIncidentsDialog} onOpenChange={(open) => {
+              setShowResetIncidentsDialog(open);
+              if (!open) {
+                setIncidentsPassword("");
+                setIncidentsError("");
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto gap-2 border-orange-500 text-orange-600 hover:bg-orange-50"
+                  data-testid="button-reset-incidents"
+                >
+                  <AlertTriangle className="w-5 h-5" />
+                  Reset Incidents Only
+                </Button>
+              </DialogTrigger>
+              <DialogContent aria-describedby={undefined} className="max-w-md max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-orange-600">
+                    <AlertTriangle className="w-5 h-5" />
+                    Reset All Incidents
+                  </DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete ALL incidents from the system.
+                    <p className="mt-3 font-semibold text-orange-600">This action cannot be undone!</p>
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="incidents-password">Admin Password</Label>
+                    <Input
+                      id="incidents-password"
+                      type="password"
+                      placeholder="Enter admin password..."
+                      value={incidentsPassword}
+                      onChange={(e) => {
+                        setIncidentsPassword(e.target.value);
+                        setIncidentsError("");
+                      }}
+                      data-testid="input-incidents-password"
+                    />
+                    {incidentsError && (
+                      <p className="text-sm text-destructive">{incidentsError}</p>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowResetIncidentsDialog(false);
+                      setIncidentsPassword("");
+                      setIncidentsError("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => resetIncidentsMutation.mutate(incidentsPassword)}
+                    disabled={!incidentsPassword || resetIncidentsMutation.isPending}
+                    data-testid="button-confirm-reset-incidents"
+                  >
+                    {resetIncidentsMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                    )}
+                    Reset Incidents
                   </Button>
                 </DialogFooter>
               </DialogContent>
