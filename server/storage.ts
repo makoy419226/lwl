@@ -558,15 +558,21 @@ export class DatabaseStorage implements IStorage {
       const billOrders = clientOrders.filter((order) => order.billId === billId);
 
       if (billOrders.length > 0) {
+        // Normalize payment method for orders (bulk_deposit -> deposit)
+        const orderPaymentMethod = paymentMethod === "bulk_deposit" ? "deposit" : (paymentMethod || "cash");
+        
         if (isPaid) {
-          // Bill fully paid - mark all orders as fully paid
+          // Bill fully paid - mark all orders as fully paid with payment method
           await db
             .update(orders)
-            .set({ paidAmount: sql`total_amount` })
+            .set({ 
+              paidAmount: sql`total_amount`,
+              paymentMethod: orderPaymentMethod
+            })
             .where(inArray(orders.id, billOrders.map(o => o.id)));
 
           console.log(
-            `[PAYMENT] Marked ${billOrders.length} order(s) as fully paid for bill ${billId}`,
+            `[PAYMENT] Marked ${billOrders.length} order(s) as fully paid (${orderPaymentMethod}) for bill ${billId}`,
           );
         } else {
           // Partial payment - distribute payment across unpaid orders proportionally
@@ -582,10 +588,15 @@ export class DatabaseStorage implements IStorage {
             if (orderRemaining > 0) {
               const paymentForThisOrder = Math.min(remainingPayment, orderRemaining);
               const newOrderPaid = orderPaid + paymentForThisOrder;
+              const isOrderFullyPaid = Math.abs(newOrderPaid - orderTotal) < 0.01;
               
               await db
                 .update(orders)
-                .set({ paidAmount: newOrderPaid.toFixed(2) })
+                .set({ 
+                  paidAmount: newOrderPaid.toFixed(2),
+                  // Only set payment method when order is fully paid
+                  ...(isOrderFullyPaid && { paymentMethod: orderPaymentMethod })
+                })
                 .where(eq(orders.id, order.id));
               
               remainingPayment -= paymentForThisOrder;
