@@ -772,7 +772,7 @@ export async function seedDatabase() {
       },
       {
         username: "reception1",
-        password: "reception1234",
+        password: "reception123",
         role: "reception",
         name: "ReceptionUsername",
         pin: "11111",
@@ -829,7 +829,7 @@ export const defaultUsers = [
   },
   {
     username: "reception1",
-    password: "reception1234",
+    password: "reception123",
     role: "reception",
     name: "ReceptionUsername",
     pin: "11111",

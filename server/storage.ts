@@ -1026,7 +1026,7 @@ export class DatabaseStorage implements IStorage {
     const defaultUsers = [
       {
         username: "reception1",
-        password: "reception1234",
+        password: "reception123",
         role: "reception",
         name: "ReceptionUsername",
         pin: "11111",
