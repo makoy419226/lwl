@@ -1982,26 +1982,34 @@ export default function Clients() {
                           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                         );
                         let runningBalance = 0;
-                        const txRows = sortedTx.map((tx) => {
+                        const txRows = sortedTx.map((tx, index) => {
                           if (tx.type === "deposit") {
                             runningBalance += parseFloat(tx.amount);
                           } else {
                             runningBalance -= parseFloat(tx.amount);
                           }
+                          // Truncate long descriptions for print
+                          const desc = tx.description || "-";
+                          const truncatedDesc = desc.length > 80 ? desc.substring(0, 80) + "..." : desc;
+                          const typeLabel = tx.type === "bill" ? "Bill" : tx.type === "deposit" ? "Deposit" : "Payment";
+                          const typeColor = tx.type === "bill" ? "#dc2626" : "#16a34a";
+                          const typeBg = tx.type === "bill" ? "#fee2e2" : "#dcfce7";
                           return `
-                            <tr>
-                              <td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 11px;">${format(new Date(tx.date), "dd/MM/yyyy HH:mm")}</td>
-                              <td style="padding: 8px; border-bottom: 1px solid #eee;">
-                                <span style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: ${tx.type === "bill" ? "#dbeafe" : "#dcfce7"}; color: ${tx.type === "bill" ? "#1d4ed8" : "#16a34a"};">
-                                  ${tx.type === "bill" ? "Bill" : "Paid in Cash"}
+                            <tr style="page-break-inside: avoid; break-inside: avoid;">
+                              <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 10px; text-align: center;">${index + 1}</td>
+                              <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 10px;">${format(new Date(tx.date), "dd/MM/yyyy")}</td>
+                              <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 10px;">${format(new Date(tx.date), "HH:mm")}</td>
+                              <td style="padding: 6px; border-bottom: 1px solid #eee;">
+                                <span style="padding: 2px 6px; border-radius: 8px; font-size: 9px; background: ${typeBg}; color: ${typeColor};">
+                                  ${typeLabel}
                                 </span>
                               </td>
-                              <td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 11px; max-width: 200px;">${tx.description || "-"}</td>
-                              <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: 500; color: ${tx.type === "deposit" ? "#16a34a" : "#2563eb"};">
-                                ${tx.type === "deposit" ? "+" : "-"}${parseFloat(tx.amount).toFixed(2)}
+                              <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 10px;">${truncatedDesc}</td>
+                              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right; font-weight: 500; color: ${tx.type === "deposit" ? "#16a34a" : "#2563eb"}; font-size: 10px;">
+                                ${tx.type === "deposit" ? "+" : ""}${parseFloat(tx.amount).toFixed(2)}<br/><span style="font-size: 8px; color: #888;">AED</span>
                               </td>
-                              <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: ${runningBalance >= 0 ? "#16a34a" : "#dc2626"};">
-                                ${runningBalance.toFixed(2)}
+                              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: ${runningBalance >= 0 ? "#16a34a" : "#dc2626"}; font-size: 10px;">
+                                ${runningBalance.toFixed(2)}<br/><span style="font-size: 8px; color: #888;">AED</span>
                               </td>
                             </tr>
                           `;
@@ -2022,8 +2030,7 @@ export default function Clients() {
                                 .client-name { font-size: 16px; font-weight: bold; }
                                 .client-details { font-size: 12px; color: #666; margin-top: 5px; }
                                 table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                                th { background: #1e40af; color: white; padding: 10px 8px; text-align: left; font-size: 11px; }
-                                th:nth-child(4), th:nth-child(5) { text-align: right; }
+                                th { background: #1e40af; color: white; padding: 8px 6px; text-align: left; font-size: 10px; }
                                 tr { page-break-inside: avoid; break-inside: avoid; }
                                 td { word-wrap: break-word; overflow-wrap: break-word; }
                                 thead { display: table-header-group; }
@@ -2059,11 +2066,13 @@ export default function Clients() {
                               <table>
                                 <thead>
                                   <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
+                                    <th style="width: 30px;">#</th>
+                                    <th style="width: 80px;">Date</th>
+                                    <th style="width: 50px;">Time</th>
+                                    <th style="width: 70px;">Type</th>
                                     <th>Description</th>
-                                    <th>Amount</th>
-                                    <th>Balance</th>
+                                    <th style="width: 70px; text-align: right;">Amount</th>
+                                    <th style="width: 70px; text-align: right;">Balance</th>
                                   </tr>
                                 </thead>
                                 <tbody>
