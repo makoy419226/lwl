@@ -175,6 +175,33 @@ function App() {
     return () => clearInterval(interval);
   }, [isLoggedIn, user, handleLogout]);
 
+  // Listen for instant logout via Server-Sent Events
+  useEffect(() => {
+    if (!isLoggedIn || !user) return;
+    
+    const eventSource = new EventSource(`/api/auth/logout-stream?userId=${user.id}`);
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "forceLogout") {
+          handleLogout();
+          window.location.reload();
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    };
+    
+    eventSource.onerror = () => {
+      // Reconnect will happen automatically
+    };
+    
+    return () => {
+      eventSource.close();
+    };
+  }, [isLoggedIn, user, handleLogout]);
+
   const checkSessionTimeout = useCallback(() => {
     const lastActivity = localStorage.getItem("lastActivity");
     if (lastActivity && isLoggedIn) {

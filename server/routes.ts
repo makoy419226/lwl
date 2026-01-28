@@ -25,6 +25,52 @@ export async function registerRoutes(
   
   // Force logout tracking - stores userIds that should be logged out on next heartbeat
   const forceLogoutUsers = new Set<number>();
+  
+  // SSE connections for instant logout notification
+  const sseClients = new Map<number, Response[]>();
+  
+  // SSE endpoint for logout notifications
+  app.get("/api/auth/logout-stream", (req, res) => {
+    const userId = parseInt(req.query.userId as string);
+    if (!userId) {
+      return res.status(400).json({ error: "userId required" });
+    }
+    
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.flushHeaders();
+    
+    // Add this client to the list
+    if (!sseClients.has(userId)) {
+      sseClients.set(userId, []);
+    }
+    sseClients.get(userId)!.push(res);
+    
+    // Send initial connection message
+    res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+    
+    // Check if user should already be logged out
+    if (forceLogoutUsers.has(userId)) {
+      res.write(`data: ${JSON.stringify({ type: "forceLogout" })}\n\n`);
+      forceLogoutUsers.delete(userId);
+    }
+    
+    // Cleanup on disconnect
+    req.on("close", () => {
+      const clients = sseClients.get(userId);
+      if (clients) {
+        const index = clients.indexOf(res);
+        if (index > -1) {
+          clients.splice(index, 1);
+        }
+        if (clients.length === 0) {
+          sseClients.delete(userId);
+        }
+      }
+    });
+  });
 
   // Heartbeat endpoint - called periodically by logged-in users
   app.post("/api/auth/heartbeat", async (req, res) => {
@@ -88,12 +134,24 @@ export async function registerRoutes(
         forceLogoutUsers.add(user.id);
         activeSessions.delete(user.id);
         loggedOutCount++;
+        
+        // Send instant logout notification via SSE
+        const clients = sseClients.get(user.id);
+        if (clients && clients.length > 0) {
+          clients.forEach(client => {
+            try {
+              client.write(`data: ${JSON.stringify({ type: "forceLogout" })}\n\n`);
+            } catch (e) {
+              // Client disconnected
+            }
+          });
+        }
       }
     }
     
     res.json({ 
       success: true, 
-      message: `${loggedOutCount} user sessions marked for logout`,
+      message: `${loggedOutCount} user sessions logged out instantly`,
       loggedOutCount 
     });
   });
