@@ -49,6 +49,11 @@ export default function AdminSettings() {
   const [logoutAllPassword, setLogoutAllPassword] = useState("");
   const [logoutAllError, setLogoutAllError] = useState("");
   
+  // Delete all users state
+  const [showDeleteAllUsersDialog, setShowDeleteAllUsersDialog] = useState(false);
+  const [deleteAllUsersPassword, setDeleteAllUsersPassword] = useState("");
+  const [deleteAllUsersError, setDeleteAllUsersError] = useState("");
+  
   const { toast } = useToast();
 
   // Fetch admin account settings
@@ -140,6 +145,26 @@ export default function AdminSettings() {
     },
     onError: (error: any) => {
       setLogoutAllError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to log out users");
+    },
+  });
+
+  const deleteAllUsersMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await apiRequest("POST", "/api/admin/delete-all-users", { adminPassword: password });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setShowDeleteAllUsersDialog(false);
+      setDeleteAllUsersPassword("");
+      setDeleteAllUsersError("");
+      toast({
+        title: "Users Deleted",
+        description: data.message || "All non-admin user accounts have been deleted.",
+      });
+    },
+    onError: (error: any) => {
+      setDeleteAllUsersError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to delete users");
     },
   });
 
@@ -754,6 +779,71 @@ export default function AdminSettings() {
                       <Lock className="w-4 h-4 mr-2" />
                     )}
                     Log Out All Users
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={showDeleteAllUsersDialog} onOpenChange={setShowDeleteAllUsersDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full gap-2 border-red-500/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-950" data-testid="button-delete-all-users">
+                  <Trash2 className="w-5 h-5" />
+                  Delete All Users
+                </Button>
+              </DialogTrigger>
+              <DialogContent aria-describedby={undefined} className="max-w-md max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-red-600">
+                    <Trash2 className="w-5 h-5" />
+                    Delete All User Accounts
+                  </DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete all user accounts except the admin account. This action cannot be undone.
+                    <p className="mt-3 font-semibold">The admin account will not be affected.</p>
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="delete-all-users-password">Admin Password</Label>
+                    <Input
+                      id="delete-all-users-password"
+                      type="password"
+                      placeholder="Enter admin password..."
+                      value={deleteAllUsersPassword}
+                      onChange={(e) => {
+                        setDeleteAllUsersPassword(e.target.value);
+                        setDeleteAllUsersError("");
+                      }}
+                      data-testid="input-delete-all-users-password"
+                    />
+                    {deleteAllUsersError && (
+                      <p className="text-sm text-destructive">{deleteAllUsersError}</p>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDeleteAllUsersDialog(false);
+                      setDeleteAllUsersPassword("");
+                      setDeleteAllUsersError("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => deleteAllUsersMutation.mutate(deleteAllUsersPassword)}
+                    disabled={!deleteAllUsersPassword || deleteAllUsersMutation.isPending}
+                    data-testid="button-confirm-delete-all-users"
+                  >
+                    {deleteAllUsersMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mr-2" />
+                    )}
+                    Delete All Users
                   </Button>
                 </DialogFooter>
               </DialogContent>

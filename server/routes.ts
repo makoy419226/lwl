@@ -156,6 +156,43 @@ export async function registerRoutes(
     });
   });
 
+  // Delete all non-admin users (admin only)
+  app.post("/api/admin/delete-all-users", async (req, res) => {
+    const { adminPassword } = req.body;
+    
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Admin password required" });
+    }
+    
+    // Verify admin password from database
+    const adminUser = await storage.getUserByUsername("admin");
+    const correctPassword = adminUser?.password || process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (adminPassword !== correctPassword) {
+      return res.status(401).json({ success: false, message: "Invalid admin password" });
+    }
+    
+    // Get all non-admin users and delete them
+    const allUsers = await storage.getUsers();
+    let deletedCount = 0;
+    
+    for (const user of allUsers) {
+      if (user.username !== "admin" && user.role !== "admin") {
+        await storage.deleteUser(user.id);
+        // Clean up any active sessions
+        forceLogoutUsers.delete(user.id);
+        activeSessions.delete(user.id);
+        deletedCount++;
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `${deletedCount} user accounts deleted`,
+      deletedCount 
+    });
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     const { username, password } = req.body;
