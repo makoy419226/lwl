@@ -1125,6 +1125,7 @@ export async function registerRoutes(
             customerPhone: clientInfo.phone,
             customerAddress: clientInfo.address,
             items: order.items || "",
+            totalAmount: order.totalAmount || "0",
           };
         })
       );

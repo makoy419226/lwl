@@ -34,6 +34,7 @@ export default function Incidents() {
   const [foundOrder, setFoundOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedItemIndices, setSelectedItemIndices] = useState<number[]>([]);
+  const [maxRefundAmount, setMaxRefundAmount] = useState<number>(0);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -115,6 +116,7 @@ export default function Incidents() {
     customerPhone: string;
     customerAddress: string;
     items: string;
+    totalAmount: string;
   }
 
   const { data: activeOrders } = useQuery<ActiveOrder[]>({
@@ -395,6 +397,7 @@ export default function Incidents() {
               setFoundOrder(null);
               setOrderItems([]);
               setSelectedItemIndices([]);
+              setMaxRefundAmount(0);
               return;
             }
             const selectedOrder = activeOrders?.find(o => o.orderNumber === value);
@@ -407,6 +410,7 @@ export default function Incidents() {
                 customerAddress: selectedOrder.customerAddress,
                 itemName: selectedOrder.items || "",
               }));
+              setMaxRefundAmount(parseFloat(selectedOrder.totalAmount) || 0);
             }
           }}
         >
@@ -509,13 +513,33 @@ export default function Incidents() {
       {formData.incidentType === "refund" && (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="refundAmount">Refund Amount (AED)</Label>
+            <Label htmlFor="refundAmount">
+              Refund Amount (AED)
+              {maxRefundAmount > 0 && (
+                <span className="text-xs text-muted-foreground ml-2">
+                  (Max: {maxRefundAmount.toFixed(2)})
+                </span>
+              )}
+            </Label>
             <Input
               id="refundAmount"
               type="number"
               step="0.01"
+              max={maxRefundAmount > 0 ? maxRefundAmount : undefined}
               value={formData.refundAmount}
-              onChange={(e) => setFormData({ ...formData, refundAmount: e.target.value })}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value) || 0;
+                if (maxRefundAmount > 0 && value > maxRefundAmount) {
+                  toast({ 
+                    title: "Refund Limit Exceeded", 
+                    description: `Refund cannot exceed order total of AED ${maxRefundAmount.toFixed(2)}`,
+                    variant: "destructive"
+                  });
+                  setFormData({ ...formData, refundAmount: maxRefundAmount.toString() });
+                } else {
+                  setFormData({ ...formData, refundAmount: e.target.value });
+                }
+              }}
               placeholder="0.00"
               data-testid="input-incident-refund-amount"
             />
