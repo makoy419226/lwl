@@ -146,12 +146,22 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn || !user) return;
     
-    const sendHeartbeat = () => {
-      fetch("/api/auth/heartbeat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, username: user.username }),
-      }).catch(() => {});
+    const sendHeartbeat = async () => {
+      try {
+        const response = await fetch("/api/auth/heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id, username: user.username }),
+        });
+        const data = await response.json();
+        
+        // Check if admin has forced logout
+        if (data.forceLogout) {
+          handleLogout();
+        }
+      } catch {
+        // Ignore network errors
+      }
     };
     
     // Send immediately on login
@@ -161,7 +171,7 @@ function App() {
     const interval = setInterval(sendHeartbeat, 30000);
     
     return () => clearInterval(interval);
-  }, [isLoggedIn, user]);
+  }, [isLoggedIn, user, handleLogout]);
 
   const checkSessionTimeout = useCallback(() => {
     const lastActivity = localStorage.getItem("lastActivity");

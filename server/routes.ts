@@ -22,11 +22,21 @@ export async function registerRoutes(
   // Active session tracking (in-memory, stores userId -> lastActivity timestamp)
   const activeSessions = new Map<number, { userId: number; username: string; lastActivity: Date }>();
   const SESSION_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes - user is considered offline after this
+  
+  // Force logout tracking - stores userIds that should be logged out on next heartbeat
+  const forceLogoutUsers = new Set<number>();
 
   // Heartbeat endpoint - called periodically by logged-in users
   app.post("/api/auth/heartbeat", async (req, res) => {
     const { userId, username } = req.body;
     if (userId) {
+      // Check if user should be force logged out
+      if (forceLogoutUsers.has(userId)) {
+        forceLogoutUsers.delete(userId);
+        activeSessions.delete(userId);
+        return res.json({ success: false, forceLogout: true, message: "Session terminated by admin" });
+      }
+      
       activeSessions.set(userId, {
         userId,
         username: username || "",
@@ -51,6 +61,41 @@ export async function registerRoutes(
     }
     
     res.json({ activeUserIds });
+  });
+
+  // Force logout all non-admin users (admin only)
+  app.post("/api/admin/logout-all-users", async (req, res) => {
+    const { adminPassword } = req.body;
+    
+    if (!adminPassword) {
+      return res.status(400).json({ success: false, message: "Admin password required" });
+    }
+    
+    // Verify admin password from database
+    const adminUser = await storage.getUserByUsername("admin");
+    const correctPassword = adminUser?.password || process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (adminPassword !== correctPassword) {
+      return res.status(401).json({ success: false, message: "Invalid admin password" });
+    }
+    
+    // Get all non-admin users and mark them for force logout
+    const allUsers = await storage.getUsers();
+    let loggedOutCount = 0;
+    
+    for (const user of allUsers) {
+      if (user.username !== "admin" && user.role !== "admin") {
+        forceLogoutUsers.add(user.id);
+        activeSessions.delete(user.id);
+        loggedOutCount++;
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `${loggedOutCount} user sessions marked for logout`,
+      loggedOutCount 
+    });
   });
 
   // Auth routes

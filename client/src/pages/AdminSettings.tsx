@@ -44,6 +44,11 @@ export default function AdminSettings() {
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [showAdminPin, setShowAdminPin] = useState(false);
   
+  // Logout all users state
+  const [showLogoutAllDialog, setShowLogoutAllDialog] = useState(false);
+  const [logoutAllPassword, setLogoutAllPassword] = useState("");
+  const [logoutAllError, setLogoutAllError] = useState("");
+  
   const { toast } = useToast();
 
   // Fetch admin account settings
@@ -116,6 +121,25 @@ export default function AdminSettings() {
     },
     onError: (error: any) => {
       setReportError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to send report");
+    },
+  });
+
+  const logoutAllMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await apiRequest("POST", "/api/admin/logout-all-users", { adminPassword: password });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setShowLogoutAllDialog(false);
+      setLogoutAllPassword("");
+      setLogoutAllError("");
+      toast({
+        title: "Users Logged Out",
+        description: data.message || "All non-admin user sessions have been terminated.",
+      });
+    },
+    onError: (error: any) => {
+      setLogoutAllError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to log out users");
     },
   });
 
@@ -642,6 +666,94 @@ export default function AdminSettings() {
                       <RotateCcw className="w-4 h-4 mr-2" />
                     )}
                     Reset All Data
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+              <Shield className="w-5 h-5" />
+              Session Management
+            </CardTitle>
+            <CardDescription>
+              Log out all active user sessions except the admin account. Users will need to log in again.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={showLogoutAllDialog} onOpenChange={(open) => {
+              setShowLogoutAllDialog(open);
+              if (!open) {
+                setLogoutAllPassword("");
+                setLogoutAllError("");
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto gap-2 border-orange-600 text-orange-600 hover:bg-orange-50 dark:border-orange-400 dark:text-orange-400 dark:hover:bg-orange-950"
+                  data-testid="button-logout-all-users"
+                >
+                  <Lock className="w-5 h-5" />
+                  Log Out All Users
+                </Button>
+              </DialogTrigger>
+              <DialogContent aria-describedby={undefined} className="max-w-md max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-orange-600">
+                    <Lock className="w-5 h-5" />
+                    Log Out All User Sessions
+                  </DialogTitle>
+                  <DialogDescription>
+                    This will terminate all active sessions for non-admin accounts. Users currently logged in will be logged out and need to sign in again.
+                    <p className="mt-3 font-semibold">The admin account will not be affected.</p>
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="logout-all-password">Admin Password</Label>
+                    <Input
+                      id="logout-all-password"
+                      type="password"
+                      placeholder="Enter admin password..."
+                      value={logoutAllPassword}
+                      onChange={(e) => {
+                        setLogoutAllPassword(e.target.value);
+                        setLogoutAllError("");
+                      }}
+                      data-testid="input-logout-all-password"
+                    />
+                    {logoutAllError && (
+                      <p className="text-sm text-destructive">{logoutAllError}</p>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowLogoutAllDialog(false);
+                      setLogoutAllPassword("");
+                      setLogoutAllError("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                    onClick={() => logoutAllMutation.mutate(logoutAllPassword)}
+                    disabled={!logoutAllPassword || logoutAllMutation.isPending}
+                    data-testid="button-confirm-logout-all"
+                  >
+                    {logoutAllMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Lock className="w-4 h-4 mr-2" />
+                    )}
+                    Log Out All Users
                   </Button>
                 </DialogFooter>
               </DialogContent>
