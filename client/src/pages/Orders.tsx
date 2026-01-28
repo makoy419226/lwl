@@ -4251,7 +4251,7 @@ function OrderForm({
                   +971
                 </span>
                 <Input
-                  className="rounded-l-none"
+                  className={`rounded-l-none ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
                   placeholder="XXXXXXXXXX"
                   value={formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 10) || ""}
                   onChange={(e) => {
@@ -4263,6 +4263,9 @@ function OrderForm({
                   data-testid="input-customer-phone"
                 />
               </div>
+              {(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 10 && (
+                <p className="text-xs text-green-600 font-medium">10 digits - limit reached</p>
+              )}
             </div>
             {clientMatch && (
               <div className="p-4 border-2 border-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg mt-2 animate-pulse">
