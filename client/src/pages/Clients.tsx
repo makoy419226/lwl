@@ -546,134 +546,126 @@ export default function Clients() {
     const balance = getClientBalanceDue(client);
 
     // Fetch all transactions for this client
-    let clientTransactions: ClientTransaction[] = [];
+    let transactionRows = "";
     try {
       const res = await fetch(`/api/clients/${client.id}/transactions`);
       if (res.ok) {
-        clientTransactions = await res.json();
+        const clientTransactions: ClientTransaction[] = await res.json();
+        if (clientTransactions && clientTransactions.length > 0) {
+          const sortedTransactions = [...clientTransactions].sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+          );
+          let runningBalance = 0;
+          transactionRows = sortedTransactions
+            .map((t, idx) => {
+              if (t.type === "deposit") {
+                runningBalance += parseFloat(t.amount);
+              } else {
+                runningBalance -= parseFloat(t.amount);
+              }
+              // Simplify description to only show bill/order numbers
+              const desc = t.description || "-";
+              const billMatch = desc.match(/Bill #(\d+)/);
+              const orderMatch = desc.match(/Order #(ORD-\d+)/);
+              let simpleDesc = "-";
+              if (billMatch && orderMatch) {
+                if (desc.toLowerCase().includes("deposit used")) {
+                  simpleDesc = `Deposit used for Bill #${billMatch[1]}: Order #${orderMatch[1]}`;
+                } else {
+                  simpleDesc = `Payment for Bill #${billMatch[1]}: Order #${orderMatch[1]}`;
+                }
+              } else if (desc.toLowerCase().includes("deposit received")) {
+                simpleDesc = "Deposit received";
+              } else {
+                simpleDesc = desc.length > 50 ? desc.substring(0, 50) + "..." : desc;
+              }
+              const balanceColor = runningBalance >= 0 ? "#4caf50" : "#f44336";
+              return `
+                <tr style="border-bottom: 1px solid #eee;">
+                  <td style="padding: 8px; text-align: center;">${idx + 1}</td>
+                  <td style="padding: 8px;">${format(new Date(t.date), "dd/MM/yyyy")}</td>
+                  <td style="padding: 8px;">${format(new Date(t.date), "HH:mm")}</td>
+                  <td style="padding: 8px; text-transform: capitalize; font-weight: 500; color: ${t.type === "deposit" ? "#4caf50" : "#2196f3"};">${t.type}</td>
+                  <td style="padding: 8px;">${simpleDesc}</td>
+                  <td style="padding: 8px; text-align: right; color: ${t.type === "deposit" ? "#4caf50" : "#2196f3"};">${t.type === "deposit" ? "+" : ""}${parseFloat(t.amount).toFixed(2)} AED</td>
+                  <td style="padding: 8px; text-align: right; font-weight: 500; color: ${balanceColor};">${runningBalance.toFixed(2)} AED</td>
+                </tr>
+              `;
+            })
+            .join("");
+        }
       }
     } catch (e) {
       console.log("Could not fetch transactions");
     }
 
-    // Sort and calculate running balance
-    const sortedTransactions = [...clientTransactions].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
-    
-    let runningBalance = 0;
-    const ROWS_PER_PAGE_FIRST = 3;
-    const ROWS_PER_PAGE = 10;
-    
-    const allRows = sortedTransactions.map((t, idx) => {
-      if (t.type === "deposit") {
-        runningBalance += parseFloat(t.amount);
-      } else {
-        runningBalance -= parseFloat(t.amount);
-      }
-      const desc = t.description || "-";
-      const truncatedDesc = desc.length > 30 ? desc.substring(0, 30) + "..." : desc;
-      return {
-        index: idx + 1,
-        date: format(new Date(t.date), "dd/MM/yyyy"),
-        time: format(new Date(t.date), "HH:mm"),
-        type: t.type,
-        desc: truncatedDesc,
-        amount: `${t.type === "deposit" ? "+" : ""}${parseFloat(t.amount).toFixed(2)}`,
-        balance: runningBalance.toFixed(2),
-        balanceColor: runningBalance >= 0 ? "#4caf50" : "#f44336"
-      };
-    });
-    
-    // Paginate
-    const pages: typeof allRows[] = [];
-    let currentIndex = 0;
-    let pageNum = 0;
-    while (currentIndex < allRows.length) {
-      const rowsThisPage = pageNum === 0 ? ROWS_PER_PAGE_FIRST : ROWS_PER_PAGE;
-      pages.push(allRows.slice(currentIndex, currentIndex + rowsThisPage));
-      currentIndex += rowsThisPage;
-      pageNum++;
-    }
-    if (pages.length === 0) pages.push([]);
-    
-    const renderRow = (r: typeof allRows[0]) => `
-      <tr style="border-bottom: 1px solid #eee; height: 28px;">
-        <td style="padding: 6px; text-align: center;">${r.index}</td>
-        <td style="padding: 6px;">${r.date}</td>
-        <td style="padding: 6px;">${r.time}</td>
-        <td style="padding: 6px; text-transform: capitalize; font-weight: 500; color: ${r.type === "deposit" ? "#4caf50" : "#2196f3"};">${r.type}</td>
-        <td style="padding: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${r.desc}</td>
-        <td style="padding: 6px; text-align: right; color: ${r.type === "deposit" ? "#4caf50" : "#2196f3"};">${r.amount} AED</td>
-        <td style="padding: 6px; text-align: right; font-weight: 500; color: ${r.balanceColor};">${r.balance} AED</td>
-      </tr>
-    `;
-    
-    const renderHeader = () => `
-      <tr style="background: #1e88e5; color: white; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-        <th style="padding: 8px; text-align: center; width: 30px;">#</th>
-        <th style="padding: 8px; text-align: left;">Date</th>
-        <th style="padding: 8px; text-align: left;">Time</th>
-        <th style="padding: 8px; text-align: left;">Type</th>
-        <th style="padding: 8px; text-align: left;">Description</th>
-        <th style="padding: 8px; text-align: right;">Amount</th>
-        <th style="padding: 8px; text-align: right;">Balance</th>
-      </tr>
-    `;
-    
-    const pagesHtml = pages.map((pageRows, pIdx) => `
-      <div class="page" style="${pIdx > 0 ? 'page-break-before: always;' : ''}">
-        ${pIdx === 0 ? `
-          <div style="text-align: center; margin-bottom: 15px; border-bottom: 3px solid #1e88e5; padding-bottom: 15px;">
-            <img src="${logoImage}" alt="Logo" style="max-width: 150px; height: auto;" />
-            <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Centra Market D/109, Al Dhanna City, Al Ruwais, Abu Dhabi-UAE</p>
-          </div>
-          <h2 style="text-align: center; margin: 15px 0; color: #333; font-size: 18px;">CLIENT ACCOUNT SUMMARY</h2>
-          <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 12px;">
-            <table style="width: 100%;">
-              <tr>
-                <td style="padding: 4px 0;"><strong>Client Name:</strong> ${client.name}</td>
-                <td style="padding: 4px 0;"><strong>Phone:</strong> ${client.phone || "-"}</td>
-              </tr>
-              <tr>
-                <td style="padding: 4px 0;"><strong>Address:</strong> ${client.address || "-"}</td>
-                <td style="padding: 4px 0;"><strong>Account Number:</strong> ${client.billNumber || "-"}</td>
-              </tr>
-            </table>
-          </div>
-          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <div style="flex: 1; background: #e3f2fd; padding: 10px; border-radius: 6px; text-align: center;">
-              <p style="margin: 0; font-size: 10px; color: #1565c0;">Total Bills</p>
-              <p style="margin: 3px 0 0 0; font-size: 16px; font-weight: bold; color: #1e88e5;">${totalBill.toFixed(2)} AED</p>
-            </div>
-            <div style="flex: 1; background: #e8f5e9; padding: 10px; border-radius: 6px; text-align: center;">
-              <p style="margin: 0; font-size: 10px; color: #2e7d32;">Total Deposits</p>
-              <p style="margin: 3px 0 0 0; font-size: 16px; font-weight: bold; color: #4caf50;">${totalDeposit.toFixed(2)} AED</p>
-            </div>
-            <div style="flex: 1; background: #ffebee; padding: 10px; border-radius: 6px; text-align: center;">
-              <p style="margin: 0; font-size: 10px; color: #c62828;">Due Balance</p>
-              <p style="margin: 3px 0 0 0; font-size: 16px; font-weight: bold; color: #f44336;">${balance.toFixed(2)} AED</p>
-            </div>
-          </div>
-          <h3 style="margin: 10px 0 8px 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 6px; font-size: 14px;">Transaction History</h3>
-        ` : `<div style="text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 10px;">${client.name} - Transaction History (continued)</div>`}
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed;">
-          <thead>${renderHeader()}</thead>
-          <tbody>${pageRows.length > 0 ? pageRows.map(renderRow).join('') : '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #999;">No transaction history found</td></tr>'}</tbody>
-        </table>
-        ${pIdx === pages.length - 1 ? `
-          <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #ddd; text-align: center;">
-            <p style="font-size: 10px; color: #666; margin: 0;">Generated on ${format(new Date(), "dd/MM/yyyy 'at' HH:mm")} | Thank you for your business!</p>
-            <p style="font-size: 11px; font-weight: bold; color: #000; margin: 5px 0 0 0;">Tel: 026 815 824 | Mobile: +971 56 338 0001</p>
-          </div>
-        ` : ''}
-      </div>
-    `).join('');
-
     const content = document.createElement("div");
     content.innerHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 15px; max-width: 800px; margin: 0 auto;">
-        ${pagesHtml}
+      <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e88e5; padding-bottom: 20px;">
+          <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+            <img src="${logoImage}" alt="Logo" style="max-width: 180px; height: auto;" />
+          </div>
+          <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">Centra Market D/109, Al Dhanna City, Al Ruwais, Abu Dhabi-UAE</p>
+        </div>
+
+        <h2 style="text-align: center; margin: 20px 0; color: #333; font-size: 22px;">CLIENT ACCOUNT SUMMARY</h2>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+          <table style="width: 100%; font-size: 14px;">
+            <tr>
+              <td style="padding: 8px 0; width: 50%;"><strong>Client Name:</strong> ${client.name}</td>
+              <td style="padding: 8px 0;"><strong>Phone:</strong> ${client.phone || "-"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0;"><strong>Address:</strong> ${client.address || "-"}</td>
+              <td style="padding: 8px 0;"><strong>Account Number:</strong> ${client.billNumber || "-"}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="display: flex; gap: 20px; margin-bottom: 25px;">
+          <div style="flex: 1; background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: #1565c0;">Total Bills</p>
+            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #1e88e5;">${totalBill.toFixed(2)} AED</p>
+          </div>
+          <div style="flex: 1; background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: #2e7d32;">Total Deposits</p>
+            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #4caf50;">${totalDeposit.toFixed(2)} AED</p>
+          </div>
+          <div style="flex: 1; background: #ffebee; padding: 15px; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: #c62828;">Due Balance</p>
+            <p style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #f44336;">${balance.toFixed(2)} AED</p>
+          </div>
+        </div>
+
+        <h3 style="margin: 25px 0 15px 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Transaction History</h3>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: #1e88e5; color: white;">
+              <th style="padding: 12px 8px; text-align: center; width: 40px;">#</th>
+              <th style="padding: 12px 8px; text-align: left;">Date</th>
+              <th style="padding: 12px 8px; text-align: left;">Time</th>
+              <th style="padding: 12px 8px; text-align: left;">Type</th>
+              <th style="padding: 12px 8px; text-align: left;">Order #</th>
+              <th style="padding: 12px 8px; text-align: right;">Amount</th>
+              <th style="padding: 12px 8px; text-align: right;">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${transactionRows || '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No transaction history found</td></tr>'}
+          </tbody>
+        </table>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; text-align: center;">
+          <p style="font-size: 11px; color: #666; margin: 0;">
+            Generated on ${format(new Date(), "dd/MM/yyyy 'at' HH:mm")} | Thank you for your business!
+          </p>
+          <p style="font-size: 13px; font-weight: bold; color: #000; margin: 8px 0 0 0;">
+            Tel: 026 815 824 | Mobile: +971 56 338 0001
+          </p>
+        </div>
       </div>
     `;
 
@@ -2012,123 +2004,120 @@ export default function Clients() {
                           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                         );
                         let runningBalance = 0;
-                        const ROWS_PER_PAGE_FIRST = 3;
-                        const ROWS_PER_PAGE = 3;
                         
-                        const allRows = sortedTx.map((tx, index) => {
+                        // Simplify description to only show bill/order numbers
+                        const simplifyDesc = (desc: string, txType: string) => {
+                          if (!desc) return "-";
+                          // Extract bill number and order number only
+                          const billMatch = desc.match(/Bill #(\d+)/);
+                          const orderMatch = desc.match(/Order #(ORD-\d+)/);
+                          
+                          if (billMatch && orderMatch) {
+                            if (desc.toLowerCase().includes("deposit used")) {
+                              return `Deposit used for Bill #${billMatch[1]}: Order #${orderMatch[1]}`;
+                            }
+                            return `Payment for Bill #${billMatch[1]}: Order #${orderMatch[1]}`;
+                          }
+                          if (desc.toLowerCase().includes("deposit received")) {
+                            return "Deposit received";
+                          }
+                          return desc.length > 50 ? desc.substring(0, 50) + "..." : desc;
+                        };
+                        
+                        const txRows = sortedTx.map((tx, index) => {
                           if (tx.type === "deposit") {
                             runningBalance += parseFloat(tx.amount);
                           } else {
                             runningBalance -= parseFloat(tx.amount);
                           }
-                          const desc = tx.description || "-";
-                          const truncatedDesc = desc.length > 25 ? desc.substring(0, 25) + "..." : desc;
                           const typeLabel = tx.type === "bill" ? "Bill" : tx.type === "deposit" ? "Deposit" : "Payment";
-                          const typeColor = tx.type === "bill" ? "#dc2626" : "#16a34a";
-                          const typeBg = tx.type === "bill" ? "#fee2e2" : "#dcfce7";
+                          const typeColor = tx.type === "deposit" ? "#16a34a" : "#2563eb";
                           const amountColor = tx.type === "deposit" ? "#16a34a" : "#2563eb";
                           const balanceColor = runningBalance >= 0 ? "#16a34a" : "#dc2626";
-                          return {
-                            index: index + 1,
-                            date: format(new Date(tx.date), "dd/MM/yyyy"),
-                            time: format(new Date(tx.date), "HH:mm"),
-                            typeLabel, typeColor, typeBg,
-                            desc: truncatedDesc,
-                            amount: `${tx.type === "deposit" ? "+" : ""}${parseFloat(tx.amount).toFixed(2)}`,
-                            amountColor,
-                            balance: runningBalance.toFixed(2),
-                            balanceColor
-                          };
-                        });
-                        
-                        const pages: typeof allRows[] = [];
-                        let currentIndex = 0;
-                        let pageNum = 0;
-                        while (currentIndex < allRows.length) {
-                          const rowsThisPage = pageNum === 0 ? ROWS_PER_PAGE_FIRST : ROWS_PER_PAGE;
-                          pages.push(allRows.slice(currentIndex, currentIndex + rowsThisPage));
-                          currentIndex += rowsThisPage;
-                          pageNum++;
-                        }
-                        
-                        const renderRow = (r: typeof allRows[0]) => `
-                          <tr>
-                            <td>${r.index}</td>
-                            <td>${r.date}</td>
-                            <td>${r.time}</td>
-                            <td><span style="background: ${r.typeBg}; color: ${r.typeColor}; padding: 2px 6px; border-radius: 4px; font-size: 8px;">${r.typeLabel}</span></td>
-                            <td style="font-size: 8px;">${r.desc}</td>
-                            <td style="text-align: right; color: ${r.amountColor};">${r.amount}</td>
-                            <td style="text-align: right; font-weight: bold; color: ${r.balanceColor};">${r.balance}</td>
-                          </tr>
-                        `;
-                        
-                        const renderHeader = () => `
-                          <tr style="background: #1e40af; color: white; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-                            <th style="padding: 6px; text-align: left;">#</th>
-                            <th style="padding: 6px; text-align: left;">Date</th>
-                            <th style="padding: 6px; text-align: left;">Time</th>
-                            <th style="padding: 6px; text-align: left;">Type</th>
-                            <th style="padding: 6px; text-align: left;">Description</th>
-                            <th style="padding: 6px; text-align: right;">Amount</th>
-                            <th style="padding: 6px; text-align: right;">Balance</th>
-                          </tr>
-                        `;
-                        
-                        const pagesHtml = pages.map((pageRows, pIdx) => `
-                          <div class="page ${pIdx > 0 ? 'page-break' : ''}">
-                            ${pIdx === 0 ? `
-                              <div class="header">
-                                <img src="${logoImage}" class="logo" alt="Logo" />
-                                <div class="company-name">LIQUID WASHES LAUNDRY</div>
-                                <div class="company-info">Centra Market D/109, Al Dhanna City, Al Ruwais | Abu Dhabi, UAE<br/>Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
-                              </div>
-                              <div style="text-align: center; font-size: 14px; font-weight: bold; margin: 10px 0;">TRANSACTION HISTORY</div>
-                              <div class="client-info">
-                                <div class="client-name">${viewingClient.name}</div>
-                                <div class="client-details">${viewingClient.phone ? `Phone: ${viewingClient.phone}` : ""}${viewingClient.address ? ` | Address: ${viewingClient.address}` : ""}</div>
-                              </div>
-                            ` : `<div style="text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 10px;">${viewingClient.name} - Transaction History (continued)</div>`}
-                            <table>
-                              <thead>${renderHeader()}</thead>
-                              <tbody>${pageRows.map(renderRow).join('')}</tbody>
-                            </table>
-                            ${pIdx === pages.length - 1 ? `<div class="footer"><p>Generated on ${format(new Date(), "dd MMM yyyy 'at' hh:mm a")}</p><p>Thank you for your business!</p></div>` : ''}
-                          </div>
-                        `).join('');
+                          return `
+                            <tr style="border-bottom: 1px solid #eee;">
+                              <td style="padding: 8px; text-align: center;">${index + 1}</td>
+                              <td style="padding: 8px;">${format(new Date(tx.date), "dd/MM/yyyy")}</td>
+                              <td style="padding: 8px;">${format(new Date(tx.date), "HH:mm")}</td>
+                              <td style="padding: 8px; color: ${typeColor}; font-weight: 500;">${typeLabel}</td>
+                              <td style="padding: 8px; font-size: 11px;">${simplifyDesc(tx.description || "", tx.type)}</td>
+                              <td style="padding: 8px; text-align: right; color: ${amountColor};">${tx.type === "deposit" ? "+" : ""}${parseFloat(tx.amount).toFixed(2)} AED</td>
+                              <td style="padding: 8px; text-align: right; font-weight: bold; color: ${balanceColor};">${runningBalance.toFixed(2)} AED</td>
+                            </tr>
+                          `;
+                        }).join('');
 
                         const printContent = `
                           <html>
                             <head>
                               <title>Transaction History - ${viewingClient.name}</title>
                               <style>
-                                @page { size: A4; margin: 10mm; }
-                                * { box-sizing: border-box; }
-                                body { font-family: Arial, sans-serif; padding: 10px; color: #333; font-size: 9px; margin: 0; }
-                                .page { page-break-after: always; }
-                                .page:last-child { page-break-after: auto; }
-                                .page-break { page-break-before: always; }
-                                .header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #1e40af; padding-bottom: 8px; }
-                                .logo { max-width: 60px; height: auto; margin-bottom: 3px; }
-                                .company-name { font-size: 16px; font-weight: bold; color: #1e40af; }
-                                .company-info { font-size: 9px; color: #666; margin-top: 2px; }
-                                .client-info { margin: 8px 0; padding: 8px; background: #f8f9fa; border-radius: 4px; }
-                                .client-name { font-size: 12px; font-weight: bold; }
-                                .client-details { font-size: 10px; color: #666; margin-top: 2px; }
-                                table { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
-                                th, td { padding: 4px 3px; border-bottom: 1px solid #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-                                th { background: #1e40af; color: white; font-size: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                tr { height: 28px; max-height: 28px; }
-                                .footer { margin-top: 15px; text-align: center; font-size: 8px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
-                                @media print {
-                                  .page { page-break-after: always; }
-                                  .page:last-child { page-break-after: auto; }
-                                  th { background: #1e40af !important; color: white !important; }
-                                }
+                                @page { size: A4; margin: 15mm; }
+                                body { font-family: Arial, sans-serif; padding: 20px; color: #333; margin: 0; }
+                                table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                                th { background: #1e88e5; color: white; padding: 10px 8px; text-align: left; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                @media print { th { background: #1e88e5 !important; color: white !important; } }
                               </style>
                             </head>
                             <body>
-                              ${pagesHtml}
+                              <div style="text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1e88e5; padding-bottom: 15px;">
+                                <img src="${logoImage}" alt="Logo" style="max-width: 150px; height: auto;" />
+                                <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">Centra Market D/109, Al Dhanna City, Al Ruwais, Abu Dhabi-UAE</p>
+                              </div>
+                              
+                              <h2 style="text-align: center; margin: 15px 0; color: #333; font-size: 18px;">CLIENT ACCOUNT SUMMARY</h2>
+                              
+                              <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                                <table style="width: 100%; font-size: 13px;">
+                                  <tr>
+                                    <td style="padding: 5px 0;"><strong>Client Name:</strong> ${viewingClient.name}</td>
+                                    <td style="padding: 5px 0;"><strong>Phone:</strong> ${viewingClient.phone || "-"}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style="padding: 5px 0;"><strong>Address:</strong> ${viewingClient.address || "-"}</td>
+                                    <td style="padding: 5px 0;"><strong>Account Number:</strong> ${viewingClient.billNumber || "-"}</td>
+                                  </tr>
+                                </table>
+                              </div>
+                              
+                              <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                                <div style="flex: 1; background: #e3f2fd; padding: 12px; border-radius: 6px; text-align: center;">
+                                  <p style="margin: 0; font-size: 11px; color: #1565c0;">Total Bills</p>
+                                  <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #1e88e5;">${getClientTotalBills(viewingClient).toFixed(2)} AED</p>
+                                </div>
+                                <div style="flex: 1; background: #e8f5e9; padding: 12px; border-radius: 6px; text-align: center;">
+                                  <p style="margin: 0; font-size: 11px; color: #2e7d32;">Total Deposits</p>
+                                  <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #4caf50;">${getClientTotalDeposits(viewingClient).toFixed(2)} AED</p>
+                                </div>
+                                <div style="flex: 1; background: ${getClientBalanceDue(viewingClient) > 0 ? "#ffebee" : "#e8f5e9"}; padding: 12px; border-radius: 6px; text-align: center;">
+                                  <p style="margin: 0; font-size: 11px; color: ${getClientBalanceDue(viewingClient) > 0 ? "#c62828" : "#2e7d32"};">Due Balance</p>
+                                  <p style="margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: ${getClientBalanceDue(viewingClient) > 0 ? "#f44336" : "#4caf50"};">${getClientBalanceDue(viewingClient).toFixed(2)} AED</p>
+                                </div>
+                              </div>
+                              
+                              <h3 style="margin: 15px 0 10px 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 8px; font-size: 14px;">Transaction History</h3>
+                              
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th style="width: 30px; text-align: center;">#</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th style="text-align: right;">Amount</th>
+                                    <th style="text-align: right;">Balance</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  ${txRows || '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No transactions found</td></tr>'}
+                                </tbody>
+                              </table>
+                              
+                              <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #ddd; text-align: center;">
+                                <p style="font-size: 10px; color: #666; margin: 0;">Generated on ${format(new Date(), "dd/MM/yyyy 'at' HH:mm")} | Thank you for your business!</p>
+                                <p style="font-size: 12px; font-weight: bold; color: #000; margin: 8px 0 0 0;">Tel: 026 815 824 | Mobile: +971 56 338 0001</p>
+                              </div>
                             </body>
                           </html>
                         `;
