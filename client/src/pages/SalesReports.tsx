@@ -205,8 +205,6 @@ export default function SalesReports() {
       .sort((a, b) => new Date(a.entryDate || 0).getTime() - new Date(b.entryDate || 0).getTime())
       .map(order => {
         const client = allClients?.find(c => c.id === order.clientId);
-        // Amount paid for this specific order (advance payment at order time)
-        const advancePaid = parseFloat(order.paidAmount || "0");
         return [
           order.urgent ? 'Bill (Urgent)' : 'Bill',
           order.customerName || client?.name || 'Walk-in',
@@ -214,7 +212,6 @@ export default function SalesReports() {
           `Order #${order.orderNumber || order.id}`,
           parseFloat(order.totalAmount || "0").toFixed(2),
           formatPaymentMethod(order.paymentMethod),
-          advancePaid.toFixed(2),
           formatDateTime(order.entryDate ? String(order.entryDate) : new Date().toISOString())
         ];
       });
@@ -231,7 +228,7 @@ export default function SalesReports() {
       ['Total Orders', allOrdersList.length],
       [],
       ['All Transactions'],
-      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Payment Method', 'Advance Deposit', 'Date'],
+      ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Payment Method', 'Date'],
       ...allTransactionRows,
     ];
 
@@ -245,7 +242,6 @@ export default function SalesReports() {
       { wch: 20 },  // Description (Order # only)
       { wch: 15 },  // Amount
       { wch: 20 },  // Payment Method
-      { wch: 18 },  // Advance Deposit
       { wch: 20 },  // Date
     ];
     
@@ -253,7 +249,7 @@ export default function SalesReports() {
     const headerRow = 11; // Row 12 in 0-indexed is row 11
     const lastRow = headerRow + allTransactionRows.length;
     if (allTransactionRows.length > 0) {
-      ws['!autofilter'] = { ref: `A${headerRow + 1}:H${lastRow + 1}` };
+      ws['!autofilter'] = { ref: `A${headerRow + 1}:G${lastRow + 1}` };
     }
     
     const wb = XLSX.utils.book_new();
