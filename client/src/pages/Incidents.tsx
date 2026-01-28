@@ -44,6 +44,7 @@ export default function Incidents() {
     reason: "",
     notes: "",
     refundAmount: "",
+    refundType: "credit", // "cash" or "credit"
     itemValue: "",
     responsibleStaffId: "",
     responsibleStaffName: "",
@@ -123,6 +124,7 @@ export default function Incidents() {
       reason: "",
       notes: "",
       refundAmount: "",
+      refundType: "credit",
       itemValue: "",
       responsibleStaffId: "",
       responsibleStaffName: "",
@@ -240,6 +242,7 @@ export default function Incidents() {
       reason: incident.reason,
       notes: incident.notes || "",
       refundAmount: incident.refundAmount || "",
+      refundType: (incident as any).refundType || "credit",
       itemValue: incident.itemValue || "",
       responsibleStaffId: incident.responsibleStaffId?.toString() || "",
       responsibleStaffName: incident.responsibleStaffName || "",
@@ -459,19 +462,39 @@ export default function Incidents() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="refundAmount">Refund Amount (AED)</Label>
-          <Input
-            id="refundAmount"
-            type="number"
-            step="0.01"
-            value={formData.refundAmount}
-            onChange={(e) => setFormData({ ...formData, refundAmount: e.target.value })}
-            placeholder="0.00"
-            data-testid="input-incident-refund-amount"
-          />
+      {formData.incidentType === "refund" && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="refundAmount">Refund Amount (AED)</Label>
+            <Input
+              id="refundAmount"
+              type="number"
+              step="0.01"
+              value={formData.refundAmount}
+              onChange={(e) => setFormData({ ...formData, refundAmount: e.target.value })}
+              placeholder="0.00"
+              data-testid="input-incident-refund-amount"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="refundType">Refund Method</Label>
+            <Select
+              value={formData.refundType}
+              onValueChange={(value) => setFormData({ ...formData, refundType: value })}
+            >
+              <SelectTrigger data-testid="select-refund-type">
+                <SelectValue placeholder="Select refund method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Refund as Cash</SelectItem>
+                <SelectItem value="credit">Add to Credit Available</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="itemValue">Item Value (AED)</Label>
           <Input
@@ -484,9 +507,6 @@ export default function Incidents() {
             data-testid="input-incident-item-value"
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="responsibleStaff">Responsible Staff</Label>
           <Select
