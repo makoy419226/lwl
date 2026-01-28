@@ -1028,7 +1028,7 @@ export class DatabaseStorage implements IStorage {
         username: "reception1",
         password: "reception1234",
         role: "reception",
-        name: "Reception",
+        name: "ReceptionUsername",
         pin: "11111",
         active: true,
       },
@@ -1036,7 +1036,7 @@ export class DatabaseStorage implements IStorage {
         username: "staff1",
         password: "staff123",
         role: "staff",
-        name: "Staff",
+        name: "StaffUsername",
         pin: "22222",
         active: true,
       },
@@ -1044,7 +1044,7 @@ export class DatabaseStorage implements IStorage {
         username: "driver1",
         password: "driver123",
         role: "driver",
-        name: "Driver",
+        name: "DriverUsername",
         pin: "33333",
         active: true,
       },
@@ -1062,7 +1062,7 @@ export class DatabaseStorage implements IStorage {
     // Insert default packing worker with hashed PIN
     const hashedPin = await bcrypt.hash("44444", 10);
     await db.insert(packingWorkers).values({
-      name: "Packing Staff",
+      name: "Delivery Driver",
       pin: hashedPin,
       active: true,
     });
