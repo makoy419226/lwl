@@ -46,7 +46,7 @@ export default function SalesReports() {
   });
 
   const filterOrders = (period: 'daily' | 'monthly' | 'yearly') => {
-    if (!allOrders) return { deliveryOrders: [], takeawayOrders: [], totalDelivery: 0, totalTakeaway: 0 };
+    if (!allOrders) return { deliveryOrders: [], takeawayOrders: [], totalDelivery: 0, totalTakeaway: 0, totalBills: 0, totalPaid: 0, orderCount: 0 };
     
     const deliveryOrders: Order[] = [];
     const takeawayOrders: Order[] = [];
@@ -80,8 +80,12 @@ export default function SalesReports() {
     
     const totalDelivery = deliveryOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || "0"), 0);
     const totalTakeaway = takeawayOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || "0"), 0);
+    const allMatchingOrders = [...deliveryOrders, ...takeawayOrders];
+    const totalBills = allMatchingOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || "0"), 0);
+    const totalPaid = allMatchingOrders.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
+    const orderCount = allMatchingOrders.length;
     
-    return { deliveryOrders, takeawayOrders, totalDelivery, totalTakeaway };
+    return { deliveryOrders, takeawayOrders, totalDelivery, totalTakeaway, totalBills, totalPaid, orderCount };
   };
 
   const filterTransactions = (period: 'daily' | 'monthly' | 'yearly') => {
@@ -446,8 +450,38 @@ export default function SalesReports() {
     return date.toLocaleDateString('en-AE', { year: 'numeric', month: 'long' });
   };
 
-  const renderOrderSummaryCards = (orderData: { deliveryOrders: Order[]; takeawayOrders: Order[]; totalDelivery: number; totalTakeaway: number }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  const renderOrderSummaryCards = (orderData: { deliveryOrders: Order[]; takeawayOrders: Order[]; totalDelivery: number; totalTakeaway: number; totalBills: number; totalPaid: number; orderCount: number }) => (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <Receipt className="w-6 h-6 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Bills</p>
+              <p className="text-2xl font-bold text-blue-600">{orderData.totalBills.toFixed(2)} AED</p>
+              <p className="text-xs text-muted-foreground">{orderData.orderCount} orders</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+              <Banknote className="w-6 h-6 text-green-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Sales (Paid)</p>
+              <p className="text-2xl font-bold text-green-600">{orderData.totalPaid.toFixed(2)} AED</p>
+              <p className="text-xs text-muted-foreground">Collected amount</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-3">
