@@ -1426,6 +1426,19 @@ export default function Workers() {
                 data-testid="input-new-name"
               />
             </div>
+            <div className="space-y-2">
+              <Label>PIN (5 digits)</Label>
+              <Input
+                type="password"
+                placeholder="Enter 5-digit PIN"
+                value={userFormData.pin}
+                onChange={(e) =>
+                  setUserFormData({ ...userFormData, pin: e.target.value.replace(/\D/g, "").slice(0, 5) })
+                }
+                maxLength={5}
+                data-testid="input-new-pin"
+              />
+            </div>
             <Button
               className="w-full"
               onClick={handleCreateUser}
