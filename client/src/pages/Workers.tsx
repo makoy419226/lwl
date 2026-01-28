@@ -115,7 +115,7 @@ export default function Workers() {
     password: "",
     name: "",
     email: "",
-    role: "manager",
+    role: "reception",
     pin: "",
   });
   
@@ -801,19 +801,19 @@ export default function Workers() {
                   </Card>
                 </div>
 
-                <Accordion type="multiple" defaultValue={["managers", "staff", "drivers"]} className="space-y-2">
-                  <AccordionItem value="managers" className="border rounded-lg">
+                <Accordion type="multiple" defaultValue={["reception", "staff", "drivers"]} className="space-y-2">
+                  <AccordionItem value="reception" className="border rounded-lg">
                     <AccordionTrigger className="hover:no-underline px-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Manager</Badge>
+                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Reception/Cashier</Badge>
                         <span className="text-sm text-muted-foreground">
-                          ({systemUsers?.filter(u => u.role === "manager").length || 0} users)
+                          ({systemUsers?.filter(u => u.role === "reception").length || 0} users)
                         </span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      {!systemUsers?.filter(u => u.role === "manager").length ? (
-                        <p className="text-center text-muted-foreground py-4">No managers found</p>
+                      {!systemUsers?.filter(u => u.role === "reception").length ? (
+                        <p className="text-center text-muted-foreground py-4">No reception/cashier users found</p>
                       ) : (
                         <Table>
                           <TableHeader>
@@ -842,7 +842,7 @@ export default function Workers() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {systemUsers?.filter(u => u.role === "manager").map((user) => {
+                            {systemUsers?.filter(u => u.role === "reception").map((user) => {
                               const userBills = bills?.filter(b => b.notes?.includes(user.name || user.username)) || [];
                               const unpaidBills = userBills.filter(b => !b.isPaid);
                               return (
@@ -1056,19 +1056,19 @@ export default function Workers() {
                       No user accounts found
                     </div>
                   ) : (
-                    <Accordion type="multiple" defaultValue={["managers", "staff", "driver"]} className="space-y-2">
-                      <AccordionItem value="managers" className="border rounded-lg px-4">
+                    <Accordion type="multiple" defaultValue={["reception", "staff", "driver"]} className="space-y-2">
+                      <AccordionItem value="reception" className="border rounded-lg px-4">
                         <AccordionTrigger className="hover:no-underline">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Manager</Badge>
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Reception/Cashier</Badge>
                             <span className="text-sm text-muted-foreground">
-                              ({systemUsers.filter(u => u.role === "manager").length} users)
+                              ({systemUsers.filter(u => u.role === "reception").length} users)
                             </span>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          {systemUsers.filter(u => u.role === "manager").length === 0 ? (
-                            <p className="text-center text-muted-foreground py-4">No managers found</p>
+                          {systemUsers.filter(u => u.role === "reception").length === 0 ? (
+                            <p className="text-center text-muted-foreground py-4">No reception/cashier users found</p>
                           ) : (
                             <Table>
                               <TableHeader>
@@ -1082,7 +1082,7 @@ export default function Workers() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {systemUsers.filter(u => u.role === "manager").map((user) => (
+                                {systemUsers.filter(u => u.role === "reception").map((user) => (
                                   <TableRow key={user.id}>
                                     <TableCell className="font-medium">
                                       <div className="flex items-center gap-2">
@@ -1361,7 +1361,7 @@ export default function Workers() {
 
       <Dialog open={isUserCreateOpen} onOpenChange={(open) => {
               if (open) {
-                const defaultRole = "manager";
+                const defaultRole = "reception";
                 setUserFormData({ username: getNextUsername(defaultRole), password: "", name: "", email: "", role: defaultRole, pin: "" });
               }
               setIsUserCreateOpen(open);
@@ -1387,7 +1387,7 @@ export default function Workers() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="reception">Reception/Cashier</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
                   <SelectItem value="driver">Delivery Driver</SelectItem>
                 </SelectContent>
@@ -1529,7 +1529,7 @@ export default function Workers() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="reception">Reception/Cashier</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
                   <SelectItem value="driver">Delivery Driver</SelectItem>
                 </SelectContent>

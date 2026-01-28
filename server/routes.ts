@@ -1335,8 +1335,8 @@ export async function registerRoutes(
       } = req.body;
       
       // Validate that the creator has permission to create bills
-      // Only admin, manager, and cashier roles can create bills
-      const allowedBillCreatorRoles = ["admin", "manager", "cashier"];
+      // Only admin, reception, and cashier roles can create bills
+      const allowedBillCreatorRoles = ["admin", "reception", "cashier"];
       
       // Check if createdBy matches a user with a non-allowed role
       if (createdBy) {
@@ -1347,7 +1347,7 @@ export async function registerRoutes(
         );
         if (matchedUser && !allowedBillCreatorRoles.includes(matchedUser.role?.toLowerCase() || "")) {
           return res.status(403).json({ 
-            message: "This PIN has no billing rights. Use admin PIN or manager PIN only." 
+            message: "This PIN has no billing rights. Use admin or reception/cashier PIN only." 
           });
         }
       }
@@ -1359,14 +1359,14 @@ export async function registerRoutes(
       );
       if (isPacker) {
         return res.status(403).json({ 
-          message: "This PIN has no billing rights. Use admin PIN or manager PIN only." 
+          message: "This PIN has no billing rights. Use admin or reception/cashier PIN only." 
         });
       }
       
       // Also validate creatorRole if provided
       if (creatorRole && !allowedBillCreatorRoles.includes(creatorRole.toLowerCase())) {
         return res.status(403).json({ 
-          message: "This PIN has no billing rights. Use admin PIN or manager PIN only." 
+          message: "This PIN has no billing rights. Use admin or reception/cashier PIN only." 
         });
       }
 
@@ -2338,7 +2338,7 @@ export async function registerRoutes(
   });
 
   // Verify staff user PIN (for bill creation, etc.) - Admin PIN works as universal PIN
-  // Only allows admin, manager, and cashier roles - NOT packing staff
+  // Only allows admin, reception, and cashier roles - NOT packing staff
   app.post("/api/workers/verify-pin", async (req, res) => {
     const { pin } = req.body;
     if (!pin || !/^\d{5}$/.test(pin)) {
@@ -2356,12 +2356,12 @@ export async function registerRoutes(
     
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      // Only allow admin, manager, and cashier roles for bill creation
-      const allowedRoles = ["admin", "manager", "cashier"];
+      // Only allow admin, reception, and cashier roles for bill creation
+      const allowedRoles = ["admin", "reception", "cashier"];
       if (!allowedRoles.includes(user.role?.toLowerCase() || "")) {
         return res.status(403).json({ 
           success: false, 
-          message: "Only admin, manager, or cashier can create orders with bills" 
+          message: "Only admin or reception/cashier can create orders with bills" 
         });
       }
       res.json({ success: true, worker: { id: user.id, name: user.name || user.username, role: user.role } });
@@ -2386,7 +2386,7 @@ export async function registerRoutes(
       return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin" } });
     }
     
-    // Check for user PIN (admin, manager, cashier, staff roles)
+    // Check for user PIN (admin, reception, cashier, staff roles)
     const user = await storage.verifyUserPin(pin);
     if (user) {
       return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
@@ -2417,7 +2417,7 @@ export async function registerRoutes(
       return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin" } });
     }
     
-    // Check for any user PIN (admin, manager, staff, driver roles can all verify delivery)
+    // Check for any user PIN (admin, reception, staff, driver roles can all verify delivery)
     const user = await storage.verifyUserPin(pin);
     if (user) {
       return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
@@ -2448,7 +2448,7 @@ export async function registerRoutes(
       return res.json({ success: true, user: { id: adminUser?.id || 0, name: "Admin", type: "admin" } });
     }
     
-    // Check for user PIN (admin, manager, cashier, staff roles)
+    // Check for user PIN (admin, reception, cashier, staff roles)
     const user = await storage.verifyUserPin(pin);
     if (user) {
       return res.json({ success: true, user: { id: user.id, name: user.name || user.username, type: "user" } });

@@ -722,7 +722,7 @@ export default function Products() {
     setPinError("");
 
     try {
-      // Use workers/verify-pin which only accepts admin, manager, and cashier PINs
+      // Use workers/verify-pin which only accepts admin, reception, and cashier PINs
       const res = await fetch("/api/workers/verify-pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -733,9 +733,9 @@ export default function Products() {
         // Try to get the error message from the response
         try {
           const errorData = await res.json();
-          setPinError(errorData.message || "This PIN has no billing rights. Use admin, manager or cashier PIN.");
+          setPinError(errorData.message || "This PIN has no billing rights. Use admin or reception/cashier PIN.");
         } catch {
-          setPinError("This PIN has no billing rights. Use admin, manager or cashier PIN.");
+          setPinError("This PIN has no billing rights. Use admin or reception/cashier PIN.");
         }
         setIsVerifyingPin(false);
         return;

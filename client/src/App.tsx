@@ -30,20 +30,20 @@ import logoImage from "@assets/image_1767220512226.png";
 export const UserContext = createContext<UserInfo | null>(null);
 
 const rolePermissions: Record<string, string[]> = {
-  "/": ["admin", "manager", "staff", "driver"],
-  "/dashboard": ["admin", "manager", "staff"],
+  "/": ["admin", "reception", "staff", "driver"],
+  "/dashboard": ["admin", "reception", "staff"],
   "/delivery": ["driver"],
-  "/inventory": ["admin", "manager"],
-  "/products": ["admin", "manager"],
-  "/clients": ["admin", "manager"],
-  "/bills": ["admin", "manager"],
-  "/orders": ["admin", "manager", "staff"],
+  "/inventory": ["admin", "reception"],
+  "/products": ["admin", "reception"],
+  "/clients": ["admin", "reception"],
+  "/bills": ["admin", "reception"],
+  "/orders": ["admin", "reception", "staff"],
   "/workers": ["admin"],
   "/sales-reports": ["admin"],
-  "/incidents": ["admin", "manager", "staff", "driver"],
-  "/due-customers": ["admin", "manager"],
-  "/contact": ["admin", "manager", "staff", "driver"],
-  "/track": ["admin", "manager", "staff", "driver"],
+  "/incidents": ["admin", "reception", "staff", "driver"],
+  "/due-customers": ["admin", "reception"],
+  "/contact": ["admin", "reception", "staff", "driver"],
+  "/track": ["admin", "reception", "staff", "driver"],
   "/admin-settings": ["admin"],
 };
 
@@ -53,7 +53,7 @@ function ProtectedRoute({ path, component: Component, allowedRoles }: {
   allowedRoles: string[];
 }) {
   const user = useContext(UserContext);
-  const userRole = user?.role || "manager";
+  const userRole = user?.role || "reception";
   
   if (!allowedRoles.includes(userRole)) {
     return <Redirect to="/" />;
@@ -64,7 +64,7 @@ function ProtectedRoute({ path, component: Component, allowedRoles }: {
 
 function Router() {
   const user = useContext(UserContext);
-  const userRole = user?.role || "manager";
+  const userRole = user?.role || "reception";
   
   // Driver users should be redirected to delivery dashboard as home
   if (userRole === "driver") {

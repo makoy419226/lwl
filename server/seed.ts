@@ -770,10 +770,10 @@ export async function seedDatabase() {
         active: true,
       },
       {
-        username: "manager",
-        password: "manager123",
-        role: "manager",
-        name: "Manager",
+        username: "reception",
+        password: "reception123",
+        role: "reception",
+        name: "Reception",
         active: true,
       },
       {
@@ -788,7 +788,7 @@ export async function seedDatabase() {
     for (const user of defaultUsers) {
       await db.insert(users).values(user);
     }
-    console.log("Default users created: admin, manager, cashier");
+    console.log("Default users created: admin, reception, cashier");
   }
 
   // Seed default packing/delivery workers if none exist
