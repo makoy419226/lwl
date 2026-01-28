@@ -131,6 +131,12 @@ export default function Incidents() {
   const [orderSearchTerm, setOrderSearchTerm] = useState("");
   const [isOrderSearchFocused, setIsOrderSearchFocused] = useState(false);
   const orderSearchRef = useRef<HTMLInputElement>(null);
+  
+  // PIN verification state
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [userPin, setUserPin] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [verifiedUser, setVerifiedUser] = useState<{ id: number; name: string; type: string } | null>(null);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -295,6 +301,26 @@ export default function Incidents() {
     },
   });
 
+  const verifyPinMutation = useMutation({
+    mutationFn: async (pin: string) => {
+      const res = await apiRequest("POST", "/api/incidents/verify-pin", { pin });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        setVerifiedUser(data.user);
+        setShowPinDialog(false);
+        setUserPin("");
+        setPinError("");
+        // Now submit the incident with the verified user
+        submitIncident(data.user.name);
+      }
+    },
+    onError: () => {
+      setPinError("Invalid PIN. Please try again.");
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       customerName: "",
@@ -387,7 +413,13 @@ export default function Incidents() {
       toast({ title: "Error", description: "Customer name and reason are required", variant: "destructive" });
       return;
     }
-    
+    // Show PIN dialog to verify who is recording
+    setShowPinDialog(true);
+    setUserPin("");
+    setPinError("");
+  };
+
+  const submitIncident = (recordedByName: string) => {
     // Build selected items string from the order items
     let selectedItemsString = formData.itemName;
     if (formData.orderNumber && formData.itemName && selectedItemIndices.length > 0) {
@@ -408,6 +440,7 @@ export default function Incidents() {
       responsibleStaffId: formData.responsibleStaffId || null,
       responsibleStaffName: formData.responsibleStaffName || null,
       incidentDate: formData.incidentDate,
+      reporterName: recordedByName,
     };
     createMutation.mutate(data);
   };
@@ -847,7 +880,8 @@ export default function Incidents() {
                     <TableHead>Item</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Stage</TableHead>
-                    <TableHead>Staff</TableHead>
+                    <TableHead>Responsible</TableHead>
+                    <TableHead>Recorded By</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -874,6 +908,7 @@ export default function Incidents() {
                       <TableCell>{getTypeBadge(incident.incidentType)}</TableCell>
                       <TableCell>{getStageBadge(incident.incidentStage)}</TableCell>
                       <TableCell>{incident.responsibleStaffName || "-"}</TableCell>
+                      <TableCell className="text-blue-600 font-medium">{incident.reporterName || "-"}</TableCell>
                       <TableCell>{getStatusBadge(incident.status)}</TableCell>
                       <TableCell className="text-right">
                         <Button
@@ -906,6 +941,56 @@ export default function Incidents() {
             <DialogTitle>Edit Incident</DialogTitle>
           </DialogHeader>
           {renderIncidentForm(true)}
+        </DialogContent>
+      </Dialog>
+
+      {/* PIN Verification Dialog */}
+      <Dialog open={showPinDialog} onOpenChange={(open) => { if (!open) { setShowPinDialog(false); setUserPin(""); setPinError(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Enter Your PIN</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Please enter your 5-digit PIN to record this incident.
+            </p>
+            <Input
+              type="password"
+              maxLength={5}
+              placeholder="Enter 5-digit PIN"
+              value={userPin}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "");
+                setUserPin(value);
+                setPinError("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && userPin.length === 5) {
+                  verifyPinMutation.mutate(userPin);
+                }
+              }}
+              className="text-center text-2xl tracking-widest"
+              data-testid="input-incident-pin"
+            />
+            {pinError && (
+              <p className="text-sm text-destructive text-center">{pinError}</p>
+            )}
+            <Button
+              className="w-full"
+              onClick={() => verifyPinMutation.mutate(userPin)}
+              disabled={userPin.length !== 5 || verifyPinMutation.isPending}
+              data-testid="button-verify-incident-pin"
+            >
+              {verifyPinMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                "Verify & Record Incident"
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

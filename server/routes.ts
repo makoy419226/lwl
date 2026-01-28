@@ -2283,6 +2283,42 @@ export async function registerRoutes(
     }
   });
 
+  // Verify any user PIN for incident recording - checks users, packing workers, and drivers
+  app.post("/api/incidents/verify-pin", async (req, res) => {
+    const { pin } = req.body;
+    if (!pin || !/^\d{5}$/.test(pin)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid PIN format" });
+    }
+    
+    // Check if it's the admin universal PIN
+    const adminPin = process.env.ADMIN_PIN || "";
+    if (adminPin && pin === adminPin) {
+      return res.json({ success: true, user: { id: 0, name: "Admin", type: "admin" } });
+    }
+    
+    // Check for user PIN (admin, manager, cashier, staff roles)
+    const user = await storage.verifyUserPin(pin);
+    if (user) {
+      return res.json({ success: true, user: { id: user.id, name: user.name || user.username, type: "user" } });
+    }
+    
+    // Check packing workers
+    const packingWorker = await storage.verifyPackingWorkerPin(pin);
+    if (packingWorker) {
+      return res.json({ success: true, user: { id: packingWorker.id, name: packingWorker.name, type: "packing" } });
+    }
+    
+    // Check delivery drivers
+    const driver = await storage.verifyDeliveryWorkerPin(pin);
+    if (driver) {
+      return res.json({ success: true, user: { id: driver.id, name: driver.name, type: "driver" } });
+    }
+    
+    res.status(401).json({ success: false, message: "Invalid PIN" });
+  });
+
   // Public order view by token (no auth required) - limited safe data only
   app.get("/api/orders/public/:token", async (req, res) => {
     const { token } = req.params;
