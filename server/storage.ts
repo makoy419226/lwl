@@ -993,6 +993,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAllBills(): Promise<void> {
+    await db.delete(billPayments);
     await db.delete(clientTransactions);
     await db.delete(bills);
   }
