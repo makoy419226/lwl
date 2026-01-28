@@ -687,18 +687,6 @@ export default function Incidents() {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="itemValue">Item Value (AED)</Label>
-          <Input
-            id="itemValue"
-            type="number"
-            step="0.01"
-            value={formData.itemValue}
-            onChange={(e) => setFormData({ ...formData, itemValue: e.target.value })}
-            placeholder="0.00"
-            data-testid="input-incident-item-value"
-          />
-        </div>
-        <div className="space-y-2">
           <Label htmlFor="responsibleStaff">Responsible Staff</Label>
           <Select
             value={formData.responsibleStaffId}
