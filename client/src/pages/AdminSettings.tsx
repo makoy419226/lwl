@@ -646,7 +646,7 @@ export default function AdminSettings() {
                         <li>staff1 (PIN: 22222)</li>
                         <li>driver1 (PIN: 33333)</li>
                       </ul>
-                      <p className="mt-3 text-muted-foreground">Admin account will be preserved. All packing workers will be removed.</p>
+                      <p className="mt-3 text-muted-foreground">Admin account will be preserved.</p>
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
