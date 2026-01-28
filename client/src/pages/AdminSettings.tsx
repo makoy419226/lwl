@@ -563,6 +563,7 @@ export default function AdminSettings() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex flex-wrap gap-2">
             <Dialog open={showResetDialog} onOpenChange={(open) => {
               setShowResetDialog(open);
               if (!open) {
@@ -573,10 +574,10 @@ export default function AdminSettings() {
               <DialogTrigger asChild>
                 <Button
                   variant="destructive"
-                  className="w-full sm:w-auto gap-2"
+                  className="gap-2"
                   data-testid="button-reset-all"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4" />
                   Reset All Data
                 </Button>
               </DialogTrigger>
@@ -721,6 +722,7 @@ export default function AdminSettings() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </CardContent>
         </Card>
 
