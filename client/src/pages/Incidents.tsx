@@ -169,6 +169,10 @@ export default function Incidents() {
     queryKey: ["/api/drivers"],
   });
 
+  const { data: products } = useQuery<any[]>({
+    queryKey: ["/api/products"],
+  });
+
   // Combine all staff types for the dropdown
   const allStaffMembers = useMemo(() => {
     const staff: { id: string; name: string; type: string }[] = [];
@@ -205,13 +209,40 @@ export default function Incidents() {
     return staff;
   }, [users, workers, drivers]);
 
-  // Helper function to extract price from item string like "3 x White Shirt (AED 45.00)"
-  const extractItemPrice = (itemString: string): number => {
-    // Match patterns like "(AED 45.00)" or "AED 45.00" at end
-    const match = itemString.match(/\(?\s*AED\s*([\d,.]+)\s*\)?$/i);
-    if (match) {
-      return parseFloat(match[1].replace(',', '')) || 0;
+  // Helper function to parse item string like "1x Kandoora/Thob [N] (folding)" and get price from products
+  const getItemPrice = (itemString: string): number => {
+    if (!products || products.length === 0) return 0;
+    
+    // Parse quantity and product name from "1x ProductName [N] (folding)" format
+    const quantityMatch = itemString.match(/^(\d+)x\s+(.+)$/);
+    let quantity = 1;
+    let productName = itemString.trim();
+    
+    if (quantityMatch) {
+      quantity = parseInt(quantityMatch[1]) || 1;
+      productName = quantityMatch[2].trim();
     }
+    
+    // Remove service type indicators like [N], [DC], (folding), (hanging) for matching
+    const cleanName = productName
+      .replace(/\s*\[N\]\s*/gi, '')
+      .replace(/\s*\[DC\]\s*/gi, '')
+      .replace(/\s*\(folding\)\s*/gi, '')
+      .replace(/\s*\(hanging\)\s*/gi, '')
+      .trim();
+    
+    // Find matching product (case-insensitive)
+    const product = products.find(p => 
+      p.name.toLowerCase() === cleanName.toLowerCase()
+    );
+    
+    if (product) {
+      // Use normal price by default, check if it's dry clean
+      const isDryClean = itemString.includes('[DC]');
+      const price = isDryClean ? (parseFloat(product.dryCleanPrice) || 0) : (parseFloat(product.price) || 0);
+      return quantity * price;
+    }
+    
     return 0;
   };
 
@@ -232,11 +263,11 @@ export default function Incidents() {
 
   // Update maxRefundAmount when selected items change
   useEffect(() => {
-    if (formData.itemName && selectedItemIndices.length > 0) {
+    if (formData.itemName && selectedItemIndices.length > 0 && products) {
       const items = formData.itemName.split(",").map(item => item.trim());
       const selectedTotal = selectedItemIndices.reduce((sum, idx) => {
         if (idx < items.length) {
-          return sum + extractItemPrice(items[idx]);
+          return sum + getItemPrice(items[idx]);
         }
         return sum;
       }, 0);
@@ -245,7 +276,7 @@ export default function Incidents() {
       // No items selected = no max refund limit from items
       setMaxRefundAmount(0);
     }
-  }, [selectedItemIndices, formData.itemName]);
+  }, [selectedItemIndices, formData.itemName, products]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
