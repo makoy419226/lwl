@@ -209,20 +209,83 @@ export default function SalesReports() {
     };
     
     // Map orders to transaction-like format
-    const allTransactionRows = allOrdersList
-      .sort((a, b) => new Date(a.entryDate || 0).getTime() - new Date(b.entryDate || 0).getTime())
-      .map(order => {
-        const client = allClients?.find(c => c.id === order.clientId);
-        return [
-          order.urgent ? 'Bill (Urgent)' : 'Bill',
-          order.customerName || client?.name || 'Walk-in',
-          client?.phone || '',
-          `Order #${order.orderNumber || order.id}`,
-          parseFloat(order.totalAmount || "0").toFixed(2),
-          formatPaymentMethod(order.paymentMethod, order.paidAmount, order.totalAmount),
-          formatDateTime(order.entryDate ? String(order.entryDate) : new Date().toISOString())
-        ];
+    const orderRows = allOrdersList.map(order => {
+      const client = allClients?.find(c => c.id === order.clientId);
+      return {
+        type: order.urgent ? 'Bill (Urgent)' : 'Bill',
+        client: order.customerName || client?.name || 'Walk-in',
+        phone: client?.phone || '',
+        description: `Order #${order.orderNumber || order.id}`,
+        amount: parseFloat(order.totalAmount || "0").toFixed(2),
+        paymentMethod: formatPaymentMethod(order.paymentMethod, order.paidAmount, order.totalAmount),
+        date: order.entryDate ? new Date(order.entryDate) : new Date(),
+        dateStr: formatDateTime(order.entryDate ? String(order.entryDate) : new Date().toISOString())
+      };
+    });
+    
+    // Get credit deposits (Add Credit to Account transactions) for the period
+    const creditDepositRows: typeof orderRows = [];
+    let totalCreditsReceived = 0;
+    
+    if (allTransactions) {
+      allTransactions.forEach(clientData => {
+        const client = allClients?.find(c => c.id === clientData.clientId);
+        if (!clientData.transactions) return;
+        
+        clientData.transactions.forEach(tx => {
+          // Only include deposit transactions (Add Credit to Account)
+          if (tx.type !== 'deposit') return;
+          
+          const txDate = new Date(tx.date);
+          let matches = false;
+          
+          if (activeTab === 'daily') {
+            const selectedDateObj = new Date(selectedDate);
+            selectedDateObj.setHours(0, 0, 0, 0);
+            const txDateNorm = new Date(txDate);
+            txDateNorm.setHours(0, 0, 0, 0);
+            matches = txDateNorm.getTime() === selectedDateObj.getTime();
+          } else if (activeTab === 'monthly') {
+            const txMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+            matches = txMonth === selectedMonth;
+          } else {
+            matches = txDate.getFullYear().toString() === selectedYear;
+          }
+          
+          if (matches) {
+            const depositAmount = parseFloat(tx.amount || "0");
+            totalCreditsReceived += depositAmount;
+            
+            // Format payment method for deposits
+            let depositPaymentMethod = '-';
+            if (tx.paymentMethod) {
+              switch (tx.paymentMethod.toLowerCase()) {
+                case 'cash': depositPaymentMethod = 'Cash'; break;
+                case 'card': depositPaymentMethod = 'Card'; break;
+                case 'bank': depositPaymentMethod = 'Bank'; break;
+                default: depositPaymentMethod = tx.paymentMethod;
+              }
+            }
+            
+            creditDepositRows.push({
+              type: 'Add Credit to Account',
+              client: client?.name || 'Unknown',
+              phone: client?.phone || '',
+              description: tx.description || 'Deposit received',
+              amount: depositAmount.toFixed(2),
+              paymentMethod: depositPaymentMethod,
+              date: txDate,
+              dateStr: formatDateTime(tx.date ? String(tx.date) : new Date().toISOString())
+            });
+          }
+        });
       });
+    }
+    
+    // Combine and sort all transactions by date
+    const allTransactionRows = [...orderRows, ...creditDepositRows]
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map(row => [row.type, row.client, row.phone, row.description, row.amount, row.paymentMethod, row.dateStr]);
     
     const summaryData = [
       ['Liquid Washes Laundry - Sales Report'],
@@ -234,6 +297,7 @@ export default function SalesReports() {
       ['Total Paid', `${totalPaid.toFixed(2)} AED`],
       ['Total Pending', `${totalPending.toFixed(2)} AED`],
       ['Total Orders', allOrdersList.length],
+      ['Total Credits Received', `${totalCreditsReceived.toFixed(2)} AED`],
       [],
       ['All Transactions'],
       ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Payment Method', 'Date'],
@@ -254,7 +318,7 @@ export default function SalesReports() {
     ];
     
     // Add table styling by setting the range for auto-filter (creates table look)
-    const headerRow = 11; // Row 12 in 0-indexed is row 11
+    const headerRow = 12; // Row 13 in 0-indexed is row 12 (after adding Total Credits Received row)
     const lastRow = headerRow + allTransactionRows.length;
     if (allTransactionRows.length > 0) {
       ws['!autofilter'] = { ref: `A${headerRow + 1}:G${lastRow + 1}` };
