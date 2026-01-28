@@ -158,6 +158,8 @@ function App() {
         // Check if admin has forced logout
         if (data.forceLogout) {
           handleLogout();
+          // Force browser refresh to ensure clean state
+          window.location.reload();
         }
       } catch {
         // Ignore network errors
