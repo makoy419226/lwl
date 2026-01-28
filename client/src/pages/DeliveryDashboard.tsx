@@ -357,7 +357,7 @@ export default function DeliveryDashboard() {
       })()}
 
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent aria-describedby={undefined} className="max-w-md">
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
             <DialogDescription>View order information</DialogDescription>
@@ -471,7 +471,7 @@ export default function DeliveryDashboard() {
         setItemCountConfirmed(false);
         setDeliveryPhoto(null);
       }}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="w-5 h-5" />

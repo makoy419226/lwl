@@ -795,7 +795,7 @@ export default function Incidents() {
                 Record Incident
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Record New Incident</DialogTitle>
               </DialogHeader>
@@ -938,7 +938,7 @@ export default function Incidents() {
       </main>
 
       <Dialog open={!!editIncident} onOpenChange={(open) => { if (!open) { setEditIncident(null); resetForm(); } }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader className="flex flex-row items-center justify-between gap-4">
             <DialogTitle>Edit Incident</DialogTitle>
             <Select
@@ -968,7 +968,7 @@ export default function Incidents() {
 
       {/* PIN Verification Dialog */}
       <Dialog open={showPinDialog} onOpenChange={(open) => { if (!open) { setShowPinDialog(false); setUserPin(""); setPinError(""); } }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent aria-describedby={undefined} className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Enter Your PIN</DialogTitle>
           </DialogHeader>

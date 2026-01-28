@@ -1172,7 +1172,7 @@ export default function Clients() {
       </main>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display text-primary">
               Add New Client
@@ -1186,7 +1186,7 @@ export default function Clients() {
         open={!!editingClient}
         onOpenChange={(open) => !open && setEditingClient(null)}
       >
-        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display text-primary">
               Edit Client
@@ -1206,7 +1206,7 @@ export default function Clients() {
         open={!!transactionClient}
         onOpenChange={(open) => !open && setTransactionClient(null)}
       >
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display text-primary">
               {transactionClient?.name} - Transaction History
@@ -1623,7 +1623,7 @@ export default function Clients() {
 
       {/* Combined Invoice Dialog */}
       <Dialog open={!!combinedInvoiceData} onOpenChange={(open) => !open && setCombinedInvoiceData(null)}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="w-5 h-5" />
@@ -1788,7 +1788,7 @@ export default function Clients() {
           }
         }}
       >
-        <DialogContent className="max-w-xs">
+        <DialogContent aria-describedby={undefined} className="max-w-xs">
           <DialogHeader>
             <DialogTitle className="text-center flex items-center justify-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
@@ -1857,7 +1857,7 @@ export default function Clients() {
         open={!!viewingClient}
         onOpenChange={(open) => !open && setViewingClient(null)}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display text-primary flex items-center gap-2">
               <Users className="w-6 h-6" />
@@ -2242,7 +2242,7 @@ export default function Clients() {
           setPayAllMethod("cash");
         }
       }}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-primary" />
@@ -2334,7 +2334,7 @@ export default function Clients() {
           setDeleteError("");
         }
       }}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="w-5 h-5" />

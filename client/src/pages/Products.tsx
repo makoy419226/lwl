@@ -1394,7 +1394,7 @@ export default function Products() {
 
       {/* Urgent/Normal Service Dialog */}
       <Dialog open={showUrgentDialog} onOpenChange={setShowUrgentDialog}>
-        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">
               Select Service Type
@@ -1451,7 +1451,7 @@ export default function Products() {
           }
         }}
       >
-        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center flex items-center justify-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
@@ -1509,7 +1509,7 @@ export default function Products() {
 
       {/* Other Item Dialog */}
       <Dialog open={showOtherItemDialog} onOpenChange={setShowOtherItemDialog}>
-        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Other Item</DialogTitle>
           </DialogHeader>
@@ -1575,7 +1575,7 @@ export default function Products() {
 
       {/* Full New Client Dialog */}
       <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
-        <DialogContent className="max-w-md max-h-[80vh] sm:max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-md max-h-[80vh] sm:max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Client</DialogTitle>
           </DialogHeader>
@@ -1748,7 +1748,7 @@ export default function Products() {
 
       {/* Size Selection Dialog */}
       <Dialog open={showSizeDialog} onOpenChange={setShowSizeDialog}>
-        <DialogContent className="max-w-xs max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-xs max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">Select Size</DialogTitle>
           </DialogHeader>
@@ -1801,7 +1801,7 @@ export default function Products() {
 
       {/* Gutra Options Dialog */}
       <Dialog open={showGutraDialog} onOpenChange={setShowGutraDialog}>
-        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-center">Gutra Options</DialogTitle>
           </DialogHeader>
@@ -1876,7 +1876,7 @@ export default function Products() {
         open={!!editingPriceProduct}
         onOpenChange={(open) => !open && setEditingPriceProduct(null)}
       >
-        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Prices - {editingPriceProduct?.name}</DialogTitle>
           </DialogHeader>
@@ -1950,7 +1950,7 @@ export default function Products() {
 
       {/* Cart Popup Dialog */}
       <Dialog open={showCartPopup} onOpenChange={setShowCartPopup}>
-        <DialogContent className="max-w-sm max-h-[70vh] sm:max-h-[85vh] overflow-y-auto p-0 flex flex-col">
+        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[70vh] sm:max-h-[85vh] overflow-y-auto p-0 flex flex-col">
           <DialogHeader className="px-4 pt-4 pb-2 border-b bg-gradient-to-r from-primary/10 to-primary/5">
             <DialogTitle className="flex items-center gap-2 text-primary">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -2262,7 +2262,7 @@ export default function Products() {
       <Dialog open={showPrintTagDialog} onOpenChange={(open) => {
         if (!open) handlePrintTagDialogClose(false);
       }}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Tag className="w-5 h-5 text-primary" />

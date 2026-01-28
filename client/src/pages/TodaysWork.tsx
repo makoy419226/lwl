@@ -444,7 +444,7 @@ export default function TodaysWork() {
       </div>
 
       <Dialog open={selectedCard !== null} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between" data-testid="dialog-title-orders">
               <span>{dialogTitle}</span>

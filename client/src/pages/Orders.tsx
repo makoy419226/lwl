@@ -2754,7 +2754,7 @@ export default function Orders() {
           open={!!newCreatedOrder}
           onOpenChange={(open) => !open && setNewCreatedOrder(null)}
         >
-          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent aria-describedby={undefined} className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-primary" />
@@ -2997,7 +2997,7 @@ export default function Orders() {
         open={!!packingPinDialog}
         onOpenChange={(open) => !open && setPackingPinDialog(null)}
       >
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shirt className="w-5 h-5 text-primary" />
@@ -3065,7 +3065,7 @@ export default function Orders() {
         open={!!tagPinDialog}
         onOpenChange={(open) => !open && setTagPinDialog(null)}
       >
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Tag className="w-5 h-5 text-orange-500" />
@@ -3125,7 +3125,7 @@ export default function Orders() {
         open={!!stageChecklistDialog}
         onOpenChange={(open) => !open && setStageChecklistDialog(null)}
       >
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-blue-500" />
@@ -3176,7 +3176,7 @@ export default function Orders() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="w-5 h-5 text-primary" />
@@ -3362,7 +3362,7 @@ export default function Orders() {
         open={!!viewPhotoOrder}
         onOpenChange={(open) => !open && setViewPhotoOrder(null)}
       >
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Camera className="w-5 h-5" />
@@ -3418,7 +3418,7 @@ export default function Orders() {
 
       {/* Bill Preview Dialog */}
       <Dialog open={showBillDialog} onOpenChange={setShowBillDialog}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="w-5 h-5" />
@@ -3683,7 +3683,7 @@ export default function Orders() {
         open={!!editItemsDialog}
         onOpenChange={(open) => !open && setEditItemsDialog(null)}
       >
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="w-5 h-5 text-amber-500" />
@@ -3811,7 +3811,7 @@ export default function Orders() {
         open={!!incidentReportOrder}
         onOpenChange={(open) => !open && resetIncidentForm()}
       >
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-orange-500" />

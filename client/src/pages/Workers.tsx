@@ -1309,7 +1309,7 @@ export default function Workers() {
         open={!!editWorker}
         onOpenChange={(open) => !open && setEditWorker(null)}
       >
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Worker</DialogTitle>
           </DialogHeader>
@@ -1366,7 +1366,7 @@ export default function Workers() {
               }
               setIsUserCreateOpen(open);
             }}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserCog className="w-5 h-5" />
@@ -1450,7 +1450,7 @@ export default function Workers() {
         open={!!editUser}
         onOpenChange={(open) => !open && setEditUser(null)}
       >
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="w-5 h-5" />
@@ -1551,7 +1551,7 @@ export default function Workers() {
 
       {/* Driver Delivery History Dialog */}
       <Dialog open={!!selectedDriverHistory} onOpenChange={() => setSelectedDriverHistory(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="w-5 h-5 text-green-600" />
