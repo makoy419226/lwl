@@ -36,6 +36,7 @@ export default function Incidents() {
   const [selectedItemIndices, setSelectedItemIndices] = useState<number[]>([]);
   const [maxRefundAmount, setMaxRefundAmount] = useState<number>(0);
   const [orderSearchTerm, setOrderSearchTerm] = useState("");
+  const [isOrderSearchFocused, setIsOrderSearchFocused] = useState(false);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -388,8 +389,10 @@ export default function Incidents() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
           <Input
             placeholder="Type order number or select..."
-            value={orderSearchTerm || formData.orderNumber}
+            value={isOrderSearchFocused ? orderSearchTerm : (formData.orderNumber || orderSearchTerm)}
             onChange={(e) => setOrderSearchTerm(e.target.value)}
+            onFocus={() => setIsOrderSearchFocused(true)}
+            onBlur={() => setTimeout(() => setIsOrderSearchFocused(false), 200)}
             className="pl-9 pr-8"
             data-testid="input-order-search"
           />
@@ -414,7 +417,7 @@ export default function Incidents() {
             </button>
           )}
         </div>
-        {(orderSearchTerm || !formData.orderNumber) && (
+        {(isOrderSearchFocused || !formData.orderNumber) && (
           <div className="border rounded-md max-h-48 overflow-y-auto bg-background">
             {activeOrders
               ?.filter(order => 
