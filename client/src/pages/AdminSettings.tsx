@@ -49,6 +49,11 @@ export default function AdminSettings() {
   const [logoutAllPassword, setLogoutAllPassword] = useState("");
   const [logoutAllError, setLogoutAllError] = useState("");
   
+  // Reset users to defaults state
+  const [showResetUsersDialog, setShowResetUsersDialog] = useState(false);
+  const [resetUsersPassword, setResetUsersPassword] = useState("");
+  const [resetUsersError, setResetUsersError] = useState("");
+  
   const { toast } = useToast();
 
   // Fetch admin account settings
@@ -140,6 +145,29 @@ export default function AdminSettings() {
     },
     onError: (error: any) => {
       setLogoutAllError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to log out users");
+    },
+  });
+
+  const resetUsersMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await apiRequest("POST", "/api/admin/reset-users", { adminPassword: password });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/packing-workers"] });
+      
+      setShowResetUsersDialog(false);
+      setResetUsersPassword("");
+      setResetUsersError("");
+      
+      toast({
+        title: "Users Reset Complete",
+        description: "All users have been reset to defaults: reception1, staff1, driver1.",
+      });
+    },
+    onError: (error: any) => {
+      setResetUsersError(error.message?.includes("Invalid") ? "Invalid admin password" : "Failed to reset users");
     },
   });
 
@@ -587,23 +615,104 @@ export default function AdminSettings() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Dialog open={showResetDialog} onOpenChange={(open) => {
-              setShowResetDialog(open);
-              if (!open) {
-                setAdminPassword("");
-                setResetError("");
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  className="w-full sm:w-auto gap-2"
-                  data-testid="button-reset-all"
-                >
-                  <Trash2 className="w-5 h-5" />
-                  Reset All Data
-                </Button>
-              </DialogTrigger>
+            <div className="flex flex-wrap gap-3">
+              <Dialog open={showResetUsersDialog} onOpenChange={(open) => {
+                setShowResetUsersDialog(open);
+                if (!open) {
+                  setResetUsersPassword("");
+                  setResetUsersError("");
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto gap-2 border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                    data-testid="button-reset-users"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                    Reset Default Users
+                  </Button>
+                </DialogTrigger>
+                <DialogContent aria-describedby={undefined} className="max-w-md max-h-[85vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-orange-600">
+                      <RotateCcw className="w-5 h-5" />
+                      Reset Users to Defaults
+                    </DialogTitle>
+                    <DialogDescription>
+                      This will reset all user accounts to defaults:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>reception1 (PIN: 11111)</li>
+                        <li>staff1 (PIN: 22222)</li>
+                        <li>driver1 (PIN: 33333)</li>
+                      </ul>
+                      <p className="mt-3 text-muted-foreground">Admin account will be preserved. All packing workers will be removed.</p>
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-users-password">Admin Password</Label>
+                      <Input
+                        id="reset-users-password"
+                        type="password"
+                        placeholder="Enter admin password..."
+                        value={resetUsersPassword}
+                        onChange={(e) => {
+                          setResetUsersPassword(e.target.value);
+                          setResetUsersError("");
+                        }}
+                        data-testid="input-reset-users-password"
+                      />
+                      {resetUsersError && (
+                        <p className="text-sm text-destructive">{resetUsersError}</p>
+                      )}
+                    </div>
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowResetUsersDialog(false);
+                        setResetUsersPassword("");
+                        setResetUsersError("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-orange-600 hover:bg-orange-700"
+                      onClick={() => resetUsersMutation.mutate(resetUsersPassword)}
+                      disabled={!resetUsersPassword || resetUsersMutation.isPending}
+                      data-testid="button-confirm-reset-users"
+                    >
+                      {resetUsersMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                      )}
+                      Reset Users
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showResetDialog} onOpenChange={(open) => {
+                setShowResetDialog(open);
+                if (!open) {
+                  setAdminPassword("");
+                  setResetError("");
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full sm:w-auto gap-2"
+                    data-testid="button-reset-all"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    Reset All Data
+                  </Button>
+                </DialogTrigger>
               <DialogContent aria-describedby={undefined} className="max-w-md max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -670,6 +779,7 @@ export default function AdminSettings() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </CardContent>
         </Card>
 

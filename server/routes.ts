@@ -1887,6 +1887,28 @@ export async function registerRoutes(
     }
   });
 
+  // Reset users only (admin password protected)
+  app.post("/api/admin/reset-users", async (req, res) => {
+    const { adminPassword } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (!adminPassword || adminPassword !== ADMIN_PASSWORD) {
+      return res.status(401).json({ message: "Invalid admin password" });
+    }
+    
+    try {
+      // Reset users to defaults (keeping admin, adding default staff)
+      await storage.resetUsersToDefaults();
+      
+      // Reset packing workers to defaults (clears all)
+      await storage.resetPackingWorkersToDefaults();
+      
+      res.json({ success: true, message: "Users have been reset to defaults" });
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to reset users: " + err.message });
+    }
+  });
+
   // Verify admin password
   app.post("/api/admin/verify", async (req, res) => {
     const { adminPassword } = req.body;
