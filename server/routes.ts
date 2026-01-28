@@ -2485,6 +2485,18 @@ export async function registerRoutes(
         if (req.body.orderNumber) {
           const order = await storage.getOrderByNumber(req.body.orderNumber);
           if (order && order.clientId) {
+            // Mark the bill as refunded if there's an associated bill
+            if (order.billId) {
+              const bill = await storage.getBill(order.billId);
+              if (bill) {
+                const existingRefunded = parseFloat(bill.refundedAmount || "0");
+                await storage.updateBill(order.billId, {
+                  refunded: true,
+                  refundedAmount: (existingRefunded + refundAmount).toString(),
+                });
+              }
+            }
+            
             if (refundType === "credit") {
               // Add to credit available - create a deposit transaction
               await storage.createTransaction({
@@ -2493,7 +2505,7 @@ export async function registerRoutes(
                 amount: refundAmount.toString(),
                 description: `Refund added to credit - Incident #${incident.id} (Order ${req.body.orderNumber})`,
                 date: new Date().toISOString().split('T')[0],
-                createdBy: req.body.responsibleStaff || "System",
+                processedBy: req.body.responsibleStaffName || "System",
               });
             } else {
               // Cash refund - record as a note/payment transaction (not adding to credit)
@@ -2503,7 +2515,7 @@ export async function registerRoutes(
                 amount: refundAmount.toString(),
                 description: `Cash refund paid - Incident #${incident.id} (Order ${req.body.orderNumber})`,
                 date: new Date().toISOString().split('T')[0],
-                createdBy: req.body.responsibleStaff || "System",
+                processedBy: req.body.responsibleStaffName || "System",
               });
             }
           }
