@@ -1095,6 +1095,44 @@ export async function registerRoutes(
     res.json(dueSoon);
   });
 
+  // Active Orders for Incident Reporting (with client info)
+  app.get("/api/orders/active-with-clients", async (req, res) => {
+    try {
+      const allOrders = await storage.getOrders();
+      const activeStatuses = ["pending", "tagging", "packing", "ready"];
+      const activeOrders = allOrders.filter(o => activeStatuses.includes(o.status || ""));
+      
+      // Get client info for each order
+      const ordersWithClients = await Promise.all(
+        activeOrders.map(async (order) => {
+          let clientInfo = { name: order.customerName, phone: "", address: "" };
+          if (order.clientId) {
+            const client = await storage.getClient(order.clientId);
+            if (client) {
+              clientInfo = {
+                name: client.name,
+                phone: client.phone || "",
+                address: client.address || "",
+              };
+            }
+          }
+          return {
+            id: order.id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            customerName: clientInfo.name,
+            customerPhone: clientInfo.phone,
+            customerAddress: clientInfo.address,
+          };
+        })
+      );
+      
+      res.json(ordersWithClients);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch active orders" });
+    }
+  });
+
   app.get("/api/orders/by-number/:orderNumber", async (req, res) => {
     const { orderNumber } = req.params;
     if (!orderNumber) {
@@ -2410,44 +2448,6 @@ export async function registerRoutes(
     const updatedOrder = await storage.updateOrder(orderId, updateData);
 
     res.json(updatedOrder);
-  });
-
-  // Active Orders for Incident Reporting (with client info)
-  app.get("/api/orders/active-with-clients", async (req, res) => {
-    try {
-      const allOrders = await storage.getOrders();
-      const activeStatuses = ["pending", "tagging", "packing", "ready"];
-      const activeOrders = allOrders.filter(o => activeStatuses.includes(o.status || ""));
-      
-      // Get client info for each order
-      const ordersWithClients = await Promise.all(
-        activeOrders.map(async (order) => {
-          let clientInfo = { name: order.customerName, phone: "", address: "" };
-          if (order.clientId) {
-            const client = await storage.getClient(order.clientId);
-            if (client) {
-              clientInfo = {
-                name: client.name,
-                phone: client.phone || "",
-                address: client.address || "",
-              };
-            }
-          }
-          return {
-            id: order.id,
-            orderNumber: order.orderNumber,
-            status: order.status,
-            customerName: clientInfo.name,
-            customerPhone: clientInfo.phone,
-            customerAddress: clientInfo.address,
-          };
-        })
-      );
-      
-      res.json(ordersWithClients);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch active orders" });
-    }
   });
 
   // Incident Routes
