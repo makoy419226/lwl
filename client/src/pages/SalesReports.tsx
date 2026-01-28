@@ -194,12 +194,12 @@ export default function SalesReports() {
       .map(order => {
         const client = allClients?.find(c => c.id === order.clientId);
         return [
-          order.orderType === 'urgent' ? 'Bill (Urgent)' : 'Bill',
+          order.urgent ? 'Bill (Urgent)' : 'Bill',
           order.customerName || client?.name || 'Walk-in',
-          order.customerPhone || client?.phone || '',
+          client?.phone || '',
           `Order #${order.orderNumber || order.id}${order.items ? ` - ${order.items.substring(0, 50)}...` : ''}`,
           parseFloat(order.totalAmount || "0").toFixed(2),
-          formatDateTime(order.entryDate || new Date().toISOString())
+          formatDateTime(order.entryDate ? String(order.entryDate) : new Date().toISOString())
         ];
       });
     
@@ -220,14 +220,23 @@ export default function SalesReports() {
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(summaryData);
+    
+    // Set column widths - wider for first column to prevent overlap
     ws['!cols'] = [
-      { wch: 12 },  // Type
+      { wch: 18 },  // Type - wider to prevent overlap
       { wch: 25 },  // Client
-      { wch: 15 },  // Phone
-      { wch: 45 },  // Description
+      { wch: 18 },  // Phone
+      { wch: 50 },  // Description
       { wch: 15 },  // Amount
-      { wch: 18 },  // Date
+      { wch: 20 },  // Date
     ];
+    
+    // Add table styling by setting the range for auto-filter (creates table look)
+    const headerRow = 11; // Row 12 in 0-indexed is row 11
+    const lastRow = headerRow + allTransactionRows.length;
+    if (allTransactionRows.length > 0) {
+      ws['!autofilter'] = { ref: `A${headerRow + 1}:F${lastRow + 1}` };
+    }
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Sales Report');
