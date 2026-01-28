@@ -1208,8 +1208,16 @@ export default function Clients() {
                 // Credit Available = credit balance (what's been added minus what's been used)
                 const availableCredit = Math.max(0, creditBalance);
                 
+                // Calculate total paid from payment transactions
+                const totalPaid = transactions?.reduce((sum, tx) => {
+                  if (tx.type === "payment" || tx.type === "deposit_used" || tx.type === "bulk_deposit_used") {
+                    return sum + parseFloat(tx.amount || "0");
+                  }
+                  return sum;
+                }, 0) || 0;
+                
                 return (
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">Unpaid Bills</p>
                       <p className="text-xl font-bold text-blue-600">
@@ -1217,7 +1225,13 @@ export default function Clients() {
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Credit Available</p>
+                      <p className="text-sm text-muted-foreground">Total Paid</p>
+                      <p className="text-xl font-bold text-purple-600">
+                        {totalPaid.toFixed(2)} AED
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">Credits Available</p>
                       <p className="text-xl font-bold text-green-600">
                         {availableCredit.toFixed(2)} AED
                       </p>
