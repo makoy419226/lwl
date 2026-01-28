@@ -22,6 +22,100 @@ interface OrderItem {
   price: number;
 }
 
+interface ActiveOrderType {
+  id: number;
+  orderNumber: string;
+  status: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  items: string;
+  totalAmount: string;
+}
+
+interface OrderSearchBoxProps {
+  activeOrders: ActiveOrderType[] | undefined;
+  selectedOrderNumber: string;
+  onOrderSelect: (order: ActiveOrderType | null) => void;
+  getStatusBadgeColor: (status: string) => string;
+}
+
+function OrderSearchBox({ activeOrders, selectedOrderNumber, onOrderSelect, getStatusBadgeColor }: OrderSearchBoxProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filteredOrders = activeOrders?.filter(order => 
+    searchTerm === "" || 
+    order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Type order number or select..."
+          value={isFocused ? searchTerm : (selectedOrderNumber || "")}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onFocus={() => {
+            setIsFocused(true);
+            setSearchTerm("");
+          }}
+          onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm pl-9 pr-8"
+          data-testid="input-order-search"
+        />
+        {selectedOrderNumber && !isFocused && (
+          <button
+            type="button"
+            onClick={() => {
+              onOrderSelect(null);
+              setSearchTerm("");
+              inputRef.current?.focus();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <XCircle className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {(isFocused || !selectedOrderNumber) && (
+        <div className="border rounded-md max-h-48 overflow-y-auto bg-background">
+          {filteredOrders.map((order) => (
+            <div 
+              key={order.id}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onOrderSelect(order);
+                setSearchTerm("");
+                setIsFocused(false);
+              }}
+              className="flex items-center gap-2 p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
+              data-testid={`order-option-${order.id}`}
+            >
+              <span className="font-mono text-sm">{order.orderNumber}</span>
+              <span className="text-muted-foreground">-</span>
+              <span className="text-sm">{order.customerName}</span>
+              <Badge className={`text-xs ml-auto ${getStatusBadgeColor(order.status)}`}>
+                {order.status}
+              </Badge>
+            </div>
+          ))}
+          {filteredOrders.length === 0 && (
+            <div className="p-3 text-center text-muted-foreground text-sm">
+              No orders found
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Incidents() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editIncident, setEditIncident] = useState<Incident | null>(null);
@@ -386,87 +480,34 @@ export default function Incidents() {
     <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
       <div className="p-3 bg-muted/50 rounded-lg border space-y-3">
         <Label className="text-sm font-medium">Select Active Order</Label>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-          <input
-            ref={orderSearchRef}
-            type="text"
-            placeholder="Type order number or select..."
-            value={isOrderSearchFocused ? orderSearchTerm : (formData.orderNumber || orderSearchTerm)}
-            onChange={(e) => setOrderSearchTerm(e.target.value)}
-            onFocus={() => setIsOrderSearchFocused(true)}
-            onBlur={() => setTimeout(() => setIsOrderSearchFocused(false), 200)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9 pr-8"
-            data-testid="input-order-search"
-          />
-          {formData.orderNumber && (
-            <button
-              type="button"
-              onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  orderNumber: "",
-                  customerName: "",
-                  customerPhone: "",
-                  customerAddress: "",
-                  itemName: "",
-                }));
-                setOrderSearchTerm("");
-                setMaxRefundAmount(0);
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <XCircle className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-        {(isOrderSearchFocused || !formData.orderNumber) && (
-          <div className="border rounded-md max-h-48 overflow-y-auto bg-background">
-            {activeOrders
-              ?.filter(order => 
-                orderSearchTerm === "" || 
-                order.orderNumber.toLowerCase().includes(orderSearchTerm.toLowerCase()) ||
-                order.customerName.toLowerCase().includes(orderSearchTerm.toLowerCase())
-              )
-              .map((order) => (
-              <div 
-                key={order.id}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setFormData(prev => ({
-                    ...prev,
-                    orderNumber: order.orderNumber,
-                    customerName: order.customerName,
-                    customerPhone: order.customerPhone,
-                    customerAddress: order.customerAddress,
-                    itemName: order.items || "",
-                  }));
-                  setMaxRefundAmount(parseFloat(order.totalAmount) || 0);
-                  setOrderSearchTerm("");
-                  setIsOrderSearchFocused(false);
-                }}
-                className="flex items-center gap-2 p-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                data-testid={`order-option-${order.id}`}
-              >
-                <span className="font-mono text-sm">{order.orderNumber}</span>
-                <span className="text-muted-foreground">-</span>
-                <span className="text-sm">{order.customerName}</span>
-                <Badge className={`text-xs ml-auto ${getStatusBadgeColor(order.status)}`}>
-                  {order.status}
-                </Badge>
-              </div>
-            ))}
-            {activeOrders?.filter(order => 
-              orderSearchTerm === "" || 
-              order.orderNumber.toLowerCase().includes(orderSearchTerm.toLowerCase()) ||
-              order.customerName.toLowerCase().includes(orderSearchTerm.toLowerCase())
-            ).length === 0 && (
-              <div className="p-3 text-center text-muted-foreground text-sm">
-                No orders found
-              </div>
-            )}
-          </div>
-        )}
+        <OrderSearchBox
+          activeOrders={activeOrders}
+          selectedOrderNumber={formData.orderNumber}
+          getStatusBadgeColor={getStatusBadgeColor}
+          onOrderSelect={(order) => {
+            if (order) {
+              setFormData(prev => ({
+                ...prev,
+                orderNumber: order.orderNumber,
+                customerName: order.customerName,
+                customerPhone: order.customerPhone,
+                customerAddress: order.customerAddress,
+                itemName: order.items || "",
+              }));
+              setMaxRefundAmount(parseFloat(order.totalAmount) || 0);
+            } else {
+              setFormData(prev => ({
+                ...prev,
+                orderNumber: "",
+                customerName: "",
+                customerPhone: "",
+                customerAddress: "",
+                itemName: "",
+              }));
+              setMaxRefundAmount(0);
+            }
+          }}
+        />
         {formData.orderNumber && formData.itemName && (
           <div className="mt-2 p-3 bg-muted/50 rounded-md border">
             <Label className="text-xs text-muted-foreground mb-2 block">Order Items:</Label>
