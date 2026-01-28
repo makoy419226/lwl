@@ -74,6 +74,8 @@ export const bills = pgTable("bills", {
   createdByWorkerId: integer("created_by_worker_id"),
   createdBy: text("created_by"), // Name of user who created the bill
   notes: text("notes"),
+  refunded: boolean("refunded").default(false),
+  refundedAmount: numeric("refunded_amount", { precision: 12, scale: 2 }).default("0"),
 });
 
 export const billPayments = pgTable("bill_payments", {
@@ -182,6 +184,7 @@ export const incidents = pgTable("incidents", {
   refundAmount: numeric("refund_amount", { precision: 12, scale: 2 }).default(
     "0",
   ),
+  refundType: text("refund_type").default("credit"), // 'cash', 'credit'
   itemValue: numeric("item_value", { precision: 12, scale: 2 }).default("0"),
   responsibleStaffId: integer("responsible_staff_id"),
   responsibleStaffName: text("responsible_staff_name"),

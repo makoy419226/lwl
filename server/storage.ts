@@ -1148,23 +1148,26 @@ export class DatabaseStorage implements IStorage {
   async createIncident(insertIncident: InsertIncident): Promise<Incident> {
     const incidentData = {
       customerName: insertIncident.customerName,
-      customerPhone: insertIncident.customerPhone,
-      orderId: insertIncident.orderId,
-      orderNumber: insertIncident.orderNumber,
-      itemName: insertIncident.itemName,
+      customerPhone: insertIncident.customerPhone || null,
+      customerAddress: insertIncident.customerAddress || null,
+      orderId: insertIncident.orderId || null,
+      orderNumber: insertIncident.orderNumber || null,
+      itemName: insertIncident.itemName || null,
       reason: insertIncident.reason,
-      notes: insertIncident.notes,
+      notes: insertIncident.notes || null,
       refundAmount: insertIncident.refundAmount?.toString() || "0",
+      refundType: insertIncident.refundType || "credit",
       itemValue: insertIncident.itemValue?.toString() || "0",
-      responsibleStaffId: insertIncident.responsibleStaffId,
-      responsibleStaffName: insertIncident.responsibleStaffName,
+      responsibleStaffId: null, // Staff ID is stored as string now
+      responsibleStaffName: insertIncident.responsibleStaffName || null,
       incidentType: insertIncident.incidentType || "refund",
+      incidentStage: insertIncident.incidentStage || "delivery",
       status: insertIncident.status || "open",
-      incidentDate: new Date(insertIncident.incidentDate),
+      incidentDate: insertIncident.incidentDate ? new Date(insertIncident.incidentDate) : new Date(),
       resolvedDate: insertIncident.resolvedDate
         ? new Date(insertIncident.resolvedDate)
         : null,
-      resolution: insertIncident.resolution,
+      resolution: insertIncident.resolution || null,
     };
     const [incident] = await db
       .insert(incidents)

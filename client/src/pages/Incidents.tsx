@@ -418,12 +418,20 @@ export default function Incidents() {
     }
     
     const data = {
-      ...formData,
+      customerName: formData.customerName,
+      customerPhone: formData.customerPhone,
+      customerAddress: formData.customerAddress,
+      orderNumber: formData.orderNumber,
       itemName: selectedItemsString,
+      reason: formData.reason,
       refundAmount: formData.refundAmount || "0",
-      itemValue: formData.itemValue || "0",
-      responsibleStaffId: formData.responsibleStaffId ? parseInt(formData.responsibleStaffId) : null,
-      incidentDate: new Date(formData.incidentDate),
+      refundType: formData.refundType || "credit",
+      incidentType: formData.incidentType,
+      incidentStage: formData.incidentStage,
+      status: formData.status,
+      responsibleStaffId: formData.responsibleStaffId || null,
+      responsibleStaffName: formData.responsibleStaffName || null,
+      incidentDate: formData.incidentDate,
     };
     createMutation.mutate(data);
   };
