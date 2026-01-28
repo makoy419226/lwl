@@ -2126,20 +2126,20 @@ export default function Products() {
                         +971
                       </span>
                       <Input
-                        className={`h-8 text-xs rounded-l-none ${walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
-                        placeholder="XXXXXXXXXX"
-                        value={walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 10)}
+                        className={`h-8 text-xs rounded-l-none ${walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
+                        placeholder="XXXXXXXXX"
+                        value={walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9)}
                         onChange={(e) => {
-                          const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
                           setWalkInPhone("+971" + digits);
                         }}
                         inputMode="numeric"
-                        maxLength={10}
+                        maxLength={9}
                         data-testid="popup-input-walkin-phone"
                       />
                     </div>
-                    {walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 10 && (
-                      <p className="text-xs text-green-600 font-medium">10 digits - limit reached</p>
+                    {walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 && (
+                      <p className="text-xs text-green-600 font-medium">9 digits - limit reached</p>
                     )}
                   </div>
                 </div>

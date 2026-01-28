@@ -220,20 +220,20 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
                       +971
                     </span>
                     <Input 
-                      className={`rounded-l-none ${field.value.replace(/^\+971/, "").replace(/\D/g, "").length >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
-                      placeholder="XXXXXXXXXX" 
-                      value={field.value.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 10)}
+                      className={`rounded-l-none ${field.value.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
+                      placeholder="XXXXXXXXX" 
+                      value={field.value.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9)}
                       onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
                         field.onChange("+971" + digits);
                       }}
                       inputMode="numeric"
-                      maxLength={10}
+                      maxLength={9}
                       data-testid="input-phone" 
                     />
                   </div>
-                  {field.value.replace(/^\+971/, "").replace(/\D/g, "").length >= 10 && (
-                    <p className="text-xs text-green-600 font-medium">10 digits - limit reached</p>
+                  {field.value.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 && (
+                    <p className="text-xs text-green-600 font-medium">9 digits - limit reached</p>
                   )}
                 </div>
               </FormControl>

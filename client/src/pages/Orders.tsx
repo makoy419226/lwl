@@ -4251,20 +4251,20 @@ function OrderForm({
                   +971
                 </span>
                 <Input
-                  className={`rounded-l-none ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
-                  placeholder="XXXXXXXXXX"
-                  value={formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 10) || ""}
+                  className={`rounded-l-none ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
+                  placeholder="XXXXXXXXX"
+                  value={formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9) || ""}
                   onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
                     setFormData({ ...formData, customerPhone: "+971" + digits });
                   }}
                   inputMode="numeric"
-                  maxLength={10}
+                  maxLength={9}
                   data-testid="input-customer-phone"
                 />
               </div>
-              {(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 10 && (
-                <p className="text-xs text-green-600 font-medium">10 digits - limit reached</p>
+              {(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 9 && (
+                <p className="text-xs text-green-600 font-medium">9 digits - limit reached</p>
               )}
             </div>
             {clientMatch && (
