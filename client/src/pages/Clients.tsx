@@ -665,9 +665,21 @@ export default function Clients() {
   const downloadClientExcel = async (client: Client) => {
     // Fetch all transactions for this client
     let transactionData: any[][] = [];
-    let runningBalance = 0;
     let totalBillsFromTx = 0;
     let totalDepositsFromTx = 0;
+    let totalBillsPaid = 0;
+    
+    // Format payment method
+    const formatPaymentMethod = (method: string | null | undefined) => {
+      if (!method) return '-';
+      switch (method.toLowerCase()) {
+        case 'deposit': return 'Deduct from Credit';
+        case 'cash': return 'Cash';
+        case 'card': return 'Card';
+        case 'bank': return 'Bank';
+        default: return method;
+      }
+    };
     
     try {
       const res = await fetch(`/api/clients/${client.id}/transactions`);
@@ -683,24 +695,28 @@ export default function Clients() {
             const amt = parseFloat(t.amount || "0");
             if (t.type === "deposit") {
               totalDepositsFromTx += amt;
+            } else if (t.type === "payment" || t.type === "deposit_used" || t.type === "bulk_deposit_used" || t.type === "bulk_payment") {
+              totalBillsPaid += amt;
             } else {
               totalBillsFromTx += amt;
             }
           });
           
-          transactionData = sortedTransactions.map((t, idx) => {
+          transactionData = sortedTransactions.map(t => {
+            // Determine type label
+            let typeLabel = 'Bill';
             if (t.type === "deposit") {
-              runningBalance += parseFloat(t.amount);
-            } else {
-              runningBalance -= parseFloat(t.amount);
+              typeLabel = 'Add Credit to Account';
+            } else if (t.type === "payment" || t.type === "deposit_used" || t.type === "bulk_deposit_used" || t.type === "bulk_payment") {
+              typeLabel = 'Payment';
             }
+            
             return [
-              idx + 1,
-              format(new Date(t.date), "dd/MM/yyyy HH:mm"),
-              t.type === "deposit" ? "PAYMENT" : "BILL",
+              typeLabel,
               t.description || "-",
               parseFloat(t.amount).toFixed(2),
-              runningBalance.toFixed(2),
+              formatPaymentMethod(t.paymentMethod),
+              format(new Date(t.date), "dd/MM/yyyy, HH:mm"),
             ];
           });
         }
@@ -709,53 +725,48 @@ export default function Clients() {
       console.log("Could not fetch transactions");
     }
 
-    // Calculate balance due (negative runningBalance means customer owes money)
-    const balanceDue = Math.abs(runningBalance) * (runningBalance < 0 ? 1 : -1);
-
-    // Build clean data structure
+    // Build clean data structure matching sales report format
     const data: any[][] = [];
     
     // Header
-    data.push(["LIQUID WASHES LAUNDRY - CLIENT ACCOUNT SUMMARY"]);
+    data.push([`Liquid Washes Laundry - ${client.name} Account Summary`]);
+    data.push([`Phone: ${client.phone || '-'}`]);
+    data.push([`Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm:ss")}`]);
     data.push([""]);
     
-    // Client Info Section
-    data.push(["CLIENT DETAILS"]);
-    data.push(["Name", client.name]);
-    data.push(["Phone", client.phone || "-"]);
-    data.push(["Address", client.address || "-"]);
-    data.push(["Account Number", client.billNumber || "-"]);
-    data.push([""]);
-    
-    // Financial Summary - using transaction-based calculations
-    data.push(["FINANCIAL SUMMARY"]);
-    data.push(["Total Bills", `${totalBillsFromTx.toFixed(2)} AED`]);
-    data.push(["Total Payments", `${totalDepositsFromTx.toFixed(2)} AED`]);
-    data.push(["Due Balance", `${(totalBillsFromTx - totalDepositsFromTx).toFixed(2)} AED`]);
-    data.push([""]);
-    
-    // Transaction History
-    data.push(["TRANSACTION HISTORY"]);
+    // Transaction History first (like sales report)
+    data.push(["All Transactions"]);
     if (transactionData.length > 0) {
-      data.push(["#", "Date & Time", "Type", "Description", "Amount (AED)", "Balance (AED)"]);
+      data.push(["Type", "Description", "Amount (AED)", "Payment Method", "Date"]);
       transactionData.forEach(row => data.push(row));
     } else {
       data.push(["No transaction history available"]);
     }
     data.push([""]);
     
-    // Footer
-    data.push(["Report Generated", format(new Date(), "dd/MM/yyyy HH:mm")]);
+    // Summary at bottom (like sales report)
+    data.push(["Summary"]);
+    data.push(["Total Bills", `${totalBillsFromTx.toFixed(2)} AED`]);
+    data.push(["Total Payments", `${(totalDepositsFromTx + totalBillsPaid).toFixed(2)} AED`]);
+    data.push(["Total Credits Received", `${totalDepositsFromTx.toFixed(2)} AED`]);
+    data.push(["Due Balance", `${(totalBillsFromTx - totalBillsPaid - totalDepositsFromTx).toFixed(2)} AED`]);
 
     const ws = XLSX.utils.aoa_to_sheet(data);
     ws["!cols"] = [
-      { wch: 8 },  // Column A - #
-      { wch: 20 }, // Column B - Date & Time
-      { wch: 12 }, // Column C - Type
-      { wch: 40 }, // Column D - Description
-      { wch: 15 }, // Column E - Amount
-      { wch: 15 }, // Column F - Balance
+      { wch: 22 }, // Column A - Type
+      { wch: 40 }, // Column B - Description
+      { wch: 15 }, // Column C - Amount
+      { wch: 20 }, // Column D - Payment Method
+      { wch: 20 }, // Column E - Date
     ];
+    
+    // Add autofilter for transactions table
+    if (transactionData.length > 0) {
+      const headerRow = 5; // Row 6 in 0-indexed
+      const lastRow = headerRow + transactionData.length;
+      ws['!autofilter'] = { ref: `A${headerRow + 1}:E${lastRow + 1}` };
+    }
+    
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Client Summary");
     XLSX.writeFile(wb, `${client.name.replace(/\s+/g, "_")}_Summary.xlsx`);
