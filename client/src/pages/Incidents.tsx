@@ -553,11 +553,15 @@ export default function Incidents() {
                 );
               })}
             </div>
-            {selectedItemIndices.length > 0 && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                {selectedItemIndices.length} item(s) selected
-              </div>
-            )}
+            {(() => {
+              const itemCount = formData.itemName.split(",").length;
+              const validSelected = selectedItemIndices.filter(idx => idx < itemCount).length;
+              return validSelected > 0 ? (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {validSelected} item(s) selected
+                </div>
+              ) : null;
+            })()}
           </div>
         )}
       </div>
