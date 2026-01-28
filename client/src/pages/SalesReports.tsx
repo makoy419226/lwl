@@ -193,15 +193,15 @@ export default function SalesReports() {
       .sort((a, b) => new Date(a.entryDate || 0).getTime() - new Date(b.entryDate || 0).getTime())
       .map(order => {
         const client = allClients?.find(c => c.id === order.clientId);
-        // Client's current credit/deposit balance
-        const clientCredit = client ? parseFloat(client.deposit || "0") : 0;
+        // Amount paid for this specific order (advance payment at order time)
+        const advancePaid = parseFloat(order.paidAmount || "0");
         return [
           order.urgent ? 'Bill (Urgent)' : 'Bill',
           order.customerName || client?.name || 'Walk-in',
           client?.phone || '',
           `Order #${order.orderNumber || order.id}`,
           parseFloat(order.totalAmount || "0").toFixed(2),
-          clientCredit.toFixed(2),
+          advancePaid.toFixed(2),
           formatDateTime(order.entryDate ? String(order.entryDate) : new Date().toISOString())
         ];
       });
