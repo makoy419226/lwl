@@ -1251,12 +1251,6 @@ export default function Clients() {
                     <SelectItem value="bank">Bank</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input
-                  placeholder="Description (optional)"
-                  value={depositDescription}
-                  onChange={(e) => setDepositDescription(e.target.value)}
-                  data-testid="input-deposit-description"
-                />
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700"
                   onClick={() => {
@@ -1264,7 +1258,7 @@ export default function Clients() {
                       addDepositMutation.mutate({
                         clientId: transactionClient.id,
                         amount: depositAmount,
-                        description: depositDescription,
+                        description: "Deposit received",
                         paymentMethod: depositPaymentMethod,
                       });
                     }
