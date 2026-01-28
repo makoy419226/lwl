@@ -531,21 +531,26 @@ export default function Incidents() {
                     key={idx} 
                     className={`flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted ${isSelected ? 'bg-primary/10 border border-primary/30' : ''}`}
                     onClick={() => {
-                      if (isSelected) {
-                        setSelectedItemIndices(prev => prev.filter(i => i !== idx));
-                      } else {
-                        setSelectedItemIndices(prev => [...prev, idx]);
-                      }
+                      setSelectedItemIndices(prev => {
+                        if (prev.includes(idx)) {
+                          return prev.filter(i => i !== idx);
+                        } else {
+                          return [...prev, idx];
+                        }
+                      });
                     }}
                   >
                     <Checkbox 
                       checked={isSelected}
+                      onClick={(e) => e.stopPropagation()}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedItemIndices(prev => [...prev, idx]);
-                        } else {
-                          setSelectedItemIndices(prev => prev.filter(i => i !== idx));
-                        }
+                        setSelectedItemIndices(prev => {
+                          if (checked) {
+                            return prev.includes(idx) ? prev : [...prev, idx];
+                          } else {
+                            return prev.filter(i => i !== idx);
+                          }
+                        });
                       }}
                     />
                     <span>{itemTrimmed}</span>
