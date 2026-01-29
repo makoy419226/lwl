@@ -24,6 +24,7 @@ import TrackOrder from "@/pages/TrackOrder";
 import AdminSettings from "@/pages/AdminSettings";
 import DeliveryDashboard from "@/pages/DeliveryDashboard";
 import DeliveryHistory from "@/pages/DeliveryHistory";
+import DailySales from "@/pages/DailySales";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -41,6 +42,7 @@ const rolePermissions: Record<string, string[]> = {
   "/orders": ["admin", "reception", "staff"],
   "/workers": ["admin"],
   "/sales-reports": ["admin"],
+  "/daily-sales": ["admin"],
   "/incidents": ["admin", "reception", "staff", "driver"],
   "/due-customers": ["admin", "reception"],
   "/contact": ["admin", "reception", "staff", "driver"],
@@ -101,6 +103,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       {rolePermissions["/track"].includes(userRole) && <Route path="/track" component={TrackOrder} />}
       {rolePermissions["/admin-settings"].includes(userRole) && <Route path="/admin-settings" component={AdminSettings} />}
+      {rolePermissions["/daily-sales"].includes(userRole) && <Route path="/daily-sales" component={DailySales} />}
       <Route component={NotFound} />
     </Switch>
   );
