@@ -299,7 +299,7 @@ export default function SalesReports() {
     
     const summaryData = [
       ['Liquid Washes Laundry - Sales Report'],
-      [`Period: ${periodLabel}`],
+      [`DATE: ${periodLabel}`],
       [],
       ['All Transactions'],
       ['Type', 'Client', 'Phone', 'Description', 'Amount (AED)', 'Payment Method', 'Date'],
