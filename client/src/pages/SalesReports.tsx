@@ -317,7 +317,7 @@ export default function SalesReports() {
     
     // Set column widths
     ws['!cols'] = [
-      { wch: 25 },  // Type
+      { wch: 35 },  // Type / Labels (wide enough for "Total Credits Received")
       { wch: 22 },  // Client
       { wch: 18 },  // Phone
       { wch: 20 },  // Description (Order # only)
