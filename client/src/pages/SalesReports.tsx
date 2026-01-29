@@ -45,6 +45,12 @@ export default function SalesReports() {
     enabled: !!allClients && allClients.length > 0,
   });
 
+  // Helper to parse YYYY-MM-DD string as local date (not UTC)
+  const parseLocalDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const filterOrders = (period: 'daily' | 'monthly' | 'yearly') => {
     if (!allOrders) return { deliveryOrders: [], takeawayOrders: [], totalDelivery: 0, totalTakeaway: 0, totalBills: 0, totalPaid: 0, orderCount: 0 };
     
@@ -57,7 +63,7 @@ export default function SalesReports() {
       let matches = false;
       
       if (period === 'daily') {
-        const selectedDateObj = new Date(selectedDate);
+        const selectedDateObj = parseLocalDate(selectedDate);
         selectedDateObj.setHours(0, 0, 0, 0);
         const orderDateNorm = new Date(orderDate);
         orderDateNorm.setHours(0, 0, 0, 0);
@@ -103,7 +109,7 @@ export default function SalesReports() {
         let matches = false;
         
         if (period === 'daily') {
-          const selectedDateObj = new Date(selectedDate);
+          const selectedDateObj = parseLocalDate(selectedDate);
           selectedDateObj.setHours(0, 0, 0, 0);
           const txDateNorm = new Date(txDate);
           txDateNorm.setHours(0, 0, 0, 0);
@@ -163,7 +169,7 @@ export default function SalesReports() {
     // Format period with full day name (e.g., "Wednesday, 28 January 2026")
     let periodLabel = label;
     if (activeTab === 'daily') {
-      const dateObj = new Date(selectedDate);
+      const dateObj = parseLocalDate(selectedDate);
       periodLabel = dateObj.toLocaleDateString('en-GB', { 
         weekday: 'long', 
         day: 'numeric', 
@@ -244,7 +250,7 @@ export default function SalesReports() {
           let matches = false;
           
           if (activeTab === 'daily') {
-            const selectedDateObj = new Date(selectedDate);
+            const selectedDateObj = parseLocalDate(selectedDate);
             selectedDateObj.setHours(0, 0, 0, 0);
             const txDateNorm = new Date(txDate);
             txDateNorm.setHours(0, 0, 0, 0);
