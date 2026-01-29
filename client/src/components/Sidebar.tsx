@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown, Truck, History, Moon, Sun, Calendar } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown, Truck, History, Moon, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
@@ -54,7 +54,6 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isOrders = location === "/orders";
   const isWorkers = location === "/workers";
   const isSalesReports = location === "/sales-reports";
-  const isDailySales = location === "/daily-sales";
   const isIncidents = location === "/incidents";
   const isDueCustomers = location === "/due-customers";
   const isContact = location === "/contact";
@@ -93,7 +92,6 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       collapsible: false,
       items: [
         { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
-        { href: "/daily-sales", icon: Calendar, label: "Daily Sales", active: isDailySales, testId: "nav-daily-sales", roles: ["admin"] },
         { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "reception", "staff"] },
         { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "reception", "staff", "driver"] },
         { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "reception", "staff", "driver"] },
