@@ -555,14 +555,24 @@ export default function Clients() {
           const sortedTransactions = [...clientTransactions].sort(
             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
           );
-          let runningBalance = 0;
+          
+          // Use same balance calculation as UI: bills add to balance, deposits/payments reduce it
+          const hasBillTransactions = sortedTransactions.some(t => t.type === "bill");
+          // If no bill transactions in list, use the client's total bills as starting point
+          let cumulativeBills = hasBillTransactions ? 0 : totalBill;
+          let cumulativePayments = 0;
+          
           transactionRows = sortedTransactions
             .map((t, idx) => {
-              if (t.type === "deposit") {
-                runningBalance += parseFloat(t.amount);
+              // Balance represents what client owes: bills add, deposits/payments subtract
+              if (t.type === "bill") {
+                cumulativeBills += parseFloat(t.amount);
               } else {
-                runningBalance -= parseFloat(t.amount);
+                cumulativePayments += parseFloat(t.amount);
               }
+              // Running balance = cumulative bills - cumulative payments
+              const runningBalance = cumulativeBills - cumulativePayments;
+              
               // Simplify description to only show bill/order numbers
               const desc = t.description || "-";
               const billMatch = desc.match(/Bill #(\d+)/);
@@ -579,15 +589,21 @@ export default function Clients() {
               } else {
                 simpleDesc = desc.length > 50 ? desc.substring(0, 50) + "..." : desc;
               }
-              const balanceColor = runningBalance >= 0 ? "#4caf50" : "#f44336";
+              
+              const typeLabel = t.type === "bill" ? "Bill" : t.type === "deposit" ? "Deposit" : "Payment";
+              const typeColor = t.type === "deposit" || t.type === "payment" ? "#4caf50" : "#2196f3";
+              const amountColor = t.type === "deposit" || t.type === "payment" ? "#4caf50" : "#2196f3";
+              // Positive balance = client owes (red), zero or negative = client has credit (green)
+              const balanceColor = runningBalance > 0 ? "#f44336" : "#4caf50";
+              
               return `
                 <tr style="border-bottom: 1px solid #eee;">
                   <td style="padding: 8px; text-align: center;">${idx + 1}</td>
                   <td style="padding: 8px;">${format(new Date(t.date), "dd/MM/yyyy")}</td>
                   <td style="padding: 8px;">${format(new Date(t.date), "HH:mm")}</td>
-                  <td style="padding: 8px; text-transform: capitalize; font-weight: 500; color: ${t.type === "deposit" ? "#4caf50" : "#2196f3"};">${t.type}</td>
+                  <td style="padding: 8px; font-weight: 500; color: ${typeColor};">${typeLabel}</td>
                   <td style="padding: 8px;">${simpleDesc}</td>
-                  <td style="padding: 8px; text-align: right; color: ${t.type === "deposit" ? "#4caf50" : "#2196f3"};">${t.type === "deposit" ? "+" : ""}${parseFloat(t.amount).toFixed(2)} AED</td>
+                  <td style="padding: 8px; text-align: right; color: ${amountColor};">${t.type === "deposit" ? "+" : ""}${parseFloat(t.amount).toFixed(2)} AED</td>
                   <td style="padding: 8px; text-align: right; font-weight: 500; color: ${balanceColor};">${runningBalance.toFixed(2)} AED</td>
                 </tr>
               `;
