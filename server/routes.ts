@@ -3005,6 +3005,58 @@ export async function registerRoutes(
     }
   });
 
+  // Batch toggle all items - more efficient for "check all" / "uncheck all"
+  app.put("/api/stage-checklists/order/:orderId/:stage/toggle-all", async (req, res) => {
+    try {
+      const orderId = Number(req.params.orderId);
+      const stage = req.params.stage;
+      const { checkedItems, workerId, workerName } = req.body;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      
+      if (!Array.isArray(checkedItems)) {
+        return res.status(400).json({ message: "checkedItems must be an array" });
+      }
+      
+      // Get checklist
+      let [checklist] = await db
+        .select()
+        .from(stageChecklists)
+        .where(
+          and(
+            eq(stageChecklists.orderId, orderId),
+            eq(stageChecklists.stage, stage)
+          )
+        );
+      
+      if (!checklist) {
+        return res.status(404).json({ message: "Checklist not found. Create it first." });
+      }
+      
+      const checkedCount = checkedItems.length;
+      const isComplete = checkedCount >= checklist.totalItems;
+      
+      const [updated] = await db
+        .update(stageChecklists)
+        .set({
+          checkedItems: JSON.stringify(checkedItems),
+          checkedCount,
+          isComplete,
+          completedAt: isComplete ? new Date() : null,
+          workerId: workerId || checklist.workerId,
+          workerName: workerName || checklist.workerName,
+        })
+        .where(eq(stageChecklists.id, checklist.id))
+        .returning();
+      
+      res.json(updated);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
   // Get incomplete checklists (for supervisor alerts)
   app.get("/api/stage-checklists/incomplete", async (req, res) => {
     const incomplete = await db

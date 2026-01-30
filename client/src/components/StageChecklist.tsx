@@ -91,6 +91,23 @@ export function StageChecklist({
     },
   });
 
+  // Batch toggle for "check all" / "uncheck all" - single API call
+  const toggleAllMutation = useMutation({
+    mutationFn: async ({ checkedItems }: { checkedItems: number[] }) => {
+      return apiRequest("PUT", `/api/stage-checklists/order/${orderId}/${stage}/toggle-all`, {
+        checkedItems,
+        workerId,
+        workerName,
+      });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/stage-checklists/order", orderId, stage] });
+      if (data.isComplete && onComplete) {
+        onComplete();
+      }
+    },
+  });
+
   useEffect(() => {
     if (checklist?.checkedItems) {
       try {
@@ -120,25 +137,19 @@ export function StageChecklist({
   };
 
   const handleToggleAll = () => {
-    if (disabled) return;
+    if (disabled || toggleAllMutation.isPending) return;
     
     const allIndices = parsedItems.map(item => item.index);
     const allChecked = allIndices.every(index => localChecked.includes(index));
     
     if (allChecked) {
-      // Uncheck all
-      const indicesToUncheck = [...localChecked];
+      // Uncheck all - single API call
       setLocalChecked([]);
-      indicesToUncheck.forEach(index => {
-        toggleItemMutation.mutate({ itemIndex: index, checked: false });
-      });
+      toggleAllMutation.mutate({ checkedItems: [] });
     } else {
-      // Check all remaining unchecked items
-      const uncheckedIndices = allIndices.filter(index => !localChecked.includes(index));
+      // Check all - single API call
       setLocalChecked(allIndices);
-      uncheckedIndices.forEach(index => {
-        toggleItemMutation.mutate({ itemIndex: index, checked: true });
-      });
+      toggleAllMutation.mutate({ checkedItems: allIndices });
     }
   };
 
@@ -181,7 +192,7 @@ export function StageChecklist({
                 }
               }}
               onCheckedChange={() => handleToggleAll()}
-              disabled={disabled || toggleItemMutation.isPending}
+              disabled={disabled || toggleItemMutation.isPending || toggleAllMutation.isPending}
               data-testid={`checkbox-${stage}-select-all`}
               className="mr-1"
             />
