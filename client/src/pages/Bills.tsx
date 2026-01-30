@@ -845,6 +845,7 @@ export default function Bills() {
     setTimeout(() => {
       if (billPdfRef.current) {
         const printContent = billPdfRef.current.innerHTML;
+        setViewBillPDF(null);
         const printWindow = window.open('', '_blank');
         if (printWindow) {
           printWindow.document.write(`
@@ -910,9 +911,8 @@ export default function Bills() {
             }
           }
         }
-        setViewBillPDF(null);
       }
-    }, 100);
+    }, 300);
   };
 
   const sortedProducts =
