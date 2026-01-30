@@ -545,74 +545,119 @@ export default function Clients() {
     const totalDeposit = getClientTotalDeposits(client);
     const balance = getClientBalanceDue(client);
 
-    // Fetch all transactions for this client
+    // Fetch all transactions and bills for this client
     let transactionRows = "";
     try {
-      const res = await fetch(`/api/clients/${client.id}/transactions`);
-      if (res.ok) {
-        const clientTransactions: ClientTransaction[] = await res.json();
-        if (clientTransactions && clientTransactions.length > 0) {
-          const sortedTransactions = [...clientTransactions].sort(
-            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-          );
-          
-          // Use same balance calculation as UI: bills add to balance, deposits/payments reduce it
-          const hasBillTransactions = sortedTransactions.some(t => t.type === "bill");
-          // If no bill transactions in list, use the client's total bills as starting point
-          let cumulativeBills = hasBillTransactions ? 0 : totalBill;
-          let cumulativePayments = 0;
-          
-          transactionRows = sortedTransactions
-            .map((t, idx) => {
-              // Balance represents what client owes: bills add, deposits/payments subtract
-              if (t.type === "bill") {
-                cumulativeBills += parseFloat(t.amount);
-              } else {
-                cumulativePayments += parseFloat(t.amount);
-              }
-              // Running balance = cumulative bills - cumulative payments
-              const runningBalance = cumulativeBills - cumulativePayments;
-              
-              // Simplify description to only show bill/order numbers
-              const desc = t.description || "-";
-              const billMatch = desc.match(/Bill #(\d+)/);
-              const orderMatch = desc.match(/Order #(ORD-\d+)/);
-              let simpleDesc = "-";
+      // Fetch both transactions and bills
+      const [txRes, billsRes] = await Promise.all([
+        fetch(`/api/clients/${client.id}/transactions`),
+        fetch(`/api/bills?clientId=${client.id}`)
+      ]);
+      
+      const clientTransactions: ClientTransaction[] = txRes.ok ? await txRes.json() : [];
+      const clientBills: Bill[] = billsRes.ok ? await billsRes.json() : [];
+      
+      // Create unified entries: bills as "bill" type, transactions as their type
+      interface UnifiedEntry {
+        date: string;
+        type: "bill" | "deposit" | "payment";
+        amount: string;
+        description: string;
+        isPaid?: boolean;
+        referenceNumber?: string;
+        billId?: number;
+      }
+      
+      const unifiedEntries: UnifiedEntry[] = [];
+      
+      // Add bills as entries
+      clientBills.forEach(bill => {
+        const billDate = bill.billDate ? (typeof bill.billDate === 'string' ? bill.billDate : bill.billDate.toISOString()) : new Date().toISOString();
+        unifiedEntries.push({
+          date: billDate,
+          type: "bill",
+          amount: bill.amount || "0",
+          description: `Bill #${bill.id}: Order #${bill.referenceNumber || "N/A"}`,
+          isPaid: bill.isPaid ?? false,
+          referenceNumber: bill.referenceNumber ?? undefined,
+          billId: bill.id
+        });
+      });
+      
+      // Add transactions (deposits and payments only - skip bill type since we're adding bills directly)
+      clientTransactions.forEach(tx => {
+        if (tx.type === "deposit" || tx.type === "payment") {
+          const txDate = typeof tx.date === 'string' ? tx.date : tx.date.toISOString();
+          unifiedEntries.push({
+            date: txDate,
+            type: tx.type,
+            amount: tx.amount,
+            description: tx.description || ""
+          });
+        }
+      });
+      
+      // Sort by date
+      unifiedEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      if (unifiedEntries.length > 0) {
+        let cumulativeBills = 0;
+        let cumulativePayments = 0;
+        
+        transactionRows = unifiedEntries
+          .map((entry, idx) => {
+            // Balance represents what client owes: bills add, deposits/payments subtract
+            if (entry.type === "bill") {
+              cumulativeBills += parseFloat(entry.amount);
+            } else {
+              cumulativePayments += parseFloat(entry.amount);
+            }
+            // Running balance = cumulative bills - cumulative payments
+            const runningBalance = cumulativeBills - cumulativePayments;
+            
+            // Format description
+            let simpleDesc = entry.description;
+            if (entry.type === "bill") {
+              const paidStatus = entry.isPaid ? " (Paid)" : " (Unpaid)";
+              simpleDesc = `Bill #${entry.billId}: Order #${entry.referenceNumber || "N/A"}${paidStatus}`;
+            } else {
+              const billMatch = entry.description.match(/Bill #(\d+)/);
+              const orderMatch = entry.description.match(/Order #(ORD-\d+)/);
               if (billMatch && orderMatch) {
-                if (desc.toLowerCase().includes("deposit used")) {
+                if (entry.description.toLowerCase().includes("deposit used")) {
                   simpleDesc = `Deposit used for Bill #${billMatch[1]}: Order #${orderMatch[1]}`;
                 } else {
                   simpleDesc = `Payment for Bill #${billMatch[1]}: Order #${orderMatch[1]}`;
                 }
-              } else if (desc.toLowerCase().includes("deposit received")) {
+              } else if (entry.description.toLowerCase().includes("deposit received")) {
                 simpleDesc = "Deposit received";
-              } else {
-                simpleDesc = desc.length > 50 ? desc.substring(0, 50) + "..." : desc;
+              } else if (simpleDesc.length > 50) {
+                simpleDesc = simpleDesc.substring(0, 50) + "...";
               }
-              
-              const typeLabel = t.type === "bill" ? "Bill" : t.type === "deposit" ? "Deposit" : "Payment";
-              const typeColor = t.type === "deposit" || t.type === "payment" ? "#4caf50" : "#2196f3";
-              const amountColor = t.type === "deposit" || t.type === "payment" ? "#4caf50" : "#2196f3";
-              // Positive balance = client owes (red), zero or negative = client has credit (green)
-              const balanceColor = runningBalance > 0 ? "#f44336" : "#4caf50";
-              
-              return `
-                <tr style="border-bottom: 1px solid #eee;">
-                  <td style="padding: 8px; text-align: center;">${idx + 1}</td>
-                  <td style="padding: 8px;">${format(new Date(t.date), "dd/MM/yyyy")}</td>
-                  <td style="padding: 8px;">${format(new Date(t.date), "HH:mm")}</td>
-                  <td style="padding: 8px; font-weight: 500; color: ${typeColor};">${typeLabel}</td>
-                  <td style="padding: 8px;">${simpleDesc}</td>
-                  <td style="padding: 8px; text-align: right; color: ${amountColor};">${t.type === "deposit" ? "+" : ""}${parseFloat(t.amount).toFixed(2)} AED</td>
-                  <td style="padding: 8px; text-align: right; font-weight: 500; color: ${balanceColor};">${runningBalance.toFixed(2)} AED</td>
-                </tr>
-              `;
-            })
-            .join("");
-        }
+            }
+            
+            const typeLabel = entry.type === "bill" ? "Bill" : entry.type === "deposit" ? "Deposit" : "Payment";
+            const typeColor = entry.type === "deposit" || entry.type === "payment" ? "#4caf50" : "#2196f3";
+            const amountColor = entry.type === "deposit" || entry.type === "payment" ? "#4caf50" : "#2196f3";
+            // Positive balance = client owes (red), zero or negative = client has credit (green)
+            const balanceColor = runningBalance > 0 ? "#f44336" : "#4caf50";
+            
+            return `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px; text-align: center;">${idx + 1}</td>
+                <td style="padding: 8px;">${format(new Date(entry.date), "dd/MM/yyyy")}</td>
+                <td style="padding: 8px;">${format(new Date(entry.date), "HH:mm")}</td>
+                <td style="padding: 8px; font-weight: 500; color: ${typeColor};">${typeLabel}</td>
+                <td style="padding: 8px;">${simpleDesc}</td>
+                <td style="padding: 8px; text-align: right; color: ${amountColor};">${entry.type === "deposit" ? "+" : ""}${parseFloat(entry.amount).toFixed(2)} AED</td>
+                <td style="padding: 8px; text-align: right; font-weight: 500; color: ${balanceColor};">${runningBalance.toFixed(2)} AED</td>
+              </tr>
+            `;
+          })
+          .join("");
       }
     } catch (e) {
-      console.log("Could not fetch transactions");
+      console.log("Could not fetch transactions/bills");
     }
 
     const content = document.createElement("div");
