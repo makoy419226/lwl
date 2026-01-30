@@ -54,8 +54,8 @@ export function BillInvoice({
             <style>
               @page { size: A5; margin: 0 !important; }
               @media print { 
-                html, body { margin: 0 !important; padding: 0 !important; position: relative; }
-                .invoice-container { position: relative; top: -15mm; }
+                html, body { margin: 0 !important; padding: 0 !important; }
+                .invoice-container { margin-top: -20mm !important; }
               }
               * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
               html, body { 
