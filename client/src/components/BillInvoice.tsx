@@ -52,12 +52,12 @@ export function BillInvoice({
           <head>
             <title>Bill Invoice ${invoiceNumber}</title>
             <style>
-              @page { size: A5; margin: 0; }
+              @page { size: A5; margin: 0 !important; }
               @media print { 
-                html, body { margin: 0 !important; padding: 0 !important; }
-                .invoice-container { margin-top: -10mm !important; }
+                html, body { margin: 0 !important; padding: 0 !important; position: relative; }
+                .invoice-container { position: relative; top: -15mm; }
               }
-              * { margin: 0; padding: 0; box-sizing: border-box; }
+              * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
               html, body { 
                 font-family: Arial, sans-serif; 
                 padding: 0 8px 5px 8px; 
