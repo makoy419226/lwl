@@ -102,10 +102,23 @@ export function BillInvoice({
         `);
         printWindow.document.close();
         printWindow.focus();
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 250);
+        
+        // Wait for images to load before printing
+        const images = printWindow.document.querySelectorAll('img');
+        const imagePromises = Array.from(images).map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        });
+        
+        Promise.all(imagePromises).then(() => {
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 100);
+        });
       }
     }
   };
