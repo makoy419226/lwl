@@ -1773,7 +1773,7 @@ export async function registerRoutes(
           : billUpdated && amountDifference < 0
           ? `Items updated. AED ${Math.abs(amountDifference).toFixed(2)} reduced from bill.`
           : "Items updated successfully",
-        updatedBy: worker.name,
+        updatedBy: verifiedUser,
         amountDifference: amountDifference.toFixed(2),
         newDueAmount: newDueAmount.toFixed(2),
       });
