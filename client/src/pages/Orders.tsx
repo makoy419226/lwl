@@ -207,7 +207,7 @@ export default function Orders() {
   const { data: orders, isLoading, refetch: refetchOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
     refetchOnWindowFocus: true,
-    refetchInterval: 30000, // Refresh every 30 seconds to get latest delivery statuses
+    refetchInterval: 60000, // Refresh every 60 seconds to reduce load
   });
 
   const { data: clients } = useQuery<Client[]>({
@@ -220,7 +220,7 @@ export default function Orders() {
 
   const { data: dueSoonOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders/due-soon"],
-    refetchInterval: 60000,
+    refetchInterval: 120000, // Refresh every 2 minutes
   });
 
   const { data: bills } = useQuery<Bill[]>({
@@ -3962,6 +3962,7 @@ export default function Orders() {
 function OrderForm({
   clients,
   bills,
+  products,
   onSubmit,
   isLoading,
   initialClientId,
@@ -3971,6 +3972,7 @@ function OrderForm({
 }: {
   clients: Client[];
   bills: Bill[];
+  products: Product[];
   onSubmit: (data: any) => void;
   isLoading: boolean;
   initialClientId?: string;
@@ -4000,10 +4002,6 @@ function OrderForm({
   });
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [productSearch, setProductSearch] = useState("");
-
-  const { data: products } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
-  });
 
   const selectedClient = clients.find(
     (c) => c.id === parseInt(formData.clientId),

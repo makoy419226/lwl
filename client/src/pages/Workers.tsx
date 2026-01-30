@@ -171,7 +171,7 @@ export default function Workers() {
   // Fetch active sessions to show online status
   const { data: activeSessions } = useQuery<{ activeUserIds: number[] }>({
     queryKey: ["/api/auth/active-sessions"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 120000, // Refresh every 2 minutes to reduce load
   });
 
   const isUserOnline = (userId: number) => {
