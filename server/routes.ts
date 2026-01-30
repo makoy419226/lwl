@@ -1708,7 +1708,7 @@ export async function registerRoutes(
         items: newItemsText,
         totalAmount: newTotal.toFixed(2),
         finalAmount: finalAmount.toFixed(2),
-        notes: `${order.notes || ""}\n[${new Date().toLocaleString()}] Items updated by ${worker.name}. Amount changed from AED ${oldFinalAmount.toFixed(2)} to AED ${finalAmount.toFixed(2)}`,
+        notes: `${order.notes || ""}\n[${new Date().toLocaleString()}] Items updated by ${verifiedUser}. Amount changed from AED ${oldFinalAmount.toFixed(2)} to AED ${finalAmount.toFixed(2)}`,
       });
       
       let billUpdated = false;
