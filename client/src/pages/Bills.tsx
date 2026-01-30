@@ -142,14 +142,12 @@ export default function Bills() {
     bill: Bill;
     items: { name: string; qty: number; price: number }[];
   } | null>(null);
-  const [viewBillPDF, setViewBillPDF] = useState<Bill | null>(null);
   const [viewBillDetails, setViewBillDetails] = useState<Bill | null>(null);
   const [showNewItemDialog, setShowNewItemDialog] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
   const [newItemCategory, setNewItemCategory] = useState("");
   const invoiceRef = useRef<HTMLDivElement>(null);
-  const billPdfRef = useRef<HTMLDivElement>(null);
   const [logoBase64, setLogoBase64] = useState<string>("");
 
   useEffect(() => {
@@ -841,78 +839,110 @@ export default function Bills() {
   };
 
   const printBillPDF = async (bill: Bill) => {
-    setViewBillPDF(bill);
-    setTimeout(() => {
-      if (billPdfRef.current) {
-        const printContent = billPdfRef.current.innerHTML;
-        setViewBillPDF(null);
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write(`
-            <html>
-              <head>
-                <title>Bill - ${bill.referenceNumber || bill.id}</title>
-                <style>
-                  @page {
-                    size: A4;
-                    margin: 20mm;
-                  }
-                  body {
-                    font-family: Arial, sans-serif;
-                    font-size: 14px;
-                    padding: 20px;
-                    max-width: 210mm;
-                    margin: 0 auto;
-                    line-height: 1.5;
-                  }
-                  .text-center { text-align: center; }
-                  .font-bold { font-weight: bold; }
-                  .border-b { border-bottom: 1px solid #000; padding-bottom: 12px; margin-bottom: 12px; }
-                  table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-                  th, td { border: 1px solid #333; padding: 10px 8px; }
-                  th { background: #1e40af; color: white; font-weight: bold; text-transform: uppercase; font-size: 11px; }
-                  td { font-size: 12px; }
-                  tbody tr:nth-child(even) { background: #f5f5f5; }
-                  @media print {
-                    body { margin: 0; padding: 20mm; }
-                    th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    tbody tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    .paid-stamp { color: #22c55e !important; border-color: #22c55e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                  }
-                </style>
-              </head>
-              <body>
-                ${printContent}
-              </body>
-            </html>
-          `);
-          printWindow.document.close();
-          printWindow.focus();
-          const images = printWindow.document.images;
-          if (images.length === 0) {
+    const parsedItems = parseDescriptionItems(bill.description || '', products);
+    const customerName = bill.customerName || getClientName(bill.clientId!);
+    const billDate = bill.billDate ? format(new Date(bill.billDate), "dd/MM/yyyy HH:mm") : "";
+    const amount = parseFloat(bill.amount || "0").toFixed(2);
+    
+    const itemsHtml = parsedItems.length > 0 ? `
+      <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px;">
+        <thead>
+          <tr>
+            <th style="text-align: center; padding: 10px 8px; font-weight: bold; width: 8%; background: #1e40af; color: white; border: 1px solid #333;">S.No</th>
+            <th style="text-align: left; padding: 10px 8px; font-weight: bold; width: 42%; background: #1e40af; color: white; border: 1px solid #333;">Item</th>
+            <th style="text-align: center; padding: 10px 8px; font-weight: bold; width: 12%; background: #1e40af; color: white; border: 1px solid #333;">Qty</th>
+            <th style="text-align: right; padding: 10px 8px; font-weight: bold; width: 18%; background: #1e40af; color: white; border: 1px solid #333;">Price</th>
+            <th style="text-align: right; padding: 10px 8px; font-weight: bold; width: 20%; background: #1e40af; color: white; border: 1px solid #333;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${parsedItems.map((item, idx) => `
+            <tr style="background: ${idx % 2 === 1 ? '#f5f5f5' : 'white'};">
+              <td style="text-align: center; padding: 10px 8px; border: 1px solid #333;">${idx + 1}</td>
+              <td style="text-align: left; padding: 10px 8px; border: 1px solid #333;">${item.name}</td>
+              <td style="text-align: center; padding: 10px 8px; border: 1px solid #333;">${item.qty}</td>
+              <td style="text-align: right; padding: 10px 8px; border: 1px solid #333;">${item.price.toFixed(2)}</td>
+              <td style="text-align: right; padding: 10px 8px; border: 1px solid #333; font-weight: 500;">${item.total.toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    ` : '';
+    
+    const paidStamp = bill.isPaid ? `
+      <div style="text-align: center; margin: 20px 0;">
+        <div style="display: inline-block; border: 3px solid #22c55e; color: #22c55e; padding: 8px 30px; font-size: 24px; font-weight: bold; border-radius: 5px; transform: rotate(-5deg);">
+          PAID
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+          Payment Method: ${bill.paymentMethod === 'deposit' ? 'Client Deposit' : (bill.paymentMethod?.toUpperCase() || 'CASH')}
+        </div>
+      </div>
+    ` : '';
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Bill - ${bill.referenceNumber || bill.id}</title>
+            <style>
+              @page { size: A4; margin: 20mm; }
+              body { font-family: Arial, sans-serif; font-size: 14px; padding: 20px; max-width: 210mm; margin: 0 auto; line-height: 1.5; }
+              @media print {
+                body { margin: 0; padding: 20mm; }
+                th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              }
+            </style>
+          </head>
+          <body>
+            <div style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 12px; margin-bottom: 12px;">
+              <img src="${logoBase64 || logoImage}" alt="Logo" style="width: 120px; height: auto; margin: 0 auto 10px; display: block;" />
+              <div style="font-size: 12px;">Centra Market D/109, Al Dhanna City</div>
+              <div style="font-size: 12px;">Al Ruwais, Abu Dhabi-UAE</div>
+              <div style="font-size: 12px; margin-top: 8px;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
+            </div>
+            <div style="text-align: center; font-weight: bold; font-size: 18px; margin: 15px 0;">INVOICE</div>
+            <div style="font-size: 12px; margin-bottom: 15px;">
+              <div>Ref: ${bill.referenceNumber || bill.id}</div>
+              <div>Date: ${billDate}</div>
+              <div>Customer: ${customerName}</div>
+              ${bill.customerPhone ? `<div>Phone: ${bill.customerPhone}</div>` : ''}
+              ${bill.createdBy ? `<div>Billed by: ${bill.createdBy}</div>` : ''}
+            </div>
+            ${itemsHtml}
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; border-top: 1px solid #000; padding-top: 10px;">
+              <span>TOTAL:</span>
+              <span>AED ${amount}</span>
+            </div>
+            ${paidStamp}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      const images = printWindow.document.images;
+      if (images.length === 0) {
+        printWindow.print();
+      } else {
+        let loaded = 0;
+        const checkAllLoaded = () => {
+          loaded++;
+          if (loaded >= images.length) {
             printWindow.print();
-            printWindow.close();
+          }
+        };
+        for (let i = 0; i < images.length; i++) {
+          if (images[i].complete) {
+            checkAllLoaded();
           } else {
-            let loaded = 0;
-            const checkAllLoaded = () => {
-              loaded++;
-              if (loaded >= images.length) {
-                printWindow.print();
-                printWindow.close();
-              }
-            };
-            for (let i = 0; i < images.length; i++) {
-              if (images[i].complete) {
-                checkAllLoaded();
-              } else {
-                images[i].onload = checkAllLoaded;
-                images[i].onerror = checkAllLoaded;
-              }
-            }
+            images[i].onload = checkAllLoaded;
+            images[i].onerror = checkAllLoaded;
           }
         }
       }
-    }, 300);
+    }
   };
 
   const sortedProducts =
@@ -1709,194 +1739,6 @@ export default function Bills() {
           </Button>
         </DialogContent>
       </Dialog>
-
-      {viewBillPDF && (
-        <div className="fixed left-[-9999px]">
-          <div
-            ref={billPdfRef}
-            className="bg-white p-6 rounded-lg border text-black"
-            style={{
-              fontFamily: "Arial, sans-serif",
-              fontSize: "12px",
-              width: "210mm",
-              position: "relative",
-            }}
-          >
-            <div style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              opacity: 0.08,
-              pointerEvents: "none",
-              zIndex: 0,
-            }}>
-              <img src={logoBase64 || logoImage} alt="" style={{ width: "350px", height: "auto" }} />
-            </div>
-            <div style={{ position: "relative", zIndex: 1 }}>
-            <div className="text-center border-b pb-3 mb-3">
-              <img 
-                src={logoBase64 || logoImage} 
-                alt="Liquid Washes Laundry" 
-                style={{ width: '120px', height: 'auto', objectFit: 'contain', margin: '0 auto 10px' }}
-              />
-              <div className="text-sm">Centra Market D/109, Al Dhanna City</div>
-              <div className="text-sm">Al Ruwais, Abu Dhabi-UAE</div>
-              <div className="text-sm mt-2">
-                <span>Tel: 026 815 824</span>
-                <span className="mx-2">|</span>
-                <span>Mobile: +971 56 338 0001</span>
-              </div>
-            </div>
-            <div className="text-center font-bold text-lg mb-3">INVOICE</div>
-            <div className="text-sm mb-3">
-              <div>Ref: {viewBillPDF.referenceNumber || viewBillPDF.id}</div>
-              <div>
-                Date:{" "}
-                {viewBillPDF.billDate
-                  ? format(new Date(viewBillPDF.billDate), "dd/MM/yyyy HH:mm")
-                  : ""}
-              </div>
-              <div>
-                Customer:{" "}
-                {viewBillPDF.customerName ||
-                  getClientName(viewBillPDF.clientId!)}
-              </div>
-              {viewBillPDF.customerPhone && (
-                <div>Phone: {viewBillPDF.customerPhone}</div>
-              )}
-              {viewBillPDF.createdBy && (
-                <div>Billed by: {viewBillPDF.createdBy}</div>
-              )}
-            </div>
-            
-            {(() => {
-              const parsedItems = parseDescriptionItems(viewBillPDF.description || '', products);
-              if (parsedItems.length > 0) {
-                return (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px', fontSize: '12px' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 'bold', width: '8%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>S.No</th>
-                        <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 'bold', width: '42%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Item</th>
-                        <th style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 'bold', width: '12%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Qty</th>
-                        <th style={{ textAlign: 'right', padding: '10px 8px', fontWeight: 'bold', width: '18%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Price</th>
-                        <th style={{ textAlign: 'right', padding: '10px 8px', fontWeight: 'bold', width: '20%', background: '#1e40af', color: 'white', border: '1px solid #333' }}>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parsedItems.map((item, idx) => (
-                        <tr key={idx} style={{ background: idx % 2 === 1 ? '#f5f5f5' : 'white' }}>
-                          <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{idx + 1}</td>
-                          <td style={{ textAlign: 'left', padding: '10px 8px', border: '1px solid #333' }}>{item.name}</td>
-                          <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{item.qty}</td>
-                          <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333' }}>{item.price.toFixed(2)}</td>
-                          <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333', fontWeight: '500' }}>{item.total.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                );
-              }
-              return null;
-            })()}
-            
-            <div className="flex justify-between font-bold text-base border-t pt-2">
-              <span>TOTAL:</span>
-              <span>
-                AED {parseFloat(viewBillPDF.amount || "0").toFixed(2)}
-              </span>
-            </div>
-            
-            {viewBillPDF.isPaid && (
-              <>
-                {/* Large diagonal PAID watermark stamp */}
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%) rotate(-25deg)',
-                  zIndex: 10,
-                  pointerEvents: 'none',
-                }}>
-                  <div style={{
-                    border: '6px solid #22c55e',
-                    borderRadius: '12px',
-                    padding: '15px 50px',
-                    color: '#22c55e',
-                    fontWeight: 'bold',
-                    fontSize: '60px',
-                    fontFamily: 'Arial Black, Arial, sans-serif',
-                    textTransform: 'uppercase',
-                    letterSpacing: '8px',
-                    opacity: 0.35,
-                    textShadow: '2px 2px 0 rgba(34, 197, 94, 0.1)',
-                  }}>
-                    PAID
-                  </div>
-                </div>
-                {/* Payment info at bottom */}
-                <div className="text-center mt-4">
-                  <div 
-                    style={{
-                      display: 'inline-block',
-                      border: '3px solid #22c55e',
-                      borderRadius: '8px',
-                      padding: '8px 20px',
-                      color: '#22c55e',
-                      fontWeight: 'bold',
-                      fontSize: '18px',
-                      transform: 'rotate(-5deg)',
-                      textTransform: 'uppercase'
-                    }}
-                  >
-                    PAID
-                  </div>
-                  <div className="text-sm mt-2 text-gray-600">
-                    Payment Method: {
-                      viewBillPDF.paymentMethod === 'deposit' 
-                        ? 'CLIENT CREDIT' 
-                        : (viewBillPDF.paymentMethod?.toUpperCase() || 'CASH')
-                    }
-                  </div>
-                </div>
-              </>
-            )}
-            
-            <div style={{ 
-              marginTop: '15px', 
-              padding: '10px', 
-              background: '#f0f9ff', 
-              borderRadius: '6px', 
-              border: '1px dashed #1e40af',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '10px', color: '#1e40af', marginBottom: '4px' }}>
-                Track your order at this link:
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
-                <div style={{ backgroundColor: 'white', padding: '6px', borderRadius: '4px' }}>
-                  <QRCodeSVG 
-                    value="https://lwl.software/track" 
-                    size={70}
-                    level="M"
-                  />
-                </div>
-              </div>
-              <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold' }}>
-                lwl.software/track
-              </div>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#333', marginTop: '4px' }}>
-                Order Number: {viewBillPDF?.referenceNumber}
-              </div>
-            </div>
-            <div className="text-center mt-4 text-xs">
-              Thank you for your business!
-            </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <Dialog open={showNewItemDialog} onOpenChange={setShowNewItemDialog}>
         <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[85vh] overflow-y-auto">
