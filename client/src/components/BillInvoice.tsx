@@ -52,18 +52,18 @@ export function BillInvoice({
           <head>
             <title>Bill Invoice ${invoiceNumber}</title>
             <style>
-              @page { size: A5; margin: 10mm; }
+              @page { size: A5; margin: 5mm; }
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { 
                 font-family: Arial, sans-serif; 
-                padding: 20px; 
+                padding: 8px 15px; 
                 background: white; 
                 color: #333;
                 max-width: 148mm;
                 margin: 0 auto;
               }
               .invoice-container { width: 100%; }
-              .header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #1e40af; padding-bottom: 12px; }
+              .header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #1e40af; padding-bottom: 8px; }
               .logo { max-width: 80px; height: auto; margin: 0 auto 8px; display: block; }
               .company-name { font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 6px; }
               .company-address { font-size: 10px; color: #666; line-height: 1.4; }

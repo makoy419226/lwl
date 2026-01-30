@@ -2025,7 +2025,8 @@ export default function Clients() {
                         };
                         
                         const txRows = sortedTx.map((tx, index) => {
-                          if (tx.type === "deposit") {
+                          // Balance represents what client owes: bills add, deposits subtract
+                          if (tx.type === "bill") {
                             runningBalance += parseFloat(tx.amount);
                           } else {
                             runningBalance -= parseFloat(tx.amount);
@@ -2033,7 +2034,8 @@ export default function Clients() {
                           const typeLabel = tx.type === "bill" ? "Bill" : tx.type === "deposit" ? "Deposit" : "Payment";
                           const typeColor = tx.type === "deposit" ? "#16a34a" : "#2563eb";
                           const amountColor = tx.type === "deposit" ? "#16a34a" : "#2563eb";
-                          const balanceColor = runningBalance >= 0 ? "#16a34a" : "#dc2626";
+                          // Positive balance = client owes (red), negative = client has credit (green)
+                          const balanceColor = runningBalance > 0 ? "#dc2626" : "#16a34a";
                           return `
                             <tr style="border-bottom: 1px solid #eee;">
                               <td style="padding: 8px; text-align: center;">${index + 1}</td>
@@ -2156,7 +2158,8 @@ export default function Clients() {
                           );
                           let remainingBalance = 0;
                           return sortedTx.map((tx) => {
-                            if (tx.type === "deposit") {
+                            // Balance represents what client owes: bills add, deposits subtract
+                            if (tx.type === "bill") {
                               remainingBalance += parseFloat(tx.amount);
                             } else {
                               remainingBalance -= parseFloat(tx.amount);
@@ -2187,7 +2190,7 @@ export default function Clients() {
                             <TableCell className={`text-right font-medium ${tx.type === "deposit" ? "text-green-600" : "text-blue-600"}`}>
                               {tx.type === "deposit" ? "+" : "-"}{parseFloat(tx.amount).toFixed(2)} AED
                             </TableCell>
-                            <TableCell className={`text-right font-bold ${currentBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            <TableCell className={`text-right font-bold ${currentBalance > 0 ? "text-red-600" : "text-green-600"}`}>
                               {currentBalance.toFixed(2)} AED
                             </TableCell>
                           </TableRow>

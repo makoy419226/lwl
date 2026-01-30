@@ -119,6 +119,29 @@ export function StageChecklist({
     toggleItemMutation.mutate({ itemIndex, checked });
   };
 
+  const handleToggleAll = () => {
+    if (disabled) return;
+    
+    const allIndices = parsedItems.map(item => item.index);
+    const allChecked = allIndices.every(index => localChecked.includes(index));
+    
+    if (allChecked) {
+      // Uncheck all
+      const indicesToUncheck = [...localChecked];
+      setLocalChecked([]);
+      indicesToUncheck.forEach(index => {
+        toggleItemMutation.mutate({ itemIndex: index, checked: false });
+      });
+    } else {
+      // Check all remaining unchecked items
+      const uncheckedIndices = allIndices.filter(index => !localChecked.includes(index));
+      setLocalChecked(allIndices);
+      uncheckedIndices.forEach(index => {
+        toggleItemMutation.mutate({ itemIndex: index, checked: true });
+      });
+    }
+  };
+
   if (totalItems === 0) {
     return (
       <Card className="border-dashed">
@@ -149,11 +172,19 @@ export function StageChecklist({
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-base">
           <span className="flex items-center gap-2">
-            {isComplete ? (
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-            ) : (
-              <Circle className="w-5 h-5 text-muted-foreground" />
-            )}
+            <Checkbox
+              checked={isComplete}
+              ref={(el) => {
+                if (el) {
+                  const someChecked = checkedCount > 0 && checkedCount < totalItems;
+                  (el as any).indeterminate = someChecked;
+                }
+              }}
+              onCheckedChange={() => handleToggleAll()}
+              disabled={disabled || toggleItemMutation.isPending}
+              data-testid={`checkbox-${stage}-select-all`}
+              className="mr-1"
+            />
             {stageLabels[stage]} Checklist - {orderNumber}
           </span>
           <Badge variant={isComplete ? "default" : "secondary"} className={isComplete ? "bg-green-600" : ""}>

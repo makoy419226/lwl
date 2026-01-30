@@ -19,6 +19,8 @@ export default function SalesReports() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
   const [activeTab, setActiveTab] = useState("daily");
 
   const { data: allClients } = useQuery<any[]>({
@@ -30,7 +32,7 @@ export default function SalesReports() {
   });
 
   const { data: allTransactions, isLoading } = useQuery<{ clientId: number; transactions: ClientTransaction[] }[]>({
-    queryKey: ["/api/sales-data", activeTab, selectedDate, selectedMonth, selectedYear],
+    queryKey: ["/api/sales-data", activeTab, selectedDate, selectedMonth, selectedYear, startDate, endDate],
     queryFn: async () => {
       if (!allClients || allClients.length === 0) return [];
       const results = await Promise.all(
@@ -51,7 +53,7 @@ export default function SalesReports() {
     return new Date(year, month - 1, day);
   };
 
-  const filterOrders = (period: 'daily' | 'monthly' | 'yearly') => {
+  const filterOrders = (period: 'daily' | 'monthly' | 'yearly' | 'range') => {
     if (!allOrders) return { deliveryOrders: [], takeawayOrders: [], totalDelivery: 0, totalTakeaway: 0, totalBills: 0, totalPaid: 0, orderCount: 0 };
     
     const deliveryOrders: Order[] = [];
@@ -71,6 +73,13 @@ export default function SalesReports() {
       } else if (period === 'monthly') {
         const orderMonth = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
         matches = orderMonth === selectedMonth;
+      } else if (period === 'range') {
+        const startDateObj = parseLocalDate(startDate);
+        startDateObj.setHours(0, 0, 0, 0);
+        const endDateObj = parseLocalDate(endDate);
+        endDateObj.setHours(23, 59, 59, 999);
+        const orderDateNorm = new Date(orderDate);
+        matches = orderDateNorm >= startDateObj && orderDateNorm <= endDateObj;
       } else {
         matches = orderDate.getFullYear().toString() === selectedYear;
       }
@@ -94,7 +103,7 @@ export default function SalesReports() {
     return { deliveryOrders, takeawayOrders, totalDelivery, totalTakeaway, totalBills, totalPaid, orderCount };
   };
 
-  const filterTransactions = (period: 'daily' | 'monthly' | 'yearly') => {
+  const filterTransactions = (period: 'daily' | 'monthly' | 'yearly' | 'range') => {
     if (!allTransactions || !allClients) return { bills: [], deposits: [], totalBills: 0, totalDeposits: 0 };
     
     const bills: any[] = [];
@@ -117,6 +126,12 @@ export default function SalesReports() {
         } else if (period === 'monthly') {
           const txMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
           matches = txMonth === selectedMonth;
+        } else if (period === 'range') {
+          const startDateObj = parseLocalDate(startDate);
+          startDateObj.setHours(0, 0, 0, 0);
+          const endDateObj = parseLocalDate(endDate);
+          endDateObj.setHours(23, 59, 59, 999);
+          matches = txDate >= startDateObj && txDate <= endDateObj;
         } else {
           matches = txDate.getFullYear().toString() === selectedYear;
         }
@@ -145,20 +160,30 @@ export default function SalesReports() {
   const dailyData = useMemo(() => filterTransactions('daily'), [allTransactions, allClients, selectedDate]);
   const monthlyData = useMemo(() => filterTransactions('monthly'), [allTransactions, allClients, selectedMonth]);
   const yearlyData = useMemo(() => filterTransactions('yearly'), [allTransactions, allClients, selectedYear]);
+  const rangeData = useMemo(() => filterTransactions('range'), [allTransactions, allClients, startDate, endDate]);
 
   const dailyOrderData = useMemo(() => filterOrders('daily'), [allOrders, selectedDate]);
   const monthlyOrderData = useMemo(() => filterOrders('monthly'), [allOrders, selectedMonth]);
   const yearlyOrderData = useMemo(() => filterOrders('yearly'), [allOrders, selectedYear]);
+  const rangeOrderData = useMemo(() => filterOrders('range'), [allOrders, startDate, endDate]);
 
   const getCurrentOrderData = () => {
     if (activeTab === 'daily') return dailyOrderData;
     if (activeTab === 'monthly') return monthlyOrderData;
+    if (activeTab === 'range') return rangeOrderData;
     return yearlyOrderData;
+  };
+
+  const formatDateRange = () => {
+    const start = parseLocalDate(startDate);
+    const end = parseLocalDate(endDate);
+    return `${start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} - ${end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
   };
 
   const getCurrentData = () => {
     if (activeTab === 'daily') return { data: dailyData, label: formatDate(selectedDate), filename: `sales-${selectedDate}` };
     if (activeTab === 'monthly') return { data: monthlyData, label: formatMonth(selectedMonth), filename: `sales-${selectedMonth}` };
+    if (activeTab === 'range') return { data: rangeData, label: formatDateRange(), filename: `sales-${startDate}-to-${endDate}` };
     return { data: yearlyData, label: `Year ${selectedYear}`, filename: `sales-${selectedYear}` };
   };
 
@@ -258,6 +283,12 @@ export default function SalesReports() {
           } else if (activeTab === 'monthly') {
             const txMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
             matches = txMonth === selectedMonth;
+          } else if (activeTab === 'range') {
+            const startDateObj = parseLocalDate(startDate);
+            startDateObj.setHours(0, 0, 0, 0);
+            const endDateObj = parseLocalDate(endDate);
+            endDateObj.setHours(23, 59, 59, 999);
+            matches = txDate >= startDateObj && txDate <= endDateObj;
           } else {
             matches = txDate.getFullYear().toString() === selectedYear;
           }
@@ -843,6 +874,29 @@ export default function SalesReports() {
                   />
                 </div>
               )}
+              {activeTab === "range" && (
+                <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg flex-wrap">
+                  <CalendarRange className="w-4 h-4 text-primary" />
+                  <Label htmlFor="header-start-date" className="text-sm font-medium">From:</Label>
+                  <Input
+                    id="header-start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-36 h-8"
+                    data-testid="input-header-start-date"
+                  />
+                  <Label htmlFor="header-end-date" className="text-sm font-medium">To:</Label>
+                  <Input
+                    id="header-end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-36 h-8"
+                    data-testid="input-header-end-date"
+                  />
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
@@ -881,6 +935,10 @@ export default function SalesReports() {
             <TabsTrigger value="yearly" className="gap-2">
               <CalendarRange className="w-4 h-4" />
               Yearly
+            </TabsTrigger>
+            <TabsTrigger value="range" className="gap-2">
+              <CalendarRange className="w-4 h-4" />
+              Date Range
             </TabsTrigger>
           </TabsList>
         </div>
@@ -983,6 +1041,48 @@ export default function SalesReports() {
                 {renderOrderTables(yearlyOrderData)}
                 {renderSummaryCards(yearlyData)}
                 {renderTransactionTables(yearlyData)}
+                {renderCashAdvanceSummary()}
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="range">
+            <div className="mb-4 p-4 bg-primary/5 rounded-lg border flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <CalendarRange className="w-5 h-5 text-primary" />
+                <span className="font-semibold text-lg">{formatDateRange()}</span>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <Label htmlFor="start-date" className="text-sm font-medium">From:</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-44"
+                  data-testid="input-range-start-date"
+                />
+                <Label htmlFor="end-date" className="text-sm font-medium">To:</Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-44"
+                  data-testid="input-range-end-date"
+                />
+              </div>
+            </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                {renderOrderSummaryCards(rangeOrderData)}
+                {renderOrderTables(rangeOrderData)}
+                {renderSummaryCards(rangeData)}
+                {renderTransactionTables(rangeData)}
                 {renderCashAdvanceSummary()}
               </>
             )}

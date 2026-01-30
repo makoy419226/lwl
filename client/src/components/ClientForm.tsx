@@ -123,6 +123,25 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
       return;
     }
 
+    // Validate required fields
+    if (!data.name || data.name.trim() === "") {
+      toast({
+        title: "Missing Information",
+        description: "Please enter the client's name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!data.phone || data.phone.trim() === "" || data.phone.trim() === "+971") {
+      toast({
+        title: "Missing Information",
+        description: "Please enter the client's phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const amount = parseFloat(data.amount || "0");
     const deposit = parseFloat(data.deposit || "0");
     const balance = (amount - deposit).toFixed(2);
