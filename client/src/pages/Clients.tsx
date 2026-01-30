@@ -2003,7 +2003,16 @@ export default function Clients() {
                         const sortedTx = [...viewingClientTransactions].sort(
                           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                         );
-                        let runningBalance = 0;
+                        
+                        // Calculate running balance: for each transaction, compute cumulative balance
+                        // Bills add to what client owes, deposits/payments reduce it
+                        // Start with the total bills from the client's orders as initial balance
+                        // since bill transactions may not be in the transaction list
+                        const initialBillTotal = sortedTx.filter(t => t.type === "bill").reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                        const hasBillTransactions = sortedTx.some(t => t.type === "bill");
+                        // If no bill transactions in list, use the client's total bills as starting point
+                        let cumulativeBills = hasBillTransactions ? 0 : getClientTotalBills(viewingClient);
+                        let cumulativePayments = 0;
                         
                         // Simplify description to only show bill/order numbers
                         const simplifyDesc = (desc: string, txType: string) => {
@@ -2025,16 +2034,18 @@ export default function Clients() {
                         };
                         
                         const txRows = sortedTx.map((tx, index) => {
-                          // Balance represents what client owes: bills add, deposits subtract
+                          // Balance represents what client owes: bills add, deposits/payments subtract
                           if (tx.type === "bill") {
-                            runningBalance += parseFloat(tx.amount);
+                            cumulativeBills += parseFloat(tx.amount);
                           } else {
-                            runningBalance -= parseFloat(tx.amount);
+                            cumulativePayments += parseFloat(tx.amount);
                           }
+                          // Running balance = cumulative bills - cumulative payments
+                          const runningBalance = cumulativeBills - cumulativePayments;
                           const typeLabel = tx.type === "bill" ? "Bill" : tx.type === "deposit" ? "Deposit" : "Payment";
-                          const typeColor = tx.type === "deposit" ? "#16a34a" : "#2563eb";
-                          const amountColor = tx.type === "deposit" ? "#16a34a" : "#2563eb";
-                          // Positive balance = client owes (red), negative = client has credit (green)
+                          const typeColor = tx.type === "deposit" || tx.type === "payment" ? "#16a34a" : "#2563eb";
+                          const amountColor = tx.type === "deposit" || tx.type === "payment" ? "#16a34a" : "#2563eb";
+                          // Positive balance = client owes (red), zero or negative = client has credit (green)
                           const balanceColor = runningBalance > 0 ? "#dc2626" : "#16a34a";
                           return `
                             <tr style="border-bottom: 1px solid #eee;">
@@ -2156,15 +2167,18 @@ export default function Clients() {
                           const sortedTx = [...viewingClientTransactions].sort(
                             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                           );
-                          let remainingBalance = 0;
+                          // If no bill transactions in list, use the client's total bills as starting point
+                          const hasBillTransactions = sortedTx.some(t => t.type === "bill");
+                          let cumulativeBills = hasBillTransactions ? 0 : getClientTotalBills(viewingClient);
+                          let cumulativePayments = 0;
                           return sortedTx.map((tx) => {
-                            // Balance represents what client owes: bills add, deposits subtract
+                            // Balance represents what client owes: bills add, deposits/payments subtract
                             if (tx.type === "bill") {
-                              remainingBalance += parseFloat(tx.amount);
+                              cumulativeBills += parseFloat(tx.amount);
                             } else {
-                              remainingBalance -= parseFloat(tx.amount);
+                              cumulativePayments += parseFloat(tx.amount);
                             }
-                            const currentBalance = remainingBalance;
+                            const currentBalance = cumulativeBills - cumulativePayments;
                             return (
                           <TableRow key={tx.id}>
                             <TableCell className="text-sm">
