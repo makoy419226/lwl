@@ -52,11 +52,11 @@ export function BillInvoice({
           <head>
             <title>Bill Invoice ${invoiceNumber}</title>
             <style>
-              @page { size: A5; margin: 5mm; }
+              @page { size: A5; margin: 2mm 5mm 5mm 5mm; }
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body { 
                 font-family: Arial, sans-serif; 
-                padding: 8px 15px; 
+                padding: 0 15px 8px 15px; 
                 background: white; 
                 color: #333;
                 max-width: 148mm;
