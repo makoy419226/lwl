@@ -1605,10 +1605,29 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Items and staff PIN are required" });
       }
       
-      // Verify PIN
-      const packingWorkers = await storage.getPackingWorkers();
-      const worker = packingWorkers.find((w: any) => w.pin === staffPin);
-      if (!worker) {
+      // Verify PIN - accept admin PIN, user PINs, or packing worker PINs
+      const ADMIN_PIN = "00000";
+      let verifiedUser: string | null = null;
+      
+      if (staffPin === ADMIN_PIN) {
+        verifiedUser = "Admin";
+      } else {
+        // Check user PINs
+        const users = await storage.getUsers();
+        const user = users.find((u: any) => u.pin === staffPin);
+        if (user) {
+          verifiedUser = user.displayName || user.username;
+        } else {
+          // Check packing worker PINs
+          const packingWorkers = await storage.getPackingWorkers();
+          const worker = packingWorkers.find((w: any) => w.pin === staffPin);
+          if (worker) {
+            verifiedUser = worker.name;
+          }
+        }
+      }
+      
+      if (!verifiedUser) {
         return res.status(401).json({ message: "Invalid staff PIN" });
       }
       
