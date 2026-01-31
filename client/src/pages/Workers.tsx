@@ -140,7 +140,7 @@ export default function Workers() {
   const [staffMemberFormData, setStaffMemberFormData] = useState({
     name: "",
     pin: "",
-    roleType: "counter" as "counter" | "section",
+    roleType: "counter" as "counter" | "section" | "driver",
   });
   const [visibleStaffPins, setVisibleStaffPins] = useState<Set<number>>(new Set());
   
@@ -209,6 +209,10 @@ export default function Workers() {
 
   const sectionStaffMembers = useMemo(() => {
     return staffMembers?.filter(m => m.roleType === 'section') || [];
+  }, [staffMembers]);
+
+  const driverStaffMembers = useMemo(() => {
+    return staffMembers?.filter(m => m.roleType === 'driver') || [];
   }, [staffMembers]);
 
   // Fetch active sessions to show online status
@@ -1173,6 +1177,12 @@ export default function Workers() {
             </TabsContent>
 
             <TabsContent value="users">
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <Key className="w-4 h-4 inline mr-1" />
+                  <strong>All staff PINs work universally</strong> - Any staff member's PIN can be used for billing, tracking, and other functions across the entire system.
+                </p>
+              </div>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
                   <CardTitle className="flex items-center gap-2">
@@ -1399,78 +1409,94 @@ export default function Workers() {
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Driver</Badge>
                             <span className="text-sm text-muted-foreground">
-                              ({systemUsers.filter(u => u.role === "driver").length} users)
+                              ({systemUsers.filter(u => u.role === "driver").length} login{systemUsers.filter(u => u.role === "driver").length !== 1 ? "s" : ""}, {driverStaffMembers.length} staff)
                             </span>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          {systemUsers.filter(u => u.role === "driver").length === 0 ? (
-                            <p className="text-center text-muted-foreground py-4">No drivers found</p>
-                          ) : (
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Username</TableHead>
-                                  <TableHead>Name</TableHead>
-                                  <TableHead>Password</TableHead>
-                                  <TableHead>PIN</TableHead>
-                                  <TableHead className="text-center">Active</TableHead>
-                                  <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {systemUsers.filter(u => u.role === "driver").map((user) => (
-                                  <TableRow key={user.id}>
-                                    <TableCell className="font-medium">
-                                      <div className="flex items-center gap-2">
-                                        <span className={`w-2 h-2 rounded-full ${isUserOnline(user.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} title={isUserOnline(user.id) ? 'Online' : 'Offline'} />
-                                        {user.username}
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium text-sm mb-2">Login Details</h4>
+                              {systemUsers.filter(u => u.role === "driver").length === 0 ? (
+                                <p className="text-center text-muted-foreground py-4">No driver login found</p>
+                              ) : (
+                                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-3">
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-4 flex-wrap">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Username</p>
+                                        <p className="font-medium">{systemUsers.find(u => u.role === "driver")?.username}</p>
                                       </div>
-                                    </TableCell>
-                                    <TableCell>{user.name || "-"}</TableCell>
-                                    <TableCell>
-                                      <div className="flex items-center gap-1">
-                                        <span className="font-mono text-sm">
-                                          {visiblePasswords.has(user.id) ? user.password : "••••••"}
-                                        </span>
-                                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePasswordVisibility(user.id)}>
-                                          {visiblePasswords.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                        </Button>
+                                      <div className="border-l pl-4">
+                                        <p className="text-xs text-muted-foreground">Password</p>
+                                        <p className="font-mono text-sm">{systemUsers.find(u => u.role === "driver")?.password}</p>
                                       </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex items-center gap-1">
-                                        <span className="font-mono text-sm">
-                                          {visiblePins.has(user.id) ? (user.pin || "-") : (user.pin ? "•••••" : "-")}
-                                        </span>
-                                        {user.pin && (
-                                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePinVisibility(user.id)}>
-                                            {visiblePins.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                          </Button>
-                                        )}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                      <div className="flex items-center justify-center gap-2">
-                                        <Switch checked={user.active} onCheckedChange={() => toggleUserActive(user)} />
-                                        <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex justify-end gap-1">
-                                        <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); }}>
-                                          <Pencil className="w-4 h-4" />
-                                        </Button>
-                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Delete user "${user.username}"?`)) { deleteUserMutation.mutate(user.id); } }}>
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          )}
+                                    </div>
+                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "driver"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
+                                      <Pencil className="w-3 h-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="border-t pt-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-medium text-sm">Staff Members (each has their own PIN)</h4>
+                                <Button size="sm" variant="outline" onClick={() => { setStaffMemberFormData({ name: "", pin: "", roleType: "driver" }); setIsStaffMemberCreateOpen(true); }} data-testid="button-add-driver-staff">
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Add Staff
+                                </Button>
+                              </div>
+                              {driverStaffMembers.length === 0 ? (
+                                <p className="text-center text-muted-foreground py-4">No staff members assigned to driver role</p>
+                              ) : (
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Name</TableHead>
+                                      <TableHead>PIN</TableHead>
+                                      <TableHead className="text-center">Active</TableHead>
+                                      <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {driverStaffMembers.map((member) => (
+                                      <TableRow key={member.id}>
+                                        <TableCell className="font-medium">{member.name}</TableCell>
+                                        <TableCell>
+                                          <div className="flex items-center gap-1">
+                                            <span className="font-mono text-sm">
+                                              {visibleStaffPins.has(member.id) ? member.pin : "•••••"}
+                                            </span>
+                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => toggleStaffPinVisibility(member.id)}>
+                                              {visibleStaffPins.has(member.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                          <div className="flex items-center justify-center gap-2">
+                                            <Switch checked={member.active} onCheckedChange={() => toggleStaffMemberActive(member)} />
+                                            <Badge variant={member.active ? "default" : "secondary"}>{member.active ? "Active" : "Inactive"}</Badge>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell>
+                                          <div className="flex justify-end gap-1">
+                                            <Button size="icon" variant="ghost" onClick={() => { setEditStaffMember(member); setStaffMemberFormData({ name: member.name, pin: member.pin, roleType: "driver" }); }} data-testid={`button-edit-driver-staff-${member.id}`}>
+                                              <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Remove staff member "${member.name}"?`)) { deleteStaffMemberMutation.mutate(member.id); } }} data-testid={`button-delete-driver-staff-${member.id}`}>
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              )}
+                            </div>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
@@ -1828,7 +1854,7 @@ export default function Workers() {
               <Label>Role</Label>
               <Select
                 value={staffMemberFormData.roleType}
-                onValueChange={(value: "counter" | "section") => setStaffMemberFormData({ ...staffMemberFormData, roleType: value })}
+                onValueChange={(value: "counter" | "section" | "driver") => setStaffMemberFormData({ ...staffMemberFormData, roleType: value })}
               >
                 <SelectTrigger data-testid="select-staff-role">
                   <SelectValue />
@@ -1836,6 +1862,7 @@ export default function Workers() {
                 <SelectContent>
                   <SelectItem value="counter">Counter</SelectItem>
                   <SelectItem value="section">Section</SelectItem>
+                  <SelectItem value="driver">Driver</SelectItem>
                 </SelectContent>
               </Select>
             </div>

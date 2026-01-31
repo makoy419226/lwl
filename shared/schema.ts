@@ -176,7 +176,7 @@ export const staffMembers = pgTable("staff_members", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   pin: text("pin").notNull(), // 5-digit PIN for identification
-  roleType: text("role_type").notNull(), // 'counter', 'section' - which account they belong to
+  roleType: text("role_type").notNull(), // 'counter', 'section', 'driver' - which account they belong to
   active: boolean("active").default(true),
 });
 
@@ -262,7 +262,7 @@ export const insertStaffMemberSchema = createInsertSchema(staffMembers)
       .string()
       .length(5, "PIN must be exactly 5 digits")
       .regex(/^\d{5}$/, "PIN must be 5 digits"),
-    roleType: z.enum(["counter", "section"]),
+    roleType: z.enum(["counter", "section", "driver"]),
   });
 export const insertOrderSchema = createInsertSchema(orders)
   .omit({ id: true })
