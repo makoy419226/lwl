@@ -1801,6 +1801,22 @@ export default function Orders() {
                               </div>
                             )}
 
+                            {/* Staff Tracking Info */}
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground" data-testid={`staff-tracking-mobile-${order.id}`}>
+                              {order.entryBy && (
+                                <span data-testid={`text-created-by-mobile-${order.id}`}><User className="w-3 h-3 inline mr-1" />Created: <span className="font-medium text-foreground">{order.entryBy}</span></span>
+                              )}
+                              {order.tagBy && (
+                                <span data-testid={`text-tagged-by-mobile-${order.id}`}><Tag className="w-3 h-3 inline mr-1" />Tagged: <span className="font-medium text-foreground">{order.tagBy}</span></span>
+                              )}
+                              {order.packingBy && (
+                                <span data-testid={`text-packed-by-mobile-${order.id}`}><Package className="w-3 h-3 inline mr-1" />Packed: <span className="font-medium text-foreground">{order.packingBy}</span></span>
+                              )}
+                              {order.deliveryBy && (
+                                <span data-testid={`text-delivered-by-mobile-${order.id}`}><Truck className="w-3 h-3 inline mr-1" />Delivered: <span className="font-medium text-foreground">{order.deliveryBy}</span></span>
+                              )}
+                            </div>
+
                             {/* Items & Delivery Info Row */}
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
@@ -2368,7 +2384,15 @@ export default function Orders() {
                                       ) : "-"}
                                     </TableCell>
                                     <TableCell>
-                                      {getStatusBadge(order)}
+                                      <div className="space-y-1">
+                                        {getStatusBadge(order)}
+                                        <div className="text-[10px] text-muted-foreground leading-tight" data-testid={`staff-tracking-desktop-${order.id}`}>
+                                          {order.entryBy && <div data-testid={`text-created-by-${order.id}`}>Created: {order.entryBy}</div>}
+                                          {order.tagBy && <div data-testid={`text-tagged-by-${order.id}`}>Tagged: {order.tagBy}</div>}
+                                          {order.packingBy && <div data-testid={`text-packed-by-${order.id}`}>Packed: {order.packingBy}</div>}
+                                          {order.deliveryBy && <div data-testid={`text-delivered-by-${order.id}`}>Delivered: {order.deliveryBy}</div>}
+                                        </div>
+                                      </div>
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                                       {order.packingDate ? (
