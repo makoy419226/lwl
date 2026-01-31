@@ -1218,51 +1218,24 @@ export default function Workers() {
                               {systemUsers.filter(u => u.role === "counter").length === 0 ? (
                                 <p className="text-center text-muted-foreground py-4">No counter login found</p>
                               ) : (
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Username</TableHead>
-                                      <TableHead>Password</TableHead>
-                                      <TableHead className="text-center">Active</TableHead>
-                                      <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {systemUsers.filter(u => u.role === "counter").map((user) => (
-                                      <TableRow key={user.id}>
-                                        <TableCell className="font-medium">
-                                          <div className="flex items-center gap-2">
-                                            <span className={`w-2 h-2 rounded-full ${isUserOnline(user.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} title={isUserOnline(user.id) ? 'Online' : 'Offline'} />
-                                            {user.username}
-                                          </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="flex items-center gap-1">
-                                            <span className="font-mono text-sm">
-                                              {visiblePasswords.has(user.id) ? user.password : "••••••"}
-                                            </span>
-                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePasswordVisibility(user.id)}>
-                                              {visiblePasswords.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                          <div className="flex items-center justify-center gap-2">
-                                            <Switch checked={user.active} onCheckedChange={() => toggleUserActive(user)} />
-                                            <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="flex justify-end gap-1">
-                                            <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); }}>
-                                              <Pencil className="w-4 h-4" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
+                                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Default Login PIN</p>
+                                        <p className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400">11111</p>
+                                      </div>
+                                      <div className="border-l pl-4">
+                                        <p className="text-xs text-muted-foreground">Username</p>
+                                        <p className="font-medium">{systemUsers.find(u => u.role === "counter")?.username}</p>
+                                      </div>
+                                    </div>
+                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "counter"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
+                                      <Pencil className="w-3 h-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                  </div>
+                                </div>
                               )}
                             </div>
                             <div className="border-t pt-4">
@@ -1341,51 +1314,24 @@ export default function Workers() {
                               {systemUsers.filter(u => u.role === "section").length === 0 ? (
                                 <p className="text-center text-muted-foreground py-4">No section login found</p>
                               ) : (
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Username</TableHead>
-                                      <TableHead>Password</TableHead>
-                                      <TableHead className="text-center">Active</TableHead>
-                                      <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {systemUsers.filter(u => u.role === "section").map((user) => (
-                                      <TableRow key={user.id}>
-                                        <TableCell className="font-medium">
-                                          <div className="flex items-center gap-2">
-                                            <span className={`w-2 h-2 rounded-full ${isUserOnline(user.id) ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} title={isUserOnline(user.id) ? 'Online' : 'Offline'} />
-                                            {user.username}
-                                          </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="flex items-center gap-1">
-                                            <span className="font-mono text-sm">
-                                              {visiblePasswords.has(user.id) ? user.password : "••••••"}
-                                            </span>
-                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => togglePasswordVisibility(user.id)}>
-                                              {visiblePasswords.has(user.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                          <div className="flex items-center justify-center gap-2">
-                                            <Switch checked={user.active} onCheckedChange={() => toggleUserActive(user)} />
-                                            <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="flex justify-end gap-1">
-                                            <Button size="icon" variant="ghost" onClick={() => { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); }}>
-                                              <Pencil className="w-4 h-4" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
+                                <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Default Login PIN</p>
+                                        <p className="text-2xl font-bold font-mono text-purple-600 dark:text-purple-400">22222</p>
+                                      </div>
+                                      <div className="border-l pl-4">
+                                        <p className="text-xs text-muted-foreground">Username</p>
+                                        <p className="font-medium">{systemUsers.find(u => u.role === "section")?.username}</p>
+                                      </div>
+                                    </div>
+                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "section"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
+                                      <Pencil className="w-3 h-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                  </div>
+                                </div>
                               )}
                             </div>
                             <div className="border-t pt-4">
