@@ -171,6 +171,15 @@ export const packingWorkers = pgTable("packing_workers", {
   active: boolean("active").default(true),
 });
 
+// Staff members assigned to shared role accounts (counter, section)
+export const staffMembers = pgTable("staff_members", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  pin: text("pin").notNull(), // 5-digit PIN for identification
+  roleType: text("role_type").notNull(), // 'counter', 'section' - which account they belong to
+  active: boolean("active").default(true),
+});
+
 export const incidents = pgTable("incidents", {
   id: serial("id").primaryKey(),
   customerName: text("customer_name").notNull(),
@@ -244,6 +253,16 @@ export const insertPackingWorkerSchema = createInsertSchema(packingWorkers)
       .string()
       .length(5, "PIN must be exactly 5 digits")
       .regex(/^\d{5}$/, "PIN must be 5 digits"),
+  });
+export const insertStaffMemberSchema = createInsertSchema(staffMembers)
+  .omit({ id: true })
+  .extend({
+    name: z.string().min(1, "Name is required"),
+    pin: z
+      .string()
+      .length(5, "PIN must be exactly 5 digits")
+      .regex(/^\d{5}$/, "PIN must be 5 digits"),
+    roleType: z.enum(["counter", "section"]),
   });
 export const insertOrderSchema = createInsertSchema(orders)
   .omit({ id: true })

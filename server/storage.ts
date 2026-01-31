@@ -11,6 +11,7 @@ import {
   incidents,
   missingItems,
   users,
+  staffMembers,
   type Product,
   type Client,
   type Bill,
@@ -159,6 +160,13 @@ export interface IStorage {
     updates: Partial<InsertMissingItem>,
   ): Promise<MissingItem>;
   deleteMissingItem(id: number): Promise<void>;
+  // Staff members methods
+  getStaffMembers(roleType?: string): Promise<any[]>;
+  getStaffMember(id: number): Promise<any | undefined>;
+  createStaffMember(member: { name: string; pin: string; roleType: string }): Promise<any>;
+  updateStaffMember(id: number, updates: Partial<{ name: string; pin: string; active: boolean }>): Promise<any>;
+  deleteStaffMember(id: number): Promise<void>;
+  verifyStaffMemberPin(pin: string): Promise<any | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1567,6 +1575,43 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMissingItem(id: number): Promise<void> {
     await db.delete(missingItems).where(eq(missingItems.id, id));
+  }
+
+  // Staff members methods
+  async getStaffMembers(roleType?: string): Promise<any[]> {
+    if (roleType) {
+      return await db.select().from(staffMembers).where(eq(staffMembers.roleType, roleType));
+    }
+    return await db.select().from(staffMembers);
+  }
+
+  async getStaffMember(id: number): Promise<any | undefined> {
+    const [member] = await db.select().from(staffMembers).where(eq(staffMembers.id, id));
+    return member;
+  }
+
+  async createStaffMember(member: { name: string; pin: string; roleType: string }): Promise<any> {
+    const [created] = await db.insert(staffMembers).values({
+      name: member.name,
+      pin: member.pin,
+      roleType: member.roleType,
+      active: true,
+    }).returning();
+    return created;
+  }
+
+  async updateStaffMember(id: number, updates: Partial<{ name: string; pin: string; active: boolean }>): Promise<any> {
+    const [updated] = await db.update(staffMembers).set(updates).where(eq(staffMembers.id, id)).returning();
+    return updated;
+  }
+
+  async deleteStaffMember(id: number): Promise<void> {
+    await db.delete(staffMembers).where(eq(staffMembers.id, id));
+  }
+
+  async verifyStaffMemberPin(pin: string): Promise<any | null> {
+    const [member] = await db.select().from(staffMembers).where(and(eq(staffMembers.pin, pin), eq(staffMembers.active, true)));
+    return member || null;
   }
 }
 

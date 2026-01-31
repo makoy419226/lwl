@@ -498,6 +498,103 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Staff members routes - people assigned to shared role accounts
+  app.get("/api/staff-members", async (req, res) => {
+    const roleType = req.query.roleType as string | undefined;
+    const members = await storage.getStaffMembers(roleType);
+    res.json(members);
+  });
+
+  app.get("/api/staff-members/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid staff member ID" });
+    }
+    const member = await storage.getStaffMember(id);
+    if (!member) {
+      return res.status(404).json({ message: "Staff member not found" });
+    }
+    res.json(member);
+  });
+
+  app.post("/api/staff-members", async (req, res) => {
+    const { name, pin, roleType } = req.body;
+    try {
+      if (!name || !pin || !roleType) {
+        return res.status(400).json({ message: "Name, PIN, and roleType are required" });
+      }
+      if (!/^\d{5}$/.test(pin)) {
+        return res.status(400).json({ message: "PIN must be 5 digits" });
+      }
+      // Check if PIN is already used by another staff member
+      const existingMember = await storage.verifyStaffMemberPin(pin);
+      if (existingMember) {
+        return res.status(400).json({ message: "This PIN is already used by another staff member" });
+      }
+      // Check if PIN is already used by a user
+      const existingUser = await db.select().from(users).where(eq(users.pin, pin)).limit(1);
+      if (existingUser.length > 0) {
+        return res.status(400).json({ message: "This PIN is already used by a user account" });
+      }
+      const member = await storage.createStaffMember({ name, pin, roleType });
+      res.status(201).json(member);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Failed to create staff member" });
+    }
+  });
+
+  app.put("/api/staff-members/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid staff member ID" });
+    }
+    const { name, pin, active } = req.body;
+    try {
+      if (pin && !/^\d{5}$/.test(pin)) {
+        return res.status(400).json({ message: "PIN must be 5 digits" });
+      }
+      // Check if PIN is already used (if changing)
+      if (pin) {
+        const existingMember = await storage.verifyStaffMemberPin(pin);
+        if (existingMember && existingMember.id !== id) {
+          return res.status(400).json({ message: "This PIN is already used by another staff member" });
+        }
+        const existingUser = await db.select().from(users).where(eq(users.pin, pin)).limit(1);
+        if (existingUser.length > 0) {
+          return res.status(400).json({ message: "This PIN is already used by a user account" });
+        }
+      }
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (pin !== undefined) updates.pin = pin;
+      if (active !== undefined) updates.active = active;
+      const member = await storage.updateStaffMember(id, updates);
+      res.json(member);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Failed to update staff member" });
+    }
+  });
+
+  app.delete("/api/staff-members/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid staff member ID" });
+    }
+    await storage.deleteStaffMember(id);
+    res.status(204).send();
+  });
+
+  // Verify staff member PIN (for billing/tracking identification)
+  app.post("/api/staff-members/verify-pin", async (req, res) => {
+    const { pin } = req.body;
+    const member = await storage.verifyStaffMemberPin(pin);
+    if (member) {
+      res.json({ success: true, member: { id: member.id, name: member.name, roleType: member.roleType } });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid PIN" });
+    }
+  });
+
   // Client routes
   app.get(api.clients.list.path, async (req, res) => {
     const search = req.query.search as string | undefined;
