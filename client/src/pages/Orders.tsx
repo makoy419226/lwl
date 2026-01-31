@@ -1913,14 +1913,14 @@ export default function Orders() {
                 data-testid="tab-for-delivery"
               >
                 <MapPin className="w-4 h-4 mr-1" />
-                Ready
+                <span className="hidden sm:inline">4.</span> Ready
               </TabsTrigger>
               <TabsTrigger
                 value="delivery"
                 className="h-10 px-3 text-sm touch-manipulation bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
               >
                 <Truck className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">4.</span> Deliver
+                <span className="hidden sm:inline">5.</span> Completed
               </TabsTrigger>
               <TabsTrigger
                 value="item-report"
