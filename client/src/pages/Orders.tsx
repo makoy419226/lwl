@@ -171,6 +171,12 @@ export default function Orders() {
     format(new Date(), "yyyy-MM-dd"),
   );
   const [reportSubTab, setReportSubTab] = useState<"items" | "staff">("items");
+  const [staffPeriod, setStaffPeriod] = useState<"daily" | "monthly" | "yearly" | "range">("daily");
+  const [staffDate, setStaffDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [staffMonth, setStaffMonth] = useState<string>(format(new Date(), "yyyy-MM"));
+  const [staffYear, setStaffYear] = useState<string>(format(new Date(), "yyyy"));
+  const [staffStartDate, setStaffStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [staffEndDate, setStaffEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [staffOrdersDialog, setStaffOrdersDialog] = useState<{
     isOpen: boolean;
     staffName: string;
@@ -900,8 +906,47 @@ export default function Orders() {
     }
   };
 
-  const staffPerformanceData = useMemo(() => {
+  const filteredStaffOrders = useMemo(() => {
     if (!orders) return [];
+    
+    return orders.filter((order) => {
+      const orderDate = new Date(order.entryDate);
+      
+      if (staffPeriod === "daily") {
+        const selectedDateObj = new Date(staffDate);
+        return (
+          orderDate.getFullYear() === selectedDateObj.getFullYear() &&
+          orderDate.getMonth() === selectedDateObj.getMonth() &&
+          orderDate.getDate() === selectedDateObj.getDate()
+        );
+      }
+      
+      if (staffPeriod === "monthly") {
+        const [year, month] = staffMonth.split("-").map(Number);
+        return (
+          orderDate.getFullYear() === year &&
+          orderDate.getMonth() === month - 1
+        );
+      }
+      
+      if (staffPeriod === "yearly") {
+        return orderDate.getFullYear() === parseInt(staffYear);
+      }
+      
+      if (staffPeriod === "range") {
+        const start = new Date(staffStartDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(staffEndDate);
+        end.setHours(23, 59, 59, 999);
+        return orderDate >= start && orderDate <= end;
+      }
+      
+      return true;
+    });
+  }, [orders, staffPeriod, staffDate, staffMonth, staffYear, staffStartDate, staffEndDate]);
+
+  const staffPerformanceData = useMemo(() => {
+    if (!filteredStaffOrders) return [];
     
     const staffStats: Record<string, { 
       name: string; 
@@ -915,7 +960,7 @@ export default function Orders() {
       createdOrders: Order[];
     }> = {};
     
-    orders.forEach((order) => {
+    filteredStaffOrders.forEach((order) => {
       if (order.entryBy) {
         const name = order.entryBy;
         if (!staffStats[name]) {
@@ -958,7 +1003,7 @@ export default function Orders() {
       const totalB = b.taggedCount + b.packedCount + b.deliveredCount + b.createdCount;
       return totalB - totalA;
     });
-  }, [orders]);
+  }, [filteredStaffOrders]);
 
   const handleStaffCountClick = (staffName: string, actionType: string, ordersToShow: Order[]) => {
     setStaffOrdersDialog({
@@ -3089,15 +3134,106 @@ export default function Orders() {
                   <CardTitle className="flex items-center gap-2">
                     <Users className="w-5 h-5" />
                     Staff Performance Summary
-                    <Badge variant="secondary" className="ml-2">All-Time</Badge>
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Shows cumulative statistics for all orders. Click any count to see the list of orders.
+                    Click any count to see the list of orders.
                   </p>
                 </CardHeader>
                 <CardContent>
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <div className="flex gap-1">
+                      <Button
+                        variant={staffPeriod === "daily" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setStaffPeriod("daily")}
+                        data-testid="button-staff-daily"
+                      >
+                        Daily
+                      </Button>
+                      <Button
+                        variant={staffPeriod === "monthly" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setStaffPeriod("monthly")}
+                        data-testid="button-staff-monthly"
+                      >
+                        Monthly
+                      </Button>
+                      <Button
+                        variant={staffPeriod === "yearly" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setStaffPeriod("yearly")}
+                        data-testid="button-staff-yearly"
+                      >
+                        Yearly
+                      </Button>
+                      <Button
+                        variant={staffPeriod === "range" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setStaffPeriod("range")}
+                        data-testid="button-staff-range"
+                      >
+                        Custom Range
+                      </Button>
+                    </div>
+
+                    {staffPeriod === "daily" && (
+                      <Input
+                        type="date"
+                        value={staffDate}
+                        onChange={(e) => setStaffDate(e.target.value)}
+                        className="w-40 h-9"
+                        data-testid="input-staff-date"
+                      />
+                    )}
+
+                    {staffPeriod === "monthly" && (
+                      <Input
+                        type="month"
+                        value={staffMonth}
+                        onChange={(e) => setStaffMonth(e.target.value)}
+                        className="w-40 h-9"
+                        data-testid="input-staff-month"
+                      />
+                    )}
+
+                    {staffPeriod === "yearly" && (
+                      <Select value={staffYear} onValueChange={setStaffYear}>
+                        <SelectTrigger className="w-32 h-9" data-testid="select-staff-year">
+                          <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {staffPeriod === "range" && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="date"
+                          value={staffStartDate}
+                          onChange={(e) => setStaffStartDate(e.target.value)}
+                          className="w-36 h-9"
+                          data-testid="input-staff-start-date"
+                        />
+                        <span className="text-sm text-muted-foreground">to</span>
+                        <Input
+                          type="date"
+                          value={staffEndDate}
+                          onChange={(e) => setStaffEndDate(e.target.value)}
+                          className="w-36 h-9"
+                          data-testid="input-staff-end-date"
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   {staffPerformanceData.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">No staff performance data available.</p>
+                    <p className="text-muted-foreground text-center py-8">No staff performance data available for the selected period.</p>
                   ) : (
                     <Table>
                       <TableHeader>
