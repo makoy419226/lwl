@@ -28,6 +28,7 @@ import {
   Pencil,
   Printer,
   Tag,
+  GripVertical,
 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import { Input } from "@/components/ui/input";
@@ -197,6 +198,9 @@ export default function Products() {
   const [newProductDryCleanPrice, setNewProductDryCleanPrice] = useState("");
   const [newProductCategory, setNewProductCategory] = useState("");
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [draggingProduct, setDraggingProduct] = useState<{ id: number; name: string } | null>(null);
+  const [dragOverTab, setDragOverTab] = useState<string | null>(null);
 
   const sizeOptions: Record<string, { small: number; large: number }> = {
     Towel: { small: 5, large: 8 },
@@ -1184,6 +1188,71 @@ export default function Products() {
     );
   };
 
+  // Handle moving a product to a new category (drag & drop)
+  const handleMoveProductToCategory = async (productId: number, productName: string, newCategory: string) => {
+    // Map tab ID to actual category name
+    const categoryMap: Record<string, string> = {
+      "arabic": "Arabic Clothes",
+      "mens": "Men's Clothes",
+      "ladies": "Ladies' Clothes",
+      "babies": "Baby Clothes",
+      "linens": "Linens",
+      "general": "General Items",
+    };
+    
+    const actualCategory = categoryMap[newCategory];
+    if (!actualCategory) return;
+    
+    try {
+      await apiRequest("PUT", `/api/products/${productId}`, {
+        category: actualCategory,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Item moved",
+        description: `${productName} moved to ${actualCategory}`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to move item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle drag start
+  const handleDragStart = (e: React.DragEvent, product: { id: number; name: string }) => {
+    if (!isEditMode || user?.role !== "admin") return;
+    setDraggingProduct(product);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", JSON.stringify(product));
+  };
+
+  // Handle drag end
+  const handleDragEnd = () => {
+    setDraggingProduct(null);
+    setDragOverTab(null);
+  };
+
+  // Handle drop on tab
+  const handleDropOnTab = (e: React.DragEvent, tabId: string) => {
+    e.preventDefault();
+    if (!draggingProduct || tabId === "all") return;
+    
+    handleMoveProductToCategory(draggingProduct.id, draggingProduct.name, tabId);
+    setDraggingProduct(null);
+    setDragOverTab(null);
+  };
+
+  // Handle drag over tab
+  const handleDragOverTab = (e: React.DragEvent, tabId: string) => {
+    e.preventDefault();
+    if (tabId !== "all") {
+      setDragOverTab(tabId);
+    }
+  };
+
   // Render order slip content (reusable for both sidebar and popup)
   const renderOrderSlipContent = (isPopup: boolean = false) => (
     <div className={`${isPopup ? "p-4 space-y-3 flex-1 overflow-y-auto pb-32" : "p-3 space-y-3 flex-1 overflow-y-auto"}`}>
@@ -1517,18 +1586,44 @@ export default function Products() {
                 data-testid="input-search-products"
               />
             </div>
+            {/* Edit Mode Toggle - Admin Only */}
+            {user?.role === "admin" && (
+              <Button
+                variant={isEditMode ? "default" : "outline"}
+                size="sm"
+                className={`h-9 gap-1.5 ${isEditMode ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                onClick={() => setIsEditMode(!isEditMode)}
+                data-testid="button-toggle-edit-mode"
+              >
+                <Pencil className="w-4 h-4" />
+                <span className="hidden sm:inline">{isEditMode ? "Exit Edit" : "Edit"}</span>
+              </Button>
+            )}
           </div>
           
           {/* Category Tabs */}
           <div className="px-2 pb-2 overflow-x-auto">
+            {isEditMode && (
+              <div className="mb-2 px-2 py-1.5 bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 rounded-lg text-xs text-orange-700 dark:text-orange-300 flex items-center gap-2">
+                <GripVertical className="w-4 h-4" />
+                <span>Drag items to category tabs to move them</span>
+              </div>
+            )}
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
               <TabsList className="inline-flex h-9 items-center justify-start gap-1 bg-muted/50 p-1 rounded-lg w-auto min-w-full">
                 {tabCategories.map((tab) => (
                   <TabsTrigger
                     key={tab.id}
                     value={tab.id}
-                    className="px-3 py-1.5 text-xs font-medium whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
+                    className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white rounded-md transition-all ${
+                      isEditMode && tab.id !== "all" ? "border-2 border-dashed border-transparent" : ""
+                    } ${
+                      dragOverTab === tab.id ? "border-primary bg-primary/20 scale-105" : ""
+                    }`}
                     data-testid={`tab-category-${tab.id}`}
+                    onDragOver={(e) => isEditMode && handleDragOverTab(e, tab.id)}
+                    onDragLeave={() => setDragOverTab(null)}
+                    onDrop={(e) => isEditMode && handleDropOnTab(e, tab.id)}
                   >
                     {tab.label}
                   </TabsTrigger>
@@ -1566,14 +1661,25 @@ export default function Products() {
                       {categoryProducts?.map((product) => (
                         <div
                           key={product.id}
+                          draggable={isEditMode && user?.role === "admin"}
+                          onDragStart={(e) => handleDragStart(e, { id: product.id, name: product.name })}
+                          onDragEnd={handleDragEnd}
                           className={`relative rounded-lg sm:rounded-xl border-2 p-2 sm:p-3 md:p-4 flex flex-col items-center cursor-pointer hover-elevate ${
                             isProductSelected(product)
                               ? "border-primary border-[3px] bg-primary/15 ring-2 ring-primary/50 shadow-lg shadow-primary/20"
                               : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60"
+                          } ${isEditMode ? "cursor-grab active:cursor-grabbing" : ""} ${
+                            draggingProduct?.id === product.id ? "opacity-50 ring-2 ring-orange-400" : ""
                           }`}
-                          onClick={() => handleProductClick(product)}
+                          onClick={() => !isEditMode && handleProductClick(product)}
                           data-testid={`box-product-${product.id}`}
                         >
+                          {/* Edit mode indicator */}
+                          {isEditMode && user?.role === "admin" && (
+                            <div className="absolute top-1 right-1 z-10 w-5 h-5 bg-orange-500 text-white rounded flex items-center justify-center">
+                              <GripVertical className="w-3 h-3" />
+                            </div>
+                          )}
                           <div
                             className="w-full h-20 sm:h-24 md:h-28 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 mb-1 sm:mb-2 shadow-sm relative"
                           >
@@ -1732,8 +1838,8 @@ export default function Products() {
                         </div>
                       ))}
                       
-                      {/* Add New Item Card - Only for admin/reception */}
-                      {(user?.role === "admin" || user?.role === "reception") && (
+                      {/* Add New Item Card - Only for admin */}
+                      {user?.role === "admin" && !isEditMode && (
                         <div
                           className="relative rounded-lg sm:rounded-xl border-2 border-dashed border-primary/40 p-2 sm:p-3 md:p-4 flex flex-col items-center justify-center cursor-pointer hover-elevate min-h-[160px] sm:min-h-[180px] md:min-h-[200px]"
                           onClick={() => {
