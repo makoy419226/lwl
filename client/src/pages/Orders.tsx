@@ -1913,7 +1913,7 @@ export default function Orders() {
                 data-testid="tab-for-delivery"
               >
                 <MapPin className="w-4 h-4 mr-1" />
-                For Delivery
+                Ready
               </TabsTrigger>
               <TabsTrigger
                 value="delivery"
