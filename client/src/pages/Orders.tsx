@@ -57,6 +57,7 @@ import {
   Loader2,
   Package,
   Shirt,
+  CheckCircle,
   CheckCircle2,
   Truck,
   Clock,
@@ -1912,14 +1913,14 @@ export default function Orders() {
                 className="h-10 px-3 text-sm touch-manipulation bg-cyan-100 dark:bg-cyan-900/30 data-[state=active]:bg-cyan-600 data-[state=active]:text-white"
                 data-testid="tab-for-delivery"
               >
-                <MapPin className="w-4 h-4 mr-1" />
+                <CheckCircle className="w-4 h-4 mr-1" />
                 <span className="hidden sm:inline">4.</span> Ready
               </TabsTrigger>
               <TabsTrigger
                 value="delivery"
                 className="h-10 px-3 text-sm touch-manipulation bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
               >
-                <Truck className="w-4 h-4 mr-1" />
+                <CheckCircle2 className="w-4 h-4 mr-1" />
                 <span className="hidden sm:inline">5.</span> Completed
               </TabsTrigger>
               <TabsTrigger
