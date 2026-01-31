@@ -1666,7 +1666,7 @@ export default function Orders() {
     if (order.delivered)
       return (
         <Badge className="bg-green-500 dark:bg-green-600 text-white text-xs sm:text-sm transition-all duration-200">
-          Delivered
+          {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
         </Badge>
       );
     if (order.packingDone)
@@ -2823,7 +2823,7 @@ export default function Orders() {
                                             >
                                               <Package className="w-3 h-3 sm:mr-1" />
                                               <span className="hidden sm:inline">
-                                                Ready for Pickup
+                                                Picked up
                                               </span>
                                             </Button>
                                           )}
