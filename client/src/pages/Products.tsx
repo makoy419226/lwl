@@ -1184,10 +1184,319 @@ export default function Products() {
     );
   };
 
+  // Render order slip content (reusable for both sidebar and popup)
+  const renderOrderSlipContent = (isPopup: boolean = false) => (
+    <div className={`${isPopup ? "p-4 space-y-3 flex-1 overflow-y-auto pb-32" : "p-3 space-y-3 flex-1 overflow-y-auto"}`}>
+      {/* Items Table */}
+      <div className="border rounded-lg overflow-hidden">
+        <table className="w-full text-xs">
+          <thead className="bg-muted/50">
+            <tr className="border-b">
+              <th className="text-left py-2 px-2 font-bold">Item</th>
+              <th className="text-center py-2 px-1 font-bold">Qty</th>
+              <th className="text-right py-2 px-2 font-bold">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orderItems.map((item) => {
+              const isDryClean = dryCleanItems[item.product.id];
+              const itemPrice = isDryClean 
+                ? parseFloat(item.product.dryCleanPrice || item.product.price || "0")
+                : parseFloat(item.product.price || "0");
+              return (
+                <tr key={item.product.id} className={`border-b ${isDryClean ? "bg-purple-50 dark:bg-purple-900/20" : ""}`}>
+                  <td className="py-2 px-2 font-medium">
+                    {item.product.name}
+                    {isDryClean && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
+                  </td>
+                  <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
+                  <td className="py-2 px-2 text-right font-bold">{(itemPrice * item.quantity).toFixed(0)}</td>
+                </tr>
+              );
+            })}
+            {customItems.map((item, idx) => (
+              <tr key={`custom-${idx}`} className="border-b bg-amber-50 dark:bg-amber-900/20">
+                <td className="py-2 px-2 font-medium flex items-center gap-1">
+                  {item.name}
+                  <button onClick={() => removeCustomItem(idx)} className="text-red-500 hover:text-red-700">
+                    <X className="w-3 h-3" />
+                  </button>
+                </td>
+                <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
+                <td className="py-2 px-2 text-right font-bold">{(item.price * item.quantity).toFixed(0)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Empty state */}
+      {orderItems.length === 0 && customItems.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">No items added yet</p>
+          <p className="text-xs">Tap items to add them</p>
+        </div>
+      )}
+
+      {/* Totals */}
+      {(orderItems.length > 0 || customItems.length > 0) && (
+        <>
+          <div className="border rounded-lg p-3 space-y-1 bg-muted/30">
+            <div className="flex justify-between text-xs">
+              <span>Subtotal</span>
+              <span className="font-semibold">{orderTotal.toFixed(2)} AED</span>
+            </div>
+            {orderType === "urgent" && (
+              <div className="flex justify-between text-xs text-orange-600 font-semibold">
+                <span>Urgent (x2)</span>
+                <span>+{orderTotal.toFixed(2)} AED</span>
+              </div>
+            )}
+            {parseFloat(discountPercent) > 0 && (
+              <div className="flex justify-between text-xs text-green-600">
+                <span>Discount ({discountPercent}%)</span>
+                <span>-{(((orderType === "urgent" ? orderTotal * 2 : orderTotal) * parseFloat(discountPercent)) / 100).toFixed(2)} AED</span>
+              </div>
+            )}
+            {parseFloat(tips) > 0 && (
+              <div className="flex justify-between text-xs text-blue-600">
+                <span>Tips</span>
+                <span>+{parseFloat(tips).toFixed(2)} AED</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm font-bold text-primary border-t pt-2 mt-2">
+              <span>TOTAL</span>
+              <span>
+                {(() => {
+                  const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
+                  const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
+                  const tipsAmt = parseFloat(tips) || 0;
+                  return (base - discountAmt + tipsAmt).toFixed(2);
+                })()} AED
+              </span>
+            </div>
+          </div>
+
+          {/* Client Selection */}
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold">Select Client</Label>
+            <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-9 text-xs w-full justify-between" data-testid={isPopup ? "popup-select-client" : "sidebar-select-client"}>
+                  {isWalkIn ? "Walk-in Customer" : selectedClientId ? clients?.find((c) => c.id === selectedClientId)?.name || "Choose client..." : "Choose client..."}
+                  <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 z-[200]" align="start">
+                <Command filter={(value, search) => {
+                  if (value.toLowerCase().includes(search.toLowerCase())) return 1;
+                  return 0;
+                }}>
+                  <CommandInput placeholder="Search clients..." className="h-9" />
+                  <CommandList>
+                    <CommandEmpty>No client found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="walk-in-customer"
+                        onSelect={() => {
+                          setSelectedClientId(null);
+                          setIsWalkIn(true);
+                          setCustomerName("Walk-in Customer");
+                          setClientDropdownOpen(false);
+                        }}
+                      >
+                        <Check className={`mr-2 h-4 w-4 ${isWalkIn ? "opacity-100" : "opacity-0"}`} />
+                        Walk-in Customer
+                      </CommandItem>
+                      {clients?.map((client) => (
+                        <CommandItem
+                          key={client.id}
+                          value={`${client.name} ${client.phone || ""}`}
+                          onSelect={() => {
+                            setIsWalkIn(false);
+                            setSelectedClientId(client.id);
+                            setCustomerName(client.name);
+                            setCustomerPhone(client.phone || "");
+                            if (client.discountPercent) setDiscountPercent(client.discountPercent);
+                            setClientDropdownOpen(false);
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${selectedClientId === client.id ? "opacity-100" : "opacity-0"}`} />
+                          <div>
+                            <div className="font-medium">{client.name}</div>
+                            {client.phone && <div className="text-xs text-muted-foreground">{client.phone}</div>}
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Walk-in Customer Fields */}
+          {isWalkIn && (
+            <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+              <div>
+                <Label className="text-xs font-semibold">Customer Name <span className="text-destructive">*</span></Label>
+                <Input
+                  className="h-8 text-xs mt-1"
+                  placeholder="Enter name..."
+                  value={walkInName}
+                  onChange={(e) => {
+                    setWalkInName(e.target.value);
+                    setCustomerName(e.target.value || "Walk-in Customer");
+                  }}
+                  data-testid={isPopup ? "popup-input-walkin-name" : "sidebar-input-walkin-name"}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Phone Number <span className="text-destructive">*</span></Label>
+                <div className="flex flex-col gap-1 mt-1">
+                  <div className="flex">
+                    <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-xs h-8">
+                      +971
+                    </span>
+                    <Input
+                      className={`h-8 text-xs rounded-l-none ${walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
+                      placeholder="XXXXXXXXX"
+                      value={walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9)}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                        setWalkInPhone("+971" + digits);
+                      }}
+                      inputMode="numeric"
+                      maxLength={9}
+                      data-testid={isPopup ? "popup-input-walkin-phone" : "sidebar-input-walkin-phone"}
+                    />
+                  </div>
+                  {walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 && (
+                    <p className="text-xs text-green-600 font-medium">9 digits - limit reached</p>
+                  )}
+                </div>
+              </div>
+              {clientMatch && (
+                <div className="bg-red-100 dark:bg-red-950 border border-red-500 rounded-lg p-2 text-xs">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-bold text-red-700 dark:text-red-300">
+                        {clientMatch.message}: {clientMatch.client.name}
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="mt-1 text-xs h-7 bg-red-50 dark:bg-red-900 border-red-300"
+                        onClick={() => {
+                          setIsWalkIn(false);
+                          setSelectedClientId(clientMatch.client.id);
+                          setCustomerName(clientMatch.client.name);
+                          setCustomerPhone(clientMatch.client.phone || "");
+                          setWalkInAddress(clientMatch.client.address || "");
+                          setWalkInName("");
+                          setWalkInPhone("+971");
+                        }}
+                      >
+                        Use existing: {clientMatch.client.name}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label className="text-xs font-semibold">Address <span className="text-destructive">*</span></Label>
+                <Input
+                  className="h-8 text-xs mt-1"
+                  placeholder="Enter address..."
+                  value={walkInAddress}
+                  onChange={(e) => setWalkInAddress(e.target.value)}
+                  data-testid={isPopup ? "popup-input-walkin-address" : "sidebar-input-walkin-address"}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Order Type */}
+          <div className="flex gap-2">
+            <Button
+              variant={orderType === "normal" ? "default" : "outline"}
+              className="flex-1 h-9 text-xs"
+              onClick={() => setOrderType("normal")}
+            >
+              <Clock className="w-3 h-3 mr-1" /> Normal
+            </Button>
+            <Button
+              variant={orderType === "urgent" ? "default" : "outline"}
+              className={`flex-1 h-9 text-xs ${orderType === "urgent" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+              onClick={() => setOrderType("urgent")}
+            >
+              <Zap className="w-3 h-3 mr-1" /> Urgent 2x
+            </Button>
+          </div>
+
+          {/* Delivery Type */}
+          <div className="flex gap-2">
+            <Button
+              variant={deliveryType === "pickup" ? "default" : "outline"}
+              className="flex-1 h-9 text-xs"
+              onClick={() => setDeliveryType("pickup")}
+            >
+              <Package className="w-3 h-3 mr-1" /> Pickup
+            </Button>
+            <Button
+              variant={deliveryType === "delivery" ? "default" : "outline"}
+              className="flex-1 h-9 text-xs"
+              onClick={() => setDeliveryType("delivery")}
+            >
+              <Truck className="w-3 h-3 mr-1" /> Delivery
+            </Button>
+          </div>
+
+          {/* Expected Pickup/Delivery Date & Time */}
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold">
+              {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date & Time
+            </Label>
+            <Input
+              type="datetime-local"
+              className="h-9 text-xs"
+              value={expectedDeliveryAt}
+              onChange={(e) => setExpectedDeliveryAt(e.target.value)}
+              min={new Date().toISOString().slice(0, 16)}
+              data-testid={isPopup ? "popup-input-expected-datetime" : "sidebar-input-expected-datetime"}
+            />
+          </div>
+
+          {/* Place Order Button */}
+          <Button
+            className={`w-full h-10 font-bold ${clientMatch ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : ""}`}
+            onClick={() => {
+              if (isPopup) setShowCartPopup(false);
+              handleCreateOrder();
+            }}
+            disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn) || !!clientMatch}
+            data-testid={isPopup ? "popup-button-place-order" : "sidebar-button-place-order"}
+          >
+            {createOrderMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            {clientMatch ? "Use existing client above" : `Place Order - ${(() => {
+              const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
+              const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
+              const tipsAmt = parseFloat(tips) || 0;
+              return (base - discountAmt + tipsAmt).toFixed(2);
+            })()} AED`}
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex h-screen">
       {/* Left side - New Order */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 xl:mr-[340px]">
         <div className="sticky top-0 z-30 w-full bg-gradient-to-r from-primary/10 via-white to-primary/5 dark:from-primary/20 dark:via-background dark:to-primary/10 backdrop-blur-md border-b border-primary/20 shadow-sm">
           <div className="h-12 px-3 flex items-center justify-between gap-3">
             <h1 className="text-lg font-display font-black text-primary flex items-center gap-2">
@@ -1257,10 +1566,10 @@ export default function Products() {
                       {categoryProducts?.map((product) => (
                         <div
                           key={product.id}
-                          className={`relative rounded-lg sm:rounded-xl border-2 p-2 sm:p-3 md:p-4 flex flex-col items-center cursor-pointer transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${
+                          className={`relative rounded-lg sm:rounded-xl border-2 p-2 sm:p-3 md:p-4 flex flex-col items-center cursor-pointer hover-elevate ${
                             isProductSelected(product)
                               ? "border-primary border-[3px] bg-primary/15 ring-2 ring-primary/50 shadow-lg shadow-primary/20"
-                              : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60 hover:from-primary/5 hover:to-card"
+                              : "border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/60"
                           }`}
                           onClick={() => handleProductClick(product)}
                           data-testid={`box-product-${product.id}`}
@@ -1452,11 +1761,11 @@ export default function Products() {
           </div>
         </main>
 
-        {/* Floating Cart Button */}
+        {/* Floating Cart Button - Only on tablet/mobile (hidden on xl+) */}
         {hasOrderItems && (
           <button
             onClick={() => setShowCartPopup(true)}
-            className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95 ${
+            className={`fixed bottom-4 right-4 z-50 flex xl:hidden items-center gap-2 px-4 py-3 rounded-full shadow-2xl ${
               orderType === "urgent" 
                 ? "bg-gradient-to-r from-orange-500 to-red-500 text-white" 
                 : "bg-gradient-to-r from-primary to-primary/90 text-white"
@@ -1474,6 +1783,22 @@ export default function Products() {
             </span>
           </button>
         )}
+      </div>
+
+      {/* Right Sidebar - Order Slip (Only on xl+ screens) */}
+      <div className="hidden xl:flex fixed right-0 top-0 h-screen w-[340px] flex-col border-l bg-background z-40">
+        <div className="px-3 py-3 border-b bg-gradient-to-r from-primary/10 to-primary/5">
+          <div className="flex items-center gap-2 text-primary">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <ShoppingCart className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-bold">Order Slip</span>
+            <Badge className="ml-auto text-xs font-bold bg-primary text-white">
+              {orderItems.length + customItems.length} items
+            </Badge>
+          </div>
+        </div>
+        {renderOrderSlipContent(false)}
       </div>
 
       {/* Urgent/Normal Service Dialog */}
@@ -2162,9 +2487,9 @@ export default function Products() {
         </DialogContent>
       </Dialog>
 
-      {/* Cart Popup Dialog */}
+      {/* Cart Popup Dialog - Only for tablet/mobile (xl+ uses sidebar) */}
       <Dialog open={showCartPopup} onOpenChange={setShowCartPopup}>
-        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[70vh] sm:max-h-[85vh] overflow-y-auto p-0 flex flex-col">
+        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[70vh] sm:max-h-[85vh] overflow-y-auto p-0 flex flex-col xl:hidden">
           <DialogHeader className="px-4 pt-4 pb-2 border-b bg-gradient-to-r from-primary/10 to-primary/5">
             <DialogTitle className="flex items-center gap-2 text-primary">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -2176,299 +2501,7 @@ export default function Products() {
               </Badge>
             </DialogTitle>
           </DialogHeader>
-          
-          <div className="p-4 space-y-3 flex-1 overflow-y-auto pb-32">
-            {/* Items Table */}
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/50">
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-2 font-bold">Item</th>
-                    <th className="text-center py-2 px-1 font-bold">Qty</th>
-                    <th className="text-right py-2 px-2 font-bold">Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderItems.map((item) => {
-                    const isDryClean = dryCleanItems[item.product.id];
-                    const itemPrice = isDryClean 
-                      ? parseFloat(item.product.dryCleanPrice || item.product.price || "0")
-                      : parseFloat(item.product.price || "0");
-                    return (
-                      <tr key={item.product.id} className={`border-b ${isDryClean ? "bg-purple-50 dark:bg-purple-900/20" : ""}`}>
-                        <td className="py-2 px-2 font-medium">
-                          {item.product.name}
-                          {isDryClean && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
-                        </td>
-                        <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
-                        <td className="py-2 px-2 text-right font-bold">{(itemPrice * item.quantity).toFixed(0)}</td>
-                      </tr>
-                    );
-                  })}
-                  {customItems.map((item, idx) => (
-                    <tr key={`custom-${idx}`} className="border-b bg-amber-50 dark:bg-amber-900/20">
-                      <td className="py-2 px-2 font-medium flex items-center gap-1">
-                        {item.name}
-                        <button onClick={() => removeCustomItem(idx)} className="text-red-500 hover:text-red-700">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </td>
-                      <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
-                      <td className="py-2 px-2 text-right font-bold">{(item.price * item.quantity).toFixed(0)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Totals */}
-            <div className="border rounded-lg p-3 space-y-1 bg-muted/30">
-              <div className="flex justify-between text-xs">
-                <span>Subtotal</span>
-                <span className="font-semibold">{orderTotal.toFixed(2)} AED</span>
-              </div>
-              {orderType === "urgent" && (
-                <div className="flex justify-between text-xs text-orange-600 font-semibold">
-                  <span>Urgent (x2)</span>
-                  <span>+{orderTotal.toFixed(2)} AED</span>
-                </div>
-              )}
-              {parseFloat(discountPercent) > 0 && (
-                <div className="flex justify-between text-xs text-green-600">
-                  <span>Discount ({discountPercent}%)</span>
-                  <span>-{(((orderType === "urgent" ? orderTotal * 2 : orderTotal) * parseFloat(discountPercent)) / 100).toFixed(2)} AED</span>
-                </div>
-              )}
-              {parseFloat(tips) > 0 && (
-                <div className="flex justify-between text-xs text-blue-600">
-                  <span>Tips</span>
-                  <span>+{parseFloat(tips).toFixed(2)} AED</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm font-bold text-primary border-t pt-2 mt-2">
-                <span>TOTAL</span>
-                <span>
-                  {(() => {
-                    const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
-                    const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
-                    const tipsAmt = parseFloat(tips) || 0;
-                    return (base - discountAmt + tipsAmt).toFixed(2);
-                  })()} AED
-                </span>
-              </div>
-            </div>
-
-            {/* Client Selection */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Select Client</Label>
-              <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="h-9 text-xs w-full justify-between" data-testid="popup-select-client">
-                    {isWalkIn ? "Walk-in Customer" : selectedClientId ? clients?.find((c) => c.id === selectedClientId)?.name || "Choose client..." : "Choose client..."}
-                    <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0 z-[200]" align="start">
-                  <Command filter={(value, search) => {
-                    if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                    return 0;
-                  }}>
-                    <CommandInput placeholder="Search clients..." className="h-9" />
-                    <CommandList>
-                      <CommandEmpty>No client found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="walk-in-customer"
-                          onSelect={() => {
-                            setSelectedClientId(null);
-                            setIsWalkIn(true);
-                            setCustomerName("Walk-in Customer");
-                            setClientDropdownOpen(false);
-                          }}
-                        >
-                          <Check className={`mr-2 h-4 w-4 ${isWalkIn ? "opacity-100" : "opacity-0"}`} />
-                          Walk-in Customer
-                        </CommandItem>
-                        {clients?.map((client) => (
-                          <CommandItem
-                            key={client.id}
-                            value={`${client.name} ${client.phone || ""}`}
-                            onSelect={() => {
-                              setIsWalkIn(false);
-                              setSelectedClientId(client.id);
-                              setCustomerName(client.name);
-                              setCustomerPhone(client.phone || "");
-                              if (client.discountPercent) setDiscountPercent(client.discountPercent);
-                              setClientDropdownOpen(false);
-                            }}
-                          >
-                            <Check className={`mr-2 h-4 w-4 ${selectedClientId === client.id ? "opacity-100" : "opacity-0"}`} />
-                            <div>
-                              <div className="font-medium">{client.name}</div>
-                              {client.phone && <div className="text-xs text-muted-foreground">{client.phone}</div>}
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Walk-in Customer Fields */}
-            {isWalkIn && (
-              <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
-                <div>
-                  <Label className="text-xs font-semibold">Customer Name <span className="text-destructive">*</span></Label>
-                  <Input
-                    className="h-8 text-xs mt-1"
-                    placeholder="Enter name..."
-                    value={walkInName}
-                    onChange={(e) => {
-                      setWalkInName(e.target.value);
-                      setCustomerName(e.target.value || "Walk-in Customer");
-                    }}
-                    data-testid="popup-input-walkin-name"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Phone Number <span className="text-destructive">*</span></Label>
-                  <div className="flex flex-col gap-1 mt-1">
-                    <div className="flex">
-                      <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-xs h-8">
-                        +971
-                      </span>
-                      <Input
-                        className={`h-8 text-xs rounded-l-none ${walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
-                        placeholder="XXXXXXXXX"
-                        value={walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9)}
-                        onChange={(e) => {
-                          const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
-                          setWalkInPhone("+971" + digits);
-                        }}
-                        inputMode="numeric"
-                        maxLength={9}
-                        data-testid="popup-input-walkin-phone"
-                      />
-                    </div>
-                    {walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 && (
-                      <p className="text-xs text-green-600 font-medium">9 digits - limit reached</p>
-                    )}
-                  </div>
-                </div>
-                {clientMatch && (
-                  <div className="bg-red-100 dark:bg-red-950 border border-red-500 rounded-lg p-2 text-xs">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
-                      <div className="flex-1">
-                        <p className="font-bold text-red-700 dark:text-red-300">
-                          {clientMatch.message}: {clientMatch.client.name}
-                        </p>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="mt-1 text-xs h-7 bg-red-50 dark:bg-red-900 border-red-300"
-                          onClick={() => {
-                            setIsWalkIn(false);
-                            setSelectedClientId(clientMatch.client.id);
-                            setCustomerName(clientMatch.client.name);
-                            setCustomerPhone(clientMatch.client.phone || "");
-                            setWalkInAddress(clientMatch.client.address || "");
-                            setWalkInName("");
-                            setWalkInPhone("+971");
-                          }}
-                        >
-                          Use existing: {clientMatch.client.name}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <Label className="text-xs font-semibold">Address <span className="text-destructive">*</span></Label>
-                  <Input
-                    className="h-8 text-xs mt-1"
-                    placeholder="Enter address..."
-                    value={walkInAddress}
-                    onChange={(e) => setWalkInAddress(e.target.value)}
-                    data-testid="popup-input-walkin-address"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Order Type */}
-            <div className="flex gap-2">
-              <Button
-                variant={orderType === "normal" ? "default" : "outline"}
-                className="flex-1 h-9 text-xs"
-                onClick={() => setOrderType("normal")}
-              >
-                <Clock className="w-3 h-3 mr-1" /> Normal
-              </Button>
-              <Button
-                variant={orderType === "urgent" ? "default" : "outline"}
-                className={`flex-1 h-9 text-xs ${orderType === "urgent" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-                onClick={() => setOrderType("urgent")}
-              >
-                <Zap className="w-3 h-3 mr-1" /> Urgent 2x
-              </Button>
-            </div>
-
-            {/* Delivery Type */}
-            <div className="flex gap-2">
-              <Button
-                variant={deliveryType === "pickup" ? "default" : "outline"}
-                className="flex-1 h-9 text-xs"
-                onClick={() => setDeliveryType("pickup")}
-              >
-                <Package className="w-3 h-3 mr-1" /> Pickup
-              </Button>
-              <Button
-                variant={deliveryType === "delivery" ? "default" : "outline"}
-                className="flex-1 h-9 text-xs"
-                onClick={() => setDeliveryType("delivery")}
-              >
-                <Truck className="w-3 h-3 mr-1" /> Delivery
-              </Button>
-            </div>
-
-            {/* Expected Pickup/Delivery Date & Time */}
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">
-                {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date & Time
-              </Label>
-              <Input
-                type="datetime-local"
-                className="h-9 text-xs"
-                value={expectedDeliveryAt}
-                onChange={(e) => setExpectedDeliveryAt(e.target.value)}
-                min={new Date().toISOString().slice(0, 16)}
-                data-testid="popup-input-expected-datetime"
-              />
-            </div>
-
-            {/* Place Order Button */}
-            <Button
-              className={`w-full h-10 font-bold ${clientMatch ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : ""}`}
-              onClick={() => {
-                setShowCartPopup(false);
-                handleCreateOrder();
-              }}
-              disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn) || !!clientMatch}
-              data-testid="popup-button-place-order"
-            >
-              {createOrderMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {clientMatch ? "Use existing client above" : `Place Order - ${(() => {
-                const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
-                const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
-                const tipsAmt = parseFloat(tips) || 0;
-                return (base - discountAmt + tipsAmt).toFixed(2);
-              })()} AED`}
-            </Button>
-          </div>
+          {renderOrderSlipContent(true)}
         </DialogContent>
       </Dialog>
 
