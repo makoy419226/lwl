@@ -1214,8 +1214,33 @@ export default function Workers() {
                         <AccordionContent>
                           <div className="space-y-4">
                             <div>
+                              <h4 className="font-medium text-sm mb-2">Login Details</h4>
+                              {systemUsers.filter(u => u.role === "counter").length === 0 ? (
+                                <p className="text-center text-muted-foreground py-4">No counter login found</p>
+                              ) : (
+                                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-3">
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-4 flex-wrap">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Username</p>
+                                        <p className="font-medium">{systemUsers.find(u => u.role === "counter")?.username}</p>
+                                      </div>
+                                      <div className="border-l pl-4">
+                                        <p className="text-xs text-muted-foreground">Password</p>
+                                        <p className="font-mono text-sm">{systemUsers.find(u => u.role === "counter")?.password}</p>
+                                      </div>
+                                    </div>
+                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "counter"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
+                                      <Pencil className="w-3 h-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="border-t pt-4">
                               <div className="flex items-center justify-between mb-3">
-                                <h4 className="font-medium text-sm">Staff Members (each person logs in with their PIN)</h4>
+                                <h4 className="font-medium text-sm">Staff Members (each has their own PIN)</h4>
                                 <Button size="sm" variant="outline" onClick={() => { setStaffMemberFormData({ name: "", pin: "", roleType: "counter" }); setIsStaffMemberCreateOpen(true); }} data-testid="button-add-counter-staff">
                                   <Plus className="w-3 h-3 mr-1" />
                                   Add Staff
@@ -1285,8 +1310,33 @@ export default function Workers() {
                         <AccordionContent>
                           <div className="space-y-4">
                             <div>
+                              <h4 className="font-medium text-sm mb-2">Login Details</h4>
+                              {systemUsers.filter(u => u.role === "section").length === 0 ? (
+                                <p className="text-center text-muted-foreground py-4">No section login found</p>
+                              ) : (
+                                <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-3">
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-4 flex-wrap">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Username</p>
+                                        <p className="font-medium">{systemUsers.find(u => u.role === "section")?.username}</p>
+                                      </div>
+                                      <div className="border-l pl-4">
+                                        <p className="text-xs text-muted-foreground">Password</p>
+                                        <p className="font-mono text-sm">{systemUsers.find(u => u.role === "section")?.password}</p>
+                                      </div>
+                                    </div>
+                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "section"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
+                                      <Pencil className="w-3 h-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="border-t pt-4">
                               <div className="flex items-center justify-between mb-3">
-                                <h4 className="font-medium text-sm">Staff Members (each person logs in with their PIN)</h4>
+                                <h4 className="font-medium text-sm">Staff Members (each has their own PIN)</h4>
                                 <Button size="sm" variant="outline" onClick={() => { setStaffMemberFormData({ name: "", pin: "", roleType: "section" }); setIsStaffMemberCreateOpen(true); }} data-testid="button-add-section-staff">
                                   <Plus className="w-3 h-3 mr-1" />
                                   Add Staff
