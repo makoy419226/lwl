@@ -62,6 +62,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Client } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -189,6 +190,13 @@ export default function Products() {
   const [stockValue, setStockValue] = useState("");
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [showPrintTagDialog, setShowPrintTagDialog] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [showNewProductDialog, setShowNewProductDialog] = useState(false);
+  const [newProductName, setNewProductName] = useState("");
+  const [newProductPrice, setNewProductPrice] = useState("");
+  const [newProductDryCleanPrice, setNewProductDryCleanPrice] = useState("");
+  const [newProductCategory, setNewProductCategory] = useState("");
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
 
   const sizeOptions: Record<string, { small: number; large: number }> = {
     Towel: { small: 5, large: 8 },
@@ -310,6 +318,17 @@ export default function Products() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Define tab categories for the UI
+  const tabCategories = [
+    { id: "all", label: "All Items" },
+    { id: "arabic", label: "Arabic Traditional", dbCategories: ["Arabic Clothes"] },
+    { id: "mens", label: "Men's Clothes", dbCategories: ["Men's Clothes"] },
+    { id: "ladies", label: "Ladies Clothes", dbCategories: ["Ladies' Clothes"] },
+    { id: "babies", label: "Babies Clothes", dbCategories: ["Baby Clothes"] },
+    { id: "linens", label: "Linens", dbCategories: ["Linens"] },
+    { id: "general", label: "General Items", dbCategories: ["General Items", "Shoes, Carpets & More", "Shop Items"] },
+  ];
+
   const groupedProducts = useMemo(() => {
     if (!products) return {};
     const groups: Record<string, typeof products> = {};
@@ -319,13 +338,15 @@ export default function Products() {
       "Ladies' Clothes",
       "Baby Clothes",
       "Linens",
-      "Shop Items",
       "General Items",
-      "Shoes, Carpets & More",
     ];
     
     products.forEach((product) => {
-      const category = product.category || "Other";
+      let category = product.category || "General Items";
+      // Merge "Shoes, Carpets & More" and "Shop Items" into "General Items"
+      if (category === "Shoes, Carpets & More" || category === "Shop Items") {
+        category = "General Items";
+      }
       if (!groups[category]) {
         groups[category] = [];
       }
@@ -346,6 +367,29 @@ export default function Products() {
     
     return sortedGroups;
   }, [products]);
+
+  // Filter products by selected tab
+  const filteredGroupedProducts = useMemo(() => {
+    if (selectedCategory === "all") return groupedProducts;
+    
+    const selectedTab = tabCategories.find(t => t.id === selectedCategory);
+    if (!selectedTab || !selectedTab.dbCategories) return groupedProducts;
+    
+    const filtered: Record<string, typeof products> = {};
+    Object.entries(groupedProducts).forEach(([cat, prods]) => {
+      // Check if this category matches any of the tab's dbCategories
+      const matchesTab = selectedTab.dbCategories.some(dbCat => {
+        if (dbCat === "General Items") {
+          return cat === "General Items";
+        }
+        return cat === dbCat;
+      });
+      if (matchesTab) {
+        filtered[cat] = prods;
+      }
+    });
+    return filtered;
+  }, [groupedProducts, selectedCategory]);
 
   const { data: clientBalance } = useQuery<{
     totalDue: string;
@@ -1165,6 +1209,24 @@ export default function Products() {
               />
             </div>
           </div>
+          
+          {/* Category Tabs */}
+          <div className="px-2 pb-2 overflow-x-auto">
+            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+              <TabsList className="inline-flex h-9 items-center justify-start gap-1 bg-muted/50 p-1 rounded-lg w-auto min-w-full">
+                {tabCategories.map((tab) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="px-3 py-1.5 text-xs font-medium whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
+                    data-testid={`tab-category-${tab.id}`}
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
         <main className="flex-1 flex overflow-hidden">
@@ -1182,7 +1244,7 @@ export default function Products() {
               </div>
             ) : (
               <div className="space-y-4">
-                {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+                {Object.entries(filteredGroupedProducts).map(([category, categoryProducts]) => (
                   <div key={category} className="space-y-2">
                     <div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg sticky top-0 z-10">
                       {getCategoryIcon(category, "w-6 h-6")}
@@ -1360,6 +1422,28 @@ export default function Products() {
                           ) : null}
                         </div>
                       ))}
+                      
+                      {/* Add New Item Card - Only for admin/reception */}
+                      {(user?.role === "admin" || user?.role === "reception") && (
+                        <div
+                          className="relative rounded-lg sm:rounded-xl border-2 border-dashed border-primary/40 p-2 sm:p-3 md:p-4 flex flex-col items-center justify-center cursor-pointer hover-elevate min-h-[160px] sm:min-h-[180px] md:min-h-[200px]"
+                          onClick={() => {
+                            setNewProductCategory(category);
+                            setShowNewProductDialog(true);
+                          }}
+                          data-testid={`button-add-new-item-${category.replace(/\s+/g, '-').toLowerCase()}`}
+                        >
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                            <Plus className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-primary" />
+                          </div>
+                          <div className="text-xs sm:text-sm font-bold text-primary text-center">
+                            Add New Item
+                          </div>
+                          <div className="text-[10px] sm:text-xs text-muted-foreground text-center mt-1">
+                            to {category}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1567,6 +1651,136 @@ export default function Products() {
                 data-testid="button-add-other-item-confirm"
               >
                 Add Item
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Product Dialog */}
+      <Dialog open={showNewProductDialog} onOpenChange={setShowNewProductDialog}>
+        <DialogContent aria-describedby={undefined} className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-primary" />
+              Add New Item to Inventory
+            </DialogTitle>
+            <DialogDescription>
+              This item will be added to <span className="font-semibold text-primary">{newProductCategory}</span> category and saved to inventory.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Item Name *</Label>
+              <Input
+                placeholder="e.g., Dress Shirt, Jacket, etc."
+                value={newProductName}
+                onChange={(e) => setNewProductName(e.target.value)}
+                data-testid="input-new-product-name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Normal Price (AED) *</Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={newProductPrice}
+                  onChange={(e) => setNewProductPrice(e.target.value)}
+                  data-testid="input-new-product-price"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Dry Clean Price (AED)</Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={newProductDryCleanPrice}
+                  onChange={(e) => setNewProductDryCleanPrice(e.target.value)}
+                  data-testid="input-new-product-dryclean-price"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Category</Label>
+              <Select value={newProductCategory} onValueChange={setNewProductCategory}>
+                <SelectTrigger data-testid="select-new-product-category">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Arabic Clothes">Arabic Traditional Clothes</SelectItem>
+                  <SelectItem value="Men's Clothes">Men's Clothes</SelectItem>
+                  <SelectItem value="Ladies' Clothes">Ladies Clothes</SelectItem>
+                  <SelectItem value="Baby Clothes">Babies Clothes</SelectItem>
+                  <SelectItem value="Linens">Linens</SelectItem>
+                  <SelectItem value="General Items">General Items</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowNewProductDialog(false);
+                  setNewProductName("");
+                  setNewProductPrice("");
+                  setNewProductDryCleanPrice("");
+                  setNewProductCategory("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={async () => {
+                  if (!newProductName.trim() || !newProductPrice) {
+                    toast({
+                      title: "Missing information",
+                      description: "Please enter item name and price",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  setIsCreatingProduct(true);
+                  try {
+                    await apiRequest("POST", "/api/products", {
+                      name: newProductName.trim(),
+                      price: newProductPrice,
+                      dryCleanPrice: newProductDryCleanPrice ? newProductDryCleanPrice : null,
+                      category: newProductCategory || "General Items",
+                    });
+                    queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+                    toast({
+                      title: "Item added",
+                      description: `${newProductName} has been added to inventory`,
+                    });
+                    setShowNewProductDialog(false);
+                    setNewProductName("");
+                    setNewProductPrice("");
+                    setNewProductDryCleanPrice("");
+                    setNewProductCategory("");
+                  } catch (err: any) {
+                    toast({
+                      title: "Error",
+                      description: err.message || "Failed to add item",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsCreatingProduct(false);
+                  }
+                }}
+                disabled={!newProductName.trim() || !newProductPrice || isCreatingProduct}
+                data-testid="button-save-new-product"
+              >
+                {isCreatingProduct ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  "Add to Inventory"
+                )}
               </Button>
             </div>
           </div>
