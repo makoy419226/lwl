@@ -113,6 +113,7 @@ export const orders = pgTable("orders", {
   expectedDeliveryAt: timestamp("expected_delivery_at"),
   entryDate: timestamp("entry_date").notNull(),
   entryBy: text("entry_by"),
+  entryByWorkerId: integer("entry_by_worker_id"),
   tagDone: boolean("tag_done").default(false),
   tagDate: timestamp("tag_date"),
   tagBy: text("tag_by"),

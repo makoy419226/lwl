@@ -16,6 +16,17 @@ export interface SalesReportData {
   topItems: { name: string; count: number }[];
 }
 
+export interface OrderStaffTracking {
+  orderNumber: string;
+  customerName: string;
+  amount: string;
+  entryBy: string | null;
+  tagBy: string | null;
+  packingBy: string | null;
+  deliveryBy: string | null;
+  status: string;
+}
+
 export interface DailySalesData {
   date: string;
   totalOrders: number;
@@ -27,6 +38,7 @@ export interface DailySalesData {
   pickupOrders: number;
   deliveryOrders: number;
   topItems: { name: string; count: number }[];
+  orderDetails?: OrderStaffTracking[];
 }
 
 function createTransporter() {
@@ -123,6 +135,32 @@ export async function sendDailySalesReportEmailSMTP(toEmail: string, salesData: 
           <ul style="color: #4b5563; line-height: 1.8;">
             ${topItemsHtml}
           </ul>
+          
+          ${salesData.orderDetails && salesData.orderDetails.length > 0 ? `
+          <h3 style="color: #1f2937; margin-top: 20px;">Order Details with Staff Tracking</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <tr style="background-color: #1f2937; color: white;">
+              <th style="padding: 8px; text-align: left;">Order #</th>
+              <th style="padding: 8px; text-align: left;">Customer</th>
+              <th style="padding: 8px; text-align: right;">Amount</th>
+              <th style="padding: 8px; text-align: left;">Created By</th>
+              <th style="padding: 8px; text-align: left;">Tagged By</th>
+              <th style="padding: 8px; text-align: left;">Packed By</th>
+              <th style="padding: 8px; text-align: left;">Delivered By</th>
+            </tr>
+            ${salesData.orderDetails.map((order, index) => `
+            <tr style="background-color: ${index % 2 === 0 ? '#f9fafb' : 'white'};">
+              <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${order.orderNumber}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${order.customerName}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">AED ${order.amount}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${order.entryBy || '-'}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${order.tagBy || '-'}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${order.packingBy || '-'}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${order.deliveryBy || '-'}</td>
+            </tr>
+            `).join('')}
+          </table>
+          ` : ''}
         </div>
         
         <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px;">

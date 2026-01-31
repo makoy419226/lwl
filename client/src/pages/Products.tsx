@@ -829,6 +829,7 @@ export default function Products() {
         serviceType: hasDryCleanItems ? "dry_clean" : "normal",
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
+        entryByWorkerId: data.worker?.id || null,
         createdBy: data.worker?.name || user?.name || "Staff",
         notes: `Address: ${walkInAddress.trim() || "n/a"}`,
       });

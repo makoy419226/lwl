@@ -1154,6 +1154,7 @@ export default function Orders() {
               tagDone: true,
               tagDate: new Date().toISOString(),
               tagBy: data.worker.name,
+              tagWorkerId: data.worker.id,
             },
           },
           {

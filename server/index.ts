@@ -150,6 +150,17 @@ app.use((req, res, next) => {
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
     
+    const orderDetails = todaysOrders.map(order => ({
+      orderNumber: order.orderNumber,
+      customerName: order.customerName || 'Walk-in',
+      amount: order.finalAmount || order.totalAmount,
+      entryBy: order.entryBy,
+      tagBy: order.tagBy,
+      packingBy: order.packingBy,
+      deliveryBy: order.deliveryBy,
+      status: order.delivered ? 'Delivered' : order.packingDone ? 'Packed' : order.tagDone ? 'Tagged' : 'Entry'
+    }));
+    
     return {
       date: date.toLocaleDateString('en-GB', { 
         weekday: 'long', 
@@ -165,7 +176,8 @@ app.use((req, res, next) => {
       urgentOrders,
       pickupOrders,
       deliveryOrders,
-      topItems
+      topItems,
+      orderDetails
     };
   }
 

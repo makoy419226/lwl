@@ -2253,6 +2253,17 @@ export async function registerRoutes(
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
     
+    const orderDetails = todaysOrders.map(order => ({
+      orderNumber: order.orderNumber,
+      customerName: order.customerName || 'Walk-in',
+      amount: order.finalAmount || order.totalAmount,
+      entryBy: order.entryBy,
+      tagBy: order.tagBy,
+      packingBy: order.packingBy,
+      deliveryBy: order.deliveryBy,
+      status: order.delivered ? 'Delivered' : order.packingDone ? 'Packed' : order.tagDone ? 'Tagged' : 'Entry'
+    }));
+    
     return {
       date: date.toLocaleDateString('en-GB', { 
         weekday: 'long', 
@@ -2268,7 +2279,8 @@ export async function registerRoutes(
       urgentOrders,
       pickupOrders,
       deliveryOrders,
-      topItems
+      topItems,
+      orderDetails
     };
   }
 
@@ -2560,10 +2572,23 @@ export async function registerRoutes(
           message: "Only admin or counter can create orders with bills" 
         });
       }
-      res.json({ success: true, worker: { id: user.id, name: user.name || user.username, role: user.role } });
-    } else {
-      res.status(401).json({ success: false, message: "Invalid PIN" });
+      return res.json({ success: true, worker: { id: user.id, name: user.name || user.username, role: user.role } });
     }
+    
+    // Check staff members (counter staff can create orders)
+    const staffMember = await storage.verifyStaffMemberPin(pin);
+    if (staffMember) {
+      // Only counter staff members can create orders
+      if (staffMember.roleType !== "counter") {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Only counter staff can create orders with bills" 
+        });
+      }
+      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name, role: "counter" } });
+    }
+    
+    res.status(401).json({ success: false, message: "Invalid PIN" });
   });
 
   // Verify packing worker PIN - Admin PIN works as universal PIN
@@ -2588,7 +2613,13 @@ export async function registerRoutes(
       return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
     }
     
-    // Also check packing workers
+    // Check staff members (counter, section, driver staff)
+    const staffMember = await storage.verifyStaffMemberPin(pin);
+    if (staffMember) {
+      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name } });
+    }
+    
+    // Also check packing workers (legacy)
     const worker = await storage.verifyPackingWorkerPin(pin);
     if (worker) {
       res.json({ success: true, worker: { id: worker.id, name: worker.name } });
@@ -2619,6 +2650,12 @@ export async function registerRoutes(
       return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
     }
     
+    // Check staff members (counter, section, driver staff)
+    const staffMember = await storage.verifyStaffMemberPin(pin);
+    if (staffMember) {
+      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name } });
+    }
+    
     // Also allow packing workers for backward compatibility
     const worker = await storage.verifyDeliveryWorkerPin(pin);
     if (worker) {
@@ -2628,7 +2665,7 @@ export async function registerRoutes(
     }
   });
 
-  // Verify any user PIN for incident recording - checks users, packing workers, and drivers
+  // Verify any user PIN for incident recording - checks users, packing workers, staff members, and drivers
   app.post("/api/incidents/verify-pin", async (req, res) => {
     const { pin } = req.body;
     if (!pin || !/^\d{5}$/.test(pin)) {
@@ -2650,13 +2687,19 @@ export async function registerRoutes(
       return res.json({ success: true, user: { id: user.id, name: user.name || user.username, type: "user" } });
     }
     
-    // Check packing workers
+    // Check staff members (counter, section, driver staff)
+    const staffMember = await storage.verifyStaffMemberPin(pin);
+    if (staffMember) {
+      return res.json({ success: true, user: { id: staffMember.id, name: staffMember.name, type: "staff" } });
+    }
+    
+    // Check packing workers (legacy)
     const packingWorker = await storage.verifyPackingWorkerPin(pin);
     if (packingWorker) {
       return res.json({ success: true, user: { id: packingWorker.id, name: packingWorker.name, type: "packing" } });
     }
     
-    // Check delivery drivers
+    // Check delivery drivers (legacy)
     const driver = await storage.verifyDeliveryWorkerPin(pin);
     if (driver) {
       return res.json({ success: true, user: { id: driver.id, name: driver.name, type: "driver" } });
