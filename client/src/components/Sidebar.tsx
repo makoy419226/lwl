@@ -73,8 +73,8 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
         { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "counter", "section"] },
         { href: "/delivery", icon: Truck, label: "Delivery Dashboard", active: location === "/delivery", testId: "nav-delivery", roles: ["driver"] },
         { href: "/delivery-history", icon: History, label: "Delivery History", active: location === "/delivery-history", testId: "nav-delivery-history", roles: ["driver"] },
-        { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "counter"] },
-        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "counter", "section"] },
+        { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "counter", "driver"] },
+        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "counter", "section", "driver"] },
       ]
     },
     {

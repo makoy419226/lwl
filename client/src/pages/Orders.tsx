@@ -83,6 +83,7 @@ import {
   Phone,
   Edit,
   Store,
+  CreditCard,
 } from "lucide-react";
 
 const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
@@ -183,6 +184,13 @@ export default function Orders() {
   const [prefilledBillId, setPrefilledBillId] = useState<string | undefined>();
   const [showBillDialog, setShowBillDialog] = useState(false);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  
+  // Payment state for bill dialog
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "transfer">("cash");
+  const [paymentPin, setPaymentPin] = useState("");
+  const [paymentPinError, setPaymentPinError] = useState("");
 
   const [incidentReportOrder, setIncidentReportOrder] = useState<Order | null>(
     null,
@@ -1048,6 +1056,70 @@ export default function Orders() {
       return;
     }
     verifyDeliveryPinMutation.mutate(deliveryPin);
+  };
+
+  // Payment mutation for bill dialog
+  const recordPaymentMutation = useMutation({
+    mutationFn: async ({ billId, amount, method, staffName }: { billId: number; amount: number; method: string; staffName: string }) => {
+      const response = await apiRequest("POST", `/api/bills/${billId}/pay`, {
+        amount: amount.toFixed(2),
+        paymentMethod: method,
+        notes: `Recorded by ${staffName} via Orders`,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Payment Recorded",
+        description: "The payment has been successfully recorded.",
+      });
+      setShowPaymentForm(false);
+      setPaymentAmount("");
+      setPaymentPin("");
+      setPaymentPinError("");
+      setShowBillDialog(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Failed to record payment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRecordPayment = async () => {
+    if (!selectedBill) return;
+    if (paymentPin.length !== 5) {
+      setPaymentPinError("PIN must be 5 digits");
+      return;
+    }
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: "Invalid Amount", description: "Please enter a valid payment amount", variant: "destructive" });
+      return;
+    }
+    
+    // Verify staff PIN first
+    try {
+      const res = await apiRequest("POST", "/api/staff-members/verify-pin", { pin: paymentPin });
+      const data = await res.json();
+      if (data.success) {
+        recordPaymentMutation.mutate({
+          billId: selectedBill.id,
+          amount,
+          method: paymentMethod,
+          staffName: data.member.name,
+        });
+      } else {
+        setPaymentPinError("Invalid PIN");
+      }
+    } catch {
+      setPaymentPinError("Invalid PIN");
+    }
   };
 
   const [pendingTagWorkerName, setPendingTagWorkerName] = useState<
@@ -3564,14 +3636,82 @@ export default function Orders() {
                 );
               })()}
 
-              <div className="flex gap-2 pt-2">
+              {/* Payment Form */}
+              {showPaymentForm && (
+                <div className="border-t pt-4 mt-4 space-y-3">
+                  <h4 className="font-medium text-sm">Record Payment</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Amount (AED)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        placeholder="0.00"
+                        data-testid="input-payment-amount"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Method</Label>
+                      <Select value={paymentMethod} onValueChange={(v: "cash" | "card" | "transfer") => setPaymentMethod(v)}>
+                        <SelectTrigger data-testid="select-payment-method">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cash">Cash</SelectItem>
+                          <SelectItem value="card">Card</SelectItem>
+                          <SelectItem value="transfer">Transfer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Your PIN (5 digits)</Label>
+                    <Input
+                      type="password"
+                      maxLength={5}
+                      value={paymentPin}
+                      onChange={(e) => { setPaymentPin(e.target.value.replace(/\D/g, '')); setPaymentPinError(''); }}
+                      placeholder="Enter your staff PIN"
+                      data-testid="input-payment-pin"
+                    />
+                    {paymentPinError && <p className="text-xs text-destructive mt-1">{paymentPinError}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => { setShowPaymentForm(false); setPaymentPin(''); setPaymentPinError(''); }}>
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleRecordPayment} disabled={recordPaymentMutation.isPending}>
+                      {recordPaymentMutation.isPending ? "Processing..." : "Confirm Payment"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2 flex-wrap">
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => setShowBillDialog(false)}
+                  onClick={() => { setShowBillDialog(false); setShowPaymentForm(false); setPaymentPin(''); }}
                 >
                   Close
                 </Button>
+                {!showPaymentForm && !selectedBill?.isPaid && (
+                  <Button
+                    variant="default"
+                    className="flex-1"
+                    onClick={() => {
+                      const remainingAmount = parseFloat(selectedBill?.amount || "0") - parseFloat(selectedBill?.paidAmount || "0");
+                      setPaymentAmount(remainingAmount.toFixed(2));
+                      setShowPaymentForm(true);
+                    }}
+                    data-testid="button-record-payment"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Record Payment
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   className="flex-1"
