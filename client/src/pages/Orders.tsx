@@ -84,7 +84,10 @@ import {
   Edit,
   Store,
   CreditCard,
+  Users,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
   switch (category) {
@@ -167,6 +170,13 @@ export default function Orders() {
   const [reportEndDate, setReportEndDate] = useState<string>(
     format(new Date(), "yyyy-MM-dd"),
   );
+  const [reportSubTab, setReportSubTab] = useState<"items" | "staff">("items");
+  const [staffOrdersDialog, setStaffOrdersDialog] = useState<{
+    isOpen: boolean;
+    staffName: string;
+    actionType: string;
+    orders: Order[];
+  }>({ isOpen: false, staffName: "", actionType: "", orders: [] });
   const [viewPhotoOrder, setViewPhotoOrder] = useState<Order | null>(null);
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const reportTableRef = useRef<HTMLDivElement>(null);
@@ -888,6 +898,223 @@ export default function Orders() {
         description: "Item report exported to PDF",
       });
     }
+  };
+
+  const staffPerformanceData = useMemo(() => {
+    if (!orders) return [];
+    
+    const staffStats: Record<string, { 
+      name: string; 
+      taggedCount: number; 
+      taggedOrders: Order[];
+      packedCount: number;
+      packedOrders: Order[];
+      deliveredCount: number;
+      deliveredOrders: Order[];
+      createdCount: number;
+      createdOrders: Order[];
+    }> = {};
+    
+    orders.forEach((order) => {
+      if (order.entryBy) {
+        const name = order.entryBy;
+        if (!staffStats[name]) {
+          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
+        }
+        staffStats[name].createdCount++;
+        staffStats[name].createdOrders.push(order);
+      }
+      
+      if (order.tagBy) {
+        const name = order.tagBy;
+        if (!staffStats[name]) {
+          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
+        }
+        staffStats[name].taggedCount++;
+        staffStats[name].taggedOrders.push(order);
+      }
+      
+      if (order.packingBy) {
+        const name = order.packingBy;
+        if (!staffStats[name]) {
+          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
+        }
+        staffStats[name].packedCount++;
+        staffStats[name].packedOrders.push(order);
+      }
+      
+      if (order.deliveryBy) {
+        const name = order.deliveryBy;
+        if (!staffStats[name]) {
+          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
+        }
+        staffStats[name].deliveredCount++;
+        staffStats[name].deliveredOrders.push(order);
+      }
+    });
+    
+    return Object.values(staffStats).sort((a, b) => {
+      const totalA = a.taggedCount + a.packedCount + a.deliveredCount + a.createdCount;
+      const totalB = b.taggedCount + b.packedCount + b.deliveredCount + b.createdCount;
+      return totalB - totalA;
+    });
+  }, [orders]);
+
+  const handleStaffCountClick = (staffName: string, actionType: string, ordersToShow: Order[]) => {
+    setStaffOrdersDialog({
+      isOpen: true,
+      staffName,
+      actionType,
+      orders: ordersToShow,
+    });
+  };
+
+  const generateStaffPDF = (staff: { 
+    name: string; 
+    createdCount: number; 
+    createdOrders: Order[];
+    taggedCount: number; 
+    taggedOrders: Order[];
+    packedCount: number;
+    packedOrders: Order[];
+    deliveredCount: number;
+    deliveredOrders: Order[];
+  }) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    doc.setFontSize(18);
+    doc.text("Staff Performance Report", pageWidth / 2, 20, { align: "center" });
+    
+    doc.setFontSize(14);
+    doc.text(`Staff: ${staff.name}`, pageWidth / 2, 30, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 38, { align: "center" });
+    
+    doc.setFontSize(12);
+    doc.text("Summary", 14, 50);
+    
+    const summaryData = [
+      ["Created Orders", staff.createdCount.toString()],
+      ["Tagged Orders", staff.taggedCount.toString()],
+      ["Packed Orders", staff.packedCount.toString()],
+      ["Delivered Orders", staff.deliveredCount.toString()],
+      ["Total Actions", (staff.createdCount + staff.taggedCount + staff.packedCount + staff.deliveredCount).toString()],
+    ];
+    
+    autoTable(doc, {
+      startY: 55,
+      head: [["Action", "Count"]],
+      body: summaryData,
+      theme: "grid",
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+    
+    let yPos = (doc as any).lastAutoTable.finalY + 15;
+    
+    if (staff.createdOrders.length > 0) {
+      doc.setFontSize(12);
+      doc.text("Created Orders", 14, yPos);
+      
+      const createdData = staff.createdOrders.map(order => [
+        order.orderNumber || `#${order.id}`,
+        order.customerName || "Walk-in",
+        order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
+        `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos + 5,
+        head: [["Order #", "Customer", "Date", "Amount"]],
+        body: createdData,
+        theme: "striped",
+        headStyles: { fillColor: [59, 130, 246] },
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+    }
+    
+    if (staff.taggedOrders.length > 0) {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.text("Tagged Orders", 14, yPos);
+      
+      const taggedData = staff.taggedOrders.map(order => [
+        order.orderNumber || `#${order.id}`,
+        order.customerName || "Walk-in",
+        order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
+        `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos + 5,
+        head: [["Order #", "Customer", "Date", "Amount"]],
+        body: taggedData,
+        theme: "striped",
+        headStyles: { fillColor: [249, 115, 22] },
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+    }
+    
+    if (staff.packedOrders.length > 0) {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.text("Packed Orders", 14, yPos);
+      
+      const packedData = staff.packedOrders.map(order => [
+        order.orderNumber || `#${order.id}`,
+        order.customerName || "Walk-in",
+        order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
+        `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos + 5,
+        head: [["Order #", "Customer", "Date", "Amount"]],
+        body: packedData,
+        theme: "striped",
+        headStyles: { fillColor: [34, 197, 94] },
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+    }
+    
+    if (staff.deliveredOrders.length > 0) {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.text("Delivered Orders", 14, yPos);
+      
+      const deliveredData = staff.deliveredOrders.map(order => [
+        order.orderNumber || `#${order.id}`,
+        order.customerName || "Walk-in",
+        order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
+        `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos + 5,
+        head: [["Order #", "Customer", "Date", "Amount"]],
+        body: deliveredData,
+        theme: "striped",
+        headStyles: { fillColor: [168, 85, 247] },
+      });
+    }
+    
+    doc.save(`staff_report_${staff.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   const verifyPinMutation = useMutation({
@@ -2625,6 +2852,27 @@ export default function Orders() {
 
           {activeTab === "item-report" && (
             <TabsContent value="item-report" forceMount>
+              <>
+              <div className="flex gap-2 mb-4">
+                <Button
+                  variant={reportSubTab === "items" ? "default" : "outline"}
+                  onClick={() => setReportSubTab("items")}
+                  data-testid="button-items-report-tab"
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  Item Report
+                </Button>
+                <Button
+                  variant={reportSubTab === "staff" ? "default" : "outline"}
+                  onClick={() => setReportSubTab("staff")}
+                  data-testid="button-staff-performance-tab"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Staff Performance
+                </Button>
+              </div>
+
+              {reportSubTab === "items" && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -2833,10 +3081,184 @@ export default function Orders() {
                   })()}
                 </CardContent>
               </Card>
+              )}
+
+              {reportSubTab === "staff" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Staff Performance Summary
+                    <Badge variant="secondary" className="ml-2">All-Time</Badge>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Shows cumulative statistics for all orders. Click any count to see the list of orders.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {staffPerformanceData.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No staff performance data available.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Staff Name</TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Receipt className="w-4 h-4" />
+                              Created
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Tag className="w-4 h-4" />
+                              Tagged
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Package className="w-4 h-4" />
+                              Packed
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Truck className="w-4 h-4" />
+                              Delivered
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">Total Actions</TableHead>
+                          <TableHead className="text-center">PDF</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {staffPerformanceData.map((staff) => {
+                          const total = staff.createdCount + staff.taggedCount + staff.packedCount + staff.deliveredCount;
+                          return (
+                            <TableRow key={staff.name} data-testid={`row-staff-${staff.name}`}>
+                              <TableCell className="font-medium">{staff.name}</TableCell>
+                              <TableCell className="text-center">
+                                {staff.createdCount > 0 ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="font-semibold text-blue-600 dark:text-blue-400"
+                                    onClick={() => handleStaffCountClick(staff.name, "Created", staff.createdOrders)}
+                                    data-testid={`button-created-count-${staff.name}`}
+                                  >
+                                    {staff.createdCount}
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted-foreground">0</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {staff.taggedCount > 0 ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="font-semibold text-orange-600 dark:text-orange-400"
+                                    onClick={() => handleStaffCountClick(staff.name, "Tagged", staff.taggedOrders)}
+                                    data-testid={`button-tagged-count-${staff.name}`}
+                                  >
+                                    {staff.taggedCount}
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted-foreground">0</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {staff.packedCount > 0 ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="font-semibold text-green-600 dark:text-green-400"
+                                    onClick={() => handleStaffCountClick(staff.name, "Packed", staff.packedOrders)}
+                                    data-testid={`button-packed-count-${staff.name}`}
+                                  >
+                                    {staff.packedCount}
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted-foreground">0</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {staff.deliveredCount > 0 ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="font-semibold text-purple-600 dark:text-purple-400"
+                                    onClick={() => handleStaffCountClick(staff.name, "Delivered", staff.deliveredOrders)}
+                                    data-testid={`button-delivered-count-${staff.name}`}
+                                  >
+                                    {staff.deliveredCount}
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted-foreground">0</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant="secondary" className="font-semibold">
+                                  {total}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => generateStaffPDF(staff)}
+                                  data-testid={`button-pdf-${staff.name}`}
+                                >
+                                  <Download className="w-4 h-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+              )}
+              </>
             </TabsContent>
           )}
         </Tabs>
       </main>
+
+      <Dialog open={staffOrdersDialog.isOpen} onOpenChange={(open) => setStaffOrdersDialog(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {staffOrdersDialog.actionType === "Tagged" && <Tag className="w-5 h-5 text-orange-600" />}
+              {staffOrdersDialog.actionType === "Packed" && <Package className="w-5 h-5 text-green-600" />}
+              {staffOrdersDialog.actionType === "Delivered" && <Truck className="w-5 h-5 text-purple-600" />}
+              {staffOrdersDialog.actionType === "Created" && <Receipt className="w-5 h-5 text-blue-600" />}
+              Orders {staffOrdersDialog.actionType} by {staffOrdersDialog.staffName}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px]">
+            <div className="space-y-2">
+              {staffOrdersDialog.orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                  data-testid={`order-item-${order.id}`}
+                >
+                  <div>
+                    <p className="font-medium">{order.orderNumber || `Order #${order.id}`}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.customerName || "Walk-in"} - {order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A"}
+                    </p>
+                  </div>
+                  <Badge variant="outline">{parseFloat(order.totalAmount || "0").toFixed(2)} AED</Badge>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {printOrder && (
         <OrderReceipt
