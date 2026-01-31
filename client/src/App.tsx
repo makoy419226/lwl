@@ -31,20 +31,20 @@ import logoImage from "@assets/image_1767220512226.png";
 export const UserContext = createContext<UserInfo | null>(null);
 
 const rolePermissions: Record<string, string[]> = {
-  "/": ["admin", "reception", "staff", "driver"],
-  "/dashboard": ["admin", "reception", "staff"],
+  "/": ["admin", "counter", "section", "driver"],
+  "/dashboard": ["admin", "counter", "section"],
   "/delivery": ["driver"],
-  "/inventory": ["admin", "reception"],
-  "/products": ["admin", "reception"],
-  "/clients": ["admin", "reception"],
-  "/bills": ["admin", "reception"],
-  "/orders": ["admin", "reception", "staff"],
+  "/inventory": ["admin", "counter"],
+  "/products": ["admin", "counter"],
+  "/clients": ["admin", "counter"],
+  "/bills": ["admin", "counter"],
+  "/orders": ["admin", "counter", "section"],
   "/workers": ["admin"],
   "/sales-reports": ["admin"],
-  "/incidents": ["admin", "reception", "staff", "driver"],
-  "/due-customers": ["admin", "reception"],
-  "/contact": ["admin", "reception", "staff", "driver"],
-  "/track": ["admin", "reception", "staff", "driver"],
+  "/incidents": ["admin", "counter", "section", "driver"],
+  "/due-customers": ["admin", "counter"],
+  "/contact": ["admin", "counter", "section", "driver"],
+  "/track": ["admin", "counter", "section", "driver"],
   "/admin-settings": ["admin"],
 };
 
@@ -54,7 +54,7 @@ function ProtectedRoute({ path, component: Component, allowedRoles }: {
   allowedRoles: string[];
 }) {
   const user = useContext(UserContext);
-  const userRole = user?.role || "reception";
+  const userRole = user?.role || "counter";
   
   if (!allowedRoles.includes(userRole)) {
     return <Redirect to="/" />;
@@ -65,7 +65,7 @@ function ProtectedRoute({ path, component: Component, allowedRoles }: {
 
 function Router() {
   const user = useContext(UserContext);
-  const userRole = user?.role || "reception";
+  const userRole = user?.role || "counter";
   
   // Driver users should be redirected to delivery dashboard as home
   if (userRole === "driver") {

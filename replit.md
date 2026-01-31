@@ -34,7 +34,11 @@ Preferred communication style: Simple, everyday language.
 ### Authentication
 - Simple username/password authentication stored in the users table
 - Session state managed client-side via localStorage
-- Role-based access (admin, staff roles defined in schema)
+- Role-based access control with four roles:
+  - **admin**: Full system access, can add items, edit inventory organization
+  - **counter**: Order creation, billing, client management (formerly "reception")
+  - **section**: Order tracking and status updates (formerly "staff")
+  - **driver**: Delivery dashboard and order delivery
 - No session middleware currently implemented on backend
 
 ### Project Structure

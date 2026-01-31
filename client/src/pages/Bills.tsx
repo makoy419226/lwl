@@ -96,7 +96,7 @@ export default function Bills() {
   const userInfo = storedUser ? JSON.parse(storedUser) : null;
   const userRole = userInfo?.role || "cashier";
   
-  if (userRole === "staff") {
+  if (userRole === "section") {
     return (
       <div className="flex flex-col h-full items-center justify-center">
         <Card className="max-w-md w-full mx-4">

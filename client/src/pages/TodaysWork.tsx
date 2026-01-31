@@ -13,7 +13,7 @@ type OrderWithClient = Order & { clientName?: string };
 
 export default function TodaysWork() {
   const user = useContext(UserContext);
-  const isStaff = user?.role === "staff";
+  const isSection = user?.role === "section";
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<OrderWithClient[]>([]);
   const [dialogTitle, setDialogTitle] = useState("");
@@ -337,7 +337,7 @@ export default function TodaysWork() {
           <p className="text-xs text-muted-foreground">Completed today</p>
         </Card>
 
-        {!isStaff && (
+        {!isSection && (
           <Card 
             className="p-4" 
             data-testid="card-unpaid-bills"
@@ -353,7 +353,7 @@ export default function TodaysWork() {
           </Card>
         )}
 
-        {!isStaff && (
+        {!isSection && (
           <Card 
             className="p-4 cursor-pointer hover-elevate" 
             onClick={() => openCardDialog("Today's Orders", todaysOrders)}
@@ -371,8 +371,8 @@ export default function TodaysWork() {
         )}
       </div>
 
-      <div className={`grid grid-cols-1 ${isStaff ? '' : 'lg:grid-cols-2'} gap-4`}>
-        {!isStaff && (
+      <div className={`grid grid-cols-1 ${isSection ? '' : 'lg:grid-cols-2'} gap-4`}>
+        {!isSection && (
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-5 h-5 text-green-600" />
@@ -435,7 +435,7 @@ export default function TodaysWork() {
                       {getClientName(order)}
                     </span>
                   </div>
-                  {!isStaff && <span className="text-sm font-bold shrink-0" data-testid={`text-order-amount-${order.id}`}>{parseFloat(order.totalAmount || "0").toFixed(0)} AED</span>}
+                  {!isSection && <span className="text-sm font-bold shrink-0" data-testid={`text-order-amount-${order.id}`}>{parseFloat(order.totalAmount || "0").toFixed(0)} AED</span>}
                 </div>
               ))
             )}
@@ -485,7 +485,7 @@ export default function TodaysWork() {
                         )}
                       </div>
                     </div>
-                    {!isStaff && (
+                    {!isSection && (
                       <div className="text-right shrink-0">
                         <p className="font-bold text-lg" data-testid={`text-dialog-amount-${order.id}`}>{parseFloat(order.totalAmount || "0").toFixed(0)} AED</p>
                       </div>

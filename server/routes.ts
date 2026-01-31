@@ -406,7 +406,7 @@ export async function registerRoutes(
         .values({
           username,
           password,
-          role: role || "reception",
+          role: role || "counter",
           name,
           email: email || null,
           pin: pin || "12345",
@@ -1382,8 +1382,8 @@ export async function registerRoutes(
       } = req.body;
       
       // Validate that the creator has permission to create bills
-      // Only admin and reception roles can create bills
-      const allowedBillCreatorRoles = ["admin", "reception"];
+      // Only admin and counter roles can create bills
+      const allowedBillCreatorRoles = ["admin", "counter"];
       
       // Check if createdBy matches a user with a non-allowed role
       if (createdBy) {
@@ -2455,12 +2455,12 @@ export async function registerRoutes(
     
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      // Only allow admin and reception roles for bill creation
-      const allowedRoles = ["admin", "reception"];
+      // Only allow admin and counter roles for bill creation
+      const allowedRoles = ["admin", "counter"];
       if (!allowedRoles.includes(user.role?.toLowerCase() || "")) {
         return res.status(403).json({ 
           success: false, 
-          message: "Only admin or reception can create orders with bills" 
+          message: "Only admin or counter can create orders with bills" 
         });
       }
       res.json({ success: true, worker: { id: user.id, name: user.name || user.username, role: user.role } });

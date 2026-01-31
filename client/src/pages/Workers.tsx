@@ -115,7 +115,7 @@ export default function Workers() {
     password: "",
     name: "",
     email: "",
-    role: "reception",
+    role: "counter",
     pin: "",
   });
   
@@ -209,9 +209,9 @@ export default function Workers() {
     }
   };
 
-  // Use staff users from users table instead of old packing_workers table
-  const staffUsers = useMemo(() => {
-    return systemUsers?.filter(u => u.role === 'staff') || [];
+  // Use section users from users table instead of old packing_workers table
+  const sectionUsers = useMemo(() => {
+    return systemUsers?.filter(u => u.role === 'section') || [];
   }, [systemUsers]);
 
   // Driver users for delivery stats
@@ -220,10 +220,10 @@ export default function Workers() {
   }, [systemUsers]);
 
   const workerStats = useMemo(() => {
-    if (!staffUsers.length || !orders) return [];
+    if (!sectionUsers.length || !orders) return [];
     const { start, end } = getDateRange();
 
-    return staffUsers
+    return sectionUsers
       .map((worker) => {
         const taggedOrders = orders.filter((o) => {
           if (o.tagWorkerId !== worker.id) return false;
@@ -290,7 +290,7 @@ export default function Workers() {
         };
       })
       .sort((a, b) => b.totalTasks - a.totalTasks);
-  }, [staffUsers, orders, bills, dateFilter, customFromDate, customToDate]);
+  }, [sectionUsers, orders, bills, dateFilter, customFromDate, customToDate]);
 
   // Driver delivery stats
   const driverStats = useMemo(() => {
@@ -543,7 +543,7 @@ export default function Workers() {
         password: "",
         name: "",
         email: "",
-        role: "reception",
+        role: "counter",
         pin: "",
       });
       toast({ title: "User Created", description: "New user account added" });
@@ -569,7 +569,7 @@ export default function Workers() {
         password: "",
         name: "",
         email: "",
-        role: "reception",
+        role: "counter",
         pin: "",
       });
       toast({ title: "User Updated", description: "User details updated" });
@@ -801,19 +801,19 @@ export default function Workers() {
                   </Card>
                 </div>
 
-                <Accordion type="multiple" defaultValue={["reception", "staff", "drivers"]} className="space-y-2">
-                  <AccordionItem value="reception" className="border rounded-lg">
+                <Accordion type="multiple" defaultValue={["counter", "section", "drivers"]} className="space-y-2">
+                  <AccordionItem value="counter" className="border rounded-lg">
                     <AccordionTrigger className="hover:no-underline px-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Reception/Cashier</Badge>
+                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Counter</Badge>
                         <span className="text-sm text-muted-foreground">
-                          ({systemUsers?.filter(u => u.role === "reception").length || 0} users)
+                          ({systemUsers?.filter(u => u.role === "counter").length || 0} users)
                         </span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      {!systemUsers?.filter(u => u.role === "reception").length ? (
-                        <p className="text-center text-muted-foreground py-4">No reception/cashier users found</p>
+                      {!systemUsers?.filter(u => u.role === "counter").length ? (
+                        <p className="text-center text-muted-foreground py-4">No counter users found</p>
                       ) : (
                         <Table>
                           <TableHeader>
@@ -841,7 +841,7 @@ export default function Workers() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {systemUsers?.filter(u => u.role === "reception").map((user) => {
+                            {systemUsers?.filter(u => u.role === "counter").map((user) => {
                               const userBills = bills?.filter(b => b.notes?.includes(user.name || user.username)) || [];
                               const unpaidBills = userBills.filter(b => !b.isPaid);
                               return (
@@ -874,10 +874,10 @@ export default function Workers() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="staff" className="border rounded-lg">
+                  <AccordionItem value="section" className="border rounded-lg">
                     <AccordionTrigger className="hover:no-underline px-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Staff</Badge>
+                        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Section</Badge>
                         <span className="text-sm text-muted-foreground">
                           ({filteredStats.length} workers)
                         </span>
@@ -1054,19 +1054,19 @@ export default function Workers() {
                       No user accounts found
                     </div>
                   ) : (
-                    <Accordion type="multiple" defaultValue={["reception", "staff", "driver"]} className="space-y-2">
-                      <AccordionItem value="reception" className="border rounded-lg px-4">
+                    <Accordion type="multiple" defaultValue={["counter", "section", "driver"]} className="space-y-2">
+                      <AccordionItem value="counter" className="border rounded-lg px-4">
                         <AccordionTrigger className="hover:no-underline">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Reception/Cashier</Badge>
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Counter</Badge>
                             <span className="text-sm text-muted-foreground">
-                              ({systemUsers.filter(u => u.role === "reception").length} users)
+                              ({systemUsers.filter(u => u.role === "counter").length} users)
                             </span>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          {systemUsers.filter(u => u.role === "reception").length === 0 ? (
-                            <p className="text-center text-muted-foreground py-4">No reception/cashier users found</p>
+                          {systemUsers.filter(u => u.role === "counter").length === 0 ? (
+                            <p className="text-center text-muted-foreground py-4">No counter users found</p>
                           ) : (
                             <Table>
                               <TableHeader>
@@ -1080,7 +1080,7 @@ export default function Workers() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {systemUsers.filter(u => u.role === "reception").map((user) => (
+                                {systemUsers.filter(u => u.role === "counter").map((user) => (
                                   <TableRow key={user.id}>
                                     <TableCell className="font-medium">
                                       <div className="flex items-center gap-2">
@@ -1135,18 +1135,18 @@ export default function Workers() {
                         </AccordionContent>
                       </AccordionItem>
                       
-                      <AccordionItem value="staff" className="border rounded-lg px-4">
+                      <AccordionItem value="section" className="border rounded-lg px-4">
                         <AccordionTrigger className="hover:no-underline">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Staff</Badge>
+                            <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Section</Badge>
                             <span className="text-sm text-muted-foreground">
-                              ({systemUsers.filter(u => u.role === "staff").length} users)
+                              ({systemUsers.filter(u => u.role === "section").length} users)
                             </span>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          {systemUsers.filter(u => u.role === "staff").length === 0 ? (
-                            <p className="text-center text-muted-foreground py-4">No staff found</p>
+                          {systemUsers.filter(u => u.role === "section").length === 0 ? (
+                            <p className="text-center text-muted-foreground py-4">No section users found</p>
                           ) : (
                             <Table>
                               <TableHeader>
@@ -1160,7 +1160,7 @@ export default function Workers() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {systemUsers.filter(u => u.role === "staff").map((user) => (
+                                {systemUsers.filter(u => u.role === "section").map((user) => (
                                   <TableRow key={user.id}>
                                     <TableCell className="font-medium">
                                       <div className="flex items-center gap-2">
@@ -1359,7 +1359,7 @@ export default function Workers() {
 
       <Dialog open={isUserCreateOpen} onOpenChange={(open) => {
               if (open) {
-                const defaultRole = "reception";
+                const defaultRole = "counter";
                 setUserFormData({ username: getNextUsername(defaultRole), password: "", name: "", email: "", role: defaultRole, pin: "" });
               }
               setIsUserCreateOpen(open);
@@ -1385,8 +1385,8 @@ export default function Workers() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="reception">Reception/Cashier</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="counter">Counter</SelectItem>
+                  <SelectItem value="section">Section</SelectItem>
                   <SelectItem value="driver">Delivery Driver</SelectItem>
                 </SelectContent>
               </Select>
@@ -1540,8 +1540,8 @@ export default function Workers() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="reception">Reception/Cashier</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="counter">Counter</SelectItem>
+                  <SelectItem value="section">Section</SelectItem>
                   <SelectItem value="driver">Delivery Driver</SelectItem>
                 </SelectContent>
               </Select>

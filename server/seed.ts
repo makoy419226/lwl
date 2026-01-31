@@ -771,18 +771,18 @@ export async function seedDatabase() {
         active: true,
       },
       {
-        username: "reception1",
-        password: "reception123",
-        role: "reception",
-        name: "ReceptionUsername",
+        username: "counter1",
+        password: "counter123",
+        role: "counter",
+        name: "CounterUsername",
         pin: "11111",
         active: true,
       },
       {
-        username: "staff1",
-        password: "staff123",
-        role: "staff",
-        name: "StaffUsername",
+        username: "section1",
+        password: "section123",
+        role: "section",
+        name: "SectionUsername",
         pin: "22222",
         active: true,
       },
@@ -799,7 +799,7 @@ export async function seedDatabase() {
     for (const user of defaultUsers) {
       await db.insert(users).values(user);
     }
-    console.log("Default users created: admin, reception1, staff1, driver1");
+    console.log("Default users created: admin, counter1, section1, driver1");
   }
 
   // No default packing workers - staff users handle packing by default
@@ -816,18 +816,18 @@ export const defaultUsers = [
     active: true,
   },
   {
-    username: "reception1",
-    password: "reception123",
-    role: "reception",
-    name: "ReceptionUsername",
+    username: "counter1",
+    password: "counter123",
+    role: "counter",
+    name: "CounterUsername",
     pin: "11111",
     active: true,
   },
   {
-    username: "staff1",
-    password: "staff123",
-    role: "staff",
-    name: "StaffUsername",
+    username: "section1",
+    password: "section123",
+    role: "section",
+    name: "SectionUsername",
     pin: "22222",
     active: true,
   },

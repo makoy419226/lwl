@@ -28,11 +28,11 @@ export default function Dashboard() {
   const { data: products, isLoading, isError } = useProducts(searchTerm);
   const user = useContext(UserContext);
   const isAdmin = user?.role === "admin";
-  const isStaff = user?.role === "staff";
+  const isSection = user?.role === "section";
   
   const { data: orders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
-    enabled: isStaff,
+    enabled: isSection,
   });
 
   const container = {
@@ -56,7 +56,7 @@ export default function Dashboard() {
   const packingOrders = orders?.filter(o => o.status === "Packing") || [];
   const deliveredOrders = orders?.filter(o => o.status === "Delivered") || [];
 
-  if (isStaff) {
+  if (isSection) {
     return (
       <div className="flex flex-col h-screen">
         <div className="bg-primary text-white overflow-hidden">

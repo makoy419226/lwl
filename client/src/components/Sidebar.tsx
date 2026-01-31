@@ -60,31 +60,31 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const isTrackOrder = location === "/track";
   const isAdminSettings = location === "/admin-settings";
 
-  const userRole = user?.role || "reception";
+  const userRole = user?.role || "counter";
   const isAdmin = userRole === "admin";
-  const isReception = userRole === "reception";
-  const isAdminOrReception = isAdmin || isReception;
+  const isCounter = userRole === "counter";
+  const isAdminOrCounter = isAdmin || isCounter;
 
   const navGroups = [
     {
       label: "Operations",
       collapsible: false,
       items: [
-        { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "reception", "staff"] },
+        { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "counter", "section"] },
         { href: "/delivery", icon: Truck, label: "Delivery Dashboard", active: location === "/delivery", testId: "nav-delivery", roles: ["driver"] },
         { href: "/delivery-history", icon: History, label: "Delivery History", active: location === "/delivery-history", testId: "nav-delivery-history", roles: ["driver"] },
-        { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "reception"] },
-        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "reception", "staff"] },
+        { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "counter"] },
+        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "counter", "section"] },
       ]
     },
     {
       label: "Business",
       collapsible: false,
       items: [
-        { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "reception"] },
-        { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "reception"] },
-        { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "reception"] },
-        { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "reception"] },
+        { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "counter"] },
+        { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "counter"] },
+        { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "counter"] },
+        { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "counter"] },
       ]
     },
     {
@@ -92,9 +92,9 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       collapsible: false,
       items: [
         { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
-        { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "reception", "staff"] },
-        { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "reception", "staff", "driver"] },
-        { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "reception", "staff", "driver"] },
+        { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "counter", "section"] },
+        { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "counter", "section", "driver"] },
+        { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "counter", "section", "driver"] },
       ]
     },
     {
@@ -216,7 +216,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 {user.role === "admin" ? (
                   <Shield className="w-5 h-5 text-primary" />
-                ) : user.role === "reception" ? (
+                ) : user.role === "counter" ? (
                   <UserCog className="w-5 h-5 text-primary" />
                 ) : (
                   <Wallet className="w-5 h-5 text-primary" />
@@ -225,7 +225,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-foreground truncate">{user.name || user.username}</p>
                 <Badge variant="secondary" className="text-xs capitalize">
-                  {user.role === "reception" ? "Reception/Cashier" : user.role}
+                  {user.role === "counter" ? "Counter" : user.role === "section" ? "Section" : user.role}
                 </Badge>
               </div>
             </div>
