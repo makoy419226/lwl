@@ -1610,7 +1610,7 @@ export default function Products() {
               </div>
             )}
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-              <TabsList className="inline-flex h-9 items-center justify-start gap-1 bg-muted/50 p-1 rounded-lg w-auto min-w-full">
+              <TabsList className="inline-flex h-10 items-center justify-start gap-1 bg-muted p-1.5 rounded-lg w-auto min-w-full border border-border shadow-sm">
                 {tabCategories.map((tab) => (
                   <TabsTrigger
                     key={tab.id}
