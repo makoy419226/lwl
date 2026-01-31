@@ -21,6 +21,7 @@ import {
   type PackingWorker,
   type Incident,
   type MissingItem,
+  type StaffMember,
   type InsertProduct,
   type InsertClient,
   type InsertBill,
@@ -30,6 +31,7 @@ import {
   type InsertPackingWorker,
   type InsertIncident,
   type InsertMissingItem,
+  type InsertStaffMember,
   type UpdateProductRequest,
   type UpdateClientRequest,
   type UpdateOrderRequest,
@@ -161,12 +163,13 @@ export interface IStorage {
   ): Promise<MissingItem>;
   deleteMissingItem(id: number): Promise<void>;
   // Staff members methods
-  getStaffMembers(roleType?: string): Promise<any[]>;
-  getStaffMember(id: number): Promise<any | undefined>;
-  createStaffMember(member: { name: string; pin: string; roleType: string }): Promise<any>;
-  updateStaffMember(id: number, updates: Partial<{ name: string; pin: string; active: boolean }>): Promise<any>;
+  getStaffMembers(roleType?: string): Promise<StaffMember[]>;
+  getStaffMember(id: number): Promise<StaffMember | undefined>;
+  createStaffMember(member: InsertStaffMember): Promise<StaffMember>;
+  updateStaffMember(id: number, updates: Partial<{ name: string; pin: string; active: boolean }>): Promise<StaffMember>;
   deleteStaffMember(id: number): Promise<void>;
-  verifyStaffMemberPin(pin: string): Promise<any | null>;
+  verifyStaffMemberPin(pin: string): Promise<StaffMember | null>;
+  checkStaffMemberPinExists(pin: string, excludeId?: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1578,19 +1581,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Staff members methods
-  async getStaffMembers(roleType?: string): Promise<any[]> {
+  async getStaffMembers(roleType?: string): Promise<StaffMember[]> {
     if (roleType) {
       return await db.select().from(staffMembers).where(eq(staffMembers.roleType, roleType));
     }
     return await db.select().from(staffMembers);
   }
 
-  async getStaffMember(id: number): Promise<any | undefined> {
+  async getStaffMember(id: number): Promise<StaffMember | undefined> {
     const [member] = await db.select().from(staffMembers).where(eq(staffMembers.id, id));
     return member;
   }
 
-  async createStaffMember(member: { name: string; pin: string; roleType: string }): Promise<any> {
+  async createStaffMember(member: InsertStaffMember): Promise<StaffMember> {
     const [created] = await db.insert(staffMembers).values({
       name: member.name,
       pin: member.pin,
@@ -1600,7 +1603,7 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateStaffMember(id: number, updates: Partial<{ name: string; pin: string; active: boolean }>): Promise<any> {
+  async updateStaffMember(id: number, updates: Partial<{ name: string; pin: string; active: boolean }>): Promise<StaffMember> {
     const [updated] = await db.update(staffMembers).set(updates).where(eq(staffMembers.id, id)).returning();
     return updated;
   }
@@ -1609,9 +1612,20 @@ export class DatabaseStorage implements IStorage {
     await db.delete(staffMembers).where(eq(staffMembers.id, id));
   }
 
-  async verifyStaffMemberPin(pin: string): Promise<any | null> {
+  async verifyStaffMemberPin(pin: string): Promise<StaffMember | null> {
+    // For login verification, only check active members
     const [member] = await db.select().from(staffMembers).where(and(eq(staffMembers.pin, pin), eq(staffMembers.active, true)));
     return member || null;
+  }
+
+  async checkStaffMemberPinExists(pin: string, excludeId?: number): Promise<boolean> {
+    // For creation/update validation, check ALL staff members (including inactive)
+    if (excludeId) {
+      const existing = await db.select().from(staffMembers).where(and(eq(staffMembers.pin, pin), ne(staffMembers.id, excludeId)));
+      return existing.length > 0;
+    }
+    const existing = await db.select().from(staffMembers).where(eq(staffMembers.pin, pin));
+    return existing.length > 0;
   }
 }
 

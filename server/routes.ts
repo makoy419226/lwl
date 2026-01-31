@@ -526,9 +526,9 @@ export async function registerRoutes(
       if (!/^\d{5}$/.test(pin)) {
         return res.status(400).json({ message: "PIN must be 5 digits" });
       }
-      // Check if PIN is already used by another staff member
-      const existingMember = await storage.verifyStaffMemberPin(pin);
-      if (existingMember) {
+      // Check if PIN is already used by another staff member (including inactive)
+      const pinExists = await storage.checkStaffMemberPinExists(pin);
+      if (pinExists) {
         return res.status(400).json({ message: "This PIN is already used by another staff member" });
       }
       // Check if PIN is already used by a user
@@ -553,10 +553,10 @@ export async function registerRoutes(
       if (pin && !/^\d{5}$/.test(pin)) {
         return res.status(400).json({ message: "PIN must be 5 digits" });
       }
-      // Check if PIN is already used (if changing)
+      // Check if PIN is already used by another staff member (if changing)
       if (pin) {
-        const existingMember = await storage.verifyStaffMemberPin(pin);
-        if (existingMember && existingMember.id !== id) {
+        const pinExists = await storage.checkStaffMemberPinExists(pin, id);
+        if (pinExists) {
           return res.status(400).json({ message: "This PIN is already used by another staff member" });
         }
         const existingUser = await db.select().from(users).where(eq(users.pin, pin)).limit(1);

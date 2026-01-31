@@ -371,6 +371,8 @@ export type MissingItem = typeof missingItems.$inferSelect;
 export type InsertMissingItem = z.infer<typeof insertMissingItemSchema>;
 export type StageChecklist = typeof stageChecklists.$inferSelect;
 export type InsertStageChecklist = z.infer<typeof insertStageChecklistSchema>;
+export type StaffMember = typeof staffMembers.$inferSelect;
+export type InsertStaffMember = z.infer<typeof insertStaffMemberSchema>;
 
 // Explicit API types
 export type ProductResponse = Product;
