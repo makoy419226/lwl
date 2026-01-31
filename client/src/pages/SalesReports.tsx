@@ -11,6 +11,8 @@ import { Loader2, Calendar, TrendingUp, Wallet, Receipt, FileText, CalendarDays,
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import type { ClientTransaction, Order } from "@shared/schema";
 
 export default function SalesReports() {
@@ -242,6 +244,160 @@ export default function SalesReports() {
       actionType,
       orders,
     });
+  };
+
+  const generateStaffPDF = (staff: { 
+    name: string; 
+    createdCount: number; 
+    createdOrders: Order[];
+    taggedCount: number; 
+    taggedOrders: Order[];
+    packedCount: number;
+    packedOrders: Order[];
+    deliveredCount: number;
+    deliveredOrders: Order[];
+  }) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text("Staff Performance Report", pageWidth / 2, 20, { align: "center" });
+    
+    doc.setFontSize(14);
+    doc.text(`Staff: ${staff.name}`, pageWidth / 2, 30, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 38, { align: "center" });
+    
+    // Summary
+    doc.setFontSize(12);
+    doc.text("Summary", 14, 50);
+    
+    const summaryData = [
+      ["Created Orders", staff.createdCount.toString()],
+      ["Tagged Orders", staff.taggedCount.toString()],
+      ["Packed Orders", staff.packedCount.toString()],
+      ["Delivered Orders", staff.deliveredCount.toString()],
+      ["Total Actions", (staff.createdCount + staff.taggedCount + staff.packedCount + staff.deliveredCount).toString()],
+    ];
+    
+    autoTable(doc, {
+      startY: 55,
+      head: [["Action", "Count"]],
+      body: summaryData,
+      theme: "grid",
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+    
+    let yPos = (doc as any).lastAutoTable.finalY + 15;
+    
+    // Created Orders section
+    if (staff.createdOrders.length > 0) {
+      doc.setFontSize(12);
+      doc.text("Created Orders", 14, yPos);
+      
+      const createdData = staff.createdOrders.map(order => [
+        order.orderNumber || `#${order.id}`,
+        order.customerName || "Walk-in",
+        order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
+        `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos + 5,
+        head: [["Order #", "Customer", "Date", "Amount"]],
+        body: createdData,
+        theme: "striped",
+        headStyles: { fillColor: [59, 130, 246] },
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+    }
+    
+    // Tagged Orders section
+    if (staff.taggedOrders.length > 0) {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.text("Tagged Orders", 14, yPos);
+      
+      const taggedData = staff.taggedOrders.map(order => [
+        order.orderNumber || `#${order.id}`,
+        order.customerName || "Walk-in",
+        order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
+        `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos + 5,
+        head: [["Order #", "Customer", "Date", "Amount"]],
+        body: taggedData,
+        theme: "striped",
+        headStyles: { fillColor: [249, 115, 22] },
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+    }
+    
+    // Packed Orders section
+    if (staff.packedOrders.length > 0) {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.text("Packed Orders", 14, yPos);
+      
+      const packedData = staff.packedOrders.map(order => [
+        order.orderNumber || `#${order.id}`,
+        order.customerName || "Walk-in",
+        order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
+        `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos + 5,
+        head: [["Order #", "Customer", "Date", "Amount"]],
+        body: packedData,
+        theme: "striped",
+        headStyles: { fillColor: [34, 197, 94] },
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+    }
+    
+    // Delivered Orders section
+    if (staff.deliveredOrders.length > 0) {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.text("Delivered Orders", 14, yPos);
+      
+      const deliveredData = staff.deliveredOrders.map(order => [
+        order.orderNumber || `#${order.id}`,
+        order.customerName || "Walk-in",
+        order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
+        `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPos + 5,
+        head: [["Order #", "Customer", "Date", "Amount"]],
+        body: deliveredData,
+        theme: "striped",
+        headStyles: { fillColor: [168, 85, 247] },
+      });
+    }
+    
+    doc.save(`staff_report_${staff.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   const getCurrentOrderData = () => {
@@ -1214,6 +1370,7 @@ export default function SalesReports() {
                           </div>
                         </TableHead>
                         <TableHead className="text-center">Total Actions</TableHead>
+                        <TableHead className="text-center">PDF</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1286,6 +1443,16 @@ export default function SalesReports() {
                               <Badge variant="secondary" className="font-semibold">
                                 {total}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => generateStaffPDF(staff)}
+                                data-testid={`button-pdf-${staff.name}`}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
