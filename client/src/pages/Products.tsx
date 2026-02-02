@@ -208,7 +208,6 @@ export default function Products() {
     Blanket: { small: 15, large: 25 },
     "Duvet Cover": { small: 10, large: 15 },
     "Bed Sheet": { small: 5, large: 8 },
-    Jacket: { small: 5, large: 8 },
     "Curtain/Window Screen": { small: 15, large: 25 },
   };
 
