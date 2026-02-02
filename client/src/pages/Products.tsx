@@ -1611,13 +1611,13 @@ export default function Products() {
               </div>
             )}
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-              <TabsList className="inline-flex h-10 items-center justify-start gap-1 bg-muted p-1.5 rounded-lg w-auto min-w-full border border-border shadow-sm">
+              <TabsList className="inline-flex h-auto items-center justify-start gap-2 bg-transparent p-1 w-auto min-w-full">
                 {tabCategories.map((tab) => (
                   <TabsTrigger
                     key={tab.id}
                     value={tab.id}
-                    className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white rounded-md transition-all ${
-                      isEditMode && tab.id !== "all" ? "border-2 border-dashed border-transparent" : ""
+                    className={`px-4 py-2 text-xs font-medium whitespace-nowrap border border-border rounded-md bg-background shadow-sm data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary transition-all ${
+                      isEditMode && tab.id !== "all" ? "border-2 border-dashed" : ""
                     } ${
                       dragOverTab === tab.id ? "border-primary bg-primary/20 scale-105" : ""
                     }`}
