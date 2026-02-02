@@ -1926,7 +1926,7 @@ export default function Orders() {
                                   </Button>
                                   {order.deliveryBy && (
                                     <span className="text-xs text-muted-foreground text-center mt-1">
-                                      by: {order.deliveryBy}
+                                      {order.deliveryType === "delivery" ? "Delivered by" : "Completed by"}: {order.deliveryBy}
                                     </span>
                                   )}
                                 </div>
@@ -2502,7 +2502,7 @@ export default function Orders() {
                                               </Button>
                                               {order.deliveryBy && (
                                                 <span className="text-xs text-muted-foreground mt-1">
-                                                  by: {order.deliveryBy}
+                                                  {order.deliveryType === "delivery" ? "Delivered by" : "Completed by"}: {order.deliveryBy}
                                                 </span>
                                               )}
                                             </div>
