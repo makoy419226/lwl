@@ -405,6 +405,14 @@ export default function Workers() {
     });
 
     const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 12 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Staff Report");
     XLSX.writeFile(wb, `Staff_Report_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
