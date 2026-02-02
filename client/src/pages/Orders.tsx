@@ -37,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TouchSelect } from "@/components/TouchSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -4097,24 +4098,20 @@ function OrderForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label>Client</Label>
-        <Select value={formData.clientId} onValueChange={handleClientChange}>
-          <SelectTrigger data-testid="select-client">
-            <SelectValue placeholder="Select client" />
-          </SelectTrigger>
-          <SelectContent 
-            className="z-[100] max-h-[300px]" 
-            position="popper" 
-            sideOffset={4}
-            onCloseAutoFocus={(e) => e.preventDefault()}
-          >
-            <SelectItem value="walkin">Walk-in Customer</SelectItem>
-            {clients.map((client) => (
-              <SelectItem key={client.id} value={client.id.toString()}>
-                {client.name} - {client.phone}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <TouchSelect
+          value={formData.clientId}
+          onValueChange={handleClientChange}
+          placeholder="Select client"
+          searchable={clients.length > 10}
+          data-testid="select-client"
+          options={[
+            { value: "walkin", label: "Walk-in Customer" },
+            ...clients.map((client) => ({
+              value: client.id.toString(),
+              label: `${client.name} - ${client.phone}`,
+            })),
+          ]}
+        />
       </div>
 
       {formData.clientId === "walkin" && (
