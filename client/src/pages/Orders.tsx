@@ -1029,6 +1029,14 @@ export default function Orders() {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
+    const getClientName = (order: Order) => {
+      if (order.clientId) {
+        const client = clients?.find(c => c.id === order.clientId);
+        if (client?.name) return client.name;
+      }
+      return order.customerName || "Walk-in";
+    };
+    
     doc.setFontSize(18);
     doc.text("Staff Performance Report", pageWidth / 2, 20, { align: "center" });
     
@@ -1065,7 +1073,7 @@ export default function Orders() {
       
       const createdData = staff.createdOrders.map(order => [
         order.orderNumber || `#${order.id}`,
-        order.customerName || "Walk-in",
+        getClientName(order),
         order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
         `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
       ]);
@@ -1092,7 +1100,7 @@ export default function Orders() {
       
       const taggedData = staff.taggedOrders.map(order => [
         order.orderNumber || `#${order.id}`,
-        order.customerName || "Walk-in",
+        getClientName(order),
         order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
         `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
       ]);
@@ -1119,7 +1127,7 @@ export default function Orders() {
       
       const packedData = staff.packedOrders.map(order => [
         order.orderNumber || `#${order.id}`,
-        order.customerName || "Walk-in",
+        getClientName(order),
         order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
         `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
       ]);
@@ -1146,7 +1154,7 @@ export default function Orders() {
       
       const deliveredData = staff.deliveredOrders.map(order => [
         order.orderNumber || `#${order.id}`,
-        order.customerName || "Walk-in",
+        getClientName(order),
         order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A",
         `${parseFloat(order.totalAmount || "0").toFixed(2)} AED`
       ]);
