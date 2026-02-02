@@ -2098,7 +2098,7 @@ export default function Workers() {
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Counter</Badge>
                             <span className="text-sm text-muted-foreground">
-                              ({systemUsers.filter(u => u.role === "counter").length} login{systemUsers.filter(u => u.role === "counter").length !== 1 ? "s" : ""}, {counterStaffMembers.length} staff)
+                              ({systemUsers.filter(u => u.role === "counter" || u.role === "reception").length} login{systemUsers.filter(u => u.role === "counter" || u.role === "reception").length !== 1 ? "s" : ""}, {counterStaffMembers.length} staff)
                             </span>
                           </div>
                         </AccordionTrigger>
@@ -2106,7 +2106,7 @@ export default function Workers() {
                           <div className="space-y-4">
                             <div>
                               <h4 className="font-medium text-sm mb-2">Login Details</h4>
-                              {systemUsers.filter(u => u.role === "counter").length === 0 ? (
+                              {systemUsers.filter(u => u.role === "counter" || u.role === "reception").length === 0 ? (
                                 <p className="text-center text-muted-foreground py-4">No counter login found</p>
                               ) : (
                                 <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-3">
@@ -2114,14 +2114,14 @@ export default function Workers() {
                                     <div className="flex items-center gap-4 flex-wrap">
                                       <div>
                                         <p className="text-xs text-muted-foreground">Username</p>
-                                        <p className="font-medium">{systemUsers.find(u => u.role === "counter")?.username}</p>
+                                        <p className="font-medium">{systemUsers.find(u => u.role === "counter" || u.role === "reception")?.username}</p>
                                       </div>
                                       <div className="border-l pl-4">
                                         <p className="text-xs text-muted-foreground">Password</p>
-                                        <p className="font-mono text-sm">{systemUsers.find(u => u.role === "counter")?.password}</p>
+                                        <p className="font-mono text-sm">{systemUsers.find(u => u.role === "counter" || u.role === "reception")?.password}</p>
                                       </div>
                                     </div>
-                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "counter"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
+                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "counter" || u.role === "reception"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
                                       <Pencil className="w-3 h-3 mr-1" />
                                       Edit
                                     </Button>
@@ -2194,7 +2194,7 @@ export default function Workers() {
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Section</Badge>
                             <span className="text-sm text-muted-foreground">
-                              ({systemUsers.filter(u => u.role === "section").length} login{systemUsers.filter(u => u.role === "section").length !== 1 ? "s" : ""}, {sectionStaffMembers.length} staff)
+                              ({systemUsers.filter(u => u.role === "section" || u.role === "staff").length} login{systemUsers.filter(u => u.role === "section" || u.role === "staff").length !== 1 ? "s" : ""}, {sectionStaffMembers.length} staff)
                             </span>
                           </div>
                         </AccordionTrigger>
@@ -2202,7 +2202,7 @@ export default function Workers() {
                           <div className="space-y-4">
                             <div>
                               <h4 className="font-medium text-sm mb-2">Login Details</h4>
-                              {systemUsers.filter(u => u.role === "section").length === 0 ? (
+                              {systemUsers.filter(u => u.role === "section" || u.role === "staff").length === 0 ? (
                                 <p className="text-center text-muted-foreground py-4">No section login found</p>
                               ) : (
                                 <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-3">
@@ -2210,14 +2210,14 @@ export default function Workers() {
                                     <div className="flex items-center gap-4 flex-wrap">
                                       <div>
                                         <p className="text-xs text-muted-foreground">Username</p>
-                                        <p className="font-medium">{systemUsers.find(u => u.role === "section")?.username}</p>
+                                        <p className="font-medium">{systemUsers.find(u => u.role === "section" || u.role === "staff")?.username}</p>
                                       </div>
                                       <div className="border-l pl-4">
                                         <p className="text-xs text-muted-foreground">Password</p>
-                                        <p className="font-mono text-sm">{systemUsers.find(u => u.role === "section")?.password}</p>
+                                        <p className="font-mono text-sm">{systemUsers.find(u => u.role === "section" || u.role === "staff")?.password}</p>
                                       </div>
                                     </div>
-                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "section"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
+                                    <Button size="sm" variant="outline" onClick={() => { const user = systemUsers.find(u => u.role === "section" || u.role === "staff"); if (user) { setEditUser(user); setUserFormData({ username: user.username, password: "", name: user.name || "", email: user.email || "", role: user.role, pin: "" }); } }}>
                                       <Pencil className="w-3 h-3 mr-1" />
                                       Edit
                                     </Button>
