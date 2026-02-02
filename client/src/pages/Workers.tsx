@@ -162,6 +162,11 @@ export default function Workers() {
   // Report tab state
   const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [itemReportDateFilter, setItemReportDateFilter] = useState("today");
+  const [itemReportMonth, setItemReportMonth] = useState(new Date().getMonth());
+  const [itemReportYear, setItemReportYear] = useState(new Date().getFullYear());
+  const [itemReportCustomFrom, setItemReportCustomFrom] = useState("");
+  const [itemReportCustomTo, setItemReportCustomTo] = useState("");
   const reportTableRef = useRef<HTMLDivElement>(null);
   const [logoBase64, setLogoBase64] = useState<string>("");
   
@@ -278,6 +283,38 @@ export default function Workers() {
           return {
             start: startOfDay(parseISO(customFromDate)),
             end: endOfDay(parseISO(customToDate)),
+          };
+        }
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case "all":
+      default:
+        return { start: new Date(0), end: now };
+    }
+  };
+
+  const getItemReportDateRange = () => {
+    const now = new Date();
+    switch (itemReportDateFilter) {
+      case "today":
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case "yesterday":
+        const yesterday = subDays(now, 1);
+        return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+      case "week":
+        return { start: startOfWeek(now), end: endOfWeek(now) };
+      case "month":
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "monthly":
+        const monthDate = new Date(itemReportYear, itemReportMonth, 1);
+        return { start: startOfMonth(monthDate), end: endOfMonth(monthDate) };
+      case "yearly":
+        const yearDate = new Date(itemReportYear, 0, 1);
+        return { start: startOfYear(yearDate), end: endOfYear(yearDate) };
+      case "custom":
+        if (itemReportCustomFrom && itemReportCustomTo) {
+          return {
+            start: startOfDay(parseISO(itemReportCustomFrom)),
+            end: endOfDay(parseISO(itemReportCustomTo)),
           };
         }
         return { start: startOfDay(now), end: endOfDay(now) };
@@ -591,81 +628,117 @@ export default function Workers() {
     });
   };
 
-  const generateItemReportExcel = (
-    dateItemMap: Record<string, Record<string, number>>,
-    sortedDates: string[],
-    sortedItems: string[],
-    itemTotals: Record<string, number>
-  ) => {
+  const generateItemReportExcel = (filteredOrders: Order[]) => {
+    const { start, end } = getItemReportDateRange();
+    const dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    
     const wsData: (string | number)[][] = [];
-    wsData.push([
-      "Item Quantity Report",
-      "",
-      "",
-      `From: ${reportStartDate} To: ${reportEndDate}`,
-    ]);
+    wsData.push(["Liquid Washes Laundry"]);
+    wsData.push(["Item Quantity Report"]);
+    wsData.push([`Report Period: ${dateRangeStr}`]);
     wsData.push([]);
+    wsData.push(["Order Number", "Client Name", "Order Date", "Items", "Total Items"]);
 
-    const headerRow: (string | number)[] = [
-      "Item Name",
-      ...sortedDates,
-      "Total",
-    ];
-    wsData.push(headerRow);
-
-    sortedItems.forEach((itemName) => {
-      const row: (string | number)[] = [itemName];
-      sortedDates.forEach((date) => {
-        row.push(dateItemMap[date][itemName] || 0);
-      });
-      row.push(itemTotals[itemName]);
-      wsData.push(row);
+    filteredOrders.forEach((order) => {
+      const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
+      const orderDate = order.entryDate ? format(new Date(order.entryDate), "MMMM d, yyyy") : "";
+      const itemsStr = order.items || "";
+      
+      const itemRegex = /(\d+)x\s+([^,\[\]]+?)(?:\s*\[[^\]]*\])?(?:\s*\([^)]*\))?(?:,|$)/g;
+      let match;
+      let totalItems = 0;
+      while ((match = itemRegex.exec(itemsStr)) !== null) {
+        totalItems += parseInt(match[1], 10);
+      }
+      
+      wsData.push([order.orderNumber || "", clientName, orderDate, itemsStr, totalItems]);
     });
 
-    const dailyTotalRow: (string | number)[] = ["Daily Total"];
-    sortedDates.forEach((date) => {
-      dailyTotalRow.push(
-        Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0),
-      );
-    });
-    dailyTotalRow.push(
-      Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0),
-    );
-    wsData.push(dailyTotalRow);
+    wsData.push([]);
+    wsData.push(["Total Orders:", filteredOrders.length]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 60 },
+      { wch: 12 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Item Report");
-    XLSX.writeFile(
-      wb,
-      `Item_Report_${reportStartDate}_to_${reportEndDate}.xlsx`,
-    );
+    XLSX.writeFile(wb, `Item_Report_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
     toast({
       title: "Excel Downloaded",
       description: "Item report exported to Excel",
     });
   };
 
-  const exportReportToPDF = () => {
-    if (reportTableRef.current) {
-      const opt = {
-        margin: 10,
-        filename: `Item_Report_${reportStartDate}_to_${reportEndDate}.pdf`,
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: {
-          unit: "mm" as const,
-          format: "a4" as const,
-          orientation: "landscape" as const,
-        },
-      };
+  const exportItemReportToPDF = (filteredOrders: Order[]) => {
+    const { start, end } = getItemReportDateRange();
+    const dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    
+    const content = document.createElement("div");
+    content.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #000; background: #fff;">
+        <div style="text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 15px; margin-bottom: 20px;">
+          <div style="font-size: 20px; font-weight: bold; color: #1e40af;">LIQUID WASHES LAUNDRY</div>
+          <div style="font-size: 14px; margin-top: 5px; font-weight: bold;">Item Quantity Report</div>
+          <div style="font-size: 11px; margin-top: 5px; color: #666;">${dateRangeStr}</div>
+        </div>
 
-      html2pdf().set(opt).from(reportTableRef.current).save();
-      toast({
-        title: "PDF Downloaded",
-        description: "Item report exported to PDF",
-      });
-    }
+        <table style="width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 15px;">
+          <thead>
+            <tr style="background: #f3f4f6;">
+              <th style="padding: 6px 4px; border: 1px solid #ddd; text-align: left;">Order #</th>
+              <th style="padding: 6px 4px; border: 1px solid #ddd; text-align: left;">Client</th>
+              <th style="padding: 6px 4px; border: 1px solid #ddd; text-align: left;">Date</th>
+              <th style="padding: 6px 4px; border: 1px solid #ddd; text-align: left;">Items</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredOrders.map((order) => {
+              const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
+              const orderDate = order.entryDate ? format(new Date(order.entryDate), "MMM d, yyyy") : "";
+              return `
+                <tr>
+                  <td style="padding: 4px; border: 1px solid #ddd;">${order.orderNumber || ""}</td>
+                  <td style="padding: 4px; border: 1px solid #ddd;">${clientName}</td>
+                  <td style="padding: 4px; border: 1px solid #ddd;">${orderDate}</td>
+                  <td style="padding: 4px; border: 1px solid #ddd; font-size: 8px;">${order.items || ""}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+
+        <div style="text-align: right; font-weight: bold; margin-bottom: 15px;">
+          Total Orders: ${filteredOrders.length}
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 9px; color: #888;">
+          Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")} | Tel: 026 815 824 | Mobile: +971 56 338 0001
+        </div>
+      </div>
+    `;
+
+    const opt = {
+      margin: 10,
+      filename: `Item_Report_${format(new Date(), "yyyy-MM-dd")}.pdf`,
+      image: { type: "jpeg" as const, quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: {
+        unit: "mm" as const,
+        format: "a4" as const,
+        orientation: "landscape" as const,
+      },
+    };
+
+    html2pdf().set(opt).from(content).save();
+    toast({
+      title: "PDF Downloaded",
+      description: "Item report exported to PDF",
+    });
   };
 
   const createMutation = useMutation({
@@ -1355,40 +1428,99 @@ export default function Workers() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Package className="w-5 h-5" />
-                        Item Quantity Report (Date-wise)
+                        Item Quantity Report
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6">
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                          <Label htmlFor="report-start" className="whitespace-nowrap">From:</Label>
-                          <Input
-                            id="report-start"
-                            type="date"
-                            value={reportStartDate}
-                            onChange={(e) => setReportStartDate(e.target.value)}
-                            className="w-full sm:w-40 h-11 touch-manipulation"
-                            data-testid="input-report-start-date"
-                          />
+                      <div className="flex flex-wrap items-center gap-3 mb-6">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <Select value={itemReportDateFilter} onValueChange={setItemReportDateFilter}>
+                            <SelectTrigger className="w-36" data-testid="select-item-report-date-filter">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="today">Today</SelectItem>
+                              <SelectItem value="yesterday">Yesterday</SelectItem>
+                              <SelectItem value="week">This Week</SelectItem>
+                              <SelectItem value="month">This Month</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                              <SelectItem value="yearly">Yearly</SelectItem>
+                              <SelectItem value="custom">Custom Range</SelectItem>
+                              <SelectItem value="all">All Time</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                          <Label htmlFor="report-end" className="whitespace-nowrap">To:</Label>
-                          <Input
-                            id="report-end"
-                            type="date"
-                            value={reportEndDate}
-                            onChange={(e) => setReportEndDate(e.target.value)}
-                            className="w-full sm:w-40 h-11 touch-manipulation"
-                            data-testid="input-report-end-date"
-                          />
-                        </div>
+                        {itemReportDateFilter === "monthly" && (
+                          <div className="flex items-center gap-2">
+                            <Select value={itemReportMonth.toString()} onValueChange={(v) => setItemReportMonth(parseInt(v))}>
+                              <SelectTrigger className="w-32" data-testid="select-item-report-month">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="0">January</SelectItem>
+                                <SelectItem value="1">February</SelectItem>
+                                <SelectItem value="2">March</SelectItem>
+                                <SelectItem value="3">April</SelectItem>
+                                <SelectItem value="4">May</SelectItem>
+                                <SelectItem value="5">June</SelectItem>
+                                <SelectItem value="6">July</SelectItem>
+                                <SelectItem value="7">August</SelectItem>
+                                <SelectItem value="8">September</SelectItem>
+                                <SelectItem value="9">October</SelectItem>
+                                <SelectItem value="10">November</SelectItem>
+                                <SelectItem value="11">December</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select value={itemReportYear.toString()} onValueChange={(v) => setItemReportYear(parseInt(v))}>
+                              <SelectTrigger className="w-24" data-testid="select-item-report-year-monthly">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {itemReportDateFilter === "yearly" && (
+                          <div className="flex items-center gap-2">
+                            <Select value={itemReportYear.toString()} onValueChange={(v) => setItemReportYear(parseInt(v))}>
+                              <SelectTrigger className="w-24" data-testid="select-item-report-year">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {itemReportDateFilter === "custom" && (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="date"
+                              value={itemReportCustomFrom}
+                              onChange={(e) => setItemReportCustomFrom(e.target.value)}
+                              className="w-36"
+                              data-testid="input-item-report-from-date"
+                            />
+                            <span className="text-muted-foreground">to</span>
+                            <Input
+                              type="date"
+                              value={itemReportCustomTo}
+                              onChange={(e) => setItemReportCustomTo(e.target.value)}
+                              className="w-36"
+                              data-testid="input-item-report-to-date"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {(() => {
-                        const startDate = new Date(reportStartDate);
-                        startDate.setHours(0, 0, 0, 0);
-                        const endDate = new Date(reportEndDate);
-                        endDate.setHours(23, 59, 59, 999);
+                        const { start: startDate, end: endDate } = getItemReportDateRange();
 
                         const filteredOrders = orders?.filter((order) => {
                           const orderDate = new Date(order.entryDate);
@@ -1454,7 +1586,7 @@ export default function Workers() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => generateItemReportExcel(dateItemMap, sortedDates, sortedItems, itemTotals)}
+                                onClick={() => generateItemReportExcel(filteredOrders)}
                                 data-testid="button-export-excel"
                               >
                                 <Download className="w-4 h-4 mr-2" />
@@ -1463,7 +1595,7 @@ export default function Workers() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={exportReportToPDF}
+                                onClick={() => exportItemReportToPDF(filteredOrders)}
                                 data-testid="button-export-pdf"
                               >
                                 <FileText className="w-4 h-4 mr-2" />
@@ -1472,7 +1604,7 @@ export default function Workers() {
                             </div>
                             <div ref={reportTableRef} className="overflow-x-auto">
                               <div className="bg-card p-4 mb-4">
-                                <h3 className="text-lg font-semibold mb-1">Item Quantity Report ({reportStartDate} to {reportEndDate})</h3>
+                                <h3 className="text-lg font-semibold mb-1">Item Quantity Report - {format(startDate, "MMMM d, yyyy")} to {format(endDate, "MMMM d, yyyy")}</h3>
                               </div>
                               <Table>
                                 <TableHeader>
