@@ -2683,83 +2683,98 @@ export default function Workers() {
 
       {/* Staff Orders Dialog */}
       <Dialog open={!!selectedStaffOrders} onOpenChange={() => setSelectedStaffOrders(null)}>
-        <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {selectedStaffOrders?.type === "bills" && <Receipt className="w-5 h-5 text-cyan-600" />}
-              {selectedStaffOrders?.type === "tagged" && <Tag className="w-5 h-5 text-orange-600" />}
-              {selectedStaffOrders?.type === "packed" && <Package className="w-5 h-5 text-green-600" />}
-              {selectedStaffOrders?.type === "delivered" && <Truck className="w-5 h-5 text-purple-600" />}
-              {selectedStaffOrders?.type === "bills" ? "Bills Created" : 
+              {selectedStaffOrders?.type === "bills" && <Receipt className="w-5 h-5 text-cyan-500" />}
+              {selectedStaffOrders?.type === "tagged" && <Tag className="w-5 h-5 text-orange-500" />}
+              {selectedStaffOrders?.type === "packed" && <Package className="w-5 h-5 text-green-500" />}
+              {selectedStaffOrders?.type === "delivered" && <Truck className="w-5 h-5 text-purple-500" />}
+              {selectedStaffOrders?.staffName} - {selectedStaffOrders?.type === "bills" ? "Bills Created" : 
                selectedStaffOrders?.type === "tagged" ? "Orders Tagged" : 
-               selectedStaffOrders?.type === "packed" ? "Orders Packed" : "Orders Delivered"} - {selectedStaffOrders?.staffName}
+               selectedStaffOrders?.type === "packed" ? "Orders Packed" : "Orders Delivered"}
+              <Badge variant="outline" className="ml-2">
+                {selectedStaffOrders?.type === "bills" 
+                  ? getStaffOrders(selectedStaffOrders?.staffId || 0, "bills").length
+                  : (getStaffOrders(selectedStaffOrders?.staffId || 0, selectedStaffOrders?.type || "tagged") as Order[]).length}
+              </Badge>
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            {selectedStaffOrders && selectedStaffOrders.type === "bills" ? (
-              // Show bills
-              <>
-                {getStaffOrders(selectedStaffOrders.staffId, "bills").map((bill: any) => (
-                  <Card key={bill.id} className="p-3" data-testid={`card-bill-${bill.id}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-bold">Bill #{bill.id}</div>
-                        <div className="text-sm text-muted-foreground">{bill.amount} AED</div>
-                      </div>
-                      <div className="text-right">
-                        <Badge className={bill.isPaid ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
-                          {bill.isPaid ? "Paid" : "Unpaid"}
-                        </Badge>
-                        {bill.billDate && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(bill.billDate), "dd MMM yyyy, h:mm a")}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-                {getStaffOrders(selectedStaffOrders.staffId, "bills").length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No bills found for this staff member
-                  </div>
-                )}
-              </>
-            ) : (
-              // Show orders
-              <>
-                {selectedStaffOrders && (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).map((order) => (
-                  <Card key={order.id} className="p-3" data-testid={`card-order-${order.id}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-bold">#{order.orderNumber}</div>
-                        <div className="text-sm text-muted-foreground">{order.customerName || "Walk-in"}</div>
-                      </div>
-                      <div className="text-right">
-                        <Badge className={
-                          selectedStaffOrders?.type === "tagged" ? "bg-orange-500 text-white" :
-                          selectedStaffOrders?.type === "packed" ? "bg-green-500 text-white" : "bg-purple-500 text-white"
-                        }>
-                          {selectedStaffOrders?.type === "tagged" ? "Tagged" :
-                           selectedStaffOrders?.type === "packed" ? "Packed" : "Delivered"}
-                        </Badge>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {selectedStaffOrders?.type === "tagged" && order.tagDate && format(new Date(order.tagDate), "dd MMM yyyy, h:mm a")}
-                          {selectedStaffOrders?.type === "packed" && order.packingDate && format(new Date(order.packingDate), "dd MMM yyyy, h:mm a")}
-                          {selectedStaffOrders?.type === "delivered" && order.deliveryDate && format(new Date(order.deliveryDate), "dd MMM yyyy, h:mm a")}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-                {selectedStaffOrders && (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No orders found for this staff member
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          {selectedStaffOrders && (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order #</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedStaffOrders.type === "bills" ? (
+                    // Show bills as orders
+                    getStaffOrders(selectedStaffOrders.staffId, "bills").map((bill: any) => {
+                      const order = orders?.find(o => o.billId === bill.id);
+                      const clientName = order ? (clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in") : "N/A";
+                      return (
+                        <TableRow key={bill.id} data-testid={`row-staff-bill-${bill.id}`}>
+                          <TableCell className="font-medium text-blue-600">
+                            {order?.orderNumber || `Bill #${bill.id}`}
+                          </TableCell>
+                          <TableCell>{clientName}</TableCell>
+                          <TableCell>
+                            {bill.billDate && format(new Date(bill.billDate), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate text-muted-foreground text-sm">
+                            {order?.items || "N/A"}
+                          </TableCell>
+                          <TableCell className="text-right">{bill.amount} AED</TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    // Show orders
+                    (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).map((order) => {
+                      const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
+                      return (
+                        <TableRow key={order.id} data-testid={`row-staff-order-${order.id}`}>
+                          <TableCell className="font-medium text-blue-600">
+                            {order.orderNumber}
+                          </TableCell>
+                          <TableCell>{clientName}</TableCell>
+                          <TableCell>
+                            {selectedStaffOrders.type === "tagged" && order.tagDate && format(new Date(order.tagDate), "MMM d, yyyy")}
+                            {selectedStaffOrders.type === "packed" && order.packingDate && format(new Date(order.packingDate), "MMM d, yyyy")}
+                            {selectedStaffOrders.type === "delivered" && order.deliveryDate && format(new Date(order.deliveryDate), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate text-muted-foreground text-sm">
+                            {order.items || "No items"}
+                          </TableCell>
+                          <TableCell className="text-right">{order.finalAmount} AED</TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                  {selectedStaffOrders.type === "bills" && getStaffOrders(selectedStaffOrders.staffId, "bills").length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No bills found for this staff member
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {selectedStaffOrders.type !== "bills" && (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No orders found for this staff member
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
