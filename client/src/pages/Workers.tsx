@@ -417,7 +417,7 @@ export default function Workers() {
   }, [workerStats]);
 
   const adminStats = useMemo(() => {
-    if (!orders || !bills) return { ordersCreated: 0, billsCreated: 0, billsTotal: 0 };
+    if (!orders || !bills) return { orders: [] as Order[], billsCreated: 0, billsTotal: 0 };
     const { start, end } = getDateRange();
     
     const adminOrders = orders.filter((o) => {
@@ -445,11 +445,28 @@ export default function Workers() {
     const billsTotal = adminBills.reduce((sum, b) => sum + parseFloat(b.amount || "0"), 0);
     
     return {
-      ordersCreated: adminOrders.length,
+      orders: adminOrders,
       billsCreated: adminBills.length,
       billsTotal,
     };
   }, [orders, bills, dateFilter, customFromDate, customToDate, selectedMonth, selectedYear]);
+
+  const [expandedAdminOrders, setExpandedAdminOrders] = useState<Set<number>>(new Set());
+  
+  const getAdminDateRangeLabel = () => {
+    const { start, end } = getDateRange();
+    if (dateFilter === "today" || dateFilter === "yesterday") {
+      return format(start, "MMMM d, yyyy");
+    } else if (dateFilter === "monthly" || dateFilter === "month") {
+      return format(start, "MMMM yyyy");
+    } else if (dateFilter === "yearly") {
+      return format(start, "yyyy");
+    } else if (dateFilter === "all") {
+      return "All Time";
+    } else {
+      return `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    }
+  };
 
   const getDateRangeLabel = () => {
     const { start, end } = getDateRange();
@@ -1358,16 +1375,19 @@ export default function Workers() {
                     <CardTitle className="text-base flex items-center gap-2">
                       <Users className="w-5 h-5 text-purple-500" />
                       Admin Performance
+                      <Badge variant="outline" className="ml-2">
+                        {getAdminDateRangeLabel()}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-4 mb-4">
                       <div className="text-center p-3 bg-muted/50 rounded-lg">
                         <div className="flex items-center justify-center gap-2 mb-1">
                           <ClipboardList className="w-4 h-4 text-blue-500" />
                           <span className="text-sm text-muted-foreground">Orders Created</span>
                         </div>
-                        <p className="text-2xl font-bold">{adminStats.ordersCreated}</p>
+                        <p className="text-2xl font-bold">{adminStats.orders.length}</p>
                       </div>
                       <div className="text-center p-3 bg-muted/50 rounded-lg">
                         <div className="flex items-center justify-center gap-2 mb-1">
@@ -1384,6 +1404,64 @@ export default function Workers() {
                         <p className="text-2xl font-bold">{adminStats.billsTotal.toFixed(2)} AED</p>
                       </div>
                     </div>
+                    
+                    {adminStats.orders.length > 0 && (
+                      <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Order #</TableHead>
+                              <TableHead>Client</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead className="text-right">Amount</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {adminStats.orders.map((order) => {
+                              const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
+                              const isExpanded = expandedAdminOrders.has(order.id);
+                              return (
+                                <>
+                                  <TableRow 
+                                    key={order.id} 
+                                    className="cursor-pointer hover-elevate"
+                                    onClick={() => {
+                                      const newSet = new Set(expandedAdminOrders);
+                                      if (isExpanded) {
+                                        newSet.delete(order.id);
+                                      } else {
+                                        newSet.add(order.id);
+                                      }
+                                      setExpandedAdminOrders(newSet);
+                                    }}
+                                    data-testid={`row-admin-order-${order.id}`}
+                                  >
+                                    <TableCell className="font-medium text-blue-600">
+                                      {order.orderNumber}
+                                    </TableCell>
+                                    <TableCell>{clientName}</TableCell>
+                                    <TableCell>
+                                      {order.entryDate && format(new Date(order.entryDate), "MMM d, yyyy")}
+                                    </TableCell>
+                                    <TableCell className="text-right">{order.finalAmount} AED</TableCell>
+                                  </TableRow>
+                                  {isExpanded && (
+                                    <TableRow key={`${order.id}-items`}>
+                                      <TableCell colSpan={4} className="bg-muted/30 p-4">
+                                        <div className="text-sm">
+                                          <p className="font-medium mb-2">Items:</p>
+                                          <p className="text-muted-foreground">{order.items || "No items"}</p>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
