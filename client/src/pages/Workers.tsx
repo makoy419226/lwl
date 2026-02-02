@@ -793,14 +793,20 @@ export default function Workers() {
       const orderDate = order.entryDate ? format(new Date(order.entryDate), "MMMM d, yyyy") : "";
       const itemsStr = order.items || "";
       
+      // Parse items and format with line breaks for Excel
       const itemRegex = /(\d+)x\s+([^,\[\]]+?)(?:\s*\[[^\]]*\])?(?:\s*\([^)]*\))?(?:,|$)/g;
       let match;
       let totalItems = 0;
+      const parsedItems: string[] = [];
       while ((match = itemRegex.exec(itemsStr)) !== null) {
         totalItems += parseInt(match[1], 10);
+        parsedItems.push(`${match[1]}x ${match[2].trim()}`);
       }
       
-      wsData.push([order.orderNumber || "", clientName, orderDate, itemsStr, totalItems]);
+      // Join items with line breaks for better readability in Excel
+      const formattedItems = parsedItems.join("\n");
+      
+      wsData.push([order.orderNumber || "", clientName, orderDate, formattedItems || itemsStr, totalItems]);
     });
 
     wsData.push([]);
@@ -811,9 +817,17 @@ export default function Workers() {
       { wch: 15 },
       { wch: 20 },
       { wch: 20 },
-      { wch: 60 },
+      { wch: 40 },
       { wch: 12 },
     ];
+    
+    // Enable text wrapping for the Items column
+    for (let i = 5; i < wsData.length - 2; i++) {
+      const cellRef = XLSX.utils.encode_cell({ r: i, c: 3 });
+      if (ws[cellRef]) {
+        ws[cellRef].s = { alignment: { wrapText: true } };
+      }
+    }
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Item Report");
     XLSX.writeFile(wb, `Item_Report_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
