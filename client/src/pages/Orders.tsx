@@ -4361,6 +4361,29 @@ function OrderForm({
         </div>
       )}
 
+      {/* Always show selected items when there are any */}
+      {orderItems.length > 0 && productSearch && (
+        <div className="p-3 bg-accent/30 rounded-lg border border-accent mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-foreground">Selected Items ({orderItems.length})</span>
+            <span className="text-sm font-bold text-primary">{orderTotal.toFixed(2)} AED</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {orderItems.map((item) => (
+              <Badge 
+                key={item.product.id} 
+                variant="secondary" 
+                className="text-xs cursor-pointer hover:bg-destructive/20"
+                onClick={() => handleQuantityChange(item.product.id, -item.quantity)}
+              >
+                {item.quantity}x {item.product.name} ({(parseFloat(item.product.price || "0") * item.quantity).toFixed(0)} AED)
+                <X className="w-3 h-3 ml-1" />
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label>Select Items</Label>
         <Input
