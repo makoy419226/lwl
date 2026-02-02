@@ -1397,81 +1397,107 @@ export default function Workers() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <ClipboardList className="w-4 h-4 text-blue-500" />
-                          <span className="text-sm text-muted-foreground">Orders Created</span>
-                        </div>
-                        <p className="text-2xl font-bold">{adminStats.orders.length}</p>
-                      </div>
-                      <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <Receipt className="w-4 h-4 text-cyan-500" />
-                          <span className="text-sm text-muted-foreground">Bills Created</span>
-                        </div>
-                        <p className="text-2xl font-bold">{adminStats.billsCreated}</p>
-                      </div>
-                      <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <Receipt className="w-4 h-4 text-green-500" />
-                          <span className="text-sm text-muted-foreground">Bills Total</span>
-                        </div>
-                        <p className="text-2xl font-bold">{adminStats.billsTotal.toFixed(2)} AED</p>
-                      </div>
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead className="text-center">Role</TableHead>
+                            <TableHead className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <ClipboardList className="w-4 h-4 text-blue-500" />
+                                Orders
+                              </div>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Receipt className="w-4 h-4 text-cyan-500" />
+                                Bills
+                              </div>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Receipt className="w-4 h-4 text-green-500" />
+                                Total (AED)
+                              </div>
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow 
+                            className="cursor-pointer hover-elevate"
+                            onClick={() => {
+                              if (adminStats.orders.length > 0) {
+                                setExpandedAdminOrders(prev => prev.size > 0 ? new Set() : new Set(adminStats.orders.map(o => o.id)));
+                              }
+                            }}
+                            data-testid="row-admin-stats"
+                          >
+                            <TableCell className="font-medium">Admin</TableCell>
+                            <TableCell className="text-center">
+                              <Badge 
+                                variant="outline" 
+                                className="bg-purple-500/10 text-purple-600 border-purple-500/30"
+                              >
+                                Admin
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                              >
+                                {adminStats.orders.length}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge
+                                variant="outline"
+                                className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
+                              >
+                                {adminStats.billsCreated}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center font-medium">
+                              {adminStats.billsTotal.toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
                     </div>
                     
-                    {adminStats.orders.length > 0 && (
-                      <div className="border rounded-lg overflow-hidden">
+                    {expandedAdminOrders.size > 0 && adminStats.orders.length > 0 && (
+                      <div className="mt-4 border rounded-lg overflow-hidden">
+                        <div className="bg-muted/50 px-4 py-2 border-b">
+                          <p className="text-sm font-medium">Admin Orders ({adminStats.orders.length})</p>
+                        </div>
                         <Table>
                           <TableHeader>
                             <TableRow>
                               <TableHead>Order #</TableHead>
                               <TableHead>Client</TableHead>
                               <TableHead>Date</TableHead>
+                              <TableHead>Items</TableHead>
                               <TableHead className="text-right">Amount</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {adminStats.orders.map((order) => {
                               const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
-                              const isExpanded = expandedAdminOrders.has(order.id);
                               return (
-                                <>
-                                  <TableRow 
-                                    key={order.id} 
-                                    className="cursor-pointer hover-elevate"
-                                    onClick={() => {
-                                      const newSet = new Set(expandedAdminOrders);
-                                      if (isExpanded) {
-                                        newSet.delete(order.id);
-                                      } else {
-                                        newSet.add(order.id);
-                                      }
-                                      setExpandedAdminOrders(newSet);
-                                    }}
-                                    data-testid={`row-admin-order-${order.id}`}
-                                  >
-                                    <TableCell className="font-medium text-blue-600">
-                                      {order.orderNumber}
-                                    </TableCell>
-                                    <TableCell>{clientName}</TableCell>
-                                    <TableCell>
-                                      {order.entryDate && format(new Date(order.entryDate), "MMM d, yyyy")}
-                                    </TableCell>
-                                    <TableCell className="text-right">{order.finalAmount} AED</TableCell>
-                                  </TableRow>
-                                  {isExpanded && (
-                                    <TableRow key={`${order.id}-items`}>
-                                      <TableCell colSpan={4} className="bg-muted/30 p-4">
-                                        <div className="text-sm">
-                                          <p className="font-medium mb-2">Items:</p>
-                                          <p className="text-muted-foreground">{order.items || "No items"}</p>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  )}
-                                </>
+                                <TableRow key={order.id} data-testid={`row-admin-order-${order.id}`}>
+                                  <TableCell className="font-medium text-blue-600">
+                                    {order.orderNumber}
+                                  </TableCell>
+                                  <TableCell>{clientName}</TableCell>
+                                  <TableCell>
+                                    {order.entryDate && format(new Date(order.entryDate), "MMM d, yyyy")}
+                                  </TableCell>
+                                  <TableCell className="max-w-xs truncate text-muted-foreground text-sm">
+                                    {order.items || "No items"}
+                                  </TableCell>
+                                  <TableCell className="text-right">{order.finalAmount} AED</TableCell>
+                                </TableRow>
                               );
                             })}
                           </TableBody>
