@@ -256,17 +256,17 @@ export default function Workers() {
     }
   };
 
-  // All staff workers (all roles except admin) - universal tracking by PIN
-  const allStaffUsers = useMemo(() => {
-    return systemUsers?.filter(u => u.role !== 'admin') || [];
-  }, [systemUsers]);
+  // All individual staff members (tracked by PIN) - universal tracking
+  const allStaffMembers = useMemo(() => {
+    return staffMembers || [];
+  }, [staffMembers]);
 
-  // Universal worker stats - all staff can do any task (tracked by PIN)
+  // Universal worker stats - all individual staff members tracked by PIN
   const workerStats = useMemo(() => {
-    if (!allStaffUsers.length || !orders) return [];
+    if (!allStaffMembers.length || !orders) return [];
     const { start, end } = getDateRange();
 
-    return allStaffUsers
+    return allStaffMembers
       .map((worker) => {
         const taggedOrders = orders.filter((o) => {
           if (o.tagWorkerId !== worker.id) return false;
@@ -333,7 +333,7 @@ export default function Workers() {
         };
       })
       .sort((a, b) => b.totalTasks - a.totalTasks);
-  }, [allStaffUsers, orders, bills, dateFilter, customFromDate, customToDate]);
+  }, [allStaffMembers, orders, bills, dateFilter, customFromDate, customToDate]);
 
   const totals = useMemo(() => {
     return workerStats.reduce(
@@ -972,20 +972,20 @@ export default function Workers() {
                                 data-testid={`row-stats-${s.worker.id}`}
                               >
                                 <TableCell className="font-medium">
-                                  {s.worker.name || s.worker.username}
+                                  {s.worker.name}
                                 </TableCell>
                                 <TableCell className="text-center">
                                   <Badge 
                                     variant="outline" 
                                     className={
-                                      s.worker.role === "counter" 
+                                      s.worker.roleType === "counter" 
                                         ? "bg-blue-500/10 text-blue-600 border-blue-500/30" 
-                                        : s.worker.role === "section" 
+                                        : s.worker.roleType === "section" 
                                           ? "bg-purple-500/10 text-purple-600 border-purple-500/30" 
                                           : "bg-green-500/10 text-green-600 border-green-500/30"
                                     }
                                   >
-                                    {s.worker.role === "counter" ? "Counter" : s.worker.role === "section" ? "Section" : "Driver"}
+                                    {s.worker.roleType === "counter" ? "Counter" : s.worker.roleType === "section" ? "Section" : "Driver"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-center">
