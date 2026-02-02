@@ -797,9 +797,9 @@ export default function Products() {
 
       createOrderMutation.mutate({
         clientId: isWalkIn ? null : selectedClientId,
-        customerName: isWalkIn ? (walkInName.trim() || "N/A") : (customerName.trim() || "N/A"),
-        customerPhone: isWalkIn ? (walkInPhone.trim() || "N/A") : (customerPhone.trim() || "N/A"),
-        deliveryAddress: walkInAddress.trim() || "N/A",
+        customerName: isWalkIn ? (walkInName.trim() || "-") : (customerName.trim() || "-"),
+        customerPhone: isWalkIn ? (walkInPhone.trim() || "-") : (customerPhone.trim() || "-"),
+        deliveryAddress: walkInAddress.trim() || "-",
         orderNumber,
         items: itemsText,
         totalAmount: subtotal.toFixed(2),
@@ -815,7 +815,7 @@ export default function Products() {
         entryBy: data.worker?.name || "Staff",
         entryByWorkerId: data.worker?.id || null,
         createdBy: data.worker?.name || user?.name || "Staff",
-        notes: `Address: ${walkInAddress.trim() || "N/A"}`,
+        notes: `Address: ${walkInAddress.trim() || "-"}`,
       });
 
       setShowPinDialog(false);
