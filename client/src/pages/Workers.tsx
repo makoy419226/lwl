@@ -364,7 +364,7 @@ export default function Workers() {
         };
       })
       .sort((a, b) => b.totalTasks - a.totalTasks);
-  }, [allStaffMembers, orders, bills, dateFilter, customFromDate, customToDate]);
+  }, [allStaffMembers, orders, bills, dateFilter, customFromDate, customToDate, selectedMonth, selectedYear]);
 
   const totals = useMemo(() => {
     return workerStats.reduce(
