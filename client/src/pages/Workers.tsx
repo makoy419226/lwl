@@ -1088,7 +1088,7 @@ export default function Workers() {
         <div className="h-20 px-6 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
             <Users className="w-6 h-6 text-primary" />
-            Staff Members
+            Management
           </h1>
         </div>
       </div>
