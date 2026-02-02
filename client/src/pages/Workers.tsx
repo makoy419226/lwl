@@ -423,7 +423,18 @@ export default function Workers() {
 
   const exportToExcel = () => {
     const { start, end } = getDateRange();
-    const dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    let dateRangeStr = "";
+    if (dateFilter === "today" || dateFilter === "yesterday") {
+      dateRangeStr = format(start, "MMMM d, yyyy");
+    } else if (dateFilter === "monthly" || dateFilter === "month") {
+      dateRangeStr = format(start, "MMMM yyyy");
+    } else if (dateFilter === "yearly") {
+      dateRangeStr = format(start, "yyyy");
+    } else if (dateFilter === "all") {
+      dateRangeStr = "All Time";
+    } else {
+      dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    }
     
     const headerRows = [
       ["Liquid Washes Laundry"],
@@ -468,13 +479,25 @@ export default function Workers() {
 
   const exportToPDF = () => {
     const { start, end } = getDateRange();
+    let dateRangeStr = "";
+    if (dateFilter === "today" || dateFilter === "yesterday") {
+      dateRangeStr = format(start, "MMMM d, yyyy");
+    } else if (dateFilter === "monthly" || dateFilter === "month") {
+      dateRangeStr = format(start, "MMMM yyyy");
+    } else if (dateFilter === "yearly") {
+      dateRangeStr = format(start, "yyyy");
+    } else if (dateFilter === "all") {
+      dateRangeStr = "All Time";
+    } else {
+      dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    }
     const content = document.createElement("div");
     content.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 148mm; color: #000; background: #fff;">
         <div style="text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 15px; margin-bottom: 20px;">
           <div style="font-size: 20px; font-weight: bold; color: #1e40af;">LIQUID WASHES LAUNDRY</div>
           <div style="font-size: 14px; margin-top: 5px; font-weight: bold;">Staff Performance Report</div>
-          <div style="font-size: 11px; margin-top: 5px; color: #666;">${format(start, "dd/MM/yyyy")} - ${format(end, "dd/MM/yyyy")}</div>
+          <div style="font-size: 11px; margin-top: 5px; color: #666;">${dateRangeStr}</div>
         </div>
 
         <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 15px;">
@@ -630,7 +653,18 @@ export default function Workers() {
 
   const generateItemReportExcel = (filteredOrders: Order[]) => {
     const { start, end } = getItemReportDateRange();
-    const dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    let dateRangeStr = "";
+    if (itemReportDateFilter === "today" || itemReportDateFilter === "yesterday") {
+      dateRangeStr = format(start, "MMMM d, yyyy");
+    } else if (itemReportDateFilter === "monthly" || itemReportDateFilter === "month") {
+      dateRangeStr = format(start, "MMMM yyyy");
+    } else if (itemReportDateFilter === "yearly") {
+      dateRangeStr = format(start, "yyyy");
+    } else if (itemReportDateFilter === "all") {
+      dateRangeStr = "All Time";
+    } else {
+      dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    }
     
     const wsData: (string | number)[][] = [];
     wsData.push(["Liquid Washes Laundry"]);
@@ -676,7 +710,18 @@ export default function Workers() {
 
   const exportItemReportToPDF = (filteredOrders: Order[]) => {
     const { start, end } = getItemReportDateRange();
-    const dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    let dateRangeStr = "";
+    if (itemReportDateFilter === "today" || itemReportDateFilter === "yesterday") {
+      dateRangeStr = format(start, "MMMM d, yyyy");
+    } else if (itemReportDateFilter === "monthly" || itemReportDateFilter === "month") {
+      dateRangeStr = format(start, "MMMM yyyy");
+    } else if (itemReportDateFilter === "yearly") {
+      dateRangeStr = format(start, "yyyy");
+    } else if (itemReportDateFilter === "all") {
+      dateRangeStr = "All Time";
+    } else {
+      dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    }
     
     const content = document.createElement("div");
     content.innerHTML = `
