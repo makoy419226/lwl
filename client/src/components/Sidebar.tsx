@@ -70,30 +70,30 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       label: "Operations",
       collapsible: false,
       items: [
-        { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "counter", "section"] },
+        { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", active: isDashboard, testId: "nav-dashboard", roles: ["admin", "counter", "reception", "section", "staff"] },
         { href: "/delivery", icon: Truck, label: "Delivery Dashboard", active: location === "/delivery", testId: "nav-delivery", roles: ["driver"] },
         { href: "/delivery-history", icon: History, label: "Delivery History", active: location === "/delivery-history", testId: "nav-delivery-history", roles: ["driver"] },
-        { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "counter", "driver"] },
-        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "counter", "section", "driver"] },
+        { href: "/products", icon: List, label: "New Order", active: isPriceList, testId: "nav-new-order", roles: ["admin", "counter", "reception", "driver"] },
+        { href: "/orders", icon: ClipboardList, label: "Order Tracking", active: isOrders, testId: "nav-orders", roles: ["admin", "counter", "reception", "section", "staff", "driver"] },
       ]
     },
     {
       label: "Business",
       collapsible: false,
       items: [
-        { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "counter"] },
-        { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "counter"] },
-        { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "counter"] },
-        { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "counter"] },
+        { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "counter", "reception"] },
+        { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "counter", "reception"] },
+        { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "counter", "reception"] },
+        { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "counter", "reception"] },
       ]
     },
     {
       label: "Reports",
       collapsible: false,
       items: [
-        { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "counter", "section"] },
-        { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "counter", "section", "driver"] },
-        { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "counter", "section", "driver"] },
+        { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "counter", "reception", "section", "staff"] },
+        { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "counter", "reception", "section", "staff", "driver"] },
+        { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "counter", "reception", "section", "staff", "driver"] },
       ]
     },
     {
