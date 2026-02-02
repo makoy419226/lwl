@@ -256,21 +256,17 @@ export default function Workers() {
     }
   };
 
-  // Use section users from users table instead of old packing_workers table
-  const sectionUsers = useMemo(() => {
-    return systemUsers?.filter(u => u.role === 'section') || [];
+  // All staff workers (all roles except admin) - universal tracking by PIN
+  const allStaffUsers = useMemo(() => {
+    return systemUsers?.filter(u => u.role !== 'admin') || [];
   }, [systemUsers]);
 
-  // Driver users for delivery stats
-  const driverUsers = useMemo(() => {
-    return systemUsers?.filter(u => u.role === 'driver') || [];
-  }, [systemUsers]);
-
+  // Universal worker stats - all staff can do any task (tracked by PIN)
   const workerStats = useMemo(() => {
-    if (!sectionUsers.length || !orders) return [];
+    if (!allStaffUsers.length || !orders) return [];
     const { start, end } = getDateRange();
 
-    return sectionUsers
+    return allStaffUsers
       .map((worker) => {
         const taggedOrders = orders.filter((o) => {
           if (o.tagWorkerId !== worker.id) return false;
@@ -337,42 +333,7 @@ export default function Workers() {
         };
       })
       .sort((a, b) => b.totalTasks - a.totalTasks);
-  }, [sectionUsers, orders, bills, dateFilter, customFromDate, customToDate]);
-
-  // Driver delivery stats
-  const driverStats = useMemo(() => {
-    if (!driverUsers.length || !orders) return [];
-    const { start, end } = getDateRange();
-
-    return driverUsers
-      .map((driver) => {
-        const deliveredOrders = orders.filter((o) => {
-          if (o.deliveredByWorkerId !== driver.id) return false;
-          if (!o.deliveryDate) return false;
-          try {
-            const delDate = new Date(o.deliveryDate);
-            return delDate >= start && delDate <= end;
-          } catch {
-            return false;
-          }
-        });
-
-        return {
-          driver,
-          deliveredCount: deliveredOrders.length,
-        };
-      })
-      .sort((a, b) => b.deliveredCount - a.deliveredCount);
-  }, [driverUsers, orders, dateFilter, customFromDate, customToDate]);
-
-  const driverTotals = useMemo(() => {
-    return driverStats.reduce(
-      (acc, s) => ({
-        delivered: acc.delivered + s.deliveredCount,
-      }),
-      { delivered: 0 },
-    );
-  }, [driverStats]);
+  }, [allStaffUsers, orders, bills, dateFilter, customFromDate, customToDate]);
 
   const totals = useMemo(() => {
     return workerStats.reduce(
@@ -952,96 +913,36 @@ export default function Workers() {
                   </Card>
                 </div>
 
-                <Accordion type="multiple" defaultValue={["counter", "section", "drivers"]} className="space-y-2">
-                  <AccordionItem value="counter" className="border rounded-lg">
-                    <AccordionTrigger className="hover:no-underline px-4">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">Counter</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          ({systemUsers?.filter(u => u.role === "counter").length || 0} users)
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      {!systemUsers?.filter(u => u.role === "counter").length ? (
-                        <p className="text-center text-muted-foreground py-4">No counter users found</p>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Name</TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Receipt className="w-4 h-4 text-cyan-500" />
-                                  Transactions
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Package className="w-4 h-4 text-green-500" />
-                                  Orders
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <AlertCircle className="w-4 h-4 text-red-500" />
-                                  Unpaid
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">Status</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {systemUsers?.filter(u => u.role === "counter").map((user) => {
-                              const userBills = bills?.filter(b => b.notes?.includes(user.name || user.username)) || [];
-                              const unpaidBills = userBills.filter(b => !b.isPaid);
-                              return (
-                                <TableRow key={user.id}>
-                                  <TableCell className="font-medium">{user.name || "-"}</TableCell>
-                                  <TableCell className="text-center">
-                                    <Badge variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300">
-                                      {userBills.length}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300">
-                                      {userBills.length}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300">
-                                      {unpaidBills.length}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    <Badge variant={user.active ? "default" : "secondary"}>{user.active ? "Active" : "Inactive"}</Badge>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="section" className="border rounded-lg">
-                    <AccordionTrigger className="hover:no-underline px-4">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Section</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          ({filteredStats.length} workers)
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      {filteredStats.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4">No staff workers found</p>
-                      ) : (
+                {/* Universal Staff Stats Table - All staff tracked by PIN */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      All Staff Performance
+                      <Badge variant="outline" className="ml-2">
+                        {filteredStats.length} staff
+                      </Badge>
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      All staff are all-rounders - tracked by PIN across all activities
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    {filteredStats.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-4">No staff members found</p>
+                    ) : (
+                      <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
                             <TableRow>
                               <TableHead>Staff Name</TableHead>
+                              <TableHead className="text-center">Role</TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Receipt className="w-4 h-4 text-cyan-500" />
+                                  Bills
+                                </div>
+                              </TableHead>
                               <TableHead className="text-center">
                                 <div className="flex items-center justify-center gap-1">
                                   <Tag className="w-4 h-4 text-orange-500" />
@@ -1054,7 +955,14 @@ export default function Workers() {
                                   Packed
                                 </div>
                               </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Truck className="w-4 h-4 text-purple-500" />
+                                  Delivered
+                                </div>
+                              </TableHead>
                               <TableHead className="text-center">Total</TableHead>
+                              <TableHead className="text-center">Status</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1064,13 +972,30 @@ export default function Workers() {
                                 data-testid={`row-stats-${s.worker.id}`}
                               >
                                 <TableCell className="font-medium">
-                                  {s.worker.name}
-                                  {!s.worker.active && (
-                                    <Badge variant="secondary" className="ml-2">
-                                      Inactive
-                                    </Badge>
-                                  )}
-                            </TableCell>
+                                  {s.worker.name || s.worker.username}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge 
+                                    variant="outline" 
+                                    className={
+                                      s.worker.role === "counter" 
+                                        ? "bg-blue-500/10 text-blue-600 border-blue-500/30" 
+                                        : s.worker.role === "section" 
+                                          ? "bg-purple-500/10 text-purple-600 border-purple-500/30" 
+                                          : "bg-green-500/10 text-green-600 border-green-500/30"
+                                    }
+                                  >
+                                    {s.worker.role === "counter" ? "Counter" : s.worker.role === "section" ? "Section" : "Driver"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
+                                  >
+                                    {s.billsCreated}
+                                  </Badge>
+                                </TableCell>
                                 <TableCell className="text-center">
                                   <Badge
                                     variant="outline"
@@ -1087,92 +1012,30 @@ export default function Workers() {
                                     {s.packedCount}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-center font-bold">
-                                  {s.taggedCount + s.packedCount}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="drivers" className="border rounded-lg">
-                    <AccordionTrigger className="hover:no-underline px-4">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Drivers</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          ({driverStats.length} drivers) - {driverTotals.delivered} deliveries
-                        </span>
-                        {orders && (
-                          <Badge className="bg-orange-500 text-white">
-                            {orders.filter(o => o.packingDone && !o.delivered && o.deliveryType === 'delivery').length} Ready
-                          </Badge>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      {orders && orders.filter(o => o.packingDone && !o.delivered && o.deliveryType === 'delivery').length > 0 && (
-                        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                          <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                            <Package className="w-5 h-5" />
-                            <span className="font-semibold">
-                              {orders.filter(o => o.packingDone && !o.delivered && o.deliveryType === 'delivery').length} orders ready for delivery
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {driverStats.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4">No drivers found</p>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Driver Name</TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Truck className="w-4 h-4 text-green-500" />
-                                  Delivered
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">Status</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {driverStats.map((s) => (
-                              <TableRow key={s.driver.id} data-testid={`row-driver-stats-${s.driver.id}`}>
-                                <TableCell className="font-medium">
-                                  {s.driver.name || s.driver.username}
-                                  {!s.driver.active && (
-                                    <Badge variant="secondary" className="ml-2">
-                                      Inactive
-                                    </Badge>
-                                  )}
-                                </TableCell>
                                 <TableCell className="text-center">
                                   <Badge
                                     variant="outline"
-                                    className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40"
-                                    onClick={() => setSelectedDriverHistory({ id: s.driver.id, name: s.driver.name || s.driver.username })}
-                                    data-testid={`badge-driver-delivered-${s.driver.id}`}
+                                    className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
                                   >
                                     {s.deliveredCount}
                                   </Badge>
                                 </TableCell>
+                                <TableCell className="text-center font-bold">
+                                  {s.totalTasks}
+                                </TableCell>
                                 <TableCell className="text-center">
-                                  <Badge variant={s.driver.active ? "default" : "secondary"}>
-                                    {s.driver.active ? "Active" : "Inactive"}
+                                  <Badge variant={s.worker.active ? "default" : "secondary"}>
+                                    {s.worker.active ? "Active" : "Inactive"}
                                   </Badge>
                                 </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
 
