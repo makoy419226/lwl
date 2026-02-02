@@ -101,7 +101,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       label: "Settings",
       collapsible: false,
       items: [
-        { href: "/workers", icon: HardHat, label: "User Management", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
+        { href: "/workers", icon: HardHat, label: "Staff Management", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
         { href: "/admin-settings", icon: Settings, label: "Admin Settings", active: isAdminSettings, testId: "nav-admin-settings", roles: ["admin"] },
       ]
     },
