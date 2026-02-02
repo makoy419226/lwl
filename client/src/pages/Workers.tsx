@@ -62,6 +62,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -386,23 +387,19 @@ export default function Workers() {
   const exportToExcel = () => {
     const data = filteredStats.map((s) => ({
       "Staff Name": s.worker.name,
-      Status: s.worker.active ? "Active" : "Inactive",
       "Tags Done": s.taggedCount,
       "Packing Done": s.packedCount,
       Deliveries: s.deliveredCount,
       "Bills Created": s.billsCreated,
-      "Bills Total (AED)": s.billsTotal.toFixed(2),
       "Total Tasks": s.totalTasks,
     }));
 
     data.push({
       "Staff Name": "TOTAL",
-      Status: "",
       "Tags Done": totals.tagged,
       "Packing Done": totals.packed,
       Deliveries: totals.delivered,
       "Bills Created": totals.billsCreated,
-      "Bills Total (AED)": totals.billsTotal.toFixed(2),
       "Total Tasks":
         totals.tagged + totals.packed + totals.delivered + totals.billsCreated,
     });
@@ -433,7 +430,6 @@ export default function Workers() {
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Packing</th>
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Delivery</th>
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Bills</th>
-              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: right;">Bills AED</th>
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Total</th>
             </tr>
           </thead>
@@ -447,7 +443,6 @@ export default function Workers() {
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.packedCount}</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.deliveredCount}</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.billsCreated}</td>
-                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: right;">${s.billsTotal.toFixed(2)}</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center; font-weight: bold;">${s.totalTasks}</td>
               </tr>
             `,
@@ -459,7 +454,6 @@ export default function Workers() {
               <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.packed}</td>
               <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.delivered}</td>
               <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.billsCreated}</td>
-              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: right;">${totals.billsTotal.toFixed(2)}</td>
               <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.tagged + totals.packed + totals.delivered + totals.billsCreated}</td>
             </tr>
           </tbody>
