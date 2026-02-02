@@ -416,6 +416,41 @@ export default function Workers() {
     );
   }, [workerStats]);
 
+  const adminStats = useMemo(() => {
+    if (!orders || !bills) return { ordersCreated: 0, billsCreated: 0, billsTotal: 0 };
+    const { start, end } = getDateRange();
+    
+    const adminOrders = orders.filter((o) => {
+      if (o.entryByWorkerId !== null) return false;
+      if (!o.entryDate) return false;
+      try {
+        const entryDate = new Date(o.entryDate);
+        return entryDate >= start && entryDate <= end;
+      } catch {
+        return false;
+      }
+    });
+    
+    const adminBills = bills.filter((b) => {
+      if (b.createdByWorkerId !== null) return false;
+      if (!b.billDate) return false;
+      try {
+        const billDate = new Date(b.billDate);
+        return billDate >= start && billDate <= end;
+      } catch {
+        return false;
+      }
+    });
+    
+    const billsTotal = adminBills.reduce((sum, b) => sum + parseFloat(b.amount || "0"), 0);
+    
+    return {
+      ordersCreated: adminOrders.length,
+      billsCreated: adminBills.length,
+      billsTotal,
+    };
+  }, [orders, bills, dateFilter, customFromDate, customToDate, selectedMonth, selectedYear]);
+
   const getDateRangeLabel = () => {
     const { start, end } = getDateRange();
     return `${format(start, "dd/MM/yyyy")} - ${format(end, "dd/MM/yyyy")}`;
@@ -1316,6 +1351,41 @@ export default function Workers() {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Admin Performance */}
+                <Card className="mb-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users className="w-5 h-5 text-purple-500" />
+                      Admin Performance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <ClipboardList className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm text-muted-foreground">Orders Created</span>
+                        </div>
+                        <p className="text-2xl font-bold">{adminStats.ordersCreated}</p>
+                      </div>
+                      <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <Receipt className="w-4 h-4 text-cyan-500" />
+                          <span className="text-sm text-muted-foreground">Bills Created</span>
+                        </div>
+                        <p className="text-2xl font-bold">{adminStats.billsCreated}</p>
+                      </div>
+                      <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <Receipt className="w-4 h-4 text-green-500" />
+                          <span className="text-sm text-muted-foreground">Bills Total</span>
+                        </div>
+                        <p className="text-2xl font-bold">{adminStats.billsTotal.toFixed(2)} AED</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Universal Staff Stats Table - All staff tracked by PIN */}
                 <Card>
