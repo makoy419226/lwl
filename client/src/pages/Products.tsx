@@ -721,22 +721,6 @@ export default function Products() {
       });
       return;
     }
-    if (isWalkIn && !walkInName.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter the customer's name.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (isWalkIn && !walkInPhone.trim()) {
-      toast({
-        title: "Phone required",
-        description: "Please enter the customer's phone number.",
-        variant: "destructive",
-      });
-      return;
-    }
     if (!hasOrderItems) {
       toast({
         title: "No items",
@@ -813,9 +797,9 @@ export default function Products() {
 
       createOrderMutation.mutate({
         clientId: isWalkIn ? null : selectedClientId,
-        customerName: isWalkIn ? walkInName.trim() : customerName.trim(),
-        customerPhone: isWalkIn ? walkInPhone.trim() : customerPhone.trim(),
-        deliveryAddress: walkInAddress.trim() || "n/a",
+        customerName: isWalkIn ? (walkInName.trim() || "N/A") : (customerName.trim() || "N/A"),
+        customerPhone: isWalkIn ? (walkInPhone.trim() || "N/A") : (customerPhone.trim() || "N/A"),
+        deliveryAddress: walkInAddress.trim() || "N/A",
         orderNumber,
         items: itemsText,
         totalAmount: subtotal.toFixed(2),
@@ -831,7 +815,7 @@ export default function Products() {
         entryBy: data.worker?.name || "Staff",
         entryByWorkerId: data.worker?.id || null,
         createdBy: data.worker?.name || user?.name || "Staff",
-        notes: `Address: ${walkInAddress.trim() || "n/a"}`,
+        notes: `Address: ${walkInAddress.trim() || "N/A"}`,
       });
 
       setShowPinDialog(false);
@@ -1391,7 +1375,7 @@ export default function Products() {
           {isWalkIn && (
             <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
               <div>
-                <Label className="text-xs font-semibold">Customer Name <span className="text-destructive">*</span></Label>
+                <Label className="text-xs font-semibold">Customer Name</Label>
                 <Input
                   className="h-8 text-xs mt-1"
                   placeholder="Enter name..."
@@ -1404,7 +1388,7 @@ export default function Products() {
                 />
               </div>
               <div>
-                <Label className="text-xs font-semibold">Phone Number <span className="text-destructive">*</span></Label>
+                <Label className="text-xs font-semibold">Phone Number</Label>
                 <div className="flex flex-col gap-1 mt-1">
                   <div className="flex">
                     <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-xs h-8">
