@@ -115,6 +115,7 @@ export default function Workers() {
   
   const predefinedRoles = ["Reception", "Packer", "Delivery Driver", "Manager", "Supervisor"];
   const [activeTab, setActiveTab] = useState("stats");
+  const [statsSubTab, setStatsSubTab] = useState<"staff-stats" | "item-report" | "staff-performance">("staff-stats");
   const [dateFilter, setDateFilter] = useState("today");
   const [customFromDate, setCustomFromDate] = useState("");
   const [customToDate, setCustomToDate] = useState("");
@@ -1116,6 +1117,36 @@ export default function Workers() {
 
             <TabsContent value="stats">
               <div className="space-y-4">
+                {/* Sub-tabs for User Stats */}
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    variant={statsSubTab === "staff-stats" ? "default" : "outline"}
+                    onClick={() => setStatsSubTab("staff-stats")}
+                    data-testid="button-staff-stats-tab"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Staff Stats
+                  </Button>
+                  <Button
+                    variant={statsSubTab === "item-report" ? "default" : "outline"}
+                    onClick={() => setStatsSubTab("item-report")}
+                    data-testid="button-item-report-tab"
+                  >
+                    <Package className="w-4 h-4 mr-2" />
+                    Item Report
+                  </Button>
+                  <Button
+                    variant={statsSubTab === "staff-performance" ? "default" : "outline"}
+                    onClick={() => setStatsSubTab("staff-performance")}
+                    data-testid="button-staff-performance-tab"
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Staff Performance
+                  </Button>
+                </div>
+
+                {statsSubTab === "staff-stats" && (
+                <div className="space-y-4">
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -1395,6 +1426,405 @@ export default function Workers() {
                     )}
                   </CardContent>
                 </Card>
+              </div>
+                )}
+
+                {statsSubTab === "item-report" && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="w-5 h-5" />
+                        Item Quantity Report (Date-wise)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <Label htmlFor="report-start" className="whitespace-nowrap">From:</Label>
+                          <Input
+                            id="report-start"
+                            type="date"
+                            value={reportStartDate}
+                            onChange={(e) => setReportStartDate(e.target.value)}
+                            className="w-full sm:w-40 h-11 touch-manipulation"
+                            data-testid="input-report-start-date"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <Label htmlFor="report-end" className="whitespace-nowrap">To:</Label>
+                          <Input
+                            id="report-end"
+                            type="date"
+                            value={reportEndDate}
+                            onChange={(e) => setReportEndDate(e.target.value)}
+                            className="w-full sm:w-40 h-11 touch-manipulation"
+                            data-testid="input-report-end-date"
+                          />
+                        </div>
+                      </div>
+
+                      {(() => {
+                        const startDate = new Date(reportStartDate);
+                        startDate.setHours(0, 0, 0, 0);
+                        const endDate = new Date(reportEndDate);
+                        endDate.setHours(23, 59, 59, 999);
+
+                        const filteredOrders = orders?.filter((order) => {
+                          const orderDate = new Date(order.entryDate);
+                          return orderDate >= startDate && orderDate <= endDate;
+                        }) || [];
+
+                        if (filteredOrders.length === 0) {
+                          return (
+                            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                              <Package className="w-12 h-12 mb-4 opacity-50" />
+                              <p>No orders found in the selected date range</p>
+                            </div>
+                          );
+                        }
+
+                        const dateItemMap: Record<string, Record<string, number>> = {};
+                        const itemTotals: Record<string, number> = {};
+
+                        filteredOrders.forEach((order) => {
+                          const dateKey = new Date(order.entryDate).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                          });
+
+                          if (!dateItemMap[dateKey]) {
+                            dateItemMap[dateKey] = {};
+                          }
+
+                          const itemsStr = order.items || "";
+                          const itemRegex = /(\d+)x\s+([^,\[\]]+?)(?:\s*\[[^\]]*\])?(?:\s*\([^)]*\))?(?:,|$)/g;
+                          let match;
+
+                          while ((match = itemRegex.exec(itemsStr)) !== null) {
+                            const qty = parseInt(match[1], 10);
+                            const itemName = match[2].trim();
+                            dateItemMap[dateKey][itemName] = (dateItemMap[dateKey][itemName] || 0) + qty;
+                            itemTotals[itemName] = (itemTotals[itemName] || 0) + qty;
+                          }
+                        });
+
+                        const sortedDates = Object.keys(dateItemMap).sort((a, b) => {
+                          const dateA = new Date(a);
+                          const dateB = new Date(b);
+                          return dateA.getTime() - dateB.getTime();
+                        });
+
+                        const sortedItems = Object.keys(itemTotals).sort((a, b) =>
+                          a.localeCompare(b)
+                        );
+
+                        if (sortedItems.length === 0) {
+                          return (
+                            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                              <Package className="w-12 h-12 mb-4 opacity-50" />
+                              <p>No items found in the selected date range</p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <>
+                            <div className="flex gap-2 mb-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => generateItemReportExcel(dateItemMap, sortedDates, sortedItems, itemTotals)}
+                                data-testid="button-export-excel"
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Export Excel
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={exportReportToPDF}
+                                data-testid="button-export-pdf"
+                              >
+                                <FileText className="w-4 h-4 mr-2" />
+                                Export PDF
+                              </Button>
+                            </div>
+                            <div ref={reportTableRef} className="overflow-x-auto">
+                              <div className="bg-card p-4 mb-4">
+                                <h3 className="text-lg font-semibold mb-1">Item Quantity Report ({reportStartDate} to {reportEndDate})</h3>
+                              </div>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="sticky left-0 bg-background z-10">Item Name</TableHead>
+                                    {sortedDates.map((date) => (
+                                      <TableHead key={date} className="text-center whitespace-nowrap">{date}</TableHead>
+                                    ))}
+                                    <TableHead className="text-center font-bold">Total</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {sortedItems.map((itemName) => (
+                                    <TableRow key={itemName}>
+                                      <TableCell className="sticky left-0 bg-background z-10 font-medium">{itemName}</TableCell>
+                                      {sortedDates.map((date) => (
+                                        <TableCell key={date} className="text-center">
+                                          {dateItemMap[date][itemName] || 0}
+                                        </TableCell>
+                                      ))}
+                                      <TableCell className="text-center font-bold">{itemTotals[itemName]}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                  <TableRow className="bg-muted/50 font-bold">
+                                    <TableCell className="sticky left-0 bg-muted/50 z-10">Daily Total</TableCell>
+                                    {sortedDates.map((date) => (
+                                      <TableCell key={date} className="text-center">
+                                        {Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0)}
+                                      </TableCell>
+                                    ))}
+                                    <TableCell className="text-center">
+                                      {Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0)}
+                                    </TableCell>
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {statsSubTab === "staff-performance" && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5" />
+                        Staff Performance Summary
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Click any count to see the list of orders.
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <div className="flex gap-1">
+                          <Button
+                            variant={staffPeriod === "daily" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setStaffPeriod("daily")}
+                            data-testid="button-staff-daily"
+                          >
+                            Daily
+                          </Button>
+                          <Button
+                            variant={staffPeriod === "monthly" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setStaffPeriod("monthly")}
+                            data-testid="button-staff-monthly"
+                          >
+                            Monthly
+                          </Button>
+                          <Button
+                            variant={staffPeriod === "yearly" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setStaffPeriod("yearly")}
+                            data-testid="button-staff-yearly"
+                          >
+                            Yearly
+                          </Button>
+                          <Button
+                            variant={staffPeriod === "range" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setStaffPeriod("range")}
+                            data-testid="button-staff-range"
+                          >
+                            Custom Range
+                          </Button>
+                        </div>
+
+                        {staffPeriod === "daily" && (
+                          <Input
+                            type="date"
+                            value={staffDate}
+                            onChange={(e) => setStaffDate(e.target.value)}
+                            className="w-40 h-9"
+                            data-testid="input-staff-date"
+                          />
+                        )}
+
+                        {staffPeriod === "monthly" && (
+                          <Input
+                            type="month"
+                            value={staffMonth}
+                            onChange={(e) => setStaffMonth(e.target.value)}
+                            className="w-40 h-9"
+                            data-testid="input-staff-month"
+                          />
+                        )}
+
+                        {staffPeriod === "yearly" && (
+                          <Select value={staffYear} onValueChange={setStaffYear}>
+                            <SelectTrigger className="w-32 h-9" data-testid="select-staff-year">
+                              <SelectValue placeholder="Year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                <SelectItem key={year} value={year.toString()}>
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        {staffPeriod === "range" && (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="date"
+                              value={staffStartDate}
+                              onChange={(e) => setStaffStartDate(e.target.value)}
+                              className="w-36 h-9"
+                              data-testid="input-staff-start-date"
+                            />
+                            <span className="text-sm text-muted-foreground">to</span>
+                            <Input
+                              type="date"
+                              value={staffEndDate}
+                              onChange={(e) => setStaffEndDate(e.target.value)}
+                              className="w-36 h-9"
+                              data-testid="input-staff-end-date"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {staffPerformanceData.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-8">No staff performance data available for the selected period.</p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Staff Name</TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Receipt className="w-4 h-4" />
+                                  Created
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Tag className="w-4 h-4" />
+                                  Tagged
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Package className="w-4 h-4" />
+                                  Packed
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Truck className="w-4 h-4" />
+                                  Delivered
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">Total Actions</TableHead>
+                              <TableHead className="text-center">PDF</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {staffPerformanceData.map((staff) => {
+                              const total = staff.createdCount + staff.taggedCount + staff.packedCount + staff.deliveredCount;
+                              return (
+                                <TableRow key={staff.name} data-testid={`row-staff-${staff.name}`}>
+                                  <TableCell className="font-medium">{staff.name}</TableCell>
+                                  <TableCell className="text-center">
+                                    {staff.createdCount > 0 ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="font-semibold text-blue-600 dark:text-blue-400"
+                                        onClick={() => handleStaffCountClick(staff.name, "Created", staff.createdOrders)}
+                                        data-testid={`button-created-count-${staff.name}`}
+                                      >
+                                        {staff.createdCount}
+                                      </Button>
+                                    ) : (
+                                      <span className="text-muted-foreground">0</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {staff.taggedCount > 0 ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="font-semibold text-orange-600 dark:text-orange-400"
+                                        onClick={() => handleStaffCountClick(staff.name, "Tagged", staff.taggedOrders)}
+                                        data-testid={`button-tagged-count-${staff.name}`}
+                                      >
+                                        {staff.taggedCount}
+                                      </Button>
+                                    ) : (
+                                      <span className="text-muted-foreground">0</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {staff.packedCount > 0 ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="font-semibold text-green-600 dark:text-green-400"
+                                        onClick={() => handleStaffCountClick(staff.name, "Packed", staff.packedOrders)}
+                                        data-testid={`button-packed-count-${staff.name}`}
+                                      >
+                                        {staff.packedCount}
+                                      </Button>
+                                    ) : (
+                                      <span className="text-muted-foreground">0</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {staff.deliveredCount > 0 ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="font-semibold text-purple-600 dark:text-purple-400"
+                                        onClick={() => handleStaffCountClick(staff.name, "Delivered", staff.deliveredOrders)}
+                                        data-testid={`button-delivered-count-${staff.name}`}
+                                      >
+                                        {staff.deliveredCount}
+                                      </Button>
+                                    ) : (
+                                      <span className="text-muted-foreground">0</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="secondary" className="font-semibold">
+                                      {total}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => generateStaffPDF(staff)}
+                                      data-testid={`button-pdf-${staff.name}`}
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </TabsContent>
 
@@ -2237,6 +2667,40 @@ export default function Workers() {
               Update Staff Member
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Staff Orders Dialog for Performance */}
+      <Dialog open={staffOrdersDialog.isOpen} onOpenChange={(open) => setStaffOrdersDialog(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {staffOrdersDialog.actionType === "Tagged" && <Tag className="w-5 h-5 text-orange-600" />}
+              {staffOrdersDialog.actionType === "Packed" && <Package className="w-5 h-5 text-green-600" />}
+              {staffOrdersDialog.actionType === "Delivered" && <Truck className="w-5 h-5 text-purple-600" />}
+              {staffOrdersDialog.actionType === "Created" && <Receipt className="w-5 h-5 text-blue-600" />}
+              Orders {staffOrdersDialog.actionType} by {staffOrdersDialog.staffName}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px]">
+            <div className="space-y-2">
+              {staffOrdersDialog.orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                  data-testid={`order-item-${order.id}`}
+                >
+                  <div>
+                    <p className="font-medium">{order.orderNumber || `Order #${order.id}`}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.customerName || "Walk-in"} - {order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A"}
+                    </p>
+                  </div>
+                  <Badge variant="outline">{parseFloat(order.totalAmount || "0").toFixed(2)} AED</Badge>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
