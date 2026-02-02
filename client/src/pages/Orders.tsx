@@ -4101,7 +4101,12 @@ function OrderForm({
           <SelectTrigger data-testid="select-client">
             <SelectValue placeholder="Select client" />
           </SelectTrigger>
-          <SelectContent className="z-[100] max-h-[300px]">
+          <SelectContent 
+            className="z-[100] max-h-[300px]" 
+            position="popper" 
+            sideOffset={4}
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
             <SelectItem value="walkin">Walk-in Customer</SelectItem>
             {clients.map((client) => (
               <SelectItem key={client.id} value={client.id.toString()}>
@@ -4186,7 +4191,7 @@ function OrderForm({
           <SelectTrigger data-testid="select-order-type">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
             <SelectItem value="normal">Normal</SelectItem>
             <SelectItem value="urgent">Urgent</SelectItem>
           </SelectContent>
@@ -4202,7 +4207,7 @@ function OrderForm({
           <SelectTrigger data-testid="select-delivery-type">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
             <SelectItem value="pickup">Pickup</SelectItem>
             <SelectItem value="delivery">Delivery</SelectItem>
           </SelectContent>
@@ -4218,7 +4223,7 @@ function OrderForm({
           <SelectTrigger data-testid="select-payment-option">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
             <SelectItem value="pay_later">Pay Later</SelectItem>
             <SelectItem value="pay_now">Pay Now</SelectItem>
           </SelectContent>
@@ -4338,7 +4343,7 @@ function OrderForm({
               <SelectTrigger data-testid="select-existing-bill">
                 <SelectValue placeholder="Select unpaid bill" />
               </SelectTrigger>
-              <SelectContent className="z-[100]">
+              <SelectContent className="z-[100]" position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
                 {clientUnpaidBills.map((bill) => (
                   <SelectItem key={bill.id} value={bill.id.toString()}>
                     Bill #{bill.referenceNumber || bill.id} -{" "}
@@ -4462,7 +4467,7 @@ function OrderForm({
               <SelectTrigger className="w-32 h-7">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
                 <SelectItem value="pickup">for pickup</SelectItem>
                 <SelectItem value="delivery">for delivery</SelectItem>
               </SelectContent>
