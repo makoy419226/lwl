@@ -452,7 +452,7 @@ export default function Workers() {
   }, [orders, bills, dateFilter, customFromDate, customToDate, selectedMonth, selectedYear]);
 
   const [expandedAdminOrders, setExpandedAdminOrders] = useState<Set<number>>(new Set());
-  const [expandedItemReportOrders, setExpandedItemReportOrders] = useState<Set<number>>(new Set());
+  const [selectedItemReportOrder, setSelectedItemReportOrder] = useState<Order | null>(null);
   
   const getAdminDateRangeLabel = () => {
     const { start, end } = getDateRange();
@@ -1840,7 +1840,6 @@ export default function Workers() {
                                 <TableBody>
                                   {filteredOrders.map((order) => {
                                     const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
-                                    const isExpanded = expandedItemReportOrders.has(order.id);
                                     
                                     // Count items in this order
                                     let orderItemCount = 0;
@@ -1852,41 +1851,21 @@ export default function Workers() {
                                     }
                                     
                                     return (
-                                      <>
-                                        <TableRow 
-                                          key={order.id}
-                                          className="cursor-pointer hover-elevate"
-                                          onClick={() => {
-                                            const newSet = new Set(expandedItemReportOrders);
-                                            if (isExpanded) {
-                                              newSet.delete(order.id);
-                                            } else {
-                                              newSet.add(order.id);
-                                            }
-                                            setExpandedItemReportOrders(newSet);
-                                          }}
-                                          data-testid={`row-item-report-order-${order.id}`}
-                                        >
-                                          <TableCell className="font-medium text-blue-600">
-                                            {order.orderNumber}
-                                          </TableCell>
-                                          <TableCell>{clientName}</TableCell>
-                                          <TableCell>
-                                            {order.entryDate && format(new Date(order.entryDate), "MMM d, yyyy")}
-                                          </TableCell>
-                                          <TableCell className="text-right">{orderItemCount} items</TableCell>
-                                        </TableRow>
-                                        {isExpanded && (
-                                          <TableRow key={`${order.id}-details`}>
-                                            <TableCell colSpan={4} className="bg-muted/30 p-4">
-                                              <div className="text-sm">
-                                                <p className="font-medium mb-2">Items:</p>
-                                                <p className="text-muted-foreground">{order.items || "No items"}</p>
-                                              </div>
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </>
+                                      <TableRow 
+                                        key={order.id}
+                                        className="cursor-pointer hover-elevate"
+                                        onClick={() => setSelectedItemReportOrder(order)}
+                                        data-testid={`row-item-report-order-${order.id}`}
+                                      >
+                                        <TableCell className="font-medium text-blue-600">
+                                          {order.orderNumber}
+                                        </TableCell>
+                                        <TableCell>{clientName}</TableCell>
+                                        <TableCell>
+                                          {order.entryDate && format(new Date(order.entryDate), "MMM d, yyyy")}
+                                        </TableCell>
+                                        <TableCell className="text-right">{orderItemCount} items</TableCell>
+                                      </TableRow>
                                     );
                                   })}
                                 </TableBody>
@@ -1898,6 +1877,78 @@ export default function Workers() {
                     </CardContent>
                   </Card>
                 )}
+                
+                {/* Item Report Order Details Dialog */}
+                <Dialog open={!!selectedItemReportOrder} onOpenChange={(open) => !open && setSelectedItemReportOrder(null)}>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Package className="w-5 h-5" />
+                        Order {selectedItemReportOrder?.orderNumber}
+                      </DialogTitle>
+                    </DialogHeader>
+                    {selectedItemReportOrder && (() => {
+                      const order = selectedItemReportOrder;
+                      const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
+                      const itemsStr = order.items || "";
+                      const itemRegex = /(\d+)x\s+([^,\[\]]+?)(?:\s*\[[^\]]*\])?(?:\s*\([^)]*\))?(?:,|$)/g;
+                      const parsedItems: { qty: number; name: string }[] = [];
+                      let match;
+                      while ((match = itemRegex.exec(itemsStr)) !== null) {
+                        parsedItems.push({ qty: parseInt(match[1], 10), name: match[2].trim() });
+                      }
+                      const totalItems = parsedItems.reduce((sum, item) => sum + item.qty, 0);
+                      
+                      return (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Client:</span>
+                              <span className="ml-2 font-medium">{clientName}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Date:</span>
+                              <span className="ml-2 font-medium">
+                                {order.entryDate && format(new Date(order.entryDate), "MMMM d, yyyy")}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="border rounded-lg overflow-hidden">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Item</TableHead>
+                                  <TableHead className="text-right w-24">Quantity</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {parsedItems.length > 0 ? (
+                                  parsedItems.map((item, idx) => (
+                                    <TableRow key={idx}>
+                                      <TableCell>{item.name}</TableCell>
+                                      <TableCell className="text-right">{item.qty}</TableCell>
+                                    </TableRow>
+                                  ))
+                                ) : (
+                                  <TableRow>
+                                    <TableCell colSpan={2} className="text-center text-muted-foreground">
+                                      No items found
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                                <TableRow className="bg-muted/50 font-bold">
+                                  <TableCell>Total</TableCell>
+                                  <TableCell className="text-right">{totalItems}</TableCell>
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </DialogContent>
+                </Dialog>
               </div>
             </TabsContent>
 
