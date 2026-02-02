@@ -1351,59 +1351,40 @@ export default function Products() {
           {/* Client Selection */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold">Select Client</Label>
-            <Popover open={clientDropdownOpen} onOpenChange={setClientDropdownOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="h-9 text-xs w-full justify-between" data-testid={isPopup ? "popup-select-client" : "sidebar-select-client"}>
-                  {isWalkIn ? "Walk-in Customer" : selectedClientId ? clients?.find((c) => c.id === selectedClientId)?.name || "Choose client..." : "Choose client..."}
-                  <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0 z-[200]" align="start">
-                <Command filter={(value, search) => {
-                  if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                  return 0;
-                }}>
-                  <CommandInput placeholder="Search clients..." className="h-9" />
-                  <CommandList>
-                    <CommandEmpty>No client found.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="walk-in-customer"
-                        onSelect={() => {
-                          setSelectedClientId(null);
-                          setIsWalkIn(true);
-                          setCustomerName("Walk-in Customer");
-                          setClientDropdownOpen(false);
-                        }}
-                      >
-                        <Check className={`mr-2 h-4 w-4 ${isWalkIn ? "opacity-100" : "opacity-0"}`} />
-                        Walk-in Customer
-                      </CommandItem>
-                      {clients?.map((client) => (
-                        <CommandItem
-                          key={client.id}
-                          value={`${client.name} ${client.phone || ""}`}
-                          onSelect={() => {
-                            setIsWalkIn(false);
-                            setSelectedClientId(client.id);
-                            setCustomerName(client.name);
-                            setCustomerPhone(client.phone || "");
-                            if (client.discountPercent) setDiscountPercent(client.discountPercent);
-                            setClientDropdownOpen(false);
-                          }}
-                        >
-                          <Check className={`mr-2 h-4 w-4 ${selectedClientId === client.id ? "opacity-100" : "opacity-0"}`} />
-                          <div>
-                            <div className="font-medium">{client.name}</div>
-                            {client.phone && <div className="text-xs text-muted-foreground">{client.phone}</div>}
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <select
+              value={isWalkIn ? "walkin" : selectedClientId?.toString() || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "walkin") {
+                  setSelectedClientId(null);
+                  setIsWalkIn(true);
+                  setCustomerName("Walk-in Customer");
+                } else if (value) {
+                  const client = clients?.find(c => c.id === parseInt(value));
+                  if (client) {
+                    setIsWalkIn(false);
+                    setSelectedClientId(client.id);
+                    setCustomerName(client.name);
+                    setCustomerPhone(client.phone || "");
+                    if (client.discountPercent) setDiscountPercent(client.discountPercent);
+                  }
+                } else {
+                  setSelectedClientId(null);
+                  setIsWalkIn(false);
+                  setCustomerName("");
+                }
+              }}
+              className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              data-testid={isPopup ? "popup-select-client" : "sidebar-select-client"}
+            >
+              <option value="">Choose client...</option>
+              <option value="walkin">Walk-in Customer</option>
+              {clients?.map((client) => (
+                <option key={client.id} value={client.id.toString()}>
+                  {client.name} - {client.phone || "No phone"}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Walk-in Customer Fields */}
