@@ -786,48 +786,49 @@ export default function Workers() {
     wsData.push(["Item Quantity Report"]);
     wsData.push([`Report Period: ${dateRangeStr}`]);
     wsData.push([]);
-    wsData.push(["Order Number", "Client Name", "Order Date", "Items", "Total Items"]);
+    wsData.push(["Order Number", "Client Name", "Order Date", "Item", "Qty"]);
 
+    let totalItemsCount = 0;
     filteredOrders.forEach((order) => {
       const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
       const orderDate = order.entryDate ? format(new Date(order.entryDate), "MMMM d, yyyy") : "";
       const itemsStr = order.items || "";
       
-      // Parse items and format with line breaks for Excel
+      // Parse items and create a row for each item
       const itemRegex = /(\d+)x\s+([^,\[\]]+?)(?:\s*\[[^\]]*\])?(?:\s*\([^)]*\))?(?:,|$)/g;
       let match;
-      let totalItems = 0;
-      const parsedItems: string[] = [];
+      let isFirstItem = true;
       while ((match = itemRegex.exec(itemsStr)) !== null) {
-        totalItems += parseInt(match[1], 10);
-        parsedItems.push(`${match[1]}x ${match[2].trim()}`);
+        const qty = parseInt(match[1], 10);
+        const itemName = match[2].trim();
+        totalItemsCount += qty;
+        
+        // First item shows order details, subsequent items show empty for order columns
+        if (isFirstItem) {
+          wsData.push([order.orderNumber || "", clientName, orderDate, itemName, qty]);
+          isFirstItem = false;
+        } else {
+          wsData.push(["", "", "", itemName, qty]);
+        }
       }
       
-      // Join items with line breaks for better readability in Excel
-      const formattedItems = parsedItems.join("\n");
-      
-      wsData.push([order.orderNumber || "", clientName, orderDate, formattedItems || itemsStr, totalItems]);
+      // If no items parsed, still show the order with the raw items string
+      if (isFirstItem) {
+        wsData.push([order.orderNumber || "", clientName, orderDate, itemsStr || "No items", 0]);
+      }
     });
 
     wsData.push([]);
-    wsData.push(["Total Orders:", filteredOrders.length]);
+    wsData.push(["Total Orders:", filteredOrders.length, "", "Total Items:", totalItemsCount]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws["!cols"] = [
       { wch: 15 },
       { wch: 20 },
       { wch: 20 },
-      { wch: 40 },
-      { wch: 12 },
+      { wch: 30 },
+      { wch: 8 },
     ];
-    
-    // Enable text wrapping for the Items column
-    for (let i = 5; i < wsData.length - 2; i++) {
-      const cellRef = XLSX.utils.encode_cell({ r: i, c: 3 });
-      if (ws[cellRef]) {
-        ws[cellRef].s = { alignment: { wrapText: true } };
-      }
-    }
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Item Report");
     XLSX.writeFile(wb, `Item_Report_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
