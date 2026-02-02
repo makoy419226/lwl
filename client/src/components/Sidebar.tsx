@@ -91,7 +91,6 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       label: "Reports",
       collapsible: false,
       items: [
-        { href: "/sales-reports", icon: TrendingUp, label: "Sales Reports", active: isSalesReports, testId: "nav-sales-reports", roles: ["admin"] },
         { href: "/incidents", icon: AlertTriangle, label: "Incidents", active: isIncidents, testId: "nav-incidents", roles: ["admin", "counter", "section"] },
         { href: "/track", icon: FlaskConical, label: "Public Tracking", active: isTrackOrder, testId: "nav-track-order", roles: ["admin", "counter", "section", "driver"] },
         { href: "/contact", icon: Phone, label: "Contact", active: isContact, testId: "nav-contact", roles: ["admin", "counter", "section", "driver"] },
@@ -101,7 +100,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       label: "Settings",
       collapsible: false,
       items: [
-        { href: "/workers", icon: HardHat, label: "Staff Management", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
+        { href: "/workers", icon: HardHat, label: "Management", active: isWorkers, testId: "nav-workers", roles: ["admin"] },
         { href: "/admin-settings", icon: Settings, label: "Admin Settings", active: isAdminSettings, testId: "nav-admin-settings", roles: ["admin"] },
       ]
     },

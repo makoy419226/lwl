@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,10 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  Download,
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import jsPDF from "jspdf";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -72,9 +75,10 @@ import {
   endOfMonth,
   parseISO,
 } from "date-fns";
-import type { Order, Bill } from "@shared/schema";
+import type { Order, Bill, Client } from "@shared/schema";
 import * as XLSX from "xlsx";
 import html2pdf from "html2pdf.js";
+import SalesReports from "./SalesReports";
 
 interface PackingWorker {
   id: number;
@@ -149,6 +153,25 @@ export default function Workers() {
     type: "bills" | "tagged" | "packed" | "delivered";
   } | null>(null);
   
+  // Report tab state
+  const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [reportSubTab, setReportSubTab] = useState<"items" | "staff">("items");
+  const [staffPeriod, setStaffPeriod] = useState<"daily" | "monthly" | "yearly" | "range">("daily");
+  const [staffDate, setStaffDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [staffMonth, setStaffMonth] = useState<string>(format(new Date(), "yyyy-MM"));
+  const [staffYear, setStaffYear] = useState<string>(format(new Date(), "yyyy"));
+  const [staffStartDate, setStaffStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [staffEndDate, setStaffEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [staffOrdersDialog, setStaffOrdersDialog] = useState<{
+    isOpen: boolean;
+    staffName: string;
+    actionType: string;
+    orders: Order[];
+  }>({ isOpen: false, staffName: "", actionType: "", orders: [] });
+  const reportTableRef = useRef<HTMLDivElement>(null);
+  const [logoBase64, setLogoBase64] = useState<string>("");
+  
   const toggleStaffPinVisibility = (memberId: number) => {
     setVisibleStaffPins(prev => {
       const newSet = new Set(prev);
@@ -195,6 +218,10 @@ export default function Workers() {
 
   const { data: bills } = useQuery<Bill[]>({
     queryKey: ["/api/bills"],
+  });
+
+  const { data: clients } = useQuery<Client[]>({
+    queryKey: ["/api/clients"],
   });
 
   const { data: systemUsers, isLoading: isLoadingUsers } = useQuery<
@@ -495,6 +522,286 @@ export default function Workers() {
       const date = new Date(dateField);
       return date >= start && date <= end;
     });
+  };
+
+  // Report tab functions
+  const filteredStaffOrders = useMemo(() => {
+    if (!orders) return [];
+    
+    return orders.filter((order) => {
+      const orderDate = new Date(order.entryDate);
+      
+      if (staffPeriod === "daily") {
+        const selectedDateObj = new Date(staffDate);
+        return (
+          orderDate.getFullYear() === selectedDateObj.getFullYear() &&
+          orderDate.getMonth() === selectedDateObj.getMonth() &&
+          orderDate.getDate() === selectedDateObj.getDate()
+        );
+      }
+      
+      if (staffPeriod === "monthly") {
+        const [year, month] = staffMonth.split("-").map(Number);
+        return (
+          orderDate.getFullYear() === year &&
+          orderDate.getMonth() === month - 1
+        );
+      }
+      
+      if (staffPeriod === "yearly") {
+        return orderDate.getFullYear() === parseInt(staffYear);
+      }
+      
+      if (staffPeriod === "range") {
+        const start = new Date(staffStartDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(staffEndDate);
+        end.setHours(23, 59, 59, 999);
+        return orderDate >= start && orderDate <= end;
+      }
+      
+      return true;
+    });
+  }, [orders, staffPeriod, staffDate, staffMonth, staffYear, staffStartDate, staffEndDate]);
+
+  const staffPerformanceData = useMemo(() => {
+    if (!filteredStaffOrders) return [];
+    
+    const staffStats: Record<string, { 
+      name: string; 
+      taggedCount: number; 
+      taggedOrders: Order[];
+      packedCount: number;
+      packedOrders: Order[];
+      deliveredCount: number;
+      deliveredOrders: Order[];
+      createdCount: number;
+      createdOrders: Order[];
+    }> = {};
+    
+    filteredStaffOrders.forEach((order) => {
+      if (order.entryBy) {
+        const name = order.entryBy;
+        if (!staffStats[name]) {
+          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
+        }
+        staffStats[name].createdCount++;
+        staffStats[name].createdOrders.push(order);
+      }
+      
+      if (order.tagBy) {
+        const name = order.tagBy;
+        if (!staffStats[name]) {
+          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
+        }
+        staffStats[name].taggedCount++;
+        staffStats[name].taggedOrders.push(order);
+      }
+      
+      if (order.packingBy) {
+        const name = order.packingBy;
+        if (!staffStats[name]) {
+          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
+        }
+        staffStats[name].packedCount++;
+        staffStats[name].packedOrders.push(order);
+      }
+      
+      if (order.deliveryBy) {
+        const name = order.deliveryBy;
+        if (!staffStats[name]) {
+          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
+        }
+        staffStats[name].deliveredCount++;
+        staffStats[name].deliveredOrders.push(order);
+      }
+    });
+    
+    return Object.values(staffStats).sort((a, b) => {
+      const totalA = a.taggedCount + a.packedCount + a.deliveredCount + a.createdCount;
+      const totalB = b.taggedCount + b.packedCount + b.deliveredCount + b.createdCount;
+      return totalB - totalA;
+    });
+  }, [filteredStaffOrders]);
+
+  const handleStaffCountClick = (staffName: string, actionType: string, ordersToShow: Order[]) => {
+    setStaffOrdersDialog({
+      isOpen: true,
+      staffName,
+      actionType,
+      orders: ordersToShow,
+    });
+  };
+
+  const generateStaffPDF = (staff: { 
+    name: string; 
+    createdCount: number; 
+    createdOrders: Order[];
+    taggedCount: number; 
+    taggedOrders: Order[];
+    packedCount: number;
+    packedOrders: Order[];
+    deliveredCount: number;
+    deliveredOrders: Order[];
+  }) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    const getClientName = (order: Order) => {
+      if (order.clientId) {
+        const client = clients?.find(c => c.id === order.clientId);
+        if (client?.name) return client.name;
+      }
+      return order.customerName || "Walk-in";
+    };
+    
+    let startY = 15;
+    
+    if (logoBase64) {
+      const logoWidth = 40;
+      const logoHeight = 30;
+      const logoX = (pageWidth - logoWidth) / 2;
+      doc.addImage(logoBase64, "PNG", logoX, startY, logoWidth, logoHeight);
+      startY += logoHeight + 5;
+    }
+    
+    doc.setFontSize(18);
+    doc.text("Staff Performance Report", pageWidth / 2, startY + 5, { align: "center" });
+    
+    doc.setFontSize(14);
+    doc.text(`Staff: ${staff.name}`, pageWidth / 2, startY + 15, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, startY + 23, { align: "center" });
+    
+    doc.setFontSize(12);
+    doc.text("Summary", 14, startY + 35);
+    
+    let yPos = startY + 45;
+    doc.setFontSize(10);
+    doc.text(`Orders Created: ${staff.createdCount}`, 14, yPos);
+    doc.text(`Orders Tagged: ${staff.taggedCount}`, 14, yPos + 7);
+    doc.text(`Orders Packed: ${staff.packedCount}`, 14, yPos + 14);
+    doc.text(`Orders Delivered: ${staff.deliveredCount}`, 14, yPos + 21);
+    doc.text(`Total Actions: ${staff.createdCount + staff.taggedCount + staff.packedCount + staff.deliveredCount}`, 14, yPos + 28);
+    
+    yPos += 45;
+    
+    const addOrderList = (title: string, orderList: Order[]) => {
+      if (orderList.length === 0) return;
+      
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(11);
+      doc.text(title, 14, yPos);
+      yPos += 7;
+      
+      doc.setFontSize(9);
+      orderList.forEach((order, index) => {
+        if (yPos > 280) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(
+          `${index + 1}. ${order.orderNumber} - ${getClientName(order)} - ${parseFloat(order.totalAmount || "0").toFixed(2)} AED`,
+          18,
+          yPos
+        );
+        yPos += 5;
+      });
+      yPos += 5;
+    };
+    
+    addOrderList("Created Orders:", staff.createdOrders);
+    addOrderList("Tagged Orders:", staff.taggedOrders);
+    addOrderList("Packed Orders:", staff.packedOrders);
+    addOrderList("Delivered Orders:", staff.deliveredOrders);
+    
+    doc.save(`Staff_Report_${staff.name}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    toast({
+      title: "PDF Downloaded",
+      description: `Staff report for ${staff.name} exported to PDF`,
+    });
+  };
+
+  const generateItemReportExcel = (
+    dateItemMap: Record<string, Record<string, number>>,
+    sortedDates: string[],
+    sortedItems: string[],
+    itemTotals: Record<string, number>
+  ) => {
+    const wsData: (string | number)[][] = [];
+    wsData.push([
+      "Item Quantity Report",
+      "",
+      "",
+      `From: ${reportStartDate} To: ${reportEndDate}`,
+    ]);
+    wsData.push([]);
+
+    const headerRow: (string | number)[] = [
+      "Item Name",
+      ...sortedDates,
+      "Total",
+    ];
+    wsData.push(headerRow);
+
+    sortedItems.forEach((itemName) => {
+      const row: (string | number)[] = [itemName];
+      sortedDates.forEach((date) => {
+        row.push(dateItemMap[date][itemName] || 0);
+      });
+      row.push(itemTotals[itemName]);
+      wsData.push(row);
+    });
+
+    const dailyTotalRow: (string | number)[] = ["Daily Total"];
+    sortedDates.forEach((date) => {
+      dailyTotalRow.push(
+        Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0),
+      );
+    });
+    dailyTotalRow.push(
+      Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0),
+    );
+    wsData.push(dailyTotalRow);
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Item Report");
+    XLSX.writeFile(
+      wb,
+      `Item_Report_${reportStartDate}_to_${reportEndDate}.xlsx`,
+    );
+    toast({
+      title: "Excel Downloaded",
+      description: "Item report exported to Excel",
+    });
+  };
+
+  const exportReportToPDF = () => {
+    if (reportTableRef.current) {
+      const opt = {
+        margin: 10,
+        filename: `Item_Report_${reportStartDate}_to_${reportEndDate}.pdf`,
+        image: { type: "jpeg" as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: {
+          unit: "mm" as const,
+          format: "a4" as const,
+          orientation: "landscape" as const,
+        },
+      };
+
+      html2pdf().set(opt).from(reportTableRef.current).save();
+      toast({
+        title: "PDF Downloaded",
+        description: "Item report exported to PDF",
+      });
+    }
   };
 
   const createMutation = useMutation({
@@ -800,6 +1107,10 @@ export default function Workers() {
               <TabsTrigger value="users" data-testid="tab-users">
                 <UserCog className="w-4 h-4 mr-1" />
                 User Account Management
+              </TabsTrigger>
+              <TabsTrigger value="sales-reports" data-testid="tab-sales-reports">
+                <FileSpreadsheet className="w-4 h-4 mr-1" />
+                Sales Reports
               </TabsTrigger>
             </TabsList>
 
@@ -1414,6 +1725,10 @@ export default function Workers() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="sales-reports">
+              <SalesReports embedded />
             </TabsContent>
           </Tabs>
         )}

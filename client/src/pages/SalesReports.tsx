@@ -13,7 +13,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import * as XLSX from "xlsx";
 import type { ClientTransaction, Order } from "@shared/schema";
 
-export default function SalesReports() {
+interface SalesReportsProps {
+  embedded?: boolean;
+}
+
+export default function SalesReports({ embedded = false }: SalesReportsProps) {
   const today = new Date().toISOString().split('T')[0];
   const currentMonth = new Date().toISOString().slice(0, 7);
   const currentYear = new Date().getFullYear().toString();
