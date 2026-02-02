@@ -73,6 +73,8 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
+  startOfYear,
+  endOfYear,
   parseISO,
 } from "date-fns";
 import type { Order, Bill, Client } from "@shared/schema";
@@ -119,6 +121,8 @@ export default function Workers() {
   const [dateFilter, setDateFilter] = useState("today");
   const [customFromDate, setCustomFromDate] = useState("");
   const [customToDate, setCustomToDate] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
 
   const [isUserCreateOpen, setIsUserCreateOpen] = useState(false);
@@ -262,6 +266,12 @@ export default function Workers() {
         return { start: startOfWeek(now), end: endOfWeek(now) };
       case "month":
         return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "monthly":
+        const monthDate = new Date(selectedYear, selectedMonth, 1);
+        return { start: startOfMonth(monthDate), end: endOfMonth(monthDate) };
+      case "yearly":
+        const yearDate = new Date(selectedYear, 0, 1);
+        return { start: startOfYear(yearDate), end: endOfYear(yearDate) };
       case "custom":
         if (customFromDate && customToDate) {
           return {
@@ -995,11 +1005,60 @@ export default function Workers() {
                         <SelectItem value="yesterday">Yesterday</SelectItem>
                         <SelectItem value="week">This Week</SelectItem>
                         <SelectItem value="month">This Month</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
                         <SelectItem value="custom">Custom Range</SelectItem>
                         <SelectItem value="all">All Time</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  {dateFilter === "monthly" && (
+                    <div className="flex items-center gap-2">
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="w-32" data-testid="select-month">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">January</SelectItem>
+                          <SelectItem value="1">February</SelectItem>
+                          <SelectItem value="2">March</SelectItem>
+                          <SelectItem value="3">April</SelectItem>
+                          <SelectItem value="4">May</SelectItem>
+                          <SelectItem value="5">June</SelectItem>
+                          <SelectItem value="6">July</SelectItem>
+                          <SelectItem value="7">August</SelectItem>
+                          <SelectItem value="8">September</SelectItem>
+                          <SelectItem value="9">October</SelectItem>
+                          <SelectItem value="10">November</SelectItem>
+                          <SelectItem value="11">December</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-24" data-testid="select-year-monthly">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {dateFilter === "yearly" && (
+                    <div className="flex items-center gap-2">
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-24" data-testid="select-year">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   {dateFilter === "custom" && (
                     <div className="flex items-center gap-2">
                       <Input
