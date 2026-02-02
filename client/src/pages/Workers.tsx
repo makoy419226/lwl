@@ -386,7 +386,7 @@ export default function Workers() {
 
   const exportToExcel = () => {
     const { start, end } = getDateRange();
-    const dateRangeStr = `${format(start, "dd/MM/yyyy")} - ${format(end, "dd/MM/yyyy")}`;
+    const dateRangeStr = `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
     
     const headerRows = [
       ["Liquid Washes Laundry"],
