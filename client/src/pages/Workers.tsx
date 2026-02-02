@@ -452,6 +452,7 @@ export default function Workers() {
   }, [orders, bills, dateFilter, customFromDate, customToDate, selectedMonth, selectedYear]);
 
   const [expandedAdminOrders, setExpandedAdminOrders] = useState<Set<number>>(new Set());
+  const [expandedItemReportOrders, setExpandedItemReportOrders] = useState<Set<number>>(new Set());
   
   const getAdminDateRangeLabel = () => {
     const { start, end } = getDateRange();
@@ -462,6 +463,21 @@ export default function Workers() {
     } else if (dateFilter === "yearly") {
       return format(start, "yyyy");
     } else if (dateFilter === "all") {
+      return "All Time";
+    } else {
+      return `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
+    }
+  };
+  
+  const getItemReportDateLabel = () => {
+    const { start, end } = getItemReportDateRange();
+    if (itemReportDateFilter === "today" || itemReportDateFilter === "yesterday") {
+      return format(start, "MMMM d, yyyy");
+    } else if (itemReportDateFilter === "monthly" || itemReportDateFilter === "month") {
+      return format(start, "MMMM yyyy");
+    } else if (itemReportDateFilter === "yearly") {
+      return format(start, "yyyy");
+    } else if (itemReportDateFilter === "all") {
       return "All Time";
     } else {
       return `${format(start, "MMMM d, yyyy")} to ${format(end, "MMMM d, yyyy")}`;
@@ -1729,109 +1745,124 @@ export default function Workers() {
                           );
                         }
 
-                        const dateItemMap: Record<string, Record<string, number>> = {};
-                        const itemTotals: Record<string, number> = {};
-
+                        // Calculate total items across all orders
+                        let totalItems = 0;
                         filteredOrders.forEach((order) => {
-                          const dateKey = new Date(order.entryDate).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                          });
-
-                          if (!dateItemMap[dateKey]) {
-                            dateItemMap[dateKey] = {};
-                          }
-
                           const itemsStr = order.items || "";
                           const itemRegex = /(\d+)x\s+([^,\[\]]+?)(?:\s*\[[^\]]*\])?(?:\s*\([^)]*\))?(?:,|$)/g;
                           let match;
-
                           while ((match = itemRegex.exec(itemsStr)) !== null) {
-                            const qty = parseInt(match[1], 10);
-                            const itemName = match[2].trim();
-                            dateItemMap[dateKey][itemName] = (dateItemMap[dateKey][itemName] || 0) + qty;
-                            itemTotals[itemName] = (itemTotals[itemName] || 0) + qty;
+                            totalItems += parseInt(match[1], 10);
                           }
                         });
 
-                        const sortedDates = Object.keys(dateItemMap).sort((a, b) => {
-                          const dateA = new Date(a);
-                          const dateB = new Date(b);
-                          return dateA.getTime() - dateB.getTime();
-                        });
-
-                        const sortedItems = Object.keys(itemTotals).sort((a, b) =>
-                          a.localeCompare(b)
-                        );
-
-                        if (sortedItems.length === 0) {
-                          return (
-                            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                              <Package className="w-12 h-12 mb-4 opacity-50" />
-                              <p>No items found in the selected date range</p>
-                            </div>
-                          );
-                        }
-
                         return (
                           <>
-                            <div className="flex gap-2 mb-4">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => generateItemReportExcel(filteredOrders)}
-                                data-testid="button-export-excel"
-                              >
-                                <Download className="w-4 h-4 mr-2" />
-                                Export Excel
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => exportItemReportToPDF(filteredOrders)}
-                                data-testid="button-export-pdf"
-                              >
-                                <FileText className="w-4 h-4 mr-2" />
-                                Export PDF
-                              </Button>
-                            </div>
-                            <div ref={reportTableRef} className="overflow-x-auto">
-                              <div className="bg-card p-4 mb-4">
-                                <h3 className="text-lg font-semibold mb-1">Item Quantity Report - {format(startDate, "MMMM d, yyyy")} to {format(endDate, "MMMM d, yyyy")}</h3>
+                            <div className="flex items-center justify-between mb-4">
+                              <Badge variant="outline" className="text-sm">
+                                {getItemReportDateLabel()}
+                              </Badge>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => generateItemReportExcel(filteredOrders)}
+                                  data-testid="button-export-excel"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export Excel
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => exportItemReportToPDF(filteredOrders)}
+                                  data-testid="button-export-pdf"
+                                >
+                                  <FileText className="w-4 h-4 mr-2" />
+                                  Export PDF
+                                </Button>
                               </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                                <div className="flex items-center justify-center gap-2 mb-1">
+                                  <ClipboardList className="w-4 h-4 text-blue-500" />
+                                  <span className="text-sm text-muted-foreground">Total Orders</span>
+                                </div>
+                                <p className="text-2xl font-bold">{filteredOrders.length}</p>
+                              </div>
+                              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                                <div className="flex items-center justify-center gap-2 mb-1">
+                                  <Package className="w-4 h-4 text-green-500" />
+                                  <span className="text-sm text-muted-foreground">Total Items</span>
+                                </div>
+                                <p className="text-2xl font-bold">{totalItems}</p>
+                              </div>
+                            </div>
+                            
+                            <div ref={reportTableRef} className="border rounded-lg overflow-hidden">
                               <Table>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead className="sticky left-0 bg-background z-10">Item Name</TableHead>
-                                    {sortedDates.map((date) => (
-                                      <TableHead key={date} className="text-center whitespace-nowrap">{date}</TableHead>
-                                    ))}
-                                    <TableHead className="text-center font-bold">Total</TableHead>
+                                    <TableHead>Order #</TableHead>
+                                    <TableHead>Client</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-right">Items</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {sortedItems.map((itemName) => (
-                                    <TableRow key={itemName}>
-                                      <TableCell className="sticky left-0 bg-background z-10 font-medium">{itemName}</TableCell>
-                                      {sortedDates.map((date) => (
-                                        <TableCell key={date} className="text-center">
-                                          {dateItemMap[date][itemName] || 0}
-                                        </TableCell>
-                                      ))}
-                                      <TableCell className="text-center font-bold">{itemTotals[itemName]}</TableCell>
-                                    </TableRow>
-                                  ))}
-                                  <TableRow className="bg-muted/50 font-bold">
-                                    <TableCell className="sticky left-0 bg-muted/50 z-10">Daily Total</TableCell>
-                                    {sortedDates.map((date) => (
-                                      <TableCell key={date} className="text-center">
-                                        {Object.values(dateItemMap[date]).reduce((sum, qty) => sum + qty, 0)}
-                                      </TableCell>
-                                    ))}
-                                    <TableCell className="text-center">
-                                      {Object.values(itemTotals).reduce((sum, qty) => sum + qty, 0)}
-                                    </TableCell>
-                                  </TableRow>
+                                  {filteredOrders.map((order) => {
+                                    const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
+                                    const isExpanded = expandedItemReportOrders.has(order.id);
+                                    
+                                    // Count items in this order
+                                    let orderItemCount = 0;
+                                    const itemsStr = order.items || "";
+                                    const itemRegex = /(\d+)x\s+([^,\[\]]+?)(?:\s*\[[^\]]*\])?(?:\s*\([^)]*\))?(?:,|$)/g;
+                                    let match;
+                                    while ((match = itemRegex.exec(itemsStr)) !== null) {
+                                      orderItemCount += parseInt(match[1], 10);
+                                    }
+                                    
+                                    return (
+                                      <>
+                                        <TableRow 
+                                          key={order.id}
+                                          className="cursor-pointer hover-elevate"
+                                          onClick={() => {
+                                            const newSet = new Set(expandedItemReportOrders);
+                                            if (isExpanded) {
+                                              newSet.delete(order.id);
+                                            } else {
+                                              newSet.add(order.id);
+                                            }
+                                            setExpandedItemReportOrders(newSet);
+                                          }}
+                                          data-testid={`row-item-report-order-${order.id}`}
+                                        >
+                                          <TableCell className="font-medium text-blue-600">
+                                            {order.orderNumber}
+                                          </TableCell>
+                                          <TableCell>{clientName}</TableCell>
+                                          <TableCell>
+                                            {order.entryDate && format(new Date(order.entryDate), "MMM d, yyyy")}
+                                          </TableCell>
+                                          <TableCell className="text-right">{orderItemCount} items</TableCell>
+                                        </TableRow>
+                                        {isExpanded && (
+                                          <TableRow key={`${order.id}-details`}>
+                                            <TableCell colSpan={4} className="bg-muted/30 p-4">
+                                              <div className="text-sm">
+                                                <p className="font-medium mb-2">Items:</p>
+                                                <p className="text-muted-foreground">{order.items || "No items"}</p>
+                                              </div>
+                                            </TableCell>
+                                          </TableRow>
+                                        )}
+                                      </>
+                                    );
+                                  })}
                                 </TableBody>
                               </Table>
                             </div>
