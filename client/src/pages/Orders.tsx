@@ -1744,7 +1744,7 @@ export default function Orders() {
                                 <span data-testid={`text-packed-by-mobile-${order.id}`}><Package className="w-3 h-3 inline mr-1" />Packed: <span className="font-medium text-foreground">{order.packingBy}</span></span>
                               )}
                               {order.deliveryBy && (
-                                <span data-testid={`text-delivered-by-mobile-${order.id}`}><Truck className="w-3 h-3 inline mr-1" />Delivered: <span className="font-medium text-foreground">{order.deliveryBy}</span></span>
+                                <span data-testid={`text-delivered-by-mobile-${order.id}`}><Truck className="w-3 h-3 inline mr-1" />{order.deliveryType === 'pickup' ? 'Completed' : 'Delivered'}: <span className="font-medium text-foreground">{order.deliveryBy}</span></span>
                               )}
                             </div>
 
@@ -2321,7 +2321,7 @@ export default function Orders() {
                                           {order.entryBy && <div data-testid={`text-created-by-${order.id}`}>Created: {order.entryBy}</div>}
                                           {order.tagBy && <div data-testid={`text-tagged-by-${order.id}`}>Tagged: {order.tagBy}</div>}
                                           {order.packingBy && <div data-testid={`text-packed-by-${order.id}`}>Packed: {order.packingBy}</div>}
-                                          {order.deliveryBy && <div data-testid={`text-delivered-by-${order.id}`}>Delivered: {order.deliveryBy}</div>}
+                                          {order.deliveryBy && <div data-testid={`text-delivered-by-${order.id}`}>{order.deliveryType === 'pickup' ? 'Completed' : 'Delivered'}: {order.deliveryBy}</div>}
                                         </div>
                                       </div>
                                     </TableCell>
