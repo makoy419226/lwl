@@ -1478,41 +1478,8 @@ export async function registerRoutes(
         creatorRole,
       } = req.body;
       
-      // Validate that the creator has permission to create bills
-      // Only admin and counter roles can create bills
-      const allowedBillCreatorRoles = ["admin", "counter"];
-      
-      // Check if createdBy matches a user with a non-allowed role
-      if (createdBy) {
-        const allUsers = await storage.getUsers();
-        const matchedUser = allUsers.find(u => 
-          (u.name && u.name.toLowerCase() === createdBy.toLowerCase()) ||
-          (u.username && u.username.toLowerCase() === createdBy.toLowerCase())
-        );
-        if (matchedUser && !allowedBillCreatorRoles.includes(matchedUser.role?.toLowerCase() || "")) {
-          return res.status(403).json({ 
-            message: "This PIN has no billing rights. Use admin or reception PIN only." 
-          });
-        }
-      }
-      
-      // Check if createdBy is a packing worker name - they cannot create bills
-      const packingWorkers = await storage.getPackingWorkers();
-      const isPacker = packingWorkers.some(pw => 
-        pw.name && createdBy && pw.name.toLowerCase() === createdBy.toLowerCase()
-      );
-      if (isPacker) {
-        return res.status(403).json({ 
-          message: "This PIN has no billing rights. Use admin or reception PIN only." 
-        });
-      }
-      
-      // Also validate creatorRole if provided
-      if (creatorRole && !allowedBillCreatorRoles.includes(creatorRole.toLowerCase())) {
-        return res.status(403).json({ 
-          message: "This PIN has no billing rights. Use admin or reception PIN only." 
-        });
-      }
+      // All PINs are universal - any valid PIN can create orders
+      // createdBy and creatorRole are used for tracking only, not for access control
 
       // // Validate required fields
       // if (!customerName || !customerName.trim()) {
@@ -2562,30 +2529,22 @@ export async function registerRoutes(
       return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin", role: "admin" } });
     }
     
+    // All PINs are universal - any valid PIN can be used for any process
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      // Only allow admin and counter roles for bill creation
-      const allowedRoles = ["admin", "counter"];
-      if (!allowedRoles.includes(user.role?.toLowerCase() || "")) {
-        return res.status(403).json({ 
-          success: false, 
-          message: "Only admin or counter can create orders with bills" 
-        });
-      }
       return res.json({ success: true, worker: { id: user.id, name: user.name || user.username, role: user.role } });
     }
     
-    // Check staff members (counter staff can create orders)
+    // Check staff members - all staff can use their PIN universally
     const staffMember = await storage.verifyStaffMemberPin(pin);
     if (staffMember) {
-      // Only counter staff members can create orders
-      if (staffMember.roleType !== "counter") {
-        return res.status(403).json({ 
-          success: false, 
-          message: "Only counter staff can create orders with bills" 
-        });
-      }
-      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name, role: "counter" } });
+      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name, role: staffMember.roleType } });
+    }
+    
+    // Check packing workers (legacy)
+    const packingWorker = await storage.verifyPackingWorkerPin(pin);
+    if (packingWorker) {
+      return res.json({ success: true, worker: { id: packingWorker.id, name: packingWorker.name, role: "section" } });
     }
     
     res.status(401).json({ success: false, message: "Invalid PIN" });
