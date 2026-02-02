@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
-import { users, passwordResetTokens, stageChecklists, packingWorkers } from "@shared/schema";
+import { users, passwordResetTokens, stageChecklists, packingWorkers, bills } from "@shared/schema";
 import { eq, and, gt, ne } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
 import { sendDailySalesReportEmailSMTP, sendSalesReportEmailSMTP, type DailySalesData, type SalesReportData, type ReportPeriod } from "./smtp";
@@ -461,6 +461,11 @@ export async function registerRoutes(
       }
     }
     
+    // Get current user to check if name is changing
+    const [currentUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const oldName = currentUser?.name;
+    const oldUsername = currentUser?.username;
+    
     const updates: any = {};
     if (username) updates.username = username;
     if (password) updates.password = password;
@@ -478,6 +483,16 @@ export async function registerRoutes(
     if (!updated) {
       return res.status(404).json({ message: "User not found" });
     }
+    
+    // If name changed, update the createdBy field in all bills where this user was the biller
+    if (name && oldName && name !== oldName) {
+      await db.update(bills).set({ createdBy: name }).where(eq(bills.createdBy, oldName));
+    }
+    // Also update if username was used as createdBy (fallback)
+    if (name && oldUsername && name !== oldUsername) {
+      await db.update(bills).set({ createdBy: name }).where(eq(bills.createdBy, oldUsername));
+    }
+    
     res.json({
       id: updated.id,
       username: updated.username,
@@ -564,11 +579,21 @@ export async function registerRoutes(
           return res.status(400).json({ message: "This PIN is already used by a user account" });
         }
       }
+      // Get current staff member to check if name is changing
+      const currentMember = await storage.getStaffMember(id);
+      const oldName = currentMember?.name;
+      
       const updates: any = {};
       if (name !== undefined) updates.name = name;
       if (pin !== undefined) updates.pin = pin;
       if (active !== undefined) updates.active = active;
       const member = await storage.updateStaffMember(id, updates);
+      
+      // If name changed, update the createdBy field in all bills where this staff member was the biller
+      if (name && oldName && name !== oldName) {
+        await db.update(bills).set({ createdBy: name }).where(eq(bills.createdBy, oldName));
+      }
+      
       res.json(member);
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Failed to update staff member" });
