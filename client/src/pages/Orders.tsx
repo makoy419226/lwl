@@ -2936,26 +2936,8 @@ export default function Orders() {
           {activeTab === "item-report" && (
             <TabsContent value="item-report" forceMount>
               <>
-              <div className="flex gap-2 mb-4">
-                <Button
-                  variant={reportSubTab === "items" ? "default" : "outline"}
-                  onClick={() => setReportSubTab("items")}
-                  data-testid="button-items-report-tab"
-                >
-                  <Package className="w-4 h-4 mr-2" />
-                  Item Report
-                </Button>
-                <Button
-                  variant={reportSubTab === "staff" ? "default" : "outline"}
-                  onClick={() => setReportSubTab("staff")}
-                  data-testid="button-staff-performance-tab"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Staff Performance
-                </Button>
-              </div>
-
-              {reportSubTab === "items" && (
+              {/* Item Report - Staff Performance moved to Staff Members page */}
+              {(
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -3165,31 +3147,6 @@ export default function Orders() {
                 </CardContent>
               </Card>
               )}
-
-              {reportSubTab === "staff" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Staff Performance Summary
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Click any count to see the list of orders.
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap items-center gap-3 mb-4">
-                    <div className="flex gap-1">
-                      <Button
-                        variant={staffPeriod === "daily" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setStaffPeriod("daily")}
-                        data-testid="button-staff-daily"
-                      >
-                        Daily
-                      </Button>
-                      <Button
-                        variant={staffPeriod === "monthly" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setStaffPeriod("monthly")}
                         data-testid="button-staff-monthly"
