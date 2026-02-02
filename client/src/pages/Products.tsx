@@ -629,15 +629,28 @@ export default function Products() {
       return cleaned;
     };
     
+    // Check if phone is valid (not placeholder like XXXXXXXXX or 0000000)
+    const isValidPhone = (phone: string) => {
+      const cleaned = phone.replace(/\D/g, '');
+      // Must have at least 7 real digits and not be all same digit
+      if (cleaned.length < 7) return false;
+      if (/^(.)\1+$/.test(cleaned)) return false; // All same digit
+      if (/^0+$/.test(cleaned)) return false; // All zeros
+      return true;
+    };
+    
     const normalizedWalkIn = normalizePhone(walkInPhone);
-    if (normalizedWalkIn.length < 4) return null;
+    // Need at least 7 digits for a match to avoid false positives
+    if (normalizedWalkIn.length < 7) return null;
     
     const matchingClient = clients?.find(client => {
       if (!client.phone) return false;
+      if (!isValidPhone(client.phone)) return false; // Skip invalid phone numbers
       const normalizedClient = normalizePhone(client.phone);
+      if (normalizedClient.length < 7) return false; // Client must also have valid phone
+      // Only match if exact match or last 9 digits match
       return normalizedClient === normalizedWalkIn || 
-             normalizedClient.endsWith(normalizedWalkIn) || 
-             normalizedWalkIn.endsWith(normalizedClient);
+             (normalizedWalkIn.length >= 9 && normalizedClient.endsWith(normalizedWalkIn.slice(-9)));
     });
     
     if (matchingClient) {
