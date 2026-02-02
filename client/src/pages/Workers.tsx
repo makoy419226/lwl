@@ -143,6 +143,11 @@ export default function Workers() {
     roleType: "counter" as "counter" | "section" | "driver",
   });
   const [visibleStaffPins, setVisibleStaffPins] = useState<Set<number>>(new Set());
+  const [selectedStaffOrders, setSelectedStaffOrders] = useState<{
+    staffId: number;
+    staffName: string;
+    type: "bills" | "tagged" | "packed" | "delivered";
+  } | null>(null);
   
   const toggleStaffPinVisibility = (memberId: number) => {
     setVisibleStaffPins(prev => {
@@ -456,6 +461,41 @@ export default function Workers() {
   const filteredStats = workerStats.filter((s) =>
     (s.worker.name || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  // Get orders for a specific staff member by type
+  const getStaffOrders = (staffId: number, type: "bills" | "tagged" | "packed" | "delivered") => {
+    if (!orders) return [];
+    const { start, end } = getDateRange();
+    
+    if (type === "bills") {
+      return bills?.filter(b => {
+        if (b.createdByWorkerId !== staffId) return false;
+        if (!b.billDate) return false;
+        const billDate = new Date(b.billDate);
+        return billDate >= start && billDate <= end;
+      }) || [];
+    }
+    
+    return orders.filter((o) => {
+      let dateField: string | Date | null | undefined;
+      let workerField: number | null | undefined;
+      
+      if (type === "tagged") {
+        dateField = o.tagDate;
+        workerField = o.tagWorkerId;
+      } else if (type === "packed") {
+        dateField = o.packingDate;
+        workerField = o.packingWorkerId;
+      } else if (type === "delivered") {
+        dateField = o.deliveryDate;
+        workerField = o.deliveredByWorkerId;
+      }
+      
+      if (workerField !== staffId || !dateField) return false;
+      const date = new Date(dateField);
+      return date >= start && date <= end;
+    });
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; role: string; pin: string }) => {
@@ -991,7 +1031,9 @@ export default function Workers() {
                                 <TableCell className="text-center">
                                   <Badge
                                     variant="outline"
-                                    className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
+                                    className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300 cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
+                                    onClick={() => s.billsCreated > 0 && setSelectedStaffOrders({ staffId: s.worker.id, staffName: s.worker.name, type: "bills" })}
+                                    data-testid={`badge-bills-${s.worker.id}`}
                                   >
                                     {s.billsCreated}
                                   </Badge>
@@ -999,7 +1041,9 @@ export default function Workers() {
                                 <TableCell className="text-center">
                                   <Badge
                                     variant="outline"
-                                    className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
+                                    className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300 cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/40"
+                                    onClick={() => s.taggedCount > 0 && setSelectedStaffOrders({ staffId: s.worker.id, staffName: s.worker.name, type: "tagged" })}
+                                    data-testid={`badge-tagged-${s.worker.id}`}
                                   >
                                     {s.taggedCount}
                                   </Badge>
@@ -1007,7 +1051,9 @@ export default function Workers() {
                                 <TableCell className="text-center">
                                   <Badge
                                     variant="outline"
-                                    className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                                    className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40"
+                                    onClick={() => s.packedCount > 0 && setSelectedStaffOrders({ staffId: s.worker.id, staffName: s.worker.name, type: "packed" })}
+                                    data-testid={`badge-packed-${s.worker.id}`}
                                   >
                                     {s.packedCount}
                                   </Badge>
@@ -1015,7 +1061,9 @@ export default function Workers() {
                                 <TableCell className="text-center">
                                   <Badge
                                     variant="outline"
-                                    className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                                    className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40"
+                                    onClick={() => s.deliveredCount > 0 && setSelectedStaffOrders({ staffId: s.worker.id, staffName: s.worker.name, type: "delivered" })}
+                                    data-testid={`badge-delivered-${s.worker.id}`}
                                   >
                                     {s.deliveredCount}
                                   </Badge>
@@ -1669,6 +1717,88 @@ export default function Workers() {
               <div className="text-center py-8 text-muted-foreground">
                 No deliveries found for this driver
               </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Staff Orders Dialog */}
+      <Dialog open={!!selectedStaffOrders} onOpenChange={() => setSelectedStaffOrders(null)}>
+        <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedStaffOrders?.type === "bills" && <Receipt className="w-5 h-5 text-cyan-600" />}
+              {selectedStaffOrders?.type === "tagged" && <Tag className="w-5 h-5 text-orange-600" />}
+              {selectedStaffOrders?.type === "packed" && <Package className="w-5 h-5 text-green-600" />}
+              {selectedStaffOrders?.type === "delivered" && <Truck className="w-5 h-5 text-purple-600" />}
+              {selectedStaffOrders?.type === "bills" ? "Bills Created" : 
+               selectedStaffOrders?.type === "tagged" ? "Orders Tagged" : 
+               selectedStaffOrders?.type === "packed" ? "Orders Packed" : "Orders Delivered"} - {selectedStaffOrders?.staffName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {selectedStaffOrders && selectedStaffOrders.type === "bills" ? (
+              // Show bills
+              <>
+                {getStaffOrders(selectedStaffOrders.staffId, "bills").map((bill: any) => (
+                  <Card key={bill.id} className="p-3" data-testid={`card-bill-${bill.id}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold">Bill #{bill.id}</div>
+                        <div className="text-sm text-muted-foreground">{bill.amount} AED</div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={bill.isPaid ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
+                          {bill.isPaid ? "Paid" : "Unpaid"}
+                        </Badge>
+                        {bill.billDate && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(bill.billDate), "dd MMM yyyy, h:mm a")}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+                {getStaffOrders(selectedStaffOrders.staffId, "bills").length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No bills found for this staff member
+                  </div>
+                )}
+              </>
+            ) : (
+              // Show orders
+              <>
+                {selectedStaffOrders && (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).map((order) => (
+                  <Card key={order.id} className="p-3" data-testid={`card-order-${order.id}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold">#{order.orderNumber}</div>
+                        <div className="text-sm text-muted-foreground">{order.customerName || "Walk-in"}</div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={
+                          selectedStaffOrders?.type === "tagged" ? "bg-orange-500 text-white" :
+                          selectedStaffOrders?.type === "packed" ? "bg-green-500 text-white" : "bg-purple-500 text-white"
+                        }>
+                          {selectedStaffOrders?.type === "tagged" ? "Tagged" :
+                           selectedStaffOrders?.type === "packed" ? "Packed" : "Delivered"}
+                        </Badge>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedStaffOrders?.type === "tagged" && order.tagDate && format(new Date(order.tagDate), "dd MMM yyyy, h:mm a")}
+                          {selectedStaffOrders?.type === "packed" && order.packingDate && format(new Date(order.packingDate), "dd MMM yyyy, h:mm a")}
+                          {selectedStaffOrders?.type === "delivered" && order.deliveryDate && format(new Date(order.deliveryDate), "dd MMM yyyy, h:mm a")}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+                {selectedStaffOrders && (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No orders found for this staff member
+                  </div>
+                )}
+              </>
             )}
           </div>
         </DialogContent>
