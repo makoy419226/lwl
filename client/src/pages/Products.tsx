@@ -721,6 +721,22 @@ export default function Products() {
       });
       return;
     }
+    // Require at least 2 of 3 fields for walk-in customers
+    if (isWalkIn) {
+      const hasName = walkInName.trim().length > 0;
+      const hasPhone = walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length > 0;
+      const hasAddress = walkInAddress.trim().length > 0;
+      const filledFields = [hasName, hasPhone, hasAddress].filter(Boolean).length;
+      
+      if (filledFields < 2) {
+        toast({
+          title: "More details needed",
+          description: "Please fill at least 2 fields: name, phone, or address.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     if (!hasOrderItems) {
       toast({
         title: "No items",
