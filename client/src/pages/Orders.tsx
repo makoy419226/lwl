@@ -4098,20 +4098,20 @@ function OrderForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label>Client</Label>
-        <TouchSelect
+        <select
           value={formData.clientId}
-          onValueChange={handleClientChange}
-          placeholder="Select client"
-          searchable={clients.length > 10}
+          onChange={(e) => handleClientChange(e.target.value)}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="select-client"
-          options={[
-            { value: "walkin", label: "Walk-in Customer" },
-            ...clients.map((client) => ({
-              value: client.id.toString(),
-              label: `${client.name} - ${client.phone}`,
-            })),
-          ]}
-        />
+        >
+          <option value="">Select client</option>
+          <option value="walkin">Walk-in Customer</option>
+          {clients.map((client) => (
+            <option key={client.id} value={client.id.toString()}>
+              {client.name} - {client.phone}
+            </option>
+          ))}
+        </select>
       </div>
 
       {formData.clientId === "walkin" && (
