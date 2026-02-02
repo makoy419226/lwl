@@ -385,26 +385,36 @@ export default function Workers() {
   };
 
   const exportToExcel = () => {
-    const data = filteredStats.map((s) => ({
-      "Staff Name": s.worker.name,
-      "Tags Done": s.taggedCount,
-      "Packing Done": s.packedCount,
-      Deliveries: s.deliveredCount,
-      "Bills Created": s.billsCreated,
-      "Total Tasks": s.totalTasks,
-    }));
+    const { start, end } = getDateRange();
+    const dateRangeStr = `${format(start, "dd/MM/yyyy")} - ${format(end, "dd/MM/yyyy")}`;
+    
+    const headerRows = [
+      ["Liquid Washes Laundry"],
+      ["Staff Performance Report"],
+      [`Report Period: ${dateRangeStr}`],
+      [],
+      ["Staff Name", "Tags Done", "Packing Done", "Deliveries", "Bills Created", "Total Tasks"],
+    ];
+    
+    const dataRows = filteredStats.map((s) => [
+      s.worker.name,
+      s.taggedCount,
+      s.packedCount,
+      s.deliveredCount,
+      s.billsCreated,
+      s.totalTasks,
+    ]);
+    
+    dataRows.push([
+      "TOTAL",
+      totals.tagged,
+      totals.packed,
+      totals.delivered,
+      totals.billsCreated,
+      totals.tagged + totals.packed + totals.delivered + totals.billsCreated,
+    ]);
 
-    data.push({
-      "Staff Name": "TOTAL",
-      "Tags Done": totals.tagged,
-      "Packing Done": totals.packed,
-      Deliveries: totals.delivered,
-      "Bills Created": totals.billsCreated,
-      "Total Tasks":
-        totals.tagged + totals.packed + totals.delivered + totals.billsCreated,
-    });
-
-    const ws = XLSX.utils.json_to_sheet(data);
+    const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...dataRows]);
     ws["!cols"] = [
       { wch: 15 },
       { wch: 12 },
