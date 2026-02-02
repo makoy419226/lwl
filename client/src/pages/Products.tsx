@@ -157,6 +157,7 @@ export default function Products() {
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [showCartPopup, setShowCartPopup] = useState(false);
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("+971");
   const [newClientAddress, setNewClientAddress] = useState("");
@@ -1351,6 +1352,13 @@ export default function Products() {
           {/* Client Selection */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold">Select Client</Label>
+            <Input
+              placeholder="Search by name or phone..."
+              value={clientSearchTerm}
+              onChange={(e) => setClientSearchTerm(e.target.value)}
+              className="h-10 text-sm mb-1"
+              data-testid={isPopup ? "popup-search-client" : "sidebar-search-client"}
+            />
             <select
               value={isWalkIn ? "walkin" : selectedClientId?.toString() || ""}
               onChange={(e) => {
@@ -1373,13 +1381,21 @@ export default function Products() {
                   setIsWalkIn(false);
                   setCustomerName("");
                 }
+                setClientSearchTerm("");
               }}
               className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               data-testid={isPopup ? "popup-select-client" : "sidebar-select-client"}
             >
               <option value="">Choose client...</option>
               <option value="walkin">Walk-in Customer</option>
-              {clients?.map((client) => (
+              {clients?.filter((client) => {
+                if (!clientSearchTerm.trim()) return true;
+                const search = clientSearchTerm.toLowerCase();
+                return (
+                  client.name.toLowerCase().includes(search) ||
+                  (client.phone && client.phone.toLowerCase().includes(search))
+                );
+              }).map((client) => (
                 <option key={client.id} value={client.id.toString()}>
                   {client.name} - {client.phone || "No phone"}
                 </option>
