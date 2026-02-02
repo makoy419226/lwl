@@ -3,6 +3,7 @@ import { UserContext } from "@/App";
 import { useSearch, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getProductImage as getStockProductImage } from "@/lib/productImages";
+import logoImage from "@assets/image_1769169126339.png";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -188,6 +189,24 @@ export default function Orders() {
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const reportTableRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [logoBase64, setLogoBase64] = useState<string>("");
+
+  useEffect(() => {
+    const img = document.createElement("img");
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL("image/png");
+        setLogoBase64(dataURL);
+      }
+    };
+    img.src = logoImage;
+  }, []);
 
   const searchString = useSearch();
   const [, setLocation] = useLocation();
@@ -1037,17 +1056,27 @@ export default function Orders() {
       return order.customerName || "Walk-in";
     };
     
+    let startY = 15;
+    
+    if (logoBase64) {
+      const logoWidth = 40;
+      const logoHeight = 30;
+      const logoX = (pageWidth - logoWidth) / 2;
+      doc.addImage(logoBase64, "PNG", logoX, startY, logoWidth, logoHeight);
+      startY += logoHeight + 5;
+    }
+    
     doc.setFontSize(18);
-    doc.text("Staff Performance Report", pageWidth / 2, 20, { align: "center" });
+    doc.text("Staff Performance Report", pageWidth / 2, startY + 5, { align: "center" });
     
     doc.setFontSize(14);
-    doc.text(`Staff: ${staff.name}`, pageWidth / 2, 30, { align: "center" });
+    doc.text(`Staff: ${staff.name}`, pageWidth / 2, startY + 15, { align: "center" });
     
     doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 38, { align: "center" });
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, startY + 23, { align: "center" });
     
     doc.setFontSize(12);
-    doc.text("Summary", 14, 50);
+    doc.text("Summary", 14, startY + 35);
     
     const summaryData = [
       ["Created Orders", staff.createdCount.toString()],
@@ -1058,7 +1087,7 @@ export default function Orders() {
     ];
     
     autoTable(doc, {
-      startY: 55,
+      startY: startY + 40,
       head: [["Action", "Count"]],
       body: summaryData,
       theme: "grid",
