@@ -37,7 +37,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TouchSelect } from "@/components/TouchSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -4097,11 +4096,11 @@ function OrderForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label>Client</Label>
+        <Label className="text-base">Client</Label>
         <select
           value={formData.clientId}
           onChange={(e) => handleClientChange(e.target.value)}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="select-client"
         >
           <option value="">Select client</option>
@@ -4117,23 +4116,24 @@ function OrderForm({
       {formData.clientId === "walkin" && (
         <>
           <div className="space-y-2">
-            <Label>Customer Name</Label>
+            <Label className="text-base">Customer Name</Label>
             <Input
               placeholder="Enter customer name"
               value={formData.customerName}
               onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
               data-testid="input-customer-name"
+              className="h-12 text-base"
             />
           </div>
           <div className="space-y-2">
-            <Label>Phone Number</Label>
+            <Label className="text-base">Phone Number</Label>
             <div className="flex flex-col gap-1">
               <div className="flex">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                <span className="inline-flex items-center px-4 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-base font-medium h-12">
                   +971
                 </span>
                 <Input
-                  className={`rounded-l-none ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
+                  className={`rounded-l-none h-12 text-base ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
                   placeholder="XXXXXXXXX"
                   value={formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9) || ""}
                   onChange={(e) => {
@@ -4180,56 +4180,47 @@ function OrderForm({
       )}
 
       <div className="space-y-2">
-        <Label>Order Type</Label>
-        <Select
+        <Label className="text-base">Order Type</Label>
+        <select
           value={formData.orderType}
-          onValueChange={(v) => setFormData({ ...formData, orderType: v })}
+          onChange={(e) => setFormData({ ...formData, orderType: e.target.value })}
+          className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          data-testid="select-order-type"
         >
-          <SelectTrigger data-testid="select-order-type">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
-            <SelectItem value="normal">Normal</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-          </SelectContent>
-        </Select>
+          <option value="normal">Normal</option>
+          <option value="urgent">Urgent</option>
+        </select>
       </div>
 
       <div className="space-y-2">
-        <Label>Delivery Type</Label>
-        <Select
+        <Label className="text-base">Delivery Type</Label>
+        <select
           value={formData.deliveryType}
-          onValueChange={(v) => setFormData({ ...formData, deliveryType: v })}
+          onChange={(e) => setFormData({ ...formData, deliveryType: e.target.value })}
+          className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          data-testid="select-delivery-type"
         >
-          <SelectTrigger data-testid="select-delivery-type">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
-            <SelectItem value="pickup">Pickup</SelectItem>
-            <SelectItem value="delivery">Delivery</SelectItem>
-          </SelectContent>
-        </Select>
+          <option value="pickup">Pickup</option>
+          <option value="delivery">Delivery</option>
+        </select>
       </div>
 
       <div className="space-y-2">
-        <Label>Payment Option</Label>
-        <Select
+        <Label className="text-base">Payment Option</Label>
+        <select
           value={formData.paymentOption}
-          onValueChange={(v) => setFormData({ ...formData, paymentOption: v })}
+          onChange={(e) => setFormData({ ...formData, paymentOption: e.target.value })}
+          className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          data-testid="select-payment-option"
         >
-          <SelectTrigger data-testid="select-payment-option">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
-            <SelectItem value="pay_later">Pay Later</SelectItem>
-            <SelectItem value="pay_now">Pay Now</SelectItem>
-          </SelectContent>
-        </Select>
+          <option value="pay_later">Pay Later</option>
+          <option value="pay_now">Pay Now</option>
+        </select>
       </div>
 
       {formData.deliveryType === "delivery" && (
         <div className="space-y-2">
-          <Label>Delivery Address *</Label>
+          <Label className="text-base">Delivery Address *</Label>
           <Textarea
             placeholder="Enter delivery address..."
             value={formData.deliveryAddress}
@@ -4237,7 +4228,7 @@ function OrderForm({
               setFormData({ ...formData, deliveryAddress: e.target.value })
             }
             data-testid="input-delivery-address"
-            className="min-h-[60px]"
+            className="min-h-[80px] text-base"
             required
           />
         </div>
@@ -4245,7 +4236,7 @@ function OrderForm({
 
       {formData.deliveryType === "delivery" && (
         <div className="space-y-2">
-          <Label>Expected Delivery</Label>
+          <Label className="text-base">Expected Delivery</Label>
           <Input
             type="datetime-local"
             value={formData.expectedDeliveryAt}
@@ -4253,6 +4244,7 @@ function OrderForm({
               setFormData({ ...formData, expectedDeliveryAt: e.target.value })
             }
             data-testid="input-delivery-time"
+            className="h-12 text-base"
           />
         </div>
       )}
@@ -4382,12 +4374,12 @@ function OrderForm({
       )}
 
       <div className="space-y-2">
-        <Label>Select Items</Label>
+        <Label className="text-base">Select Items</Label>
         <Input
           placeholder="Search items..."
           value={productSearch}
           onChange={(e) => setProductSearch(e.target.value)}
-          className="mb-2"
+          className="mb-2 h-12 text-base"
           data-testid="input-product-search"
         />
         <ScrollArea className="h-80 border rounded-lg">
@@ -4419,17 +4411,17 @@ function OrderForm({
                               ? `${parseFloat(product.price).toFixed(0)}`
                               : "-"}
                           </TableCell>
-                          <TableCell className="w-32 py-2">
-                            <div className="flex items-center justify-center gap-1">
+                          <TableCell className="w-40 py-2">
+                            <div className="flex items-center justify-center gap-2">
                               <Button
                                 type="button"
                                 size="icon"
                                 variant="outline"
-                                className="h-7 w-7"
+                                className="h-10 w-10 touch-manipulation"
                                 onClick={() => handleQuantityChange(product.id, -1)}
                                 disabled={!quantities[product.id]}
                               >
-                                <Minus className="w-3 h-3" />
+                                <Minus className="w-4 h-4" />
                               </Button>
                               <Input
                                 type="number"
@@ -4438,7 +4430,7 @@ function OrderForm({
                                 onChange={(e) =>
                                   handleManualQuantity(product.id, e.target.value)
                                 }
-                                className="w-12 h-7 text-center text-sm font-bold p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="w-14 h-10 text-center text-base font-bold p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 placeholder="0"
                                 data-testid={`input-qty-${product.id}`}
                               />
@@ -4446,10 +4438,10 @@ function OrderForm({
                                 type="button"
                                 size="icon"
                                 variant="outline"
-                                className="h-7 w-7"
+                                className="h-10 w-10 touch-manipulation"
                                 onClick={() => handleQuantityChange(product.id, 1)}
                               >
-                                <Plus className="w-3 h-3" />
+                                <Plus className="w-4 h-4" />
                               </Button>
                             </div>
                           </TableCell>
@@ -4474,24 +4466,18 @@ function OrderForm({
               {orderTotal.toFixed(2)} AED
             </span>
           </div>
-          <div className="flex items-center justify-between mb-3 pb-3 border-b">
-            <span className="text-xs font-medium text-muted-foreground">
+          <div className="flex items-center justify-between mb-3 pb-3 border-b gap-2">
+            <span className="text-sm font-medium text-muted-foreground">
               Action:
             </span>
-            <Select
+            <select
               value={formData.deliveryType}
-              onValueChange={(v) =>
-                setFormData({ ...formData, deliveryType: v })
-              }
+              onChange={(e) => setFormData({ ...formData, deliveryType: e.target.value })}
+              className="h-10 px-3 rounded-md border border-input bg-background text-sm"
             >
-              <SelectTrigger className="w-32 h-7">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
-                <SelectItem value="pickup">for pickup</SelectItem>
-                <SelectItem value="delivery">for delivery</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="pickup">for pickup</option>
+              <option value="delivery">for delivery</option>
+            </select>
           </div>
           <p className="text-xs text-muted-foreground">
             {orderItems
@@ -4502,18 +4488,19 @@ function OrderForm({
       )}
 
       <div className="space-y-2">
-        <Label>Notes</Label>
+        <Label className="text-base">Notes</Label>
         <Textarea
           placeholder="Any special instructions..."
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           data-testid="input-notes"
+          className="text-base min-h-[80px]"
         />
       </div>
 
       <Button
         type="submit"
-        className="w-full"
+        className="w-full h-14 text-lg font-semibold touch-manipulation"
         disabled={
           isLoading ||
           !formData.clientId ||
@@ -4525,7 +4512,7 @@ function OrderForm({
         }
         data-testid="button-submit-order"
       >
-        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        {isLoading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
         {clientMatch ? "Use existing client above" : `Create Order (${orderTotal.toFixed(2)} AED)`}
       </Button>
       {clientMatch && (
