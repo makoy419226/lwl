@@ -417,7 +417,14 @@ export default function Workers() {
   }, [workerStats]);
 
   const adminStats = useMemo(() => {
-    if (!orders || !bills) return { orders: [] as Order[], billsCreated: 0, billsTotal: 0 };
+    if (!orders || !bills) return { 
+      orders: [] as Order[], 
+      billsCreated: 0, 
+      billsTotal: 0,
+      taggedOrders: [] as Order[],
+      packedOrders: [] as Order[],
+      deliveredOrders: [] as Order[],
+    };
     const { start, end } = getDateRange();
     
     const adminOrders = orders.filter((o) => {
@@ -442,17 +449,57 @@ export default function Workers() {
       }
     });
     
+    // Tagged by admin (tagWorkerId is null)
+    const taggedOrders = orders.filter((o) => {
+      if (o.tagWorkerId !== null) return false;
+      if (!o.tagDate) return false;
+      try {
+        const tagDateVal = new Date(o.tagDate);
+        return tagDateVal >= start && tagDateVal <= end;
+      } catch {
+        return false;
+      }
+    });
+    
+    // Packed by admin (packingWorkerId is null)
+    const packedOrders = orders.filter((o) => {
+      if (o.packingWorkerId !== null) return false;
+      if (!o.packingDate) return false;
+      try {
+        const packingDateVal = new Date(o.packingDate);
+        return packingDateVal >= start && packingDateVal <= end;
+      } catch {
+        return false;
+      }
+    });
+    
+    // Delivered by admin (deliveredByWorkerId is null)
+    const deliveredOrders = orders.filter((o) => {
+      if (o.deliveredByWorkerId !== null) return false;
+      if (!o.deliveryDate) return false;
+      try {
+        const deliveredDateVal = new Date(o.deliveryDate);
+        return deliveredDateVal >= start && deliveredDateVal <= end;
+      } catch {
+        return false;
+      }
+    });
+    
     const billsTotal = adminBills.reduce((sum, b) => sum + parseFloat(b.amount || "0"), 0);
     
     return {
       orders: adminOrders,
       billsCreated: adminBills.length,
       billsTotal,
+      taggedOrders,
+      packedOrders,
+      deliveredOrders,
     };
   }, [orders, bills, dateFilter, customFromDate, customToDate, selectedMonth, selectedYear]);
 
   const [expandedAdminOrders, setExpandedAdminOrders] = useState<Set<number>>(new Set());
   const [selectedItemReportOrder, setSelectedItemReportOrder] = useState<Order | null>(null);
+  const [selectedAdminOrders, setSelectedAdminOrders] = useState<{ type: string; orders: Order[] } | null>(null);
   
   const getAdminDateRangeLabel = () => {
     const { start, end } = getDateRange();
@@ -1405,34 +1452,34 @@ export default function Workers() {
                             <TableHead className="text-center">Role</TableHead>
                             <TableHead className="text-center">
                               <div className="flex items-center justify-center gap-1">
-                                <ClipboardList className="w-4 h-4 text-blue-500" />
-                                Orders
-                              </div>
-                            </TableHead>
-                            <TableHead className="text-center">
-                              <div className="flex items-center justify-center gap-1">
                                 <Receipt className="w-4 h-4 text-cyan-500" />
                                 Bills
                               </div>
                             </TableHead>
                             <TableHead className="text-center">
                               <div className="flex items-center justify-center gap-1">
-                                <Receipt className="w-4 h-4 text-green-500" />
-                                Total (AED)
+                                <Tag className="w-4 h-4 text-orange-500" />
+                                Tagged
                               </div>
                             </TableHead>
+                            <TableHead className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Package className="w-4 h-4 text-green-500" />
+                                Packed
+                              </div>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Truck className="w-4 h-4 text-purple-500" />
+                                Delivered
+                              </div>
+                            </TableHead>
+                            <TableHead className="text-center">Total</TableHead>
+                            <TableHead className="text-center">Status</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          <TableRow 
-                            className="cursor-pointer hover-elevate"
-                            onClick={() => {
-                              if (adminStats.orders.length > 0) {
-                                setExpandedAdminOrders(prev => prev.size > 0 ? new Set() : new Set(adminStats.orders.map(o => o.id)));
-                              }
-                            }}
-                            data-testid="row-admin-stats"
-                          >
+                          <TableRow data-testid="row-admin-stats">
                             <TableCell className="font-medium">Admin</TableCell>
                             <TableCell className="text-center">
                               <Badge 
@@ -1445,32 +1492,75 @@ export default function Workers() {
                             <TableCell className="text-center">
                               <Badge
                                 variant="outline"
-                                className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                                className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300 cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
+                                onClick={() => adminStats.billsCreated > 0 && setSelectedAdminOrders({ type: "bills", orders: adminStats.orders })}
+                                data-testid="badge-admin-bills"
                               >
-                                {adminStats.orders.length}
+                                {adminStats.billsCreated}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge
                                 variant="outline"
-                                className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300"
+                                className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300 cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/40"
+                                onClick={() => adminStats.taggedOrders.length > 0 && setSelectedAdminOrders({ type: "tagged", orders: adminStats.taggedOrders })}
+                                data-testid="badge-admin-tagged"
                               >
-                                {adminStats.billsCreated}
+                                {adminStats.taggedOrders.length}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge
+                                variant="outline"
+                                className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40"
+                                onClick={() => adminStats.packedOrders.length > 0 && setSelectedAdminOrders({ type: "packed", orders: adminStats.packedOrders })}
+                                data-testid="badge-admin-packed"
+                              >
+                                {adminStats.packedOrders.length}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge
+                                variant="outline"
+                                className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40"
+                                onClick={() => adminStats.deliveredOrders.length > 0 && setSelectedAdminOrders({ type: "delivered", orders: adminStats.deliveredOrders })}
+                                data-testid="badge-admin-delivered"
+                              >
+                                {adminStats.deliveredOrders.length}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center font-medium">
-                              {adminStats.billsTotal.toFixed(2)}
+                              {adminStats.billsCreated + adminStats.taggedOrders.length + adminStats.packedOrders.length + adminStats.deliveredOrders.length}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge className="bg-green-500/10 text-green-600 border-green-500/30">
+                                Active
+                              </Badge>
                             </TableCell>
                           </TableRow>
                         </TableBody>
                       </Table>
                     </div>
-                    
-                    {expandedAdminOrders.size > 0 && adminStats.orders.length > 0 && (
-                      <div className="mt-4 border rounded-lg overflow-hidden">
-                        <div className="bg-muted/50 px-4 py-2 border-b">
-                          <p className="text-sm font-medium">Admin Orders ({adminStats.orders.length})</p>
-                        </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Admin Orders Popup Dialog */}
+                <Dialog open={!!selectedAdminOrders} onOpenChange={(open) => !open && setSelectedAdminOrders(null)}>
+                  <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        {selectedAdminOrders?.type === "bills" && <Receipt className="w-5 h-5 text-cyan-500" />}
+                        {selectedAdminOrders?.type === "tagged" && <Tag className="w-5 h-5 text-orange-500" />}
+                        {selectedAdminOrders?.type === "packed" && <Package className="w-5 h-5 text-green-500" />}
+                        {selectedAdminOrders?.type === "delivered" && <Truck className="w-5 h-5 text-purple-500" />}
+                        Admin - {selectedAdminOrders?.type === "bills" ? "Bills Created" : 
+                                 selectedAdminOrders?.type === "tagged" ? "Orders Tagged" :
+                                 selectedAdminOrders?.type === "packed" ? "Orders Packed" : "Orders Delivered"}
+                        <Badge variant="outline" className="ml-2">{selectedAdminOrders?.orders.length || 0}</Badge>
+                      </DialogTitle>
+                    </DialogHeader>
+                    {selectedAdminOrders && (
+                      <div className="border rounded-lg overflow-hidden">
                         <Table>
                           <TableHeader>
                             <TableRow>
@@ -1482,10 +1572,10 @@ export default function Workers() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {adminStats.orders.map((order) => {
+                            {selectedAdminOrders.orders.map((order) => {
                               const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
                               return (
-                                <TableRow key={order.id} data-testid={`row-admin-order-${order.id}`}>
+                                <TableRow key={order.id} data-testid={`row-admin-popup-order-${order.id}`}>
                                   <TableCell className="font-medium text-blue-600">
                                     {order.orderNumber}
                                   </TableCell>
@@ -1504,8 +1594,8 @@ export default function Workers() {
                         </Table>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </DialogContent>
+                </Dialog>
 
                 {/* Universal Staff Stats Table - All staff tracked by PIN */}
                 <Card>
