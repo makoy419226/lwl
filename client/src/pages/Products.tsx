@@ -311,6 +311,7 @@ export default function Products() {
   };
 
   const { data: products, isLoading, isError } = useProducts(searchTerm);
+  const { data: allProducts } = useProducts(""); // Fetch all products for order lookups
   const { data: allOrders } = useQuery<Order[]>({ queryKey: ["/api/orders"] });
   const { data: allocatedStock } = useQuery<Record<string, number>>({
     queryKey: ["/api/products/allocated-stock"],
@@ -587,15 +588,15 @@ export default function Products() {
   };
 
   const orderItems = useMemo(() => {
-    if (!products) return [];
+    if (!allProducts) return [];
     return Object.entries(quantities)
       .filter(([_, qty]) => qty > 0)
       .map(([productId, qty]) => {
-        const product = products.find((p) => p.id === parseInt(productId));
+        const product = allProducts.find((p) => p.id === parseInt(productId));
         return product ? { product, quantity: qty } : null;
       })
-      .filter(Boolean) as { product: (typeof products)[0]; quantity: number }[];
-  }, [quantities, products]);
+      .filter(Boolean) as { product: (typeof allProducts)[0]; quantity: number }[];
+  }, [quantities, allProducts]);
 
   const orderTotal = useMemo(() => {
     const productTotal = orderItems.reduce((sum, item) => {
