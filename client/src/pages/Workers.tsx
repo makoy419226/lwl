@@ -115,7 +115,7 @@ export default function Workers() {
   
   const predefinedRoles = ["Reception", "Packer", "Delivery Driver", "Manager", "Supervisor"];
   const [activeTab, setActiveTab] = useState("stats");
-  const [statsSubTab, setStatsSubTab] = useState<"staff-stats" | "item-report" | "staff-performance">("staff-stats");
+  const [statsSubTab, setStatsSubTab] = useState<"staff-stats" | "item-report">("staff-stats");
   const [dateFilter, setDateFilter] = useState("today");
   const [customFromDate, setCustomFromDate] = useState("");
   const [customToDate, setCustomToDate] = useState("");
@@ -157,19 +157,6 @@ export default function Workers() {
   // Report tab state
   const [reportStartDate, setReportStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [reportEndDate, setReportEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
-  const [reportSubTab, setReportSubTab] = useState<"items" | "staff">("items");
-  const [staffPeriod, setStaffPeriod] = useState<"daily" | "monthly" | "yearly" | "range">("daily");
-  const [staffDate, setStaffDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
-  const [staffMonth, setStaffMonth] = useState<string>(format(new Date(), "yyyy-MM"));
-  const [staffYear, setStaffYear] = useState<string>(format(new Date(), "yyyy"));
-  const [staffStartDate, setStaffStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
-  const [staffEndDate, setStaffEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
-  const [staffOrdersDialog, setStaffOrdersDialog] = useState<{
-    isOpen: boolean;
-    staffName: string;
-    actionType: string;
-    orders: Order[];
-  }>({ isOpen: false, staffName: "", actionType: "", orders: [] });
   const reportTableRef = useRef<HTMLDivElement>(null);
   const [logoBase64, setLogoBase64] = useState<string>("");
   
@@ -525,136 +512,16 @@ export default function Workers() {
     });
   };
 
-  // Report tab functions
-  const filteredStaffOrders = useMemo(() => {
-    if (!orders) return [];
-    
-    return orders.filter((order) => {
-      const orderDate = new Date(order.entryDate);
-      
-      if (staffPeriod === "daily") {
-        const selectedDateObj = new Date(staffDate);
-        return (
-          orderDate.getFullYear() === selectedDateObj.getFullYear() &&
-          orderDate.getMonth() === selectedDateObj.getMonth() &&
-          orderDate.getDate() === selectedDateObj.getDate()
-        );
-      }
-      
-      if (staffPeriod === "monthly") {
-        const [year, month] = staffMonth.split("-").map(Number);
-        return (
-          orderDate.getFullYear() === year &&
-          orderDate.getMonth() === month - 1
-        );
-      }
-      
-      if (staffPeriod === "yearly") {
-        return orderDate.getFullYear() === parseInt(staffYear);
-      }
-      
-      if (staffPeriod === "range") {
-        const start = new Date(staffStartDate);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(staffEndDate);
-        end.setHours(23, 59, 59, 999);
-        return orderDate >= start && orderDate <= end;
-      }
-      
-      return true;
-    });
-  }, [orders, staffPeriod, staffDate, staffMonth, staffYear, staffStartDate, staffEndDate]);
-
-  const staffPerformanceData = useMemo(() => {
-    if (!filteredStaffOrders) return [];
-    
-    const staffStats: Record<string, { 
-      name: string; 
-      taggedCount: number; 
-      taggedOrders: Order[];
-      packedCount: number;
-      packedOrders: Order[];
-      deliveredCount: number;
-      deliveredOrders: Order[];
-      createdCount: number;
-      createdOrders: Order[];
-    }> = {};
-    
-    filteredStaffOrders.forEach((order) => {
-      if (order.entryBy) {
-        const name = order.entryBy;
-        if (!staffStats[name]) {
-          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
-        }
-        staffStats[name].createdCount++;
-        staffStats[name].createdOrders.push(order);
-      }
-      
-      if (order.tagBy) {
-        const name = order.tagBy;
-        if (!staffStats[name]) {
-          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
-        }
-        staffStats[name].taggedCount++;
-        staffStats[name].taggedOrders.push(order);
-      }
-      
-      if (order.packingBy) {
-        const name = order.packingBy;
-        if (!staffStats[name]) {
-          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
-        }
-        staffStats[name].packedCount++;
-        staffStats[name].packedOrders.push(order);
-      }
-      
-      if (order.deliveryBy) {
-        const name = order.deliveryBy;
-        if (!staffStats[name]) {
-          staffStats[name] = { name, taggedCount: 0, taggedOrders: [], packedCount: 0, packedOrders: [], deliveredCount: 0, deliveredOrders: [], createdCount: 0, createdOrders: [] };
-        }
-        staffStats[name].deliveredCount++;
-        staffStats[name].deliveredOrders.push(order);
-      }
-    });
-    
-    return Object.values(staffStats).sort((a, b) => {
-      const totalA = a.taggedCount + a.packedCount + a.deliveredCount + a.createdCount;
-      const totalB = b.taggedCount + b.packedCount + b.deliveredCount + b.createdCount;
-      return totalB - totalA;
-    });
-  }, [filteredStaffOrders]);
-
-  const handleStaffCountClick = (staffName: string, actionType: string, ordersToShow: Order[]) => {
-    setStaffOrdersDialog({
-      isOpen: true,
-      staffName,
-      actionType,
-      orders: ordersToShow,
-    });
-  };
-
+  // Generate staff PDF report with summary statistics
   const generateStaffPDF = (staff: { 
     name: string; 
     createdCount: number; 
-    createdOrders: Order[];
     taggedCount: number; 
-    taggedOrders: Order[];
     packedCount: number;
-    packedOrders: Order[];
     deliveredCount: number;
-    deliveredOrders: Order[];
   }) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    
-    const getClientName = (order: Order) => {
-      if (order.clientId) {
-        const client = clients?.find(c => c.id === order.clientId);
-        if (client?.name) return client.name;
-      }
-      return order.customerName || "Walk-in";
-    };
     
     let startY = 15;
     
@@ -676,50 +543,24 @@ export default function Workers() {
     doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, startY + 23, { align: "center" });
     
     doc.setFontSize(12);
-    doc.text("Summary", 14, startY + 35);
+    doc.text("Performance Summary", 14, startY + 40);
     
-    let yPos = startY + 45;
-    doc.setFontSize(10);
-    doc.text(`Orders Created: ${staff.createdCount}`, 14, yPos);
-    doc.text(`Orders Tagged: ${staff.taggedCount}`, 14, yPos + 7);
-    doc.text(`Orders Packed: ${staff.packedCount}`, 14, yPos + 14);
-    doc.text(`Orders Delivered: ${staff.deliveredCount}`, 14, yPos + 21);
-    doc.text(`Total Actions: ${staff.createdCount + staff.taggedCount + staff.packedCount + staff.deliveredCount}`, 14, yPos + 28);
+    const summaryData = [
+      ["Bills Created", staff.createdCount.toString()],
+      ["Orders Tagged", staff.taggedCount.toString()],
+      ["Orders Packed", staff.packedCount.toString()],
+      ["Orders Delivered", staff.deliveredCount.toString()],
+      ["Total Actions", (staff.createdCount + staff.taggedCount + staff.packedCount + staff.deliveredCount).toString()],
+    ];
     
-    yPos += 45;
-    
-    const addOrderList = (title: string, orderList: Order[]) => {
-      if (orderList.length === 0) return;
-      
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFontSize(11);
-      doc.text(title, 14, yPos);
-      yPos += 7;
-      
-      doc.setFontSize(9);
-      orderList.forEach((order, index) => {
-        if (yPos > 280) {
-          doc.addPage();
-          yPos = 20;
-        }
-        doc.text(
-          `${index + 1}. ${order.orderNumber} - ${getClientName(order)} - ${parseFloat(order.totalAmount || "0").toFixed(2)} AED`,
-          18,
-          yPos
-        );
-        yPos += 5;
-      });
-      yPos += 5;
-    };
-    
-    addOrderList("Created Orders:", staff.createdOrders);
-    addOrderList("Tagged Orders:", staff.taggedOrders);
-    addOrderList("Packed Orders:", staff.packedOrders);
-    addOrderList("Delivered Orders:", staff.deliveredOrders);
+    autoTable(doc, {
+      startY: startY + 45,
+      head: [["Activity", "Count"]],
+      body: summaryData,
+      theme: "grid",
+      headStyles: { fillColor: [59, 130, 246] },
+      styles: { fontSize: 11 },
+    });
     
     doc.save(`Staff_Report_${staff.name}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
     toast({
@@ -1135,14 +976,6 @@ export default function Workers() {
                     <Package className="w-4 h-4 mr-2" />
                     Item Report
                   </Button>
-                  <Button
-                    variant={statsSubTab === "staff-performance" ? "default" : "outline"}
-                    onClick={() => setStatsSubTab("staff-performance")}
-                    data-testid="button-staff-performance-tab"
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Staff Performance
-                  </Button>
                 </div>
 
                 {statsSubTab === "staff-stats" && (
@@ -1345,6 +1178,7 @@ export default function Workers() {
                               </TableHead>
                               <TableHead className="text-center">Total</TableHead>
                               <TableHead className="text-center">Status</TableHead>
+                              <TableHead className="text-center">PDF</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1417,6 +1251,22 @@ export default function Workers() {
                                   <Badge variant={s.worker.active ? "default" : "secondary"}>
                                     {s.worker.active ? "Active" : "Inactive"}
                                   </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => generateStaffPDF({
+                                      name: s.worker.name,
+                                      createdCount: s.billsCreated,
+                                      taggedCount: s.taggedCount,
+                                      packedCount: s.packedCount,
+                                      deliveredCount: s.deliveredCount
+                                    })}
+                                    data-testid={`button-pdf-${s.worker.id}`}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </Button>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -1592,236 +1442,6 @@ export default function Workers() {
                           </>
                         );
                       })()}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {statsSubTab === "staff-performance" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5" />
-                        Staff Performance Summary
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Click any count to see the list of orders.
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <div className="flex gap-1">
-                          <Button
-                            variant={staffPeriod === "daily" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setStaffPeriod("daily")}
-                            data-testid="button-staff-daily"
-                          >
-                            Daily
-                          </Button>
-                          <Button
-                            variant={staffPeriod === "monthly" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setStaffPeriod("monthly")}
-                            data-testid="button-staff-monthly"
-                          >
-                            Monthly
-                          </Button>
-                          <Button
-                            variant={staffPeriod === "yearly" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setStaffPeriod("yearly")}
-                            data-testid="button-staff-yearly"
-                          >
-                            Yearly
-                          </Button>
-                          <Button
-                            variant={staffPeriod === "range" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setStaffPeriod("range")}
-                            data-testid="button-staff-range"
-                          >
-                            Custom Range
-                          </Button>
-                        </div>
-
-                        {staffPeriod === "daily" && (
-                          <Input
-                            type="date"
-                            value={staffDate}
-                            onChange={(e) => setStaffDate(e.target.value)}
-                            className="w-40 h-9"
-                            data-testid="input-staff-date"
-                          />
-                        )}
-
-                        {staffPeriod === "monthly" && (
-                          <Input
-                            type="month"
-                            value={staffMonth}
-                            onChange={(e) => setStaffMonth(e.target.value)}
-                            className="w-40 h-9"
-                            data-testid="input-staff-month"
-                          />
-                        )}
-
-                        {staffPeriod === "yearly" && (
-                          <Select value={staffYear} onValueChange={setStaffYear}>
-                            <SelectTrigger className="w-32 h-9" data-testid="select-staff-year">
-                              <SelectValue placeholder="Year" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                                <SelectItem key={year} value={year.toString()}>
-                                  {year}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-
-                        {staffPeriod === "range" && (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="date"
-                              value={staffStartDate}
-                              onChange={(e) => setStaffStartDate(e.target.value)}
-                              className="w-36 h-9"
-                              data-testid="input-staff-start-date"
-                            />
-                            <span className="text-sm text-muted-foreground">to</span>
-                            <Input
-                              type="date"
-                              value={staffEndDate}
-                              onChange={(e) => setStaffEndDate(e.target.value)}
-                              className="w-36 h-9"
-                              data-testid="input-staff-end-date"
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {staffPerformanceData.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-8">No staff performance data available for the selected period.</p>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Staff Name</TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Receipt className="w-4 h-4" />
-                                  Created
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Tag className="w-4 h-4" />
-                                  Tagged
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Package className="w-4 h-4" />
-                                  Packed
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <Truck className="w-4 h-4" />
-                                  Delivered
-                                </div>
-                              </TableHead>
-                              <TableHead className="text-center">Total Actions</TableHead>
-                              <TableHead className="text-center">PDF</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {staffPerformanceData.map((staff) => {
-                              const total = staff.createdCount + staff.taggedCount + staff.packedCount + staff.deliveredCount;
-                              return (
-                                <TableRow key={staff.name} data-testid={`row-staff-${staff.name}`}>
-                                  <TableCell className="font-medium">{staff.name}</TableCell>
-                                  <TableCell className="text-center">
-                                    {staff.createdCount > 0 ? (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="font-semibold text-blue-600 dark:text-blue-400"
-                                        onClick={() => handleStaffCountClick(staff.name, "Created", staff.createdOrders)}
-                                        data-testid={`button-created-count-${staff.name}`}
-                                      >
-                                        {staff.createdCount}
-                                      </Button>
-                                    ) : (
-                                      <span className="text-muted-foreground">0</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    {staff.taggedCount > 0 ? (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="font-semibold text-orange-600 dark:text-orange-400"
-                                        onClick={() => handleStaffCountClick(staff.name, "Tagged", staff.taggedOrders)}
-                                        data-testid={`button-tagged-count-${staff.name}`}
-                                      >
-                                        {staff.taggedCount}
-                                      </Button>
-                                    ) : (
-                                      <span className="text-muted-foreground">0</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    {staff.packedCount > 0 ? (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="font-semibold text-green-600 dark:text-green-400"
-                                        onClick={() => handleStaffCountClick(staff.name, "Packed", staff.packedOrders)}
-                                        data-testid={`button-packed-count-${staff.name}`}
-                                      >
-                                        {staff.packedCount}
-                                      </Button>
-                                    ) : (
-                                      <span className="text-muted-foreground">0</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    {staff.deliveredCount > 0 ? (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="font-semibold text-purple-600 dark:text-purple-400"
-                                        onClick={() => handleStaffCountClick(staff.name, "Delivered", staff.deliveredOrders)}
-                                        data-testid={`button-delivered-count-${staff.name}`}
-                                      >
-                                        {staff.deliveredCount}
-                                      </Button>
-                                    ) : (
-                                      <span className="text-muted-foreground">0</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    <Badge variant="secondary" className="font-semibold">
-                                      {total}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => generateStaffPDF(staff)}
-                                      data-testid={`button-pdf-${staff.name}`}
-                                    >
-                                      <Download className="w-4 h-4" />
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -2667,40 +2287,6 @@ export default function Workers() {
               Update Staff Member
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Staff Orders Dialog for Performance */}
-      <Dialog open={staffOrdersDialog.isOpen} onOpenChange={(open) => setStaffOrdersDialog(prev => ({ ...prev, isOpen: open }))}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {staffOrdersDialog.actionType === "Tagged" && <Tag className="w-5 h-5 text-orange-600" />}
-              {staffOrdersDialog.actionType === "Packed" && <Package className="w-5 h-5 text-green-600" />}
-              {staffOrdersDialog.actionType === "Delivered" && <Truck className="w-5 h-5 text-purple-600" />}
-              {staffOrdersDialog.actionType === "Created" && <Receipt className="w-5 h-5 text-blue-600" />}
-              Orders {staffOrdersDialog.actionType} by {staffOrdersDialog.staffName}
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[400px]">
-            <div className="space-y-2">
-              {staffOrdersDialog.orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  data-testid={`order-item-${order.id}`}
-                >
-                  <div>
-                    <p className="font-medium">{order.orderNumber || `Order #${order.id}`}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {order.customerName || "Walk-in"} - {order.entryDate ? new Date(order.entryDate).toLocaleDateString() : "N/A"}
-                    </p>
-                  </div>
-                  <Badge variant="outline">{parseFloat(order.totalAmount || "0").toFixed(2)} AED</Badge>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
