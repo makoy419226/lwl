@@ -1790,7 +1790,6 @@ export default function Orders() {
                                   <SelectContent>
                                     <SelectItem value="pickup">Pickup</SelectItem>
                                     <SelectItem value="delivery">Delivery</SelectItem>
-                                    <SelectItem value="iron_only">Iron Only</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -2309,9 +2308,6 @@ export default function Orders() {
                                           </SelectItem>
                                           <SelectItem value="delivery">
                                             Delivery
-                                          </SelectItem>
-                                          <SelectItem value="iron_only">
-                                            Iron Only
                                           </SelectItem>
                                         </SelectContent>
                                       </Select>
