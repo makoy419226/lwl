@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useContext } from "react";
-import { useSearch } from "wouter";
+import { useSearch, useLocation } from "wouter";
 import { UserContext } from "@/App";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { useClients, useCreateClient } from "@/hooks/use-clients";
@@ -29,6 +29,7 @@ import {
   Printer,
   Tag,
   GripVertical,
+  Banknote,
 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import { Input } from "@/components/ui/input";
@@ -190,6 +191,8 @@ export default function Products() {
   const [pinError, setPinError] = useState("");
   const [pendingUrgent, setPendingUrgent] = useState(false);
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+  const [payNowAfterOrder, setPayNowAfterOrder] = useState(false);
+  const [, navigate] = useLocation();
   const [editingStockId, setEditingStockId] = useState<number | null>(null);
   const [stockValue, setStockValue] = useState("");
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
@@ -685,6 +688,15 @@ export default function Products() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] }); // Refresh products to show updated stock
       setQuantities({});
       setCustomerName("");
+      
+      // If Pay Now was clicked, redirect to orders with payment dialog
+      if (payNowAfterOrder) {
+        setPayNowAfterOrder(false);
+        clearOrder();
+        navigate(`/orders?payOrder=${data.id}`);
+        return;
+      }
+      
       // Store the created order and show print tag dialog
       setCreatedOrder(data);
       setShowPrintTagDialog(true);
@@ -1569,24 +1581,40 @@ export default function Products() {
             />
           </div>
 
-          {/* Place Order Button */}
-          <Button
-            className={`w-full h-10 font-bold ${clientMatch ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : ""}`}
-            onClick={() => {
-              if (isPopup) setShowCartPopup(false);
-              handleCreateOrder();
-            }}
-            disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn) || !!clientMatch}
-            data-testid={isPopup ? "popup-button-place-order" : "sidebar-button-place-order"}
-          >
-            {createOrderMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            {clientMatch ? "Use existing client above" : `Place Order - ${(() => {
-              const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
-              const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
-              const tipsAmt = parseFloat(tips) || 0;
-              return (base - discountAmt + tipsAmt).toFixed(2);
-            })()} AED`}
-          </Button>
+          {/* Place Order Buttons */}
+          <div className="flex gap-2">
+            <Button
+              className={`flex-1 h-10 font-bold ${clientMatch ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : ""}`}
+              onClick={() => {
+                if (isPopup) setShowCartPopup(false);
+                handleCreateOrder();
+              }}
+              disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn) || !!clientMatch}
+              data-testid={isPopup ? "popup-button-place-order" : "sidebar-button-place-order"}
+            >
+              {createOrderMutation.isPending && !payNowAfterOrder ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {clientMatch ? "Use existing" : `${(() => {
+                const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
+                const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
+                const tipsAmt = parseFloat(tips) || 0;
+                return (base - discountAmt + tipsAmt).toFixed(2);
+              })()} AED`}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 font-bold border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30"
+              onClick={() => {
+                if (isPopup) setShowCartPopup(false);
+                setPayNowAfterOrder(true);
+                handleCreateOrder();
+              }}
+              disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn) || !!clientMatch}
+              data-testid={isPopup ? "popup-button-pay-now" : "sidebar-button-pay-now"}
+            >
+              {createOrderMutation.isPending && payNowAfterOrder ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Banknote className="w-4 h-4 mr-1" />}
+              Pay Now
+            </Button>
+          </div>
         </>
       )}
     </div>

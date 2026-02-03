@@ -193,6 +193,7 @@ export default function Orders() {
   const urlParams = new URLSearchParams(searchString);
   const urlBillId = urlParams.get("billId");
   const urlClientId = urlParams.get("clientId");
+  const urlPayOrderId = urlParams.get("payOrder");
 
   const [prefilledClientId, setPrefilledClientId] = useState<
     string | undefined
@@ -291,6 +292,28 @@ export default function Orders() {
       }
     }
   }, [urlBillId, urlClientId, bills]);
+
+  // Handle Pay Now redirect from Products page
+  useEffect(() => {
+    if (urlPayOrderId && orders && bills) {
+      const orderId = parseInt(urlPayOrderId);
+      const order = orders.find((o) => o.id === orderId);
+      if (order) {
+        const bill = bills.find((b) => b.clientId === order.clientId && !b.isPaid);
+        if (bill) {
+          setSelectedBill(bill);
+          setShowBillDialog(true);
+          setShowPaymentForm(true);
+          const paidAmount = parseFloat(bill.paidAmount || "0");
+          const totalAmount = parseFloat(bill.amount);
+          const remaining = totalAmount - paidAmount;
+          setPaymentAmount(remaining > 0 ? remaining.toFixed(2) : bill.amount);
+        }
+      }
+      // Clear the URL parameter
+      setLocation("/orders", { replace: true });
+    }
+  }, [urlPayOrderId, orders, bills]);
 
   const handleDialogClose = (open: boolean) => {
     setIsCreateOpen(open);
