@@ -883,6 +883,7 @@ export default function Products() {
     setTips("");
     setOrderType("normal");
     setDeliveryType("pickup");
+    setExpectedDeliveryAt("");
   };
 
   const parseOrderItems = (items: string) => {
