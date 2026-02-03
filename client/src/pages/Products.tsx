@@ -155,6 +155,7 @@ export default function Products() {
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
   const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery" | "iron_only">("pickup");
   const [expectedDeliveryAt, setExpectedDeliveryAt] = useState("");
+  const [orderNotes, setOrderNotes] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
   const [tips, setTips] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
@@ -872,7 +873,7 @@ export default function Products() {
         entryBy: data.worker?.name || "Staff",
         entryByWorkerId: data.worker?.id || null,
         createdBy: data.worker?.name || user?.name || "Staff",
-        notes: `Address: ${walkInAddress.trim() || "-"}`,
+        notes: orderNotes.trim() || null,
       });
 
       setShowPinDialog(false);
@@ -903,6 +904,7 @@ export default function Products() {
     setOrderType("normal");
     setDeliveryType("pickup");
     setExpectedDeliveryAt("");
+    setOrderNotes("");
   };
 
   const parseOrderItems = (items: string) => {
@@ -1600,6 +1602,19 @@ export default function Products() {
               value={expectedDeliveryAt}
               onChange={(e) => setExpectedDeliveryAt(e.target.value)}
               data-testid={isPopup ? "popup-input-expected-datetime" : "sidebar-input-expected-datetime"}
+            />
+          </div>
+
+          {/* Order Notes */}
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold">Notes</Label>
+            <Input
+              type="text"
+              placeholder="Special instructions..."
+              className="h-9 text-xs"
+              value={orderNotes}
+              onChange={(e) => setOrderNotes(e.target.value)}
+              data-testid={isPopup ? "popup-input-order-notes" : "sidebar-input-order-notes"}
             />
           </div>
 

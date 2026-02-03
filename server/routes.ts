@@ -2772,6 +2772,7 @@ export async function registerRoutes(
       expectedDeliveryAt: order.expectedDeliveryAt,
       deliveryPhotos: order.deliveryPhotos || [],
       deliveryPhoto: order.deliveryPhoto,
+      notes: order.notes,
     });
   });
 

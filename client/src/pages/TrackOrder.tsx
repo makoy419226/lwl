@@ -26,6 +26,7 @@ interface TrackOrderData {
   expectedDeliveryAt: string | null;
   deliveryPhotos: string[];
   deliveryPhoto: string | null;
+  notes: string | null;
 }
 
 export default function TrackOrder() {
@@ -302,6 +303,12 @@ export default function TrackOrder() {
                     ))}
                   </div>
                 </div>
+                {order.notes && (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-2 mt-2">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Notes</p>
+                    <p className="text-sm text-amber-900 dark:text-amber-200">{order.notes}</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t">
                   <div>
                     <p className="text-sm text-muted-foreground">Order Date</p>
@@ -313,7 +320,7 @@ export default function TrackOrder() {
                     <div>
                       <p className="text-sm text-muted-foreground">Expected</p>
                       <p className="text-sm font-medium">
-                        {new Date(order.expectedDeliveryAt).toLocaleDateString()}
+                        {order.expectedDeliveryAt}
                       </p>
                     </div>
                   )}
