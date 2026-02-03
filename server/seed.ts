@@ -463,56 +463,6 @@ const laundryItems = [
     sku: "MAT-001",
   },
   
-  // Shop Items
-  {
-    name: "Detergent (1kg)",
-    description: "Laundry detergent powder",
-    price: "15.00",
-    category: "Shop Items",
-    stockQuantity: 50,
-    sku: "DET-001",
-  },
-  {
-    name: "Fabric Softener",
-    description: "Fabric softener liquid",
-    price: "12.00",
-    category: "Shop Items",
-    stockQuantity: 40,
-    sku: "FAB-001",
-  },
-  {
-    name: "Stain Remover",
-    description: "Stain remover spray",
-    price: "18.00",
-    category: "Shop Items",
-    stockQuantity: 30,
-    sku: "STA-001",
-  },
-  {
-    name: "Hanger (Pack of 10)",
-    description: "Plastic hangers",
-    price: "10.00",
-    category: "Shop Items",
-    stockQuantity: 100,
-    sku: "HAN-001",
-  },
-  {
-    name: "Laundry Bag",
-    description: "Mesh laundry bag",
-    price: "8.00",
-    category: "Shop Items",
-    stockQuantity: 60,
-    sku: "LAU-001",
-  },
-  {
-    name: "Ironing Spray",
-    description: "Ironing spray starch",
-    price: "10.00",
-    category: "Shop Items",
-    stockQuantity: 45,
-    sku: "IRO-001",
-  },
-  
   // General Items
   {
     name: "Coveral",
