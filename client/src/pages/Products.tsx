@@ -865,7 +865,7 @@ export default function Products() {
         tips: tipsAmt.toFixed(2),
         finalAmount: finalTotal.toFixed(2),
         entryDate: new Date().toISOString(),
-        expectedDeliveryAt: expectedDeliveryAt ? new Date(expectedDeliveryAt).toISOString() : null,
+        expectedDeliveryAt: expectedDeliveryAt.trim() || null,
         deliveryType: deliveryType,
         serviceType: hasIronOnlyItems ? "iron_only" : hasDryCleanItems ? "dry_clean" : "normal",
         urgent: pendingUrgent,
@@ -964,7 +964,7 @@ export default function Products() {
             <div style="font-size: 10px; color: #666;">${format(new Date(order.entryDate), "hh:mm a")}</div>
             ${order.expectedDeliveryAt ? `
             <div style="font-size: 9px; color: #666; margin-top: 5px;">Expected Delivery</div>
-            <div style="font-size: 11px; font-weight: bold; color: #2563eb;">${format(new Date(order.expectedDeliveryAt), "dd MMM yyyy")}</div>
+            <div style="font-size: 11px; font-weight: bold; color: #2563eb;">${order.expectedDeliveryAt}</div>
             ` : ""}
           </div>
         </div>
@@ -1588,17 +1588,17 @@ export default function Products() {
             </Button>
           </div>
 
-          {/* Expected Pickup/Delivery Date & Time */}
+          {/* Expected Pickup/Delivery Date */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold">
-              {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date & Time
+              {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date
             </Label>
             <Input
-              type="datetime-local"
+              type="text"
+              placeholder="e.g. Tomorrow, 25 Dec, etc."
               className="h-9 text-xs"
               value={expectedDeliveryAt}
               onChange={(e) => setExpectedDeliveryAt(e.target.value)}
-              min={new Date().toISOString().slice(0, 16)}
               data-testid={isPopup ? "popup-input-expected-datetime" : "sidebar-input-expected-datetime"}
             />
           </div>
