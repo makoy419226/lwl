@@ -643,6 +643,13 @@ export default function Orders() {
           </div>
         </div>
         
+        ${order.notes ? `
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; padding: 10px; margin-bottom: 15px;">
+          <div style="font-size: 9px; color: #92400e; text-transform: uppercase; margin-bottom: 4px; font-weight: bold;">Notes</div>
+          <div style="font-size: 11px; color: #78350f;">${order.notes}</div>
+        </div>
+        ` : ''}
+        
         <div style="margin-bottom: 15px;">
           <div style="font-size: 11px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px;">ITEMS DETAIL</div>
           <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
