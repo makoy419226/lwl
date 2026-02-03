@@ -1615,12 +1615,22 @@ export default function Products() {
                 <Search className="w-4 h-4" />
               </div>
               <Input
-                className="pl-9 h-9 rounded-full border-2 border-primary/20 bg-background focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm shadow-sm"
+                className="pl-9 pr-8 h-9 rounded-full border-2 border-primary/20 bg-background focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm shadow-sm"
                 placeholder="Search items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 data-testid="input-search-products"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  data-testid="button-clear-search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
             {/* Edit Mode Toggle - Admin Only */}
             {user?.role === "admin" && (
