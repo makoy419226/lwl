@@ -612,12 +612,20 @@ export async function registerRoutes(
   // Verify staff member PIN (for billing/tracking identification)
   app.post("/api/staff-members/verify-pin", async (req, res) => {
     const { pin } = req.body;
+    
+    // First check user PINs (admin, counter, section, driver accounts)
+    const user = await storage.verifyUserPin(pin);
+    if (user) {
+      return res.json({ success: true, member: { id: user.id, name: user.name || user.username, roleType: user.role } });
+    }
+    
+    // Then check staff member PINs
     const member = await storage.verifyStaffMemberPin(pin);
     if (member) {
-      res.json({ success: true, member: { id: member.id, name: member.name, roleType: member.roleType } });
-    } else {
-      res.status(401).json({ success: false, message: "Invalid PIN" });
+      return res.json({ success: true, member: { id: member.id, name: member.name, roleType: member.roleType } });
     }
+    
+    res.status(401).json({ success: false, message: "Invalid PIN" });
   });
 
   // Client routes
