@@ -159,10 +159,13 @@ export function ProductCard({ product, canEdit = true }: ProductCardProps) {
           </span>
           <div className="flex flex-col items-end gap-0.5">
             <span className="text-sm font-bold text-primary font-display">
-              AED {product.price ? Number(product.price).toFixed(2) : '0.00'}
+              N: {product.price ? Number(product.price).toFixed(2) : '0.00'}
             </span>
             <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
               DC: {product.dryCleanPrice ? Number(product.dryCleanPrice).toFixed(2) : '-'}
+            </span>
+            <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
+              IO: {product.ironOnlyPrice ? Number(product.ironOnlyPrice).toFixed(2) : '-'}
             </span>
           </div>
         </div>

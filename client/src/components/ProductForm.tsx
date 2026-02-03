@@ -28,6 +28,7 @@ const formSchema = insertProductSchema.extend({
   stockQuantity: z.coerce.number().min(0).optional(),
   price: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
   dryCleanPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
+  ironOnlyPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -128,6 +129,7 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
       name: defaultValues.name,
       price: defaultValues.price || "",
       dryCleanPrice: defaultValues.dryCleanPrice || "",
+      ironOnlyPrice: defaultValues.ironOnlyPrice || "",
       description: defaultValues.description || "",
       sku: defaultValues.sku || "",
       imageUrl: defaultValues.imageUrl || "",
@@ -139,6 +141,7 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
       category: "Arabic Clothes",
       price: "",
       dryCleanPrice: "",
+      ironOnlyPrice: "",
       sku: "",
       imageUrl: "",
     },
@@ -244,6 +247,20 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Dry Clean Price (AED)</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="ironOnlyPrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Iron Only Price (AED)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
                 </FormControl>
