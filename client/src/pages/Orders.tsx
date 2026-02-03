@@ -4273,20 +4273,62 @@ function OrderForm({
         </div>
       )}
 
-      {formData.deliveryType === "delivery" && (
-        <div className="space-y-2">
-          <Label className="text-base">Expected Delivery</Label>
-          <Input
-            type="datetime-local"
-            value={formData.expectedDeliveryAt}
-            onChange={(e) =>
-              setFormData({ ...formData, expectedDeliveryAt: e.target.value })
-            }
-            data-testid="input-delivery-time"
-            className="h-12 text-base"
-          />
+      <div className="space-y-2">
+          <Label className="text-base">{formData.deliveryType === "delivery" ? "Expected Delivery" : "Pickup Date"}</Label>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={formData.expectedDeliveryAt?.startsWith(format(new Date(), "yyyy-MM-dd")) ? "default" : "outline"}
+              size="sm"
+              className="flex-1"
+              onClick={() => {
+                const today = new Date();
+                const time = formData.expectedDeliveryAt?.split("T")[1] || "12:00";
+                setFormData({ ...formData, expectedDeliveryAt: `${format(today, "yyyy-MM-dd")}T${time}` });
+              }}
+              data-testid="button-date-today"
+            >
+              Today
+            </Button>
+            <Button
+              type="button"
+              variant={formData.expectedDeliveryAt?.startsWith(format(new Date(Date.now() + 86400000), "yyyy-MM-dd")) ? "default" : "outline"}
+              size="sm"
+              className="flex-1"
+              onClick={() => {
+                const tomorrow = new Date(Date.now() + 86400000);
+                const time = formData.expectedDeliveryAt?.split("T")[1] || "12:00";
+                setFormData({ ...formData, expectedDeliveryAt: `${format(tomorrow, "yyyy-MM-dd")}T${time}` });
+              }}
+              data-testid="button-date-tomorrow"
+            >
+              Tomorrow
+            </Button>
+            <Input
+              type="date"
+              className="flex-1 h-9"
+              value={formData.expectedDeliveryAt?.split("T")[0] || ""}
+              onChange={(e) => {
+                const time = formData.expectedDeliveryAt?.split("T")[1] || "12:00";
+                setFormData({ ...formData, expectedDeliveryAt: `${e.target.value}T${time}` });
+              }}
+              data-testid="input-custom-date"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">Time:</Label>
+            <Input
+              type="time"
+              className="flex-1 h-9"
+              value={formData.expectedDeliveryAt?.split("T")[1] || "12:00"}
+              onChange={(e) => {
+                const date = formData.expectedDeliveryAt?.split("T")[0] || format(new Date(), "yyyy-MM-dd");
+                setFormData({ ...formData, expectedDeliveryAt: `${date}T${e.target.value}` });
+              }}
+              data-testid="input-pickup-time"
+            />
+          </div>
         </div>
-      )}
 
       {selectedClient && clientTotalDue > 0 && (
         <div className="p-3 border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
