@@ -1551,19 +1551,12 @@ export default function Products() {
             >
               <Truck className="w-3 h-3 mr-1" /> Delivery
             </Button>
-            <Button
-              variant={deliveryType === "iron_only" ? "default" : "outline"}
-              className="flex-1 h-9 text-xs"
-              onClick={() => setDeliveryType("iron_only")}
-            >
-              Iron Only
-            </Button>
           </div>
 
           {/* Expected Pickup/Delivery Date & Time */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold">
-              {deliveryType === "pickup" ? "Pickup" : deliveryType === "delivery" ? "Delivery" : "Iron Only"} Date & Time
+              {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date & Time
             </Label>
             <Input
               type="datetime-local"
