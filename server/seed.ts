@@ -658,16 +658,9 @@ export async function seedDatabase() {
   // Always ensure all laundry items exist - delete old products and insert new ones
   const existingProducts = await storage.getProducts();
 
-  // Check if we have the correct products with updated categories
-  const hasCorrectCategories = existingProducts.some(
-    (p) => p.category === "Arabic Clothes",
-  );
-
-  if (!hasCorrectCategories || existingProducts.length < 80) {
-    console.log("Reseeding products with updated UAE laundry items...");
-
-    // Delete all existing products
-    await db.delete(products);
+  // Only seed if no products exist at all
+  if (existingProducts.length === 0) {
+    console.log("Seeding products with UAE laundry items...");
 
     // Insert all laundry items with calculated prices
     for (const item of laundryItems) {

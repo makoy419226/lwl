@@ -141,6 +141,7 @@ export default function Products() {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [dryCleanItems, setDryCleanItems] = useState<Record<number, boolean>>({});
   const [ironOnlyItems, setIronOnlyItems] = useState<Record<number, boolean>>({});
+  const [customPrices, setCustomPrices] = useState<Record<number, number>>({});
   const [packingTypes, setPackingTypes] = useState<
     Record<number, "hanging" | "folding">
   >({});
@@ -608,7 +609,9 @@ export default function Products() {
       const isDryClean = dryCleanItems[item.product.id];
       const isIronOnly = ironOnlyItems[item.product.id];
       let price: number;
-      if (isIronOnly) {
+      if (customPrices[item.product.id] !== undefined) {
+        price = customPrices[item.product.id];
+      } else if (isIronOnly) {
         price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
       } else if (isDryClean) {
         price = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
@@ -622,7 +625,7 @@ export default function Products() {
       0,
     );
     return productTotal + customTotal;
-  }, [orderItems, customItems, dryCleanItems, ironOnlyItems]);
+  }, [orderItems, customItems, dryCleanItems, ironOnlyItems, customPrices]);
 
   const hasOrderItems = orderItems.length > 0 || customItems.length > 0;
 
@@ -830,7 +833,9 @@ export default function Products() {
         const isDryClean = dryCleanItems[item.product.id];
         const isIronOnly = ironOnlyItems[item.product.id];
         const serviceLabel = isIronOnly ? "IO" : isDryClean ? "DC" : "N";
-        return `${item.quantity}x ${item.product.name} [${serviceLabel}] (${packing})`;
+        const hasCustomPrice = customPrices[item.product.id] !== undefined;
+        const priceLabel = hasCustomPrice ? ` @ ${customPrices[item.product.id]} AED` : "";
+        return `${item.quantity}x ${item.product.name} [${serviceLabel}] (${packing})${priceLabel}`;
       });
       const customItemsText = customItems.map(
         (item) => `${item.quantity}x ${item.name} @ ${item.price} AED`,
@@ -882,6 +887,8 @@ export default function Products() {
   const clearOrder = () => {
     setQuantities({});
     setDryCleanItems({});
+    setIronOnlyItems({});
+    setCustomPrices({});
     setPackingTypes({});
     setCustomItems([]);
     setCustomerName("");
@@ -1308,14 +1315,16 @@ export default function Products() {
             {orderItems.map((item) => {
               const isDryClean = dryCleanItems[item.product.id];
               const isIronOnly = ironOnlyItems[item.product.id];
-              let itemPrice: number;
+              let basePrice: number;
               if (isIronOnly) {
-                itemPrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+                basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
               } else if (isDryClean) {
-                itemPrice = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
+                basePrice = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
               } else {
-                itemPrice = parseFloat(item.product.price || "0");
+                basePrice = parseFloat(item.product.price || "0");
               }
+              const itemPrice = customPrices[item.product.id] !== undefined ? customPrices[item.product.id] : basePrice;
+              const hasCustomPrice = customPrices[item.product.id] !== undefined;
               const bgClass = isIronOnly ? "bg-orange-50 dark:bg-orange-900/20" : isDryClean ? "bg-purple-50 dark:bg-purple-900/20" : "";
               return (
                 <tr key={item.product.id} className={`border-b ${bgClass}`}>
@@ -1325,7 +1334,20 @@ export default function Products() {
                     {isIronOnly && <span className="ml-1 text-[9px] bg-orange-500 text-white px-1 rounded">IO</span>}
                   </td>
                   <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
-                  <td className="py-2 px-2 text-right font-bold">{(itemPrice * item.quantity).toFixed(0)}</td>
+                  <td className="py-1 px-1 text-right">
+                    <input
+                      type="number"
+                      data-testid={`input-price-${item.product.id}`}
+                      value={itemPrice}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setCustomPrices(prev => ({ ...prev, [item.product.id]: val }));
+                      }}
+                      className={`w-16 text-right font-bold px-1 py-0.5 rounded border text-sm ${hasCustomPrice ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300" : "bg-transparent border-transparent"}`}
+                      min="0"
+                      step="0.5"
+                    />
+                  </td>
                 </tr>
               );
             })}
