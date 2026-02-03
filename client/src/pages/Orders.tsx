@@ -1332,7 +1332,7 @@ export default function Orders() {
     if (order.delivered)
       return (
         <Badge className="bg-green-500 dark:bg-green-600 text-white text-xs sm:text-sm transition-all duration-200">
-          {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
+          {order.deliveryType === "delivery" ? "Delivered" : order.deliveryType === "iron_only" ? "Iron Done" : "Picked Up"}
         </Badge>
       );
     if (order.packingDone)
@@ -1744,7 +1744,7 @@ export default function Orders() {
                                 <span data-testid={`text-packed-by-mobile-${order.id}`}><Package className="w-3 h-3 inline mr-1" />Packed: <span className="font-medium text-foreground">{order.packingBy}</span></span>
                               )}
                               {order.deliveryBy && (
-                                <span data-testid={`text-delivered-by-mobile-${order.id}`}><Truck className="w-3 h-3 inline mr-1" />{order.deliveryType === 'pickup' ? 'Completed' : 'Delivered'}: <span className="font-medium text-foreground">{order.deliveryBy}</span></span>
+                                <span data-testid={`text-delivered-by-mobile-${order.id}`}><Truck className="w-3 h-3 inline mr-1" />{order.deliveryType === 'pickup' || order.deliveryType === 'iron_only' ? 'Completed' : 'Delivered'}: <span className="font-medium text-foreground">{order.deliveryBy}</span></span>
                               )}
                             </div>
 
@@ -1775,6 +1775,10 @@ export default function Orders() {
                                           <Truck className="w-3 h-3" />
                                           Delivery
                                         </div>
+                                      ) : order.deliveryType === "iron_only" ? (
+                                        <div className="flex items-center gap-1">
+                                          Iron Only
+                                        </div>
                                       ) : (
                                         <div className="flex items-center gap-1">
                                           <Store className="w-3 h-3" />
@@ -1786,6 +1790,7 @@ export default function Orders() {
                                   <SelectContent>
                                     <SelectItem value="pickup">Pickup</SelectItem>
                                     <SelectItem value="delivery">Delivery</SelectItem>
+                                    <SelectItem value="iron_only">Iron Only</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1922,7 +1927,7 @@ export default function Orders() {
                                     disabled
                                   >
                                     <CheckCircle2 className="w-4 h-4 mr-1" />
-                                    {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
+                                    {order.deliveryType === "delivery" ? "Delivered" : order.deliveryType === "iron_only" ? "Iron Done" : "Picked Up"}
                                   </Button>
                                   {order.deliveryBy && (
                                     <span className="text-xs text-muted-foreground text-center mt-1">
@@ -2291,6 +2296,8 @@ export default function Orders() {
                                                 <Truck className="w-3 h-3" />
                                                 Del
                                               </div>
+                                            ) : order.deliveryType === "iron_only" ? (
+                                              "Iron"
                                             ) : (
                                               "Pick"
                                             )}
@@ -2302,6 +2309,9 @@ export default function Orders() {
                                           </SelectItem>
                                           <SelectItem value="delivery">
                                             Delivery
+                                          </SelectItem>
+                                          <SelectItem value="iron_only">
+                                            Iron Only
                                           </SelectItem>
                                         </SelectContent>
                                       </Select>
@@ -2321,7 +2331,7 @@ export default function Orders() {
                                           {order.entryBy && <div data-testid={`text-created-by-${order.id}`}>Created: {order.entryBy}</div>}
                                           {order.tagBy && <div data-testid={`text-tagged-by-${order.id}`}>Tagged: {order.tagBy}</div>}
                                           {order.packingBy && <div data-testid={`text-packed-by-${order.id}`}>Packed: {order.packingBy}</div>}
-                                          {order.deliveryBy && <div data-testid={`text-delivered-by-${order.id}`}>{order.deliveryType === 'pickup' ? 'Completed' : 'Delivered'}: {order.deliveryBy}</div>}
+                                          {order.deliveryBy && <div data-testid={`text-delivered-by-${order.id}`}>{order.deliveryType === 'pickup' || order.deliveryType === 'iron_only' ? 'Completed' : 'Delivered'}: {order.deliveryBy}</div>}
                                         </div>
                                       </div>
                                     </TableCell>
@@ -2497,7 +2507,7 @@ export default function Orders() {
                                               >
                                                 <CheckCircle2 className="w-3 h-3 sm:mr-1" />
                                                 <span className="hidden sm:inline">
-                                                  {order.deliveryType === "delivery" ? "Delivered" : "Picked Up"}
+                                                  {order.deliveryType === "delivery" ? "Delivered" : order.deliveryType === "iron_only" ? "Iron Done" : "Picked Up"}
                                                 </span>
                                               </Button>
                                               {order.deliveryBy && (

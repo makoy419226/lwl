@@ -135,9 +135,11 @@ export default function Products() {
     name: string;
     price: string;
     dryCleanPrice: string;
+    ironOnlyPrice: string;
   } | null>(null);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [dryCleanItems, setDryCleanItems] = useState<Record<number, boolean>>({});
+  const [ironOnlyItems, setIronOnlyItems] = useState<Record<number, boolean>>({});
   const [packingTypes, setPackingTypes] = useState<
     Record<number, "hanging" | "folding">
   >({});
@@ -149,7 +151,7 @@ export default function Products() {
   const [walkInPhone, setWalkInPhone] = useState("+971");
   const [walkInAddress, setWalkInAddress] = useState("");
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
-  const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery">("pickup");
+  const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery" | "iron_only">("pickup");
   const [expectedDeliveryAt, setExpectedDeliveryAt] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
   const [tips, setTips] = useState("");
@@ -601,9 +603,15 @@ export default function Products() {
   const orderTotal = useMemo(() => {
     const productTotal = orderItems.reduce((sum, item) => {
       const isDryClean = dryCleanItems[item.product.id];
-      const price = isDryClean 
-        ? parseFloat(item.product.dryCleanPrice || item.product.price || "0")
-        : parseFloat(item.product.price || "0");
+      const isIronOnly = ironOnlyItems[item.product.id];
+      let price: number;
+      if (isIronOnly) {
+        price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+      } else if (isDryClean) {
+        price = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
+      } else {
+        price = parseFloat(item.product.price || "0");
+      }
       return sum + price * item.quantity;
     }, 0);
     const customTotal = customItems.reduce(
@@ -611,7 +619,7 @@ export default function Products() {
       0,
     );
     return productTotal + customTotal;
-  }, [orderItems, customItems, dryCleanItems]);
+  }, [orderItems, customItems, dryCleanItems, ironOnlyItems]);
 
   const hasOrderItems = orderItems.length > 0 || customItems.length > 0;
 
@@ -808,7 +816,8 @@ export default function Products() {
       const productItemsText = orderItems.map((item) => {
         const packing = packingTypes[item.product.id] || "folding";
         const isDryClean = dryCleanItems[item.product.id];
-        const serviceLabel = isDryClean ? "DC" : "N";
+        const isIronOnly = ironOnlyItems[item.product.id];
+        const serviceLabel = isIronOnly ? "IO" : isDryClean ? "DC" : "N";
         return `${item.quantity}x ${item.product.name} [${serviceLabel}] (${packing})`;
       });
       const customItemsText = customItems.map(
@@ -818,6 +827,7 @@ export default function Products() {
       const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
       
       const hasDryCleanItems = orderItems.some(item => dryCleanItems[item.product.id]);
+      const hasIronOnlyItems = orderItems.some(item => ironOnlyItems[item.product.id]);
 
       let subtotal = pendingUrgent ? orderTotal * 2 : orderTotal;
       const discPct = parseFloat(discountPercent) || 0;
@@ -840,7 +850,7 @@ export default function Products() {
         entryDate: new Date().toISOString(),
         expectedDeliveryAt: expectedDeliveryAt ? new Date(expectedDeliveryAt).toISOString() : null,
         deliveryType: deliveryType,
-        serviceType: hasDryCleanItems ? "dry_clean" : "normal",
+        serviceType: hasIronOnlyItems ? "iron_only" : hasDryCleanItems ? "dry_clean" : "normal",
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
         entryByWorkerId: data.worker?.id || null,
@@ -1284,14 +1294,22 @@ export default function Products() {
           <tbody>
             {orderItems.map((item) => {
               const isDryClean = dryCleanItems[item.product.id];
-              const itemPrice = isDryClean 
-                ? parseFloat(item.product.dryCleanPrice || item.product.price || "0")
-                : parseFloat(item.product.price || "0");
+              const isIronOnly = ironOnlyItems[item.product.id];
+              let itemPrice: number;
+              if (isIronOnly) {
+                itemPrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+              } else if (isDryClean) {
+                itemPrice = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
+              } else {
+                itemPrice = parseFloat(item.product.price || "0");
+              }
+              const bgClass = isIronOnly ? "bg-orange-50 dark:bg-orange-900/20" : isDryClean ? "bg-purple-50 dark:bg-purple-900/20" : "";
               return (
-                <tr key={item.product.id} className={`border-b ${isDryClean ? "bg-purple-50 dark:bg-purple-900/20" : ""}`}>
+                <tr key={item.product.id} className={`border-b ${bgClass}`}>
                   <td className="py-2 px-2 font-medium">
                     {item.product.name}
                     {isDryClean && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
+                    {isIronOnly && <span className="ml-1 text-[9px] bg-orange-500 text-white px-1 rounded">IO</span>}
                   </td>
                   <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
                   <td className="py-2 px-2 text-right font-bold">{(itemPrice * item.quantity).toFixed(0)}</td>
@@ -1533,12 +1551,19 @@ export default function Products() {
             >
               <Truck className="w-3 h-3 mr-1" /> Delivery
             </Button>
+            <Button
+              variant={deliveryType === "iron_only" ? "default" : "outline"}
+              className="flex-1 h-9 text-xs"
+              onClick={() => setDeliveryType("iron_only")}
+            >
+              Iron Only
+            </Button>
           </div>
 
           {/* Expected Pickup/Delivery Date & Time */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold">
-              {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date & Time
+              {deliveryType === "pickup" ? "Pickup" : deliveryType === "delivery" ? "Delivery" : "Iron Only"} Date & Time
             </Label>
             <Input
               type="datetime-local"
@@ -1728,21 +1753,26 @@ export default function Products() {
                             className="flex flex-col items-center mt-0.5 sm:mt-1 gap-0.5 w-full"
                           >
                             {isProductSelected(product) ? (
-                              // Show price based on dry clean selection when item is added
+                              // Show price based on service selection when item is added
                               <div
                                 className={`text-sm sm:text-lg font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${
-                                  dryCleanItems[product.id] 
+                                  ironOnlyItems[product.id]
+                                    ? "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30"
+                                    : dryCleanItems[product.id] 
                                     ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30" 
                                     : "text-primary bg-primary/10"
                                 }`}
                                 data-testid={`text-product-active-price-${product.id}`}
                               >
                                 {(() => {
-                                  // For all items (including size-based), show the price
-                                  return `${dryCleanItems[product.id] 
-                                    ? (product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-")
-                                    : (product.price ? parseFloat(product.price).toFixed(0) : "-")
-                                  } AED`;
+                                  // For all items, show the price based on service type
+                                  if (ironOnlyItems[product.id]) {
+                                    return `${product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"} AED`;
+                                  } else if (dryCleanItems[product.id]) {
+                                    return `${product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"} AED`;
+                                  } else {
+                                    return `${product.price ? parseFloat(product.price).toFixed(0) : "-"} AED`;
+                                  }
                                 })()}
                               </div>
                             ) : (
@@ -1784,20 +1814,42 @@ export default function Products() {
                                 className="flex flex-col gap-0.5 sm:gap-1 mt-1.5 sm:mt-2 w-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <Button
-                                  size="sm"
-                                  variant={dryCleanItems[product.id] ? "default" : "outline"}
-                                  className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
-                                  onClick={() =>
-                                    setDryCleanItems(prev => ({
-                                      ...prev,
-                                      [product.id]: !prev[product.id]
-                                    }))
-                                  }
-                                  data-testid={`button-dryClean-${product.id}`}
-                                >
-                                  Dry Clean
-                                </Button>
+                                <div className="flex gap-0.5">
+                                  <Button
+                                    size="sm"
+                                    variant={dryCleanItems[product.id] ? "default" : "outline"}
+                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                                    onClick={() => {
+                                      setDryCleanItems(prev => ({
+                                        ...prev,
+                                        [product.id]: !prev[product.id]
+                                      }));
+                                      if (!dryCleanItems[product.id]) {
+                                        setIronOnlyItems(prev => ({ ...prev, [product.id]: false }));
+                                      }
+                                    }}
+                                    data-testid={`button-dryClean-${product.id}`}
+                                  >
+                                    DC
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={ironOnlyItems[product.id] ? "default" : "outline"}
+                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${ironOnlyItems[product.id] ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                                    onClick={() => {
+                                      setIronOnlyItems(prev => ({
+                                        ...prev,
+                                        [product.id]: !prev[product.id]
+                                      }));
+                                      if (!ironOnlyItems[product.id]) {
+                                        setDryCleanItems(prev => ({ ...prev, [product.id]: false }));
+                                      }
+                                    }}
+                                    data-testid={`button-ironOnly-${product.id}`}
+                                  >
+                                    Iron
+                                  </Button>
+                                </div>
                                 <div className="flex gap-0.5">
                                   <Button
                                     size="sm"
@@ -2569,6 +2621,22 @@ export default function Products() {
                 data-testid="input-edit-dc-price"
               />
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Iron Only Price (AED)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={editingPriceProduct?.ironOnlyPrice || ""}
+                onChange={(e) =>
+                  setEditingPriceProduct((prev) =>
+                    prev ? { ...prev, ironOnlyPrice: e.target.value } : null
+                  )
+                }
+                data-testid="input-edit-iron-price"
+              />
+            </div>
             <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
@@ -2586,6 +2654,7 @@ export default function Products() {
                       id: editingPriceProduct.id,
                       price: editingPriceProduct.price || undefined,
                       dryCleanPrice: editingPriceProduct.dryCleanPrice || undefined,
+                      ironOnlyPrice: editingPriceProduct.ironOnlyPrice || undefined,
                     });
                     setEditingPriceProduct(null);
                   }
