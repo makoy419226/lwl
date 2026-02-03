@@ -669,9 +669,15 @@ export async function seedDatabase() {
     // Delete all existing products
     await db.delete(products);
 
-    // Insert all laundry items
+    // Insert all laundry items with calculated prices
     for (const item of laundryItems) {
-      await storage.createProduct(item);
+      const normalPrice = parseFloat(item.price);
+      const itemWithPrices = {
+        ...item,
+        dryCleanPrice: (normalPrice * 1.5).toFixed(2),
+        ironOnlyPrice: (normalPrice * 0.5).toFixed(2),
+      };
+      await storage.createProduct(itemWithPrices);
     }
 
     console.log(`Seeded ${laundryItems.length} laundry items successfully.`);
