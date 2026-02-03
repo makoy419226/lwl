@@ -625,6 +625,18 @@ export async function registerRoutes(
       return res.json({ success: true, member: { id: member.id, name: member.name, roleType: member.roleType } });
     }
     
+    // Check packing workers (legacy)
+    const packingWorker = await storage.verifyPackingWorkerPin(pin);
+    if (packingWorker) {
+      return res.json({ success: true, member: { id: packingWorker.id, name: packingWorker.name, roleType: "section" } });
+    }
+    
+    // Check delivery workers (legacy)
+    const deliveryWorker = await storage.verifyDeliveryWorkerPin(pin);
+    if (deliveryWorker) {
+      return res.json({ success: true, member: { id: deliveryWorker.id, name: deliveryWorker.name, roleType: "driver" } });
+    }
+    
     res.status(401).json({ success: false, message: "Invalid PIN" });
   });
 
