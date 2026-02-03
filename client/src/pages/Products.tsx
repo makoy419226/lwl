@@ -1595,14 +1595,59 @@ export default function Products() {
             <Label className="text-xs font-semibold">
               {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date
             </Label>
-            <Input
-              type="text"
-              placeholder="e.g. Tomorrow, 25 Dec, etc."
-              className="h-9 text-xs"
-              value={expectedDeliveryAt}
-              onChange={(e) => setExpectedDeliveryAt(e.target.value)}
-              data-testid={isPopup ? "popup-input-expected-datetime" : "sidebar-input-expected-datetime"}
-            />
+            <div className="flex gap-1">
+              <Button
+                type="button"
+                variant={expectedDeliveryAt?.startsWith(format(new Date(), "yyyy-MM-dd")) ? "default" : "outline"}
+                size="sm"
+                className="flex-1 h-8 text-xs px-2"
+                onClick={() => {
+                  const today = new Date();
+                  const time = expectedDeliveryAt?.split("T")[1] || "12:00";
+                  setExpectedDeliveryAt(`${format(today, "yyyy-MM-dd")}T${time}`);
+                }}
+                data-testid={isPopup ? "popup-button-date-today" : "sidebar-button-date-today"}
+              >
+                Today
+              </Button>
+              <Button
+                type="button"
+                variant={expectedDeliveryAt?.startsWith(format(new Date(Date.now() + 86400000), "yyyy-MM-dd")) ? "default" : "outline"}
+                size="sm"
+                className="flex-1 h-8 text-xs px-2"
+                onClick={() => {
+                  const tomorrow = new Date(Date.now() + 86400000);
+                  const time = expectedDeliveryAt?.split("T")[1] || "12:00";
+                  setExpectedDeliveryAt(`${format(tomorrow, "yyyy-MM-dd")}T${time}`);
+                }}
+                data-testid={isPopup ? "popup-button-date-tomorrow" : "sidebar-button-date-tomorrow"}
+              >
+                Tomorrow
+              </Button>
+              <Input
+                type="date"
+                className="flex-1 h-8 text-xs px-1"
+                value={expectedDeliveryAt?.split("T")[0] || ""}
+                onChange={(e) => {
+                  const time = expectedDeliveryAt?.split("T")[1] || "12:00";
+                  setExpectedDeliveryAt(`${e.target.value}T${time}`);
+                }}
+                data-testid={isPopup ? "popup-input-custom-date" : "sidebar-input-custom-date"}
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">Time:</Label>
+              <Input
+                type="time"
+                className="flex-1 h-8 text-xs"
+                value={expectedDeliveryAt?.split("T")[1] || "12:00"}
+                onChange={(e) => {
+                  const date = expectedDeliveryAt?.split("T")[0] || format(new Date(), "yyyy-MM-dd");
+                  setExpectedDeliveryAt(`${date}T${e.target.value}`);
+                }}
+                data-testid={isPopup ? "popup-input-pickup-time" : "sidebar-input-pickup-time"}
+              />
+            </div>
           </div>
 
           {/* Order Notes */}
