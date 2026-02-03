@@ -1662,6 +1662,11 @@ export default function Orders() {
                                   {format(new Date(order.packingDate), "MMM d, h:mm a")}
                                 </span>
                               )}
+                              {order.notes && (
+                                <span className="text-xs text-amber-600 dark:text-amber-400 max-w-[120px] truncate" title={order.notes}>
+                                  📝 {order.notes}
+                                </span>
+                              )}
                             </div>
                           </CardHeader>
 
@@ -2346,6 +2351,11 @@ export default function Orders() {
                                     <TableCell>
                                       <div className="space-y-1">
                                         {getStatusBadge(order)}
+                                        {order.notes && (
+                                          <div className="text-xs text-amber-600 dark:text-amber-400 max-w-[150px] truncate" title={order.notes}>
+                                            📝 {order.notes}
+                                          </div>
+                                        )}
                                         <div className="text-[10px] text-muted-foreground leading-tight" data-testid={`staff-tracking-desktop-${order.id}`}>
                                           {order.entryBy && <div data-testid={`text-created-by-${order.id}`}>Created: {order.entryBy}</div>}
                                           {order.tagBy && <div data-testid={`text-tagged-by-${order.id}`}>Tagged: {order.tagBy}</div>}
