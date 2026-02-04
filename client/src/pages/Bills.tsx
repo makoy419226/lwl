@@ -117,9 +117,12 @@ export default function Bills() {
   }
 
   const searchParams = useSearch();
+  const [, setLocation] = useLocation();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
+  const urlHighlightBill = new URLSearchParams(searchParams).get("highlightBill");
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [timePeriod, setTimePeriod] = useState<"today" | "week" | "month" | "year" | "all">("all");
+  const [highlightedBillId, setHighlightedBillId] = useState<number | null>(null);
   
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
@@ -128,6 +131,24 @@ export default function Bills() {
       setSearchTerm(newSearch);
     }
   }, [searchParams]);
+  
+  useEffect(() => {
+    if (urlHighlightBill) {
+      const billId = parseInt(urlHighlightBill);
+      setHighlightedBillId(billId);
+      setActiveTab("bills");
+      setLocation("/bills", { replace: true });
+      setTimeout(() => {
+        const billElement = document.querySelector(`[data-bill-id="${billId}"]`);
+        if (billElement) {
+          billElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+      setTimeout(() => {
+        setHighlightedBillId(null);
+      }, 5000);
+    }
+  }, [urlHighlightBill]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("bills");
@@ -195,8 +216,6 @@ export default function Bills() {
     totalDue?: number;
   } | null>(null);
   const [verifiedCashier, setVerifiedCashier] = useState<string | null>(null);
-
-  const [, setLocation] = useLocation();
 
   // Query for workers to verify cashier PIN
   const { data: workers = [] } = useQuery<PackingWorker[]>({
@@ -1018,10 +1037,15 @@ export default function Bills() {
                 {filteredBills?.map((bill) => (
                   <Card
                     key={bill.id}
+                    data-bill-id={bill.id}
                     className={`relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer ${
                       bill.isPaid 
                         ? "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30" 
                         : "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30"
+                    } ${
+                      highlightedBillId === bill.id 
+                        ? "ring-4 ring-primary ring-offset-2 animate-pulse shadow-2xl shadow-primary/30" 
+                        : ""
                     }`}
                     data-testid={`card-bill-${bill.id}`}
                     onClick={() => setViewBillDetails(bill)}

@@ -713,11 +713,17 @@ export default function Products() {
       setCustomerName("");
       setSearchTerm("");
       
-      // If Pay Now was clicked, redirect to orders with payment dialog
+      // If Pay Now was clicked, redirect to bills page with highlighted bill
       if (payNowAfterOrder) {
         setPayNowAfterOrder(false);
         clearOrder();
-        navigate(`/orders?payOrder=${data.id}`);
+        // Navigate to bills page and highlight the corresponding bill
+        if (data.billId) {
+          navigate(`/bills?highlightBill=${data.billId}`);
+        } else {
+          // Fallback to orders page if no bill ID
+          navigate(`/orders?payOrder=${data.id}`);
+        }
         return;
       }
       
