@@ -21,6 +21,7 @@ export const products = pgTable("products", {
   category: text("category").default("Laundry"),
   stockQuantity: integer("stock_quantity").default(0),
   imageUrl: text("image_url"),
+  starred: boolean("starred").default(false),
 });
 
 export const clients = pgTable("clients", {
