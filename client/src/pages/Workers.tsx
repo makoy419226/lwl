@@ -556,7 +556,7 @@ export default function Workers() {
       ["Staff Performance Report"],
       [`Report Period: ${dateRangeStr}`],
       [],
-      ["Staff Name", "Tags Done", "Packing Done", "Deliveries", "Bills Created", "Total Tasks"],
+      ["Staff Name", "Tagged", "Packed", "Delivered", "Billed Orders", "Total Tasks"],
     ];
     
     const dataRows = filteredStats.map((s) => [
@@ -619,10 +619,10 @@ export default function Workers() {
           <thead>
             <tr style="background: #f3f4f6;">
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: left;">Staff</th>
-              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Tags</th>
-              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Packing</th>
-              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Delivery</th>
-              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Bills</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Tagged</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Packed</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Delivered</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Billed</th>
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Total</th>
             </tr>
           </thead>
@@ -743,7 +743,7 @@ export default function Workers() {
     doc.text("Performance Summary", 14, startY + 40);
     
     const summaryData = [
-      ["Bills Created", staff.createdCount.toString()],
+      ["Billed Orders", staff.createdCount.toString()],
       ["Orders Tagged", staff.taggedCount.toString()],
       ["Orders Packed", staff.packedCount.toString()],
       ["Orders Delivered", staff.deliveredCount.toString()],
@@ -1378,7 +1378,7 @@ export default function Workers() {
                         <div>
                           <p className="text-2xl font-bold">{totals.tagged}</p>
                           <p className="text-xs text-muted-foreground">
-                            Tags Done
+                            Tagged
                           </p>
                         </div>
                       </div>
@@ -1391,7 +1391,7 @@ export default function Workers() {
                         <div>
                           <p className="text-2xl font-bold">{totals.packed}</p>
                           <p className="text-xs text-muted-foreground">
-                            Packing Done
+                            Packed
                           </p>
                         </div>
                       </div>
@@ -1406,7 +1406,7 @@ export default function Workers() {
                             {totals.delivered}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Deliveries
+                            Delivered
                           </p>
                         </div>
                       </div>
@@ -1421,7 +1421,7 @@ export default function Workers() {
                             {totals.billsCreated}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Bills ({totals.billsTotal.toFixed(0)} AED)
+                            Billed Orders ({totals.billsTotal.toFixed(0)} AED)
                           </p>
                         </div>
                       </div>
@@ -1568,7 +1568,7 @@ export default function Workers() {
                         {selectedAdminOrders?.type === "tagged" && <Tag className="w-5 h-5 text-orange-500" />}
                         {selectedAdminOrders?.type === "packed" && <Package className="w-5 h-5 text-green-500" />}
                         {selectedAdminOrders?.type === "delivered" && <Truck className="w-5 h-5 text-purple-500" />}
-                        Admin - {selectedAdminOrders?.type === "bills" ? "Bills Created" : 
+                        Admin - {selectedAdminOrders?.type === "bills" ? "Billed Orders" : 
                                  selectedAdminOrders?.type === "tagged" ? "Orders Tagged" :
                                  selectedAdminOrders?.type === "packed" ? "Orders Packed" : "Orders Delivered"}
                         <Badge variant="outline" className="ml-2">{selectedAdminOrders?.orders.length || 0}</Badge>
@@ -2705,7 +2705,7 @@ export default function Workers() {
               {selectedStaffOrders?.type === "tagged" && <Tag className="w-5 h-5 text-orange-500" />}
               {selectedStaffOrders?.type === "packed" && <Package className="w-5 h-5 text-green-500" />}
               {selectedStaffOrders?.type === "delivered" && <Truck className="w-5 h-5 text-purple-500" />}
-              {selectedStaffOrders?.staffName} - {selectedStaffOrders?.type === "bills" ? "Bills Created" : 
+              {selectedStaffOrders?.staffName} - {selectedStaffOrders?.type === "bills" ? "Billed Orders" : 
                selectedStaffOrders?.type === "tagged" ? "Orders Tagged" : 
                selectedStaffOrders?.type === "packed" ? "Orders Packed" : "Orders Delivered"}
               <Badge variant="outline" className="ml-2">
