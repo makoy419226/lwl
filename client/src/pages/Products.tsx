@@ -1594,7 +1594,7 @@ export default function Products() {
           {/* Expected Pickup/Delivery Date */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold">
-              {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date
+              {deliveryType === "pickup" ? "Pickup" : "Delivery"} Date (Optional)
             </Label>
             <div className="flex gap-1">
               <Button
@@ -1604,8 +1604,7 @@ export default function Products() {
                 className="flex-1 h-8 text-xs px-2"
                 onClick={() => {
                   const today = new Date();
-                  const time = expectedDeliveryAt?.split("T")[1] || "12:00";
-                  setExpectedDeliveryAt(`${format(today, "yyyy-MM-dd")}T${time}`);
+                  setExpectedDeliveryAt(format(today, "yyyy-MM-dd"));
                 }}
                 data-testid={isPopup ? "popup-button-date-today" : "sidebar-button-date-today"}
               >
@@ -1618,8 +1617,7 @@ export default function Products() {
                 className="flex-1 h-8 text-xs px-2"
                 onClick={() => {
                   const tomorrow = new Date(Date.now() + 86400000);
-                  const time = expectedDeliveryAt?.split("T")[1] || "12:00";
-                  setExpectedDeliveryAt(`${format(tomorrow, "yyyy-MM-dd")}T${time}`);
+                  setExpectedDeliveryAt(format(tomorrow, "yyyy-MM-dd"));
                 }}
                 data-testid={isPopup ? "popup-button-date-tomorrow" : "sidebar-button-date-tomorrow"}
               >
@@ -1630,25 +1628,59 @@ export default function Products() {
                 className="flex-1 h-8 text-xs px-1"
                 value={expectedDeliveryAt?.split("T")[0] || ""}
                 onChange={(e) => {
-                  const time = expectedDeliveryAt?.split("T")[1] || "12:00";
-                  setExpectedDeliveryAt(`${e.target.value}T${time}`);
+                  if (e.target.value) {
+                    const time = expectedDeliveryAt?.split("T")[1];
+                    setExpectedDeliveryAt(time ? `${e.target.value}T${time}` : e.target.value);
+                  } else {
+                    setExpectedDeliveryAt("");
+                  }
                 }}
                 data-testid={isPopup ? "popup-input-custom-date" : "sidebar-input-custom-date"}
               />
+              {expectedDeliveryAt && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => setExpectedDeliveryAt("")}
+                  data-testid={isPopup ? "popup-button-clear-date" : "sidebar-button-clear-date"}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
             </div>
-            <div className="flex items-center gap-1">
-              <Label className="text-xs text-muted-foreground whitespace-nowrap">Time:</Label>
-              <Input
-                type="time"
-                className="flex-1 h-8 text-xs"
-                value={expectedDeliveryAt?.split("T")[1] || "12:00"}
-                onChange={(e) => {
-                  const date = expectedDeliveryAt?.split("T")[0] || format(new Date(), "yyyy-MM-dd");
-                  setExpectedDeliveryAt(`${date}T${e.target.value}`);
-                }}
-                data-testid={isPopup ? "popup-input-pickup-time" : "sidebar-input-pickup-time"}
-              />
-            </div>
+            {expectedDeliveryAt && (
+              <div className="flex items-center gap-1">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Time (Optional):</Label>
+                <Input
+                  type="time"
+                  className="flex-1 h-8 text-xs"
+                  value={expectedDeliveryAt?.split("T")[1] || ""}
+                  onChange={(e) => {
+                    const date = expectedDeliveryAt?.split("T")[0] || expectedDeliveryAt;
+                    if (e.target.value) {
+                      setExpectedDeliveryAt(`${date}T${e.target.value}`);
+                    } else {
+                      setExpectedDeliveryAt(date);
+                    }
+                  }}
+                  data-testid={isPopup ? "popup-input-pickup-time" : "sidebar-input-pickup-time"}
+                />
+                {expectedDeliveryAt?.includes("T") && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() => setExpectedDeliveryAt(expectedDeliveryAt?.split("T")[0] || "")}
+                    data-testid={isPopup ? "popup-button-clear-time" : "sidebar-button-clear-time"}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Order Notes */}
