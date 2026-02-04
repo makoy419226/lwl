@@ -139,6 +139,9 @@ export default function Orders() {
     }
   }, [searchParams]);
   const [activeTab, setActiveTab] = useState("all");
+  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "custom">("today");
+  const [customDateFrom, setCustomDateFrom] = useState("");
+  const [customDateTo, setCustomDateTo] = useState("");
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [packingPinDialog, setPackingPinDialog] = useState<{
     orderId: number;
@@ -1346,6 +1349,40 @@ export default function Orders() {
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.items?.toLowerCase().includes(searchTerm.toLowerCase());
 
+    // Date filtering
+    const orderDate = new Date(order.entryDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    let matchesDate = true;
+    if (dateFilter === "today") {
+      const orderDay = new Date(orderDate);
+      orderDay.setHours(0, 0, 0, 0);
+      matchesDate = orderDay.getTime() === today.getTime();
+    } else if (dateFilter === "yesterday") {
+      const orderDay = new Date(orderDate);
+      orderDay.setHours(0, 0, 0, 0);
+      matchesDate = orderDay.getTime() === yesterday.getTime();
+    } else if (dateFilter === "custom" && customDateFrom && customDateTo) {
+      const fromDate = new Date(customDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      const toDate = new Date(customDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      matchesDate = orderDate >= fromDate && orderDate <= toDate;
+    } else if (dateFilter === "custom" && customDateFrom) {
+      const fromDate = new Date(customDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      matchesDate = orderDate >= fromDate;
+    } else if (dateFilter === "custom" && customDateTo) {
+      const toDate = new Date(customDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      matchesDate = orderDate <= toDate;
+    }
+
+    if (!matchesDate) return false;
+
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "create") return matchesSearch && !order.tagDone;
     if (activeTab === "tag-complete")
@@ -1571,6 +1608,58 @@ export default function Orders() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Date Filter */}
+        <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-muted/50 rounded-lg border">
+          <span className="text-sm font-medium text-muted-foreground">Date:</span>
+          <div className="flex gap-1">
+            <Button
+              variant={dateFilter === "yesterday" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("yesterday")}
+              data-testid="button-filter-yesterday"
+            >
+              Yesterday
+            </Button>
+            <Button
+              variant={dateFilter === "today" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("today")}
+              data-testid="button-filter-today"
+            >
+              Today
+            </Button>
+            <Button
+              variant={dateFilter === "custom" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("custom")}
+              data-testid="button-filter-custom"
+            >
+              Custom
+            </Button>
+          </div>
+          {dateFilter === "custom" && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Input
+                type="date"
+                value={customDateFrom}
+                onChange={(e) => setCustomDateFrom(e.target.value)}
+                className="h-8 w-36 text-sm"
+                placeholder="From"
+                data-testid="input-date-from"
+              />
+              <span className="text-muted-foreground text-sm">to</span>
+              <Input
+                type="date"
+                value={customDateTo}
+                onChange={(e) => setCustomDateTo(e.target.value)}
+                className="h-8 w-36 text-sm"
+                placeholder="To"
+                data-testid="input-date-to"
+              />
+            </div>
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
