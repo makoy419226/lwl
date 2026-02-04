@@ -1687,18 +1687,18 @@ export default function Orders() {
               </TabsTrigger>
               <TabsTrigger
                 value="packing-done"
-                className="h-10 px-3 text-sm touch-manipulation bg-green-100 dark:bg-green-900/30 data-[state=active]:bg-green-500 data-[state=active]:text-white"
+                className="h-10 px-3 text-sm touch-manipulation bg-purple-100 dark:bg-purple-900/30 data-[state=active]:bg-purple-500 data-[state=active]:text-white"
               >
                 <Package className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">3.</span> Pack
+                <span className="hidden sm:inline">3.</span> Ready
               </TabsTrigger>
               <TabsTrigger
                 value="for-delivery"
                 className="h-10 px-3 text-sm touch-manipulation bg-cyan-100 dark:bg-cyan-900/30 data-[state=active]:bg-cyan-600 data-[state=active]:text-white"
                 data-testid="tab-for-delivery"
               >
-                <CheckCircle className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">4.</span> Ready
+                <Truck className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">4.</span> For Delivery
               </TabsTrigger>
               <TabsTrigger
                 value="delivery"
