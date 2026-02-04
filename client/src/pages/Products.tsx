@@ -1851,15 +1851,91 @@ export default function Products() {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Show empty state for Favorites tab when no favorites */}
-                {selectedCategory === "favorites" && Object.keys(filteredGroupedProducts).length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                    <Star className="w-12 h-12 mb-4 text-yellow-400" />
-                    <p className="font-semibold text-lg">No Favorites Yet</p>
-                    <p className="text-sm mt-2">Turn on Edit Mode to star items as favorites</p>
-                  </div>
+                {/* Favorites tab - clean flat grid */}
+                {selectedCategory === "favorites" && (
+                  <>
+                    {allProducts?.filter(p => p.starred).length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                        <Star className="w-12 h-12 mb-4 text-yellow-400" />
+                        <p className="font-semibold text-lg">No Favorites Yet</p>
+                        <p className="text-sm mt-2">Turn on Edit Mode to star items as favorites</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
+                        {allProducts?.filter(p => p.starred).map((product) => (
+                          <div
+                            key={`fav-${product.id}`}
+                            className={`relative rounded-lg sm:rounded-xl border-2 p-2 sm:p-3 md:p-4 flex flex-col items-center cursor-pointer hover-elevate ${
+                              isProductSelected(product)
+                                ? "border-primary border-[3px] bg-primary/15 ring-2 ring-primary/50 shadow-lg shadow-primary/20"
+                                : "border-yellow-300/50 dark:border-yellow-700/50 bg-gradient-to-br from-yellow-50 to-amber-50/50 dark:from-yellow-900/20 dark:to-amber-900/10 hover:border-yellow-400"
+                            }`}
+                            onClick={() => !isEditMode && handleProductClick(product)}
+                            data-testid={`box-favorite-${product.id}`}
+                          >
+                            {/* Star indicator */}
+                            <div className="absolute top-1 left-1 z-10 w-5 h-5 rounded-full flex items-center justify-center bg-yellow-400 text-yellow-900 shadow-sm">
+                              <Star className="w-3 h-3 fill-current" />
+                            </div>
+                            <div className="w-full h-20 sm:h-24 md:h-28 rounded-lg bg-gradient-to-br from-yellow-100 to-amber-50 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 mb-1 sm:mb-2 shadow-sm relative">
+                              {(() => {
+                                const imageSrc = product.imageUrl || getProductImage(product.name);
+                                if (imageSrc) {
+                                  return (
+                                    <img
+                                      src={imageSrc}
+                                      alt={product.name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                                        if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                                      }}
+                                    />
+                                  );
+                                }
+                                return null;
+                              })()}
+                              <div className="fallback-icon absolute inset-0 flex items-center justify-center" style={{ display: (product.imageUrl || getProductImage(product.name)) ? 'none' : 'flex' }}>
+                                {getCategoryIcon(product.category)}
+                              </div>
+                            </div>
+                            <div className="text-xs sm:text-sm leading-tight text-center font-bold text-foreground line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] flex items-center justify-center px-0.5 sm:px-1">
+                              {product.name}
+                            </div>
+                            <div className="flex flex-col items-center mt-0.5 sm:mt-1 gap-0.5 w-full">
+                              <div className="flex flex-col items-center gap-0.5 text-[10px] sm:text-xs">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-primary font-bold">
+                                    {product.price ? parseFloat(product.price).toFixed(0) : "-"}
+                                  </span>
+                                  <span className="text-muted-foreground">/</span>
+                                  <span className="text-purple-600 dark:text-purple-400 font-bold">
+                                    {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
+                                  </span>
+                                  <span className="text-muted-foreground">/</span>
+                                  <span className="text-orange-600 dark:text-orange-400 font-bold">
+                                    {product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"}
+                                  </span>
+                                </div>
+                                <div className="text-[8px] sm:text-[9px] text-muted-foreground">
+                                  N / DC / IO
+                                </div>
+                              </div>
+                            </div>
+                            {(quantities[product.id] || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) && (
+                              <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse">
+                                <span>{quantities[product.id] || getSizedItemQuantity(product.name)}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
-                {Object.entries(filteredGroupedProducts).map(([category, categoryProducts]) => (
+                {/* Regular category view */}
+                {selectedCategory !== "favorites" && Object.entries(filteredGroupedProducts).map(([category, categoryProducts]) => (
                   <div key={category} className="space-y-2">
                     <div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg sticky top-0 z-10">
                       {getCategoryIcon(category, "w-6 h-6")}
