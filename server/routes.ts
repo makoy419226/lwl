@@ -2608,25 +2608,25 @@ export async function registerRoutes(
     const adminUser = await storage.getUserByUsername("admin");
     const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin" } });
+      return res.json({ success: true, worker: { id: null, name: "Admin", isUser: true } });
     }
     
-    // Check for user PIN (admin, reception, staff roles)
+    // Check for user PIN (admin, reception, staff roles) - use null ID to indicate user account
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
+      return res.json({ success: true, worker: { id: null, name: user.name || user.username, isUser: true } });
     }
     
     // Check staff members (counter, section, driver staff)
     const staffMember = await storage.verifyStaffMemberPin(pin);
     if (staffMember) {
-      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name } });
+      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name, isUser: false } });
     }
     
     // Also check packing workers (legacy)
     const worker = await storage.verifyPackingWorkerPin(pin);
     if (worker) {
-      res.json({ success: true, worker: { id: worker.id, name: worker.name } });
+      res.json({ success: true, worker: { id: worker.id, name: worker.name, isUser: false } });
     } else {
       res.status(401).json({ success: false, message: "Invalid PIN" });
     }
@@ -2645,25 +2645,25 @@ export async function registerRoutes(
     const adminUser = await storage.getUserByUsername("admin");
     const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, worker: { id: adminUser?.id || 0, name: "Admin" } });
+      return res.json({ success: true, worker: { id: null, name: "Admin", isUser: true } });
     }
     
-    // Check for any user PIN (admin, reception, staff, driver roles can all verify delivery)
+    // Check for any user PIN (admin, reception, staff, driver roles can all verify delivery) - use null ID for users
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      return res.json({ success: true, worker: { id: user.id, name: user.name || user.username } });
+      return res.json({ success: true, worker: { id: null, name: user.name || user.username, isUser: true } });
     }
     
     // Check staff members (counter, section, driver staff)
     const staffMember = await storage.verifyStaffMemberPin(pin);
     if (staffMember) {
-      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name } });
+      return res.json({ success: true, worker: { id: staffMember.id, name: staffMember.name, isUser: false } });
     }
     
     // Also allow packing workers for backward compatibility
     const worker = await storage.verifyDeliveryWorkerPin(pin);
     if (worker) {
-      res.json({ success: true, worker: { id: worker.id, name: worker.name } });
+      res.json({ success: true, worker: { id: worker.id, name: worker.name, isUser: false } });
     } else {
       res.status(401).json({ success: false, message: "Invalid Staff PIN" });
     }
