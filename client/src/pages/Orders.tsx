@@ -1680,8 +1680,8 @@ export default function Orders() {
                 value="tag-complete"
                 className="h-10 px-3 text-sm touch-manipulation bg-blue-100 dark:bg-blue-900/30 data-[state=active]:bg-blue-500 data-[state=active]:text-white"
               >
-                <Package className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">2.</span> Pack
+                <Tag className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">2.</span> Tagged
               </TabsTrigger>
               <TabsTrigger
                 value="packing-done"
