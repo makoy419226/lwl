@@ -692,6 +692,7 @@ export default function Products() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] }); // Refresh products to show updated stock
       setQuantities({});
       setCustomerName("");
+      setSearchTerm("");
       
       // If Pay Now was clicked, redirect to orders with payment dialog
       if (payNowAfterOrder) {
