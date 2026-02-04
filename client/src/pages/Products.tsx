@@ -1951,11 +1951,102 @@ export default function Products() {
                                 </div>
                               )}
                             </div>
-                            {(quantities[product.id] || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) && (
-                              <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse">
-                                <span>{quantities[product.id] || getSizedItemQuantity(product.name)}</span>
-                              </div>
-                            )}
+                            {(quantities[product.id] || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) ? (
+                              <>
+                                <div
+                                  className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <span>{quantities[product.id] || getSizedItemQuantity(product.name)}</span>
+                                </div>
+                                <div
+                                  className="flex flex-col gap-0.5 sm:gap-1 mt-1.5 sm:mt-2 w-full"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="flex gap-0.5">
+                                    <Button
+                                      size="sm"
+                                      variant={dryCleanItems[product.id] ? "default" : "outline"}
+                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                                      onClick={() => {
+                                        setDryCleanItems(prev => ({
+                                          ...prev,
+                                          [product.id]: !prev[product.id]
+                                        }));
+                                        if (!dryCleanItems[product.id]) {
+                                          setIronOnlyItems(prev => ({ ...prev, [product.id]: false }));
+                                        }
+                                      }}
+                                      data-testid={`button-fav-dryClean-${product.id}`}
+                                    >
+                                      DC
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant={ironOnlyItems[product.id] ? "default" : "outline"}
+                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${ironOnlyItems[product.id] ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                                      onClick={() => {
+                                        setIronOnlyItems(prev => ({
+                                          ...prev,
+                                          [product.id]: !prev[product.id]
+                                        }));
+                                        if (!ironOnlyItems[product.id]) {
+                                          setDryCleanItems(prev => ({ ...prev, [product.id]: false }));
+                                        }
+                                      }}
+                                      data-testid={`button-fav-ironOnly-${product.id}`}
+                                    >
+                                      Iron
+                                    </Button>
+                                  </div>
+                                  <div className="flex gap-0.5">
+                                    <Button
+                                      size="sm"
+                                      variant={
+                                        packingTypes[product.id] === "hanging"
+                                          ? "default"
+                                          : "outline"
+                                      }
+                                      className="flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2"
+                                      onClick={() =>
+                                        handlePackingTypeChange(product.id, "hanging")
+                                      }
+                                      data-testid={`button-fav-hanging-${product.id}`}
+                                    >
+                                      Hang
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant={
+                                        packingTypes[product.id] === "folding" ||
+                                        !packingTypes[product.id]
+                                          ? "default"
+                                          : "outline"
+                                      }
+                                      className="flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2"
+                                      onClick={() =>
+                                        handlePackingTypeChange(product.id, "folding")
+                                      }
+                                      data-testid={`button-fav-folding-${product.id}`}
+                                    >
+                                      Fold
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="icon"
+                                  variant="destructive"
+                                  className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuantityChange(product.id, -1);
+                                  }}
+                                  data-testid={`button-fav-qty-minus-${product.id}`}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                              </>
+                            ) : null}
                           </div>
                         ))}
                       </div>
