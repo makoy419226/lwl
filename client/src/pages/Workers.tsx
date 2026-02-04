@@ -156,7 +156,7 @@ export default function Workers() {
   const [selectedStaffOrders, setSelectedStaffOrders] = useState<{
     staffId: number;
     staffName: string;
-    type: "bills" | "tagged" | "packed" | "delivered";
+    type: "created" | "tagged" | "packed" | "delivered" | "paid";
   } | null>(null);
   
   // Report tab state
@@ -336,6 +336,18 @@ export default function Workers() {
 
     return allStaffMembers
       .map((worker) => {
+        // Orders created by this worker
+        const createdOrders = orders.filter((o) => {
+          if (o.entryByWorkerId !== worker.id) return false;
+          if (!o.entryDate) return false;
+          try {
+            const entryDate = new Date(o.entryDate);
+            return entryDate >= start && entryDate <= end;
+          } catch {
+            return false;
+          }
+        });
+
         const taggedOrders = orders.filter((o) => {
           if (o.tagWorkerId !== worker.id) return false;
           if (!o.tagDate) return false;
@@ -372,6 +384,7 @@ export default function Workers() {
         const createdBills =
           bills?.filter((b) => {
             if (b.createdByWorkerId !== worker.id) return false;
+            if (!b.isPaid) return false; // Only count paid bills
             if (!b.billDate) return false;
             try {
               const billDate = new Date(b.billDate);
@@ -388,12 +401,14 @@ export default function Workers() {
 
         return {
           worker,
+          ordersCreated: createdOrders.length,
           taggedCount: taggedOrders.length,
           packedCount: packedOrders.length,
           deliveredCount: deliveredOrders.length,
           billsCreated: createdBills.length,
           billsTotal,
           totalTasks:
+            createdOrders.length +
             taggedOrders.length +
             packedOrders.length +
             deliveredOrders.length +
@@ -406,20 +421,22 @@ export default function Workers() {
   const totals = useMemo(() => {
     return workerStats.reduce(
       (acc, s) => ({
+        ordersCreated: acc.ordersCreated + s.ordersCreated,
         tagged: acc.tagged + s.taggedCount,
         packed: acc.packed + s.packedCount,
         delivered: acc.delivered + s.deliveredCount,
-        billsCreated: acc.billsCreated + s.billsCreated,
+        billsPaid: acc.billsPaid + s.billsCreated,
         billsTotal: acc.billsTotal + s.billsTotal,
       }),
-      { tagged: 0, packed: 0, delivered: 0, billsCreated: 0, billsTotal: 0 },
+      { ordersCreated: 0, tagged: 0, packed: 0, delivered: 0, billsPaid: 0, billsTotal: 0 },
     );
   }, [workerStats]);
 
   const adminStats = useMemo(() => {
     if (!orders || !bills) return { 
       orders: [] as Order[], 
-      billsCreated: 0, 
+      ordersCreated: 0,
+      billsPaid: 0, 
       billsTotal: 0,
       taggedOrders: [] as Order[],
       packedOrders: [] as Order[],
@@ -427,6 +444,7 @@ export default function Workers() {
     };
     const { start, end } = getDateRange();
     
+    // Orders created by admin (entryByWorkerId is null)
     const adminOrders = orders.filter((o) => {
       if (o.entryByWorkerId !== null) return false;
       if (!o.entryDate) return false;
@@ -438,8 +456,10 @@ export default function Workers() {
       }
     });
     
+    // Paid bills by admin (createdByWorkerId is null AND isPaid is true)
     const adminBills = bills.filter((b) => {
       if (b.createdByWorkerId !== null) return false;
+      if (!b.isPaid) return false; // Only count paid bills
       if (!b.billDate) return false;
       try {
         const billDate = new Date(b.billDate);
@@ -489,7 +509,8 @@ export default function Workers() {
     
     return {
       orders: adminOrders,
-      billsCreated: adminBills.length,
+      ordersCreated: adminOrders.length,
+      billsPaid: adminBills.length,
       billsTotal,
       taggedOrders,
       packedOrders,
@@ -499,7 +520,7 @@ export default function Workers() {
 
   const [expandedAdminOrders, setExpandedAdminOrders] = useState<Set<number>>(new Set());
   const [selectedItemReportOrder, setSelectedItemReportOrder] = useState<Order | null>(null);
-  const [selectedAdminOrders, setSelectedAdminOrders] = useState<{ type: string; orders: Order[] } | null>(null);
+  const [selectedAdminOrders, setSelectedAdminOrders] = useState<{ type: "created" | "tagged" | "packed" | "delivered" | "paid"; orders: Order[] } | null>(null);
   
   const getAdminDateRangeLabel = () => {
     const { start, end } = getDateRange();
@@ -556,11 +577,12 @@ export default function Workers() {
       ["Staff Performance Report"],
       [`Report Period: ${dateRangeStr}`],
       [],
-      ["Staff Name", "Tagged", "Packed", "Delivered", "Billed Orders", "Total Tasks"],
+      ["Staff Name", "Created", "Tagged", "Packed", "Delivered", "Paid Bills", "Total Tasks"],
     ];
     
     const dataRows = filteredStats.map((s) => [
       s.worker.name,
+      s.ordersCreated,
       s.taggedCount,
       s.packedCount,
       s.deliveredCount,
@@ -570,30 +592,33 @@ export default function Workers() {
     
     dataRows.push([
       "TOTAL",
+      totals.ordersCreated,
       totals.tagged,
       totals.packed,
       totals.delivered,
-      totals.billsCreated,
-      totals.tagged + totals.packed + totals.delivered + totals.billsCreated,
+      totals.billsPaid,
+      totals.ordersCreated + totals.tagged + totals.packed + totals.delivered + totals.billsPaid,
     ]);
     
-    const adminTotal = adminStats.taggedOrders.length + adminStats.packedOrders.length + 
-                       adminStats.deliveredOrders.length + adminStats.billsCreated;
+    const adminTotal = adminStats.ordersCreated + adminStats.taggedOrders.length + adminStats.packedOrders.length + 
+                       adminStats.deliveredOrders.length + adminStats.billsPaid;
     
     const adminSection = [
       [],
       ["Admin Performance"],
       ["Activity", "Count"],
+      ["Created Orders", adminStats.ordersCreated],
       ["Tagged", adminStats.taggedOrders.length],
       ["Packed", adminStats.packedOrders.length],
       ["Delivered", adminStats.deliveredOrders.length],
-      ["Billed Orders", adminStats.billsCreated],
+      ["Paid Bills", adminStats.billsPaid],
       ["TOTAL", adminTotal],
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...dataRows, ...adminSection]);
     ws["!cols"] = [
       { wch: 15 },
+      { wch: 12 },
       { wch: 12 },
       { wch: 14 },
       { wch: 12 },
@@ -633,10 +658,11 @@ export default function Workers() {
           <thead>
             <tr style="background: #f3f4f6;">
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: left;">Staff</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Created</th>
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Tagged</th>
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Packed</th>
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Delivered</th>
-              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Billed</th>
+              <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Paid</th>
               <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Total</th>
             </tr>
           </thead>
@@ -646,6 +672,7 @@ export default function Workers() {
                 (s) => `
               <tr>
                 <td style="padding: 6px 4px; border: 1px solid #ddd;">${s.worker.name}</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.ordersCreated}</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.taggedCount}</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.packedCount}</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${s.deliveredCount}</td>
@@ -657,11 +684,12 @@ export default function Workers() {
               .join("")}
             <tr style="background: #e5e7eb; font-weight: bold;">
               <td style="padding: 8px 4px; border: 1px solid #ddd;">TOTAL</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.ordersCreated}</td>
               <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.tagged}</td>
               <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.packed}</td>
               <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.delivered}</td>
-              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.billsCreated}</td>
-              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.tagged + totals.packed + totals.delivered + totals.billsCreated}</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.billsPaid}</td>
+              <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${totals.ordersCreated + totals.tagged + totals.packed + totals.delivered + totals.billsPaid}</td>
             </tr>
           </tbody>
         </table>
@@ -677,6 +705,10 @@ export default function Workers() {
             </thead>
             <tbody>
               <tr>
+                <td style="padding: 6px 4px; border: 1px solid #ddd;">Created Orders</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.ordersCreated}</td>
+              </tr>
+              <tr>
                 <td style="padding: 6px 4px; border: 1px solid #ddd;">Tagged</td>
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.taggedOrders.length}</td>
               </tr>
@@ -689,12 +721,12 @@ export default function Workers() {
                 <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.deliveredOrders.length}</td>
               </tr>
               <tr>
-                <td style="padding: 6px 4px; border: 1px solid #ddd;">Billed Orders</td>
-                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.billsCreated}</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd;">Paid Bills</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.billsPaid}</td>
               </tr>
               <tr style="background: #e5e7eb; font-weight: bold;">
                 <td style="padding: 8px 4px; border: 1px solid #ddd;">TOTAL</td>
-                <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.taggedOrders.length + adminStats.packedOrders.length + adminStats.deliveredOrders.length + adminStats.billsCreated}</td>
+                <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.ordersCreated + adminStats.taggedOrders.length + adminStats.packedOrders.length + adminStats.deliveredOrders.length + adminStats.billsPaid}</td>
               </tr>
             </tbody>
           </table>
@@ -723,13 +755,15 @@ export default function Workers() {
   );
 
   // Get orders for a specific staff member by type
-  const getStaffOrders = (staffId: number, type: "bills" | "tagged" | "packed" | "delivered") => {
+  const getStaffOrders = (staffId: number, type: "created" | "tagged" | "packed" | "delivered" | "paid") => {
     if (!orders) return [];
     const { start, end } = getDateRange();
     
-    if (type === "bills") {
+    // "paid" type returns paid bills by this staff member
+    if (type === "paid") {
       return bills?.filter(b => {
         if (b.createdByWorkerId !== staffId) return false;
+        if (!b.isPaid) return false; // Only paid bills
         if (!b.billDate) return false;
         const billDate = new Date(b.billDate);
         return billDate >= start && billDate <= end;
@@ -740,7 +774,10 @@ export default function Workers() {
       let dateField: string | Date | null | undefined;
       let workerField: number | null | undefined;
       
-      if (type === "tagged") {
+      if (type === "created") {
+        dateField = o.entryDate;
+        workerField = o.entryByWorkerId;
+      } else if (type === "tagged") {
         dateField = o.tagDate;
         workerField = o.tagWorkerId;
       } else if (type === "packed") {
@@ -1466,7 +1503,7 @@ export default function Workers() {
                         <Receipt className="w-5 h-5 text-cyan-500" />
                         <div>
                           <p className="text-2xl font-bold">
-                            {totals.billsCreated}
+                            {totals.billsPaid}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Billed Orders ({totals.billsTotal.toFixed(0)} AED)
@@ -1484,7 +1521,7 @@ export default function Workers() {
                             {totals.tagged +
                               totals.packed +
                               totals.delivered +
-                              totals.billsCreated}
+                              totals.billsPaid}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Total Tasks
@@ -1515,8 +1552,8 @@ export default function Workers() {
                             <TableHead className="text-center">Role</TableHead>
                             <TableHead className="text-center">
                               <div className="flex items-center justify-center gap-1">
-                                <Receipt className="w-4 h-4 text-cyan-500" />
-                                Bills
+                                <FileText className="w-4 h-4 text-blue-500" />
+                                Created
                               </div>
                             </TableHead>
                             <TableHead className="text-center">
@@ -1537,6 +1574,12 @@ export default function Workers() {
                                 Delivered
                               </div>
                             </TableHead>
+                            <TableHead className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Receipt className="w-4 h-4 text-cyan-500" />
+                                Paid
+                              </div>
+                            </TableHead>
                             <TableHead className="text-center">Total</TableHead>
                             <TableHead className="text-center">Status</TableHead>
                           </TableRow>
@@ -1555,11 +1598,11 @@ export default function Workers() {
                             <TableCell className="text-center">
                               <Badge
                                 variant="outline"
-                                className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300 cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
-                                onClick={() => adminStats.billsCreated > 0 && setSelectedAdminOrders({ type: "bills", orders: adminStats.orders })}
-                                data-testid="badge-admin-bills"
+                                className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                                onClick={() => adminStats.ordersCreated > 0 && setSelectedAdminOrders({ type: "created", orders: adminStats.orders })}
+                                data-testid="badge-admin-created"
                               >
-                                {adminStats.billsCreated}
+                                {adminStats.ordersCreated}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-center">
@@ -1592,8 +1635,18 @@ export default function Workers() {
                                 {adminStats.deliveredOrders.length}
                               </Badge>
                             </TableCell>
+                            <TableCell className="text-center">
+                              <Badge
+                                variant="outline"
+                                className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300 cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
+                                onClick={() => adminStats.billsPaid > 0 && setSelectedAdminOrders({ type: "paid", orders: adminStats.orders })}
+                                data-testid="badge-admin-paid"
+                              >
+                                {adminStats.billsPaid}
+                              </Badge>
+                            </TableCell>
                             <TableCell className="text-center font-medium">
-                              {adminStats.billsCreated + adminStats.taggedOrders.length + adminStats.packedOrders.length + adminStats.deliveredOrders.length}
+                              {adminStats.ordersCreated + adminStats.taggedOrders.length + adminStats.packedOrders.length + adminStats.deliveredOrders.length + adminStats.billsPaid}
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge className="bg-green-500/10 text-green-600 border-green-500/30">
@@ -1612,13 +1665,15 @@ export default function Workers() {
                   <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
-                        {selectedAdminOrders?.type === "bills" && <Receipt className="w-5 h-5 text-cyan-500" />}
+                        {selectedAdminOrders?.type === "created" && <FileText className="w-5 h-5 text-blue-500" />}
                         {selectedAdminOrders?.type === "tagged" && <Tag className="w-5 h-5 text-orange-500" />}
                         {selectedAdminOrders?.type === "packed" && <Package className="w-5 h-5 text-green-500" />}
                         {selectedAdminOrders?.type === "delivered" && <Truck className="w-5 h-5 text-purple-500" />}
-                        Admin - {selectedAdminOrders?.type === "bills" ? "Billed Orders" : 
+                        {selectedAdminOrders?.type === "paid" && <Receipt className="w-5 h-5 text-cyan-500" />}
+                        Admin - {selectedAdminOrders?.type === "created" ? "Orders Created" : 
                                  selectedAdminOrders?.type === "tagged" ? "Orders Tagged" :
-                                 selectedAdminOrders?.type === "packed" ? "Orders Packed" : "Orders Delivered"}
+                                 selectedAdminOrders?.type === "packed" ? "Orders Packed" : 
+                                 selectedAdminOrders?.type === "delivered" ? "Orders Delivered" : "Paid Bills"}
                         <Badge variant="outline" className="ml-2">{selectedAdminOrders?.orders.length || 0}</Badge>
                       </DialogTitle>
                     </DialogHeader>
@@ -1686,8 +1741,8 @@ export default function Workers() {
                               <TableHead className="text-center">Role</TableHead>
                               <TableHead className="text-center">
                                 <div className="flex items-center justify-center gap-1">
-                                  <Receipt className="w-4 h-4 text-cyan-500" />
-                                  Bills
+                                  <FileText className="w-4 h-4 text-blue-500" />
+                                  Created
                                 </div>
                               </TableHead>
                               <TableHead className="text-center">
@@ -1706,6 +1761,12 @@ export default function Workers() {
                                 <div className="flex items-center justify-center gap-1">
                                   <Truck className="w-4 h-4 text-purple-500" />
                                   Delivered
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Receipt className="w-4 h-4 text-cyan-500" />
+                                  Paid
                                 </div>
                               </TableHead>
                               <TableHead className="text-center">Total</TableHead>
@@ -1739,11 +1800,11 @@ export default function Workers() {
                                 <TableCell className="text-center">
                                   <Badge
                                     variant="outline"
-                                    className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300 cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
-                                    onClick={() => s.billsCreated > 0 && setSelectedStaffOrders({ staffId: s.worker.id, staffName: s.worker.name, type: "bills" })}
-                                    data-testid={`badge-bills-${s.worker.id}`}
+                                    className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                                    onClick={() => s.ordersCreated > 0 && setSelectedStaffOrders({ staffId: s.worker.id, staffName: s.worker.name, type: "created" })}
+                                    data-testid={`badge-created-${s.worker.id}`}
                                   >
-                                    {s.billsCreated}
+                                    {s.ordersCreated}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-center">
@@ -1774,6 +1835,16 @@ export default function Workers() {
                                     data-testid={`badge-delivered-${s.worker.id}`}
                                   >
                                     {s.deliveredCount}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-300 cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
+                                    onClick={() => s.billsCreated > 0 && setSelectedStaffOrders({ staffId: s.worker.id, staffName: s.worker.name, type: "paid" })}
+                                    data-testid={`badge-paid-${s.worker.id}`}
+                                  >
+                                    {s.billsCreated}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-center font-bold">
@@ -2749,16 +2820,18 @@ export default function Workers() {
         <DialogContent aria-describedby={undefined} className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {selectedStaffOrders?.type === "bills" && <Receipt className="w-5 h-5 text-cyan-500" />}
+              {selectedStaffOrders?.type === "created" && <FileText className="w-5 h-5 text-blue-500" />}
               {selectedStaffOrders?.type === "tagged" && <Tag className="w-5 h-5 text-orange-500" />}
               {selectedStaffOrders?.type === "packed" && <Package className="w-5 h-5 text-green-500" />}
               {selectedStaffOrders?.type === "delivered" && <Truck className="w-5 h-5 text-purple-500" />}
-              {selectedStaffOrders?.staffName} - {selectedStaffOrders?.type === "bills" ? "Billed Orders" : 
+              {selectedStaffOrders?.type === "paid" && <Receipt className="w-5 h-5 text-cyan-500" />}
+              {selectedStaffOrders?.staffName} - {selectedStaffOrders?.type === "created" ? "Orders Created" : 
                selectedStaffOrders?.type === "tagged" ? "Orders Tagged" : 
-               selectedStaffOrders?.type === "packed" ? "Orders Packed" : "Orders Delivered"}
+               selectedStaffOrders?.type === "packed" ? "Orders Packed" : 
+               selectedStaffOrders?.type === "delivered" ? "Orders Delivered" : "Paid Bills"}
               <Badge variant="outline" className="ml-2">
-                {selectedStaffOrders?.type === "bills" 
-                  ? getStaffOrders(selectedStaffOrders?.staffId || 0, "bills").length
+                {selectedStaffOrders?.type === "paid" 
+                  ? getStaffOrders(selectedStaffOrders?.staffId || 0, "paid").length
                   : (getStaffOrders(selectedStaffOrders?.staffId || 0, selectedStaffOrders?.type || "tagged") as Order[]).length}
               </Badge>
             </DialogTitle>
@@ -2776,9 +2849,9 @@ export default function Workers() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedStaffOrders.type === "bills" ? (
-                    // Show bills as orders
-                    getStaffOrders(selectedStaffOrders.staffId, "bills").map((bill: any) => {
+                  {selectedStaffOrders.type === "paid" ? (
+                    // Show paid bills
+                    getStaffOrders(selectedStaffOrders.staffId, "paid").map((bill: any) => {
                       const order = orders?.find(o => o.billId === bill.id);
                       const clientName = order ? (clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in") : "N/A";
                       return (
@@ -2798,7 +2871,7 @@ export default function Workers() {
                       );
                     })
                   ) : (
-                    // Show orders
+                    // Show orders (created, tagged, packed, delivered)
                     (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).map((order) => {
                       const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "Walk-in";
                       return (
@@ -2808,6 +2881,7 @@ export default function Workers() {
                           </TableCell>
                           <TableCell>{clientName}</TableCell>
                           <TableCell>
+                            {selectedStaffOrders.type === "created" && order.entryDate && format(new Date(order.entryDate), "MMM d, yyyy")}
                             {selectedStaffOrders.type === "tagged" && order.tagDate && format(new Date(order.tagDate), "MMM d, yyyy")}
                             {selectedStaffOrders.type === "packed" && order.packingDate && format(new Date(order.packingDate), "MMM d, yyyy")}
                             {selectedStaffOrders.type === "delivered" && order.deliveryDate && format(new Date(order.deliveryDate), "MMM d, yyyy")}
@@ -2820,14 +2894,14 @@ export default function Workers() {
                       );
                     })
                   )}
-                  {selectedStaffOrders.type === "bills" && getStaffOrders(selectedStaffOrders.staffId, "bills").length === 0 && (
+                  {selectedStaffOrders.type === "paid" && getStaffOrders(selectedStaffOrders.staffId, "paid").length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        No bills found for this staff member
+                        No paid bills found for this staff member
                       </TableCell>
                     </TableRow>
                   )}
-                  {selectedStaffOrders.type !== "bills" && (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).length === 0 && (
+                  {selectedStaffOrders.type !== "paid" && (getStaffOrders(selectedStaffOrders.staffId, selectedStaffOrders.type) as Order[]).length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         No orders found for this staff member
