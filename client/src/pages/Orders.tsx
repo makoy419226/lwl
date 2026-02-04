@@ -1751,9 +1751,25 @@ export default function Orders() {
                                 </span>
                               )}
                               {order.notes && (
-                                <span className="text-xs text-amber-600 dark:text-amber-400 max-w-[120px] truncate" title={order.notes}>
-                                  📝 {order.notes}
-                                </span>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="text-xs text-amber-600 dark:text-amber-400 max-w-[120px] truncate flex items-center gap-1 hover:underline cursor-pointer" data-testid={`button-note-${order.id}`}>
+                                      📝 {order.notes}
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 p-0" align="end">
+                                    <div className="bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-200 dark:border-amber-700 rounded-lg shadow-lg transform rotate-1">
+                                      <div className="bg-amber-100 dark:bg-amber-800/50 px-3 py-1.5 border-b border-amber-200 dark:border-amber-700 rounded-t-lg">
+                                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Order Note</span>
+                                      </div>
+                                      <div className="p-3 min-h-[60px]" style={{ fontFamily: "'Segoe Script', 'Bradley Hand', cursive" }}>
+                                        <p className="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-wrap leading-relaxed">
+                                          {order.notes}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               )}
                             </div>
                           </CardHeader>
@@ -2457,9 +2473,25 @@ export default function Orders() {
                                       <div className="space-y-1">
                                         {getStatusBadge(order)}
                                         {order.notes && (
-                                          <div className="text-xs text-amber-600 dark:text-amber-400 max-w-[150px] truncate" title={order.notes}>
-                                            📝 {order.notes}
-                                          </div>
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <button className="text-xs text-amber-600 dark:text-amber-400 max-w-[150px] truncate flex items-center gap-1 hover:underline cursor-pointer" data-testid={`button-desktop-note-${order.id}`}>
+                                                📝 {order.notes}
+                                              </button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-72 p-0" align="start">
+                                              <div className="bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-200 dark:border-amber-700 rounded-lg shadow-lg transform rotate-1">
+                                                <div className="bg-amber-100 dark:bg-amber-800/50 px-3 py-1.5 border-b border-amber-200 dark:border-amber-700 rounded-t-lg">
+                                                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Order Note</span>
+                                                </div>
+                                                <div className="p-4 min-h-[80px]" style={{ fontFamily: "'Segoe Script', 'Bradley Hand', cursive" }}>
+                                                  <p className="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-wrap leading-relaxed">
+                                                    {order.notes}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            </PopoverContent>
+                                          </Popover>
                                         )}
                                         <div className="text-[10px] text-muted-foreground leading-tight" data-testid={`staff-tracking-desktop-${order.id}`}>
                                           {order.entryBy && <div data-testid={`text-created-by-${order.id}`}>Created: {order.entryBy}</div>}
