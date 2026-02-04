@@ -87,6 +87,7 @@ import {
   Store,
   CreditCard,
   Users,
+  Calendar,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -1863,6 +1864,26 @@ export default function Orders() {
                               )}
                             </div>
 
+                            {/* Expected D&T - Centered */}
+                            {order.expectedDeliveryAt && (
+                              <div className="flex items-center justify-center py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <div className="flex items-center gap-2 text-center">
+                                  <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                  <div>
+                                    <span className="text-xs text-muted-foreground uppercase font-medium">
+                                      Expected {order.deliveryType === "delivery" ? "Delivery" : "Pickup"}
+                                    </span>
+                                    <p className="font-semibold text-blue-700 dark:text-blue-300">
+                                      {format(new Date(order.expectedDeliveryAt), "MMM d, h:mm a")}
+                                    </p>
+                                  </div>
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 font-medium">
+                                    {getTimeRemaining(order.expectedDeliveryAt)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
                             {/* Items & Delivery Info Row */}
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
@@ -1908,9 +1929,6 @@ export default function Orders() {
                                   </SelectContent>
                                 </Select>
                               </div>
-                              <span className="text-xs text-muted-foreground">
-                                {getTimeRemaining(order.expectedDeliveryAt)}
-                              </span>
                             </div>
 
                           </CardContent>
