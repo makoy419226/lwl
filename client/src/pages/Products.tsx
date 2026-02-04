@@ -1910,24 +1910,46 @@ export default function Products() {
                               {product.name}
                             </div>
                             <div className="flex flex-col items-center mt-0.5 sm:mt-1 gap-0.5 w-full">
-                              <div className="flex flex-col items-center gap-0.5 text-[10px] sm:text-xs">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-primary font-bold">
-                                    {product.price ? parseFloat(product.price).toFixed(0) : "-"}
-                                  </span>
-                                  <span className="text-muted-foreground">/</span>
-                                  <span className="text-purple-600 dark:text-purple-400 font-bold">
-                                    {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
-                                  </span>
-                                  <span className="text-muted-foreground">/</span>
-                                  <span className="text-orange-600 dark:text-orange-400 font-bold">
-                                    {product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"}
-                                  </span>
+                              {isProductSelected(product) ? (
+                                <div
+                                  className={`text-sm sm:text-lg font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${
+                                    ironOnlyItems[product.id]
+                                      ? "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30"
+                                      : dryCleanItems[product.id] 
+                                      ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30" 
+                                      : "text-primary bg-primary/10"
+                                  }`}
+                                >
+                                  {(() => {
+                                    if (ironOnlyItems[product.id]) {
+                                      return `${product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"} AED`;
+                                    } else if (dryCleanItems[product.id]) {
+                                      return `${product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"} AED`;
+                                    } else {
+                                      return `${product.price ? parseFloat(product.price).toFixed(0) : "-"} AED`;
+                                    }
+                                  })()}
                                 </div>
-                                <div className="text-[8px] sm:text-[9px] text-muted-foreground">
-                                  N / DC / IO
+                              ) : (
+                                <div className="flex flex-col items-center gap-0.5 text-[10px] sm:text-xs">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-primary font-bold">
+                                      {product.price ? parseFloat(product.price).toFixed(0) : "-"}
+                                    </span>
+                                    <span className="text-muted-foreground">/</span>
+                                    <span className="text-purple-600 dark:text-purple-400 font-bold">
+                                      {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
+                                    </span>
+                                    <span className="text-muted-foreground">/</span>
+                                    <span className="text-orange-600 dark:text-orange-400 font-bold">
+                                      {product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"}
+                                    </span>
+                                  </div>
+                                  <div className="text-[8px] sm:text-[9px] text-muted-foreground">
+                                    N / DC / IO
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                             </div>
                             {(quantities[product.id] || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) && (
                               <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse">
