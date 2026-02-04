@@ -2073,7 +2073,7 @@ export default function Products() {
             <div className="relative">
               <ShoppingCart className="w-5 h-5" />
               <span className="absolute -top-2 -right-2 w-5 h-5 bg-background text-primary text-xs font-bold rounded-full flex items-center justify-center border border-primary/20">
-                {orderItems.length + customItems.length}
+                {orderItems.reduce((sum, item) => sum + item.quantity, 0) + customItems.reduce((sum, item) => sum + item.quantity, 0)}
               </span>
             </div>
             <span className="font-bold text-sm">
@@ -2092,7 +2092,7 @@ export default function Products() {
             </div>
             <span className="font-bold">Order Slip</span>
             <Badge className="ml-auto text-xs font-bold bg-primary text-white">
-              {orderItems.length + customItems.length} items
+              {orderItems.reduce((sum, item) => sum + item.quantity, 0) + customItems.reduce((sum, item) => sum + item.quantity, 0)} items
             </Badge>
           </div>
         </div>
