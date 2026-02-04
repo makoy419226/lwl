@@ -576,8 +576,22 @@ export default function Workers() {
       totals.billsCreated,
       totals.tagged + totals.packed + totals.delivered + totals.billsCreated,
     ]);
+    
+    const adminTotal = adminStats.taggedOrders.length + adminStats.packedOrders.length + 
+                       adminStats.deliveredOrders.length + adminStats.billsCreated;
+    
+    const adminSection = [
+      [],
+      ["Admin Performance"],
+      ["Activity", "Count"],
+      ["Tagged", adminStats.taggedOrders.length],
+      ["Packed", adminStats.packedOrders.length],
+      ["Delivered", adminStats.deliveredOrders.length],
+      ["Billed Orders", adminStats.billsCreated],
+      ["TOTAL", adminTotal],
+    ];
 
-    const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...dataRows]);
+    const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...dataRows, ...adminSection]);
     ws["!cols"] = [
       { wch: 15 },
       { wch: 12 },
@@ -651,6 +665,40 @@ export default function Workers() {
             </tr>
           </tbody>
         </table>
+
+        <div style="margin-top: 20px;">
+          <div style="font-size: 12px; font-weight: bold; margin-bottom: 10px; color: #1e40af;">Admin Performance</div>
+          <table style="width: 50%; border-collapse: collapse; font-size: 10px;">
+            <thead>
+              <tr style="background: #f3f4f6;">
+                <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: left;">Activity</th>
+                <th style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 6px 4px; border: 1px solid #ddd;">Tagged</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.taggedOrders.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 4px; border: 1px solid #ddd;">Packed</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.packedOrders.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 4px; border: 1px solid #ddd;">Delivered</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.deliveredOrders.length}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 4px; border: 1px solid #ddd;">Billed Orders</td>
+                <td style="padding: 6px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.billsCreated}</td>
+              </tr>
+              <tr style="background: #e5e7eb; font-weight: bold;">
+                <td style="padding: 8px 4px; border: 1px solid #ddd;">TOTAL</td>
+                <td style="padding: 8px 4px; border: 1px solid #ddd; text-align: center;">${adminStats.taggedOrders.length + adminStats.packedOrders.length + adminStats.deliveredOrders.length + adminStats.billsCreated}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 9px; color: #888;">
           Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")} | Tel: 026 815 824 | Mobile: +971 56 338 0001
