@@ -4522,7 +4522,7 @@ function OrderForm({
       {orderItems.length > 0 && productSearch && (
         <div className="p-3 bg-accent/30 rounded-lg border border-accent mb-2">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-foreground">Selected Items ({orderItems.length})</span>
+            <span className="text-sm font-semibold text-foreground">Selected Items ({orderItems.reduce((sum, item) => sum + item.quantity, 0)})</span>
             <span className="text-sm font-bold text-primary">{orderTotal.toFixed(2)} AED</span>
           </div>
           <div className="flex flex-wrap gap-1">
@@ -4628,7 +4628,7 @@ function OrderForm({
         <div className="p-3 bg-primary/5 rounded-lg border">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium">
-              {orderItems.length} item(s) selected
+              {orderItems.reduce((sum, item) => sum + item.quantity, 0)} item(s) selected
             </span>
             <span className="text-lg font-bold text-primary">
               {orderTotal.toFixed(2)} AED
