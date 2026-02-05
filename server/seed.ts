@@ -728,6 +728,45 @@ export async function seedDatabase() {
   }
 
   // No default packing workers - staff users handle packing by default
+  
+  // Migrate phone numbers from +971 format to 0 format
+  await migratePhoneNumbers();
+}
+
+async function migratePhoneNumbers() {
+  try {
+    // Migrate client phone numbers
+    const clientsResult = await db.execute(`
+      UPDATE clients 
+      SET phone = CASE 
+        WHEN phone LIKE '+971%' THEN '0' || SUBSTRING(phone FROM 5)
+        WHEN phone LIKE '00971%' THEN '0' || SUBSTRING(phone FROM 6)
+        WHEN phone LIKE '971%' AND LENGTH(phone) > 9 THEN '0' || SUBSTRING(phone FROM 4)
+        ELSE phone 
+      END
+      WHERE phone IS NOT NULL 
+        AND phone != '' 
+        AND (phone LIKE '+971%' OR phone LIKE '00971%' OR (phone LIKE '971%' AND LENGTH(phone) > 9))
+    `);
+    
+    // Migrate bill customer phone numbers
+    const billsResult = await db.execute(`
+      UPDATE bills 
+      SET customer_phone = CASE 
+        WHEN customer_phone LIKE '+971%' THEN '0' || SUBSTRING(customer_phone FROM 5)
+        WHEN customer_phone LIKE '00971%' THEN '0' || SUBSTRING(customer_phone FROM 6)
+        WHEN customer_phone LIKE '971%' AND LENGTH(customer_phone) > 9 THEN '0' || SUBSTRING(customer_phone FROM 4)
+        ELSE customer_phone 
+      END
+      WHERE customer_phone IS NOT NULL 
+        AND customer_phone != '' 
+        AND (customer_phone LIKE '+971%' OR customer_phone LIKE '00971%' OR (customer_phone LIKE '971%' AND LENGTH(customer_phone) > 9))
+    `);
+    
+    console.log("Phone number migration completed (converted +971 to 0 format)");
+  } catch (error) {
+    console.log("Phone migration skipped or already done");
+  }
 }
 
 // Export default users for reset functionality
