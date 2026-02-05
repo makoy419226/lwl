@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
-import { users, passwordResetTokens, stageChecklists, packingWorkers, bills } from "@shared/schema";
+import { users, passwordResetTokens, stageChecklists, packingWorkers, bills, orders } from "@shared/schema";
 import { eq, and, gt, ne } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
 import { sendDailySalesReportEmailSMTP, sendSalesReportEmailSMTP, type DailySalesData, type SalesReportData, type ReportPeriod } from "./smtp";
@@ -484,13 +484,24 @@ export async function registerRoutes(
       return res.status(404).json({ message: "User not found" });
     }
     
-    // If name changed, update the createdBy field in all bills where this user was the biller
+    // If name changed, update all historical records with the new name
     if (name && oldName && name !== oldName) {
+      // Update bills
       await db.update(bills).set({ createdBy: name }).where(eq(bills.createdBy, oldName));
+      // Update orders - all name fields
+      await db.update(orders).set({ entryBy: name }).where(eq(orders.entryBy, oldName));
+      await db.update(orders).set({ tagBy: name }).where(eq(orders.tagBy, oldName));
+      await db.update(orders).set({ packingBy: name }).where(eq(orders.packingBy, oldName));
+      await db.update(orders).set({ deliveryBy: name }).where(eq(orders.deliveryBy, oldName));
+      console.log(`Updated historical records from "${oldName}" to "${name}"`);
     }
-    // Also update if username was used as createdBy (fallback)
+    // Also update if username was used as name field (fallback)
     if (name && oldUsername && name !== oldUsername) {
       await db.update(bills).set({ createdBy: name }).where(eq(bills.createdBy, oldUsername));
+      await db.update(orders).set({ entryBy: name }).where(eq(orders.entryBy, oldUsername));
+      await db.update(orders).set({ tagBy: name }).where(eq(orders.tagBy, oldUsername));
+      await db.update(orders).set({ packingBy: name }).where(eq(orders.packingBy, oldUsername));
+      await db.update(orders).set({ deliveryBy: name }).where(eq(orders.deliveryBy, oldUsername));
     }
     
     res.json({
@@ -589,9 +600,16 @@ export async function registerRoutes(
       if (active !== undefined) updates.active = active;
       const member = await storage.updateStaffMember(id, updates);
       
-      // If name changed, update the createdBy field in all bills where this staff member was the biller
+      // If name changed, update all historical records with the new name
       if (name && oldName && name !== oldName) {
+        // Update bills
         await db.update(bills).set({ createdBy: name }).where(eq(bills.createdBy, oldName));
+        // Update orders - all name fields
+        await db.update(orders).set({ entryBy: name }).where(eq(orders.entryBy, oldName));
+        await db.update(orders).set({ tagBy: name }).where(eq(orders.tagBy, oldName));
+        await db.update(orders).set({ packingBy: name }).where(eq(orders.packingBy, oldName));
+        await db.update(orders).set({ deliveryBy: name }).where(eq(orders.deliveryBy, oldName));
+        console.log(`Updated historical records from "${oldName}" to "${name}"`);
       }
       
       res.json(member);
