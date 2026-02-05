@@ -236,6 +236,22 @@ export default function Products() {
   });
   const [sqmInput, setSqmInput] = useState("");
   const [sqmValues, setSqmValues] = useState<Record<number, number>>({});
+  
+  // Track multiple carpet entries with different sqm values
+  const [carpetEntries, setCarpetEntries] = useState<Array<{
+    id: string; // unique id for each entry
+    productId: number;
+    sqm: number;
+    serviceType: "normal" | "dc" | "iron";
+  }>>([]);
+  
+  // Dialog for selecting which carpet to apply DC/Iron to
+  const [carpetServiceDialog, setCarpetServiceDialog] = useState<{
+    open: boolean;
+    productId: number | null;
+    productName: string;
+    serviceType: "dc" | "iron";
+  }>({ open: false, productId: null, productName: "", serviceType: "dc" });
 
   // Check if a product has size pricing defined in the database
   const hasSizeOption = (product: { name: string; smallPrice?: string | null; mediumPrice?: string | null; largePrice?: string | null }) => {
@@ -286,18 +302,30 @@ export default function Products() {
     return false;
   };
   
-  // Get total quantity for a product (simple lookup)
+  // Get total quantity for a product (uses carpetEntries for sqm products)
   const getTotalQuantityForProduct = (productId: number): number => {
+    const product = products?.find(p => p.id === productId);
+    if (product?.isSqmPriced) {
+      return carpetEntries.filter(e => e.productId === productId).length;
+    }
     return quantities[productId] || 0;
   };
   
-  // Check if product has DC items
+  // Check if product has DC items (uses carpetEntries for sqm products)
   const hasDcItems = (productId: number): boolean => {
+    const product = products?.find(p => p.id === productId);
+    if (product?.isSqmPriced) {
+      return carpetEntries.some(e => e.productId === productId && e.serviceType === "dc");
+    }
     return (dcQuantities[productId] || 0) > 0;
   };
   
-  // Check if product has Iron Only items
+  // Check if product has Iron Only items (uses carpetEntries for sqm products)
   const hasIronItems = (productId: number): boolean => {
+    const product = products?.find(p => p.id === productId);
+    if (product?.isSqmPriced) {
+      return carpetEntries.some(e => e.productId === productId && e.serviceType === "iron");
+    }
     return (ironQuantities[productId] || 0) > 0;
   };
 
@@ -562,31 +590,28 @@ export default function Products() {
   const handleQuantityChange = (productId: number, delta: number) => {
     const product = products?.find(p => p.id === productId);
     
-    // Check if sqm-priced and adding (not removing)
+    // Check if sqm-priced (carpet) - ALWAYS prompt for sqm on every add
     if (product?.isSqmPriced && delta > 0) {
-      const currentQty = quantities[productId] || 0;
-      if (currentQty === 0) {
-        // First time adding - show sqm dialog
-        setSqmDialog({
-          open: true,
-          productId,
-          productName: product.name,
-          sqmPrice: product.sqmPrice || product.price || "12.00"
-        });
-        setSqmInput("");
-        return;
-      }
+      // Always show sqm dialog for carpet - allows multiple entries with different sqm
+      setSqmDialog({
+        open: true,
+        productId,
+        productName: product.name,
+        sqmPrice: product.sqmPrice || product.price || "12.00"
+      });
+      setSqmInput("");
+      return;
     }
     
-    // If removing sqm-priced product, also clear sqm value
-    if (delta < 0) {
-      const current = quantities[productId] || 0;
-      if (current + delta <= 0) {
-        setSqmValues((prev) => {
-          const { [productId]: _, ...rest } = prev;
-          return rest;
-        });
+    // If removing sqm-priced product, remove the last carpet entry
+    if (product?.isSqmPriced && delta < 0) {
+      const entriesForProduct = carpetEntries.filter(e => e.productId === productId);
+      if (entriesForProduct.length > 0) {
+        // Remove the last entry for this product
+        const lastEntry = entriesForProduct[entriesForProduct.length - 1];
+        setCarpetEntries(prev => prev.filter(e => e.id !== lastEntry.id));
       }
+      return;
     }
     
     setQuantities((prev) => {
@@ -635,15 +660,60 @@ export default function Products() {
       return;
     }
     
-    // Set quantity to 1 (one carpet entry) and store sqm value
-    setQuantities(prev => ({ ...prev, [sqmDialog.productId!]: 1 }));
-    setSqmValues(prev => ({ ...prev, [sqmDialog.productId!]: sqm }));
+    // Add new carpet entry with unique ID
+    const newEntry = {
+      id: `carpet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      productId: sqmDialog.productId,
+      sqm,
+      serviceType: "normal" as const
+    };
+    setCarpetEntries(prev => [...prev, newEntry]);
     setSqmDialog({ open: false, productId: null, productName: "", sqmPrice: "12.00" });
     setSqmInput("");
+  };
+  
+  // Handle applying DC/Iron to a specific carpet entry
+  const handleCarpetServiceSelect = (entryId: string) => {
+    const serviceType = carpetServiceDialog.serviceType;
+    setCarpetEntries(prev => prev.map(entry => {
+      if (entry.id === entryId) {
+        // Toggle: if already this service, set to normal; otherwise set to service
+        const newServiceType = entry.serviceType === serviceType ? "normal" : serviceType;
+        return { ...entry, serviceType: newServiceType };
+      }
+      return entry;
+    }));
+    setCarpetServiceDialog({ open: false, productId: null, productName: "", serviceType: "dc" });
   };
 
   // Open dialog to set DC quantity
   const openServiceTypeDialog = (productId: number, productName: string, type: "dc" | "iron") => {
+    const product = products?.find(p => p.id === productId);
+    
+    // For carpet (sqm-priced), show carpet picker if there are entries
+    if (product?.isSqmPriced) {
+      const entriesForProduct = carpetEntries.filter(e => e.productId === productId);
+      if (entriesForProduct.length === 0) return;
+      
+      if (entriesForProduct.length === 1) {
+        // Only one carpet - toggle directly
+        const entry = entriesForProduct[0];
+        const newServiceType = entry.serviceType === type ? "normal" : type;
+        setCarpetEntries(prev => prev.map(e => 
+          e.id === entry.id ? { ...e, serviceType: newServiceType } : e
+        ));
+      } else {
+        // Multiple carpets - show picker dialog
+        setCarpetServiceDialog({
+          open: true,
+          productId,
+          productName,
+          serviceType: type
+        });
+      }
+      return;
+    }
+    
     const totalQty = quantities[productId] || 0;
     if (totalQty === 0) return;
     
@@ -796,34 +866,46 @@ export default function Products() {
     if (!allProducts) return [];
     const items: { product: (typeof allProducts)[0]; quantity: number; serviceType: "normal" | "dc" | "iron"; sqm?: number }[] = [];
     
+    // First, add carpet entries (sqm-priced products)
+    carpetEntries.forEach((entry) => {
+      const product = allProducts.find((p) => p.id === entry.productId);
+      if (!product) return;
+      items.push({ 
+        product, 
+        quantity: 1, 
+        serviceType: entry.serviceType, 
+        sqm: entry.sqm 
+      });
+    });
+    
+    // Then add regular quantity-based products (excluding sqm-priced ones)
     Object.entries(quantities).forEach(([productIdStr, totalQty]) => {
       const productId = parseInt(productIdStr);
       if (isNaN(productId) || totalQty <= 0) return;
       
       const product = allProducts.find((p) => p.id === productId);
-      if (!product) return;
+      if (!product || product.isSqmPriced) return; // Skip sqm-priced, handled above
       
-      const sqm = sqmValues[productId]; // Get sqm value if exists
       const dcQty = dcQuantities[productId] || 0;
       const ironQty = ironQuantities[productId] || 0;
       const normalQty = Math.max(0, totalQty - dcQty - ironQty);
       
       // Add normal items first
       if (normalQty > 0) {
-        items.push({ product, quantity: normalQty, serviceType: "normal", sqm });
+        items.push({ product, quantity: normalQty, serviceType: "normal" });
       }
       // Add DC items
       if (dcQty > 0) {
-        items.push({ product, quantity: dcQty, serviceType: "dc", sqm });
+        items.push({ product, quantity: dcQty, serviceType: "dc" });
       }
       // Add Iron Only items
       if (ironQty > 0) {
-        items.push({ product, quantity: ironQty, serviceType: "iron", sqm });
+        items.push({ product, quantity: ironQty, serviceType: "iron" });
       }
     });
     
     return items;
-  }, [quantities, dcQuantities, ironQuantities, allProducts, sqmValues]);
+  }, [quantities, dcQuantities, ironQuantities, allProducts, carpetEntries]);
 
   const orderTotal = useMemo(() => {
     const productTotal = orderItems.reduce((sum, item) => {
@@ -854,7 +936,7 @@ export default function Products() {
     return productTotal + customTotal;
   }, [orderItems, customItems, customPrices]);
 
-  const hasOrderItems = orderItems.length > 0 || customItems.length > 0;
+  const hasOrderItems = orderItems.length > 0 || customItems.length > 0 || carpetEntries.length > 0;
 
   // Detect if walk-in customer phone matches an existing client
   const clientMatch = useMemo(() => {
@@ -1131,6 +1213,7 @@ export default function Products() {
     setDcQuantities({});
     setIronQuantities({});
     setSqmValues({});
+    setCarpetEntries([]);
     setCustomPrices({});
     setPackingTypes({});
     setCustomItems([]);
@@ -3192,6 +3275,63 @@ export default function Products() {
                 Add to Order
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Carpet Service Picker Dialog (for DC/Iron on multiple carpets) */}
+      <Dialog 
+        open={carpetServiceDialog.open} 
+        onOpenChange={(open) => !open && setCarpetServiceDialog({ open: false, productId: null, productName: "", serviceType: "dc" })}
+      >
+        <DialogContent aria-describedby={undefined} className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg">
+              Select Carpet for {carpetServiceDialog.serviceType === "dc" ? "Dry Clean" : "Iron Only"}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              You have multiple carpets. Which one would you like to apply {carpetServiceDialog.serviceType === "dc" ? "Dry Clean" : "Iron Only"} to?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {carpetServiceDialog.productId && carpetEntries
+              .filter(e => e.productId === carpetServiceDialog.productId)
+              .map((entry, index) => {
+                const product = products?.find(p => p.id === entry.productId);
+                const sqmPrice = parseFloat(product?.sqmPrice || product?.price || "12");
+                const totalPrice = entry.sqm * sqmPrice;
+                const isSelected = entry.serviceType === carpetServiceDialog.serviceType;
+                
+                return (
+                  <Button
+                    key={entry.id}
+                    variant="outline"
+                    className={`w-full h-auto py-3 flex flex-col items-start gap-1 border-2 ${isSelected ? "border-primary bg-primary/10" : ""}`}
+                    onClick={() => handleCarpetServiceSelect(entry.id)}
+                    data-testid={`button-carpet-select-${index}`}
+                  >
+                    <div className="flex justify-between w-full">
+                      <span className="font-bold">Carpet #{index + 1}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {entry.serviceType === "normal" ? "Normal" : entry.serviceType === "dc" ? "DC" : "Iron"}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {entry.sqm} sqm = {totalPrice.toFixed(2)} AED
+                    </div>
+                    {isSelected && (
+                      <div className="text-xs text-primary font-semibold">Click to remove {carpetServiceDialog.serviceType === "dc" ? "DC" : "Iron"}</div>
+                    )}
+                  </Button>
+                );
+              })}
+            <Button 
+              variant="outline" 
+              className="w-full mt-2"
+              onClick={() => setCarpetServiceDialog({ open: false, productId: null, productName: "", serviceType: "dc" })}
+            >
+              Done
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
