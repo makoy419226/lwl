@@ -4056,7 +4056,7 @@ function OrderForm({
     billOption: (initialBillId ? "existing" : "new") as "new" | "existing",
     selectedBillId: initialBillId || "",
     customerName: "",
-    customerPhone: "+971",
+    customerPhone: "0",
   });
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [productSearch, setProductSearch] = useState("");
@@ -4249,7 +4249,7 @@ function OrderForm({
         selectedBillId: "",
         billOption: "new",
         customerName: "",
-        customerPhone: "+971",
+        customerPhone: "0",
         deliveryAddress: "",
       });
     } else {
@@ -4260,7 +4260,7 @@ function OrderForm({
         selectedBillId: "",
         billOption: "new",
         customerName: client?.name || "",
-        customerPhone: client?.phone || "+971",
+        customerPhone: client?.phone || "0",
         deliveryAddress: client?.address || "",
       });
     }
@@ -4304,25 +4304,23 @@ function OrderForm({
           <div className="space-y-2">
             <Label className="text-base">Phone Number</Label>
             <div className="flex flex-col gap-1">
-              <div className="flex">
-                <span className="inline-flex items-center px-4 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-base font-medium h-12">
-                  +971
-                </span>
-                <Input
-                  className={`rounded-l-none h-12 text-base ${(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
-                  placeholder="XXXXXXXXX"
-                  value={formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9) || ""}
-                  onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
-                    setFormData({ ...formData, customerPhone: "+971" + digits });
-                  }}
-                  inputMode="numeric"
-                  maxLength={9}
-                  data-testid="input-customer-phone"
-                />
-              </div>
-              {(formData.customerPhone?.replace(/^\+971/, "").replace(/\D/g, "").length || 0) >= 9 && (
-                <p className="text-xs text-green-600 font-medium">9 digits - limit reached</p>
+              <Input
+                className={`h-12 text-base ${(formData.customerPhone?.replace(/\D/g, "").length || 0) >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
+                placeholder="05XXXXXXXX"
+                value={formData.customerPhone?.replace(/\D/g, "").slice(0, 10) || ""}
+                onChange={(e) => {
+                  let digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  if (digits.length > 0 && !digits.startsWith("0")) {
+                    digits = "0" + digits.slice(0, 9);
+                  }
+                  setFormData({ ...formData, customerPhone: digits || "0" });
+                }}
+                inputMode="numeric"
+                maxLength={10}
+                data-testid="input-customer-phone"
+              />
+              {(formData.customerPhone?.replace(/\D/g, "").length || 0) >= 10 && (
+                <p className="text-xs text-green-600 font-medium">10 digits - complete</p>
               )}
             </div>
             {clientMatch && (

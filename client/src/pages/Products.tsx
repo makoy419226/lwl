@@ -162,7 +162,7 @@ export default function Products() {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [isWalkIn, setIsWalkIn] = useState(false);
   const [walkInName, setWalkInName] = useState("");
-  const [walkInPhone, setWalkInPhone] = useState("+971");
+  const [walkInPhone, setWalkInPhone] = useState("0");
   const [walkInAddress, setWalkInAddress] = useState("");
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
   const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery" | "iron_only">("pickup");
@@ -177,7 +177,7 @@ export default function Products() {
   const [clientSearchTerm, setClientSearchTerm] = useState("");
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [newClientName, setNewClientName] = useState("");
-  const [newClientPhone, setNewClientPhone] = useState("+971");
+  const [newClientPhone, setNewClientPhone] = useState("0");
   const [newClientAddress, setNewClientAddress] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientContact, setNewClientContact] = useState("");
@@ -1039,7 +1039,7 @@ export default function Products() {
     setSelectedClientId(null);
     setIsWalkIn(false);
     setWalkInName("");
-    setWalkInPhone("+971");
+    setWalkInPhone("0");
     setWalkInAddress("");
     setDiscountPercent("");
     setTips("");
@@ -1335,7 +1335,7 @@ export default function Products() {
           }
           setShowNewClientDialog(false);
           setNewClientName("");
-          setNewClientPhone("+971");
+          setNewClientPhone("0");
           setNewClientAddress("");
           setNewClientEmail("");
           setNewClientContact("");
@@ -1662,25 +1662,23 @@ export default function Products() {
               <div>
                 <Label className="text-xs font-semibold">Phone Number</Label>
                 <div className="flex flex-col gap-1 mt-1">
-                  <div className="flex">
-                    <span className="inline-flex items-center px-2 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-xs h-8">
-                      +971
-                    </span>
-                    <Input
-                      className={`h-8 text-xs rounded-l-none ${walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
-                      placeholder="XXXXXXXXX"
-                      value={walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9)}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
-                        setWalkInPhone("+971" + digits);
-                      }}
-                      inputMode="numeric"
-                      maxLength={9}
-                      data-testid={isPopup ? "popup-input-walkin-phone" : "sidebar-input-walkin-phone"}
-                    />
-                  </div>
-                  {walkInPhone.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 && (
-                    <p className="text-xs text-green-600 font-medium">9 digits - limit reached</p>
+                  <Input
+                    className={`h-8 text-xs ${walkInPhone.replace(/\D/g, "").length >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
+                    placeholder="05XXXXXXXX"
+                    value={walkInPhone.replace(/\D/g, "").slice(0, 10)}
+                    onChange={(e) => {
+                      let digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      if (digits.length > 0 && !digits.startsWith("0")) {
+                        digits = "0" + digits.slice(0, 9);
+                      }
+                      setWalkInPhone(digits || "0");
+                    }}
+                    inputMode="numeric"
+                    maxLength={10}
+                    data-testid={isPopup ? "popup-input-walkin-phone" : "sidebar-input-walkin-phone"}
+                  />
+                  {walkInPhone.replace(/\D/g, "").length >= 10 && (
+                    <p className="text-xs text-green-600 font-medium">10 digits - complete</p>
                   )}
                 </div>
               </div>
@@ -1704,7 +1702,7 @@ export default function Products() {
                           setCustomerPhone(clientMatch.client.phone || "");
                           setWalkInAddress(clientMatch.client.address || "");
                           setWalkInName("");
-                          setWalkInPhone("+971");
+                          setWalkInPhone("0");
                         }}
                       >
                         Use existing: {clientMatch.client.name}
@@ -2826,23 +2824,22 @@ export default function Products() {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Phone *</Label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                    +971
-                  </span>
-                  <Input
-                    className="rounded-l-none"
-                    placeholder="XXXXXXXXX"
-                    value={newClientPhone.replace(/^\+971/, "")}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
-                      const phoneValue = "+971" + digits;
-                      setNewClientPhone(phoneValue);
-                      checkExistingClientByPhone(phoneValue);
-                    }}
-                    data-testid="input-new-client-phone"
-                  />
-                </div>
+                <Input
+                  placeholder="05XXXXXXXX"
+                  value={newClientPhone.replace(/\D/g, "").slice(0, 10)}
+                  onChange={(e) => {
+                    let digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    if (digits.length > 0 && !digits.startsWith("0")) {
+                      digits = "0" + digits.slice(0, 9);
+                    }
+                    const phoneValue = digits || "0";
+                    setNewClientPhone(phoneValue);
+                    checkExistingClientByPhone(phoneValue);
+                  }}
+                  maxLength={10}
+                  inputMode="numeric"
+                  data-testid="input-new-client-phone"
+                />
               </div>
             </div>
             {suggestedExistingClient && (
@@ -2872,7 +2869,7 @@ export default function Products() {
                         setShowNewClientDialog(false);
                         setSuggestedExistingClient(null);
                         setNewClientName("");
-                        setNewClientPhone("+971");
+                        setNewClientPhone("0");
                         setNewClientAddress("");
                         setNewClientEmail("");
                         setNewClientContact("");
@@ -2957,7 +2954,7 @@ export default function Products() {
                   setShowNewClientDialog(false);
                   setSuggestedExistingClient(null);
                   setNewClientName("");
-                  setNewClientPhone("+971");
+                  setNewClientPhone("0");
                   setNewClientAddress("");
                   setNewClientEmail("");
                   setNewClientContact("");
