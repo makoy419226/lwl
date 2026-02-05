@@ -2305,22 +2305,33 @@ export default function Products() {
                                 </div>
                               ) : (
                                 <div className="flex flex-col items-center gap-0.5 text-[10px] sm:text-xs">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-primary font-bold">
-                                      {product.price ? parseFloat(product.price).toFixed(0) : "-"}
-                                    </span>
-                                    <span className="text-muted-foreground">/</span>
-                                    <span className="text-purple-600 dark:text-purple-400 font-bold">
-                                      {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
-                                    </span>
-                                    <span className="text-muted-foreground">/</span>
-                                    <span className="text-orange-600 dark:text-orange-400 font-bold">
-                                      {product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"}
-                                    </span>
-                                  </div>
-                                  <div className="text-[8px] sm:text-[9px] text-muted-foreground">
-                                    N / DC / IO
-                                  </div>
+                                  {product.isSqmPriced ? (
+                                    <>
+                                      <span className="text-primary font-bold">
+                                        {product.sqmPrice ? parseFloat(product.sqmPrice).toFixed(0) : (product.price ? parseFloat(product.price).toFixed(0) : "12")} AED
+                                      </span>
+                                      <div className="text-[8px] sm:text-[9px] text-muted-foreground">per sqm</div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-primary font-bold">
+                                          {product.price ? parseFloat(product.price).toFixed(0) : "-"}
+                                        </span>
+                                        <span className="text-muted-foreground">/</span>
+                                        <span className="text-purple-600 dark:text-purple-400 font-bold">
+                                          {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
+                                        </span>
+                                        <span className="text-muted-foreground">/</span>
+                                        <span className="text-orange-600 dark:text-orange-400 font-bold">
+                                          {product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"}
+                                        </span>
+                                      </div>
+                                      <div className="text-[8px] sm:text-[9px] text-muted-foreground">
+                                        N / DC / IO
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -2531,22 +2542,33 @@ export default function Products() {
                             ) : (
                               // Show all three prices when item not added
                               <div className="flex flex-col items-center gap-0.5 text-[10px] sm:text-xs">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-primary font-bold">
-                                    {product.price ? parseFloat(product.price).toFixed(0) : "-"}
-                                  </span>
-                                  <span className="text-muted-foreground">/</span>
-                                  <span className="text-purple-600 dark:text-purple-400 font-bold">
-                                    {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
-                                  </span>
-                                  <span className="text-muted-foreground">/</span>
-                                  <span className="text-orange-600 dark:text-orange-400 font-bold">
-                                    {product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"}
-                                  </span>
-                                </div>
-                                <div className="text-[8px] sm:text-[9px] text-muted-foreground">
-                                  N / DC / IO
-                                </div>
+                                {product.isSqmPriced ? (
+                                  <>
+                                    <span className="text-primary font-bold">
+                                      {product.sqmPrice ? parseFloat(product.sqmPrice).toFixed(0) : (product.price ? parseFloat(product.price).toFixed(0) : "12")} AED
+                                    </span>
+                                    <div className="text-[8px] sm:text-[9px] text-muted-foreground">per sqm</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-primary font-bold">
+                                        {product.price ? parseFloat(product.price).toFixed(0) : "-"}
+                                      </span>
+                                      <span className="text-muted-foreground">/</span>
+                                      <span className="text-purple-600 dark:text-purple-400 font-bold">
+                                        {product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"}
+                                      </span>
+                                      <span className="text-muted-foreground">/</span>
+                                      <span className="text-orange-600 dark:text-orange-400 font-bold">
+                                        {product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"}
+                                      </span>
+                                    </div>
+                                    <div className="text-[8px] sm:text-[9px] text-muted-foreground">
+                                      N / DC / IO
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>
