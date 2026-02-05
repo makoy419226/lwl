@@ -31,6 +31,7 @@ import {
   GripVertical,
   Banknote,
   Star,
+  ChevronDown,
 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import { Input } from "@/components/ui/input";
@@ -174,6 +175,7 @@ export default function Products() {
   const [showCartPopup, setShowCartPopup] = useState(false);
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("+971");
   const [newClientAddress, setNewClientAddress] = useState("");
@@ -1559,59 +1561,86 @@ export default function Products() {
           {/* Client Selection */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold">Select Client</Label>
-            <Input
-              placeholder="Search by name or phone..."
-              value={clientSearchTerm}
-              onChange={(e) => setClientSearchTerm(e.target.value)}
-              className="h-10 text-sm mb-1"
-              data-testid={isPopup ? "popup-search-client" : "sidebar-search-client"}
-            />
-            <select
-              value={isWalkIn ? "walkin" : selectedClientId?.toString() || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === "walkin") {
-                  setSelectedClientId(null);
-                  setIsWalkIn(true);
-                  setCustomerName("Walk-in Customer");
-                } else if (value) {
-                  const client = clients?.find(c => c.id === parseInt(value));
-                  if (client) {
+            <div className="relative">
+              <Input
+                placeholder="Click to select or type to search..."
+                value={clientSearchTerm}
+                onChange={(e) => {
+                  setClientSearchTerm(e.target.value);
+                  setShowClientDropdown(true);
+                }}
+                onFocus={() => setShowClientDropdown(true)}
+                onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
+                className="h-12 text-base pr-8"
+                data-testid={isPopup ? "popup-search-client" : "sidebar-search-client"}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              {showClientDropdown && (
+                <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-48 overflow-y-auto">
+                  <div
+                    className="px-3 py-2 cursor-pointer hover:bg-accent font-medium text-primary border-b"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setSelectedClientId(null);
+                      setIsWalkIn(true);
+                      setCustomerName("Walk-in Customer");
+                      setClientSearchTerm("");
+                      setShowClientDropdown(false);
+                    }}
+                    data-testid="option-walkin"
+                  >
+                    Walk-in Customer
+                  </div>
+                  {clients?.filter((client) => {
+                    if (!clientSearchTerm.trim()) return true;
+                    const search = clientSearchTerm.toLowerCase();
+                    return (
+                      client.name.toLowerCase().includes(search) ||
+                      (client.phone && client.phone.toLowerCase().includes(search))
+                    );
+                  }).slice(0, 10).map((client) => (
+                    <div
+                      key={client.id}
+                      className="px-3 py-2 cursor-pointer hover:bg-accent text-sm"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setIsWalkIn(false);
+                        setSelectedClientId(client.id);
+                        setCustomerName(client.name);
+                        setCustomerPhone(client.phone || "");
+                        if (client.discountPercent) setDiscountPercent(client.discountPercent);
+                        setClientSearchTerm("");
+                        setShowClientDropdown(false);
+                      }}
+                      data-testid={`option-client-${client.id}`}
+                    >
+                      {client.name} - {client.phone || "No phone"}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {(selectedClientId || isWalkIn) && (
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                Selected: <span className="font-medium text-foreground">{isWalkIn ? "Walk-in Customer" : customerName}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1 ml-2 text-xs"
+                  onClick={() => {
+                    setSelectedClientId(null);
                     setIsWalkIn(false);
-                    setSelectedClientId(client.id);
-                    setCustomerName(client.name);
-                    setCustomerPhone(client.phone || "");
-                    if (client.discountPercent) setDiscountPercent(client.discountPercent);
-                  }
-                } else {
-                  setSelectedClientId(null);
-                  setIsWalkIn(false);
-                  setCustomerName("");
-                }
-                setClientSearchTerm("");
-              }}
-              className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              data-testid={isPopup ? "popup-select-client" : "sidebar-select-client"}
-            >
-              <option value="">Choose client...</option>
-              <option value="walkin">Walk-in Customer</option>
-              {(() => {
-                if (!clientSearchTerm.trim()) return null;
-                const search = clientSearchTerm.toLowerCase();
-                const matched = clients?.find((client) =>
-                  client.name.toLowerCase().includes(search) ||
-                  (client.phone && client.phone.toLowerCase().includes(search))
-                );
-                if (matched) {
-                  return (
-                    <option key={matched.id} value={matched.id.toString()}>
-                      {matched.name} - {matched.phone || "No phone"}
-                    </option>
-                  );
-                }
-                return null;
-              })()}
-            </select>
+                    setCustomerName("");
+                    setCustomerPhone("");
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Walk-in Customer Fields */}
