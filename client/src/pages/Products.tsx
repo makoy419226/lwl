@@ -139,10 +139,10 @@ export default function Products() {
     dryCleanPrice: string;
     ironOnlyPrice: string;
   } | null>(null);
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
-  const [dryCleanItems, setDryCleanItems] = useState<Record<number, boolean>>({});
-  const [ironOnlyItems, setIronOnlyItems] = useState<Record<number, boolean>>({});
-  const [customPrices, setCustomPrices] = useState<Record<number, number>>({});
+  // Cart uses composite keys: "productId-serviceType" where serviceType is "normal", "dc", or "iron"
+  // This allows the same product to be added with different service types
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const [packingTypes, setPackingTypes] = useState<
     Record<number, "hanging" | "folding">
   >({});
@@ -242,10 +242,10 @@ export default function Products() {
       .reduce((sum, item) => sum + item.quantity, 0);
   };
 
-  // Check if a product is selected (either in quantities or in customItems for sized items)
+  // Check if a product is selected (either in cart or in customItems for sized items)
   const isProductSelected = (product: { id: number; name: string }) => {
-    // Check if in regular quantities
-    if (quantities[product.id]) return true;
+    // Check if in cart (any service type)
+    if (getTotalQuantityForProduct(product.id) > 0) return true;
     // Check if size-based product is in customItems
     if (hasSizeOption(product.name)) {
       return customItems.some(item => 
@@ -259,6 +259,15 @@ export default function Products() {
       );
     }
     return false;
+  };
+  
+  // Get total quantity for a product across all service types
+  const getTotalQuantityForProduct = (productId: number): number => {
+    return (
+      getServiceTypeQuantity(productId, "normal") +
+      getServiceTypeQuantity(productId, "dc") +
+      getServiceTypeQuantity(productId, "iron")
+    );
   };
 
   const normalizePhone = (phone: string): string => {
@@ -518,16 +527,37 @@ export default function Products() {
     setStockValue("");
   };
 
-  const handleQuantityChange = (productId: number, delta: number) => {
+  // Handle quantity change with service type - adds to specific service type entry
+  const handleQuantityChange = (productId: number, delta: number, serviceType: "normal" | "dc" | "iron" = "normal") => {
+    const cartKey = createCartKey(productId, serviceType);
     setQuantities((prev) => {
-      const current = prev[productId] || 0;
+      const current = prev[cartKey] || 0;
       const newQty = Math.max(0, current + delta);
       if (newQty === 0) {
-        const { [productId]: _, ...rest } = prev;
+        const { [cartKey]: _, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [productId]: newQty };
+      return { ...prev, [cartKey]: newQty };
     });
+  };
+
+  // Remove all entries for a product (all service types)
+  const removeAllProductEntries = (productId: number) => {
+    setQuantities((prev) => {
+      const result: Record<string, number> = {};
+      Object.entries(prev).forEach(([key, qty]) => {
+        if (parseCartKey(key).productId !== productId) {
+          result[key] = qty;
+        }
+      });
+      return result;
+    });
+  };
+
+  // Get quantity for a specific service type
+  const getServiceTypeQuantity = (productId: number, serviceType: "normal" | "dc" | "iron"): number => {
+    const cartKey = createCartKey(productId, serviceType);
+    return quantities[cartKey] || 0;
   };
 
   const handleProductClick = (product: {
@@ -613,27 +643,58 @@ export default function Products() {
     toast({ title: "Added", description: `${itemName} added to order.` });
   };
 
+  // Parse composite key: "productId-serviceType" -> { productId, serviceType }
+  const parseCartKey = (key: string): { productId: number; serviceType: "normal" | "dc" | "iron" } => {
+    const parts = key.split("-");
+    const serviceType = parts.pop() as "normal" | "dc" | "iron";
+    const productId = parseInt(parts.join("-"));
+    return { productId, serviceType };
+  };
+
+  // Create composite key
+  const createCartKey = (productId: number, serviceType: "normal" | "dc" | "iron"): string => {
+    return `${productId}-${serviceType}`;
+  };
+
+  // Get total quantity for a product across all service types
+  const getProductTotalQuantity = (productId: number): number => {
+    return Object.entries(quantities)
+      .filter(([key]) => parseCartKey(key).productId === productId)
+      .reduce((sum, [_, qty]) => sum + qty, 0);
+  };
+
+  // Check if product has any DC items
+  const hasDryCleanItems = (productId: number): boolean => {
+    const key = createCartKey(productId, "dc");
+    return (quantities[key] || 0) > 0;
+  };
+
+  // Check if product has any Iron items
+  const hasIronOnlyItems = (productId: number): boolean => {
+    const key = createCartKey(productId, "iron");
+    return (quantities[key] || 0) > 0;
+  };
+
   const orderItems = useMemo(() => {
     if (!allProducts) return [];
     return Object.entries(quantities)
       .filter(([_, qty]) => qty > 0)
-      .map(([productId, qty]) => {
-        const product = allProducts.find((p) => p.id === parseInt(productId));
-        return product ? { product, quantity: qty } : null;
+      .map(([cartKey, qty]) => {
+        const { productId, serviceType } = parseCartKey(cartKey);
+        const product = allProducts.find((p) => p.id === productId);
+        return product ? { product, quantity: qty, serviceType, cartKey } : null;
       })
-      .filter(Boolean) as { product: (typeof allProducts)[0]; quantity: number }[];
+      .filter(Boolean) as { product: (typeof allProducts)[0]; quantity: number; serviceType: "normal" | "dc" | "iron"; cartKey: string }[];
   }, [quantities, allProducts]);
 
   const orderTotal = useMemo(() => {
     const productTotal = orderItems.reduce((sum, item) => {
-      const isDryClean = dryCleanItems[item.product.id];
-      const isIronOnly = ironOnlyItems[item.product.id];
       let price: number;
-      if (customPrices[item.product.id] !== undefined) {
-        price = customPrices[item.product.id];
-      } else if (isIronOnly) {
+      if (customPrices[item.cartKey] !== undefined) {
+        price = customPrices[item.cartKey];
+      } else if (item.serviceType === "iron") {
         price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
-      } else if (isDryClean) {
+      } else if (item.serviceType === "dc") {
         price = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
       } else {
         price = parseFloat(item.product.price || "0");
@@ -645,7 +706,7 @@ export default function Products() {
       0,
     );
     return productTotal + customTotal;
-  }, [orderItems, customItems, dryCleanItems, ironOnlyItems, customPrices]);
+  }, [orderItems, customItems, customPrices]);
 
   const hasOrderItems = orderItems.length > 0 || customItems.length > 0;
 
@@ -857,11 +918,9 @@ export default function Products() {
 
       const productItemsText = orderItems.map((item) => {
         const packing = packingTypes[item.product.id] || "folding";
-        const isDryClean = dryCleanItems[item.product.id];
-        const isIronOnly = ironOnlyItems[item.product.id];
-        const serviceLabel = isIronOnly ? "IO" : isDryClean ? "DC" : "N";
-        const hasCustomPrice = customPrices[item.product.id] !== undefined;
-        const priceLabel = hasCustomPrice ? ` @ ${customPrices[item.product.id]} AED` : "";
+        const serviceLabel = item.serviceType === "iron" ? "IO" : item.serviceType === "dc" ? "DC" : "N";
+        const hasCustomPrice = customPrices[item.cartKey] !== undefined;
+        const priceLabel = hasCustomPrice ? ` @ ${customPrices[item.cartKey]} AED` : "";
         return `${item.quantity}x ${item.product.name} [${serviceLabel}] (${packing})${priceLabel}`;
       });
       const customItemsText = customItems.map(
@@ -870,8 +929,8 @@ export default function Products() {
       const itemsText = [...productItemsText, ...customItemsText].join(", ");
       const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
       
-      const hasDryCleanItems = orderItems.some(item => dryCleanItems[item.product.id]);
-      const hasIronOnlyItems = orderItems.some(item => ironOnlyItems[item.product.id]);
+      const hasDCItems = orderItems.some(item => item.serviceType === "dc");
+      const hasIronItems = orderItems.some(item => item.serviceType === "iron");
 
       let subtotal = pendingUrgent ? orderTotal * 2 : orderTotal;
       const discPct = parseFloat(discountPercent) || 0;
@@ -894,7 +953,7 @@ export default function Products() {
         entryDate: new Date().toISOString(),
         expectedDeliveryAt: expectedDeliveryAt.trim() || null,
         deliveryType: deliveryType,
-        serviceType: hasIronOnlyItems ? "iron_only" : hasDryCleanItems ? "dry_clean" : "normal",
+        serviceType: hasIronItems ? "iron_only" : hasDCItems ? "dry_clean" : "normal",
         urgent: pendingUrgent,
         entryBy: data.worker?.name || "Staff",
         entryByWorkerId: data.worker?.id || null,
@@ -913,8 +972,6 @@ export default function Products() {
 
   const clearOrder = () => {
     setQuantities({});
-    setDryCleanItems({});
-    setIronOnlyItems({});
     setCustomPrices({});
     setPackingTypes({});
     setCustomItems([]);
@@ -1341,25 +1398,23 @@ export default function Products() {
           </thead>
           <tbody>
             {orderItems.map((item) => {
-              const isDryClean = dryCleanItems[item.product.id];
-              const isIronOnly = ironOnlyItems[item.product.id];
               let basePrice: number;
-              if (isIronOnly) {
+              if (item.serviceType === "iron") {
                 basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
-              } else if (isDryClean) {
+              } else if (item.serviceType === "dc") {
                 basePrice = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
               } else {
                 basePrice = parseFloat(item.product.price || "0");
               }
-              const itemPrice = customPrices[item.product.id] !== undefined ? customPrices[item.product.id] : basePrice;
-              const hasCustomPrice = customPrices[item.product.id] !== undefined;
-              const bgClass = isIronOnly ? "bg-orange-50 dark:bg-orange-900/20" : isDryClean ? "bg-purple-50 dark:bg-purple-900/20" : "";
+              const itemPrice = customPrices[item.cartKey] !== undefined ? customPrices[item.cartKey] : basePrice;
+              const hasCustomPrice = customPrices[item.cartKey] !== undefined;
+              const bgClass = item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
               return (
-                <tr key={item.product.id} className={`border-b ${bgClass}`}>
+                <tr key={item.cartKey} className={`border-b ${bgClass}`}>
                   <td className="py-2 px-2 font-medium">
                     {item.product.name}
-                    {isDryClean && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
-                    {isIronOnly && <span className="ml-1 text-[9px] bg-orange-500 text-white px-1 rounded">IO</span>}
+                    {item.serviceType === "dc" && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
+                    {item.serviceType === "iron" && <span className="ml-1 text-[9px] bg-orange-500 text-white px-1 rounded">IO</span>}
                   </td>
                   <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
                   <td className="py-1 px-1 text-right">
@@ -1913,21 +1968,22 @@ export default function Products() {
                               {isProductSelected(product) ? (
                                 <div
                                   className={`text-sm sm:text-lg font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${
-                                    ironOnlyItems[product.id]
+                                    hasIronOnlyItems(product.id)
                                       ? "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30"
-                                      : dryCleanItems[product.id] 
+                                      : hasDryCleanItems(product.id) 
                                       ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30" 
                                       : "text-primary bg-primary/10"
                                   }`}
                                 >
                                   {(() => {
-                                    if (ironOnlyItems[product.id]) {
-                                      return `${product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"} AED`;
-                                    } else if (dryCleanItems[product.id]) {
-                                      return `${product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"} AED`;
-                                    } else {
-                                      return `${product.price ? parseFloat(product.price).toFixed(0) : "-"} AED`;
-                                    }
+                                    const dcQty = getServiceTypeQuantity(product.id, "dc");
+                                    const ironQty = getServiceTypeQuantity(product.id, "iron");
+                                    const normalQty = getServiceTypeQuantity(product.id, "normal");
+                                    const prices: string[] = [];
+                                    if (normalQty > 0) prices.push(`${normalQty}x ${product.price ? parseFloat(product.price).toFixed(0) : "-"}`);
+                                    if (dcQty > 0) prices.push(`${dcQty}x DC`);
+                                    if (ironQty > 0) prices.push(`${ironQty}x IO`);
+                                    return prices.length > 0 ? prices.join(", ") : `${product.price ? parseFloat(product.price).toFixed(0) : "-"} AED`;
                                   })()}
                                 </div>
                               ) : (
@@ -1951,13 +2007,13 @@ export default function Products() {
                                 </div>
                               )}
                             </div>
-                            {(quantities[product.id] || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) ? (
+                            {(getTotalQuantityForProduct(product.id) > 0 || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) ? (
                               <>
                                 <div
                                   className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <span>{quantities[product.id] || getSizedItemQuantity(product.name)}</span>
+                                  <span>{getTotalQuantityForProduct(product.id) || getSizedItemQuantity(product.name)}</span>
                                 </div>
                                 <div
                                   className="flex flex-col gap-0.5 sm:gap-1 mt-1.5 sm:mt-2 w-full"
@@ -1966,37 +2022,21 @@ export default function Products() {
                                   <div className="flex gap-0.5">
                                     <Button
                                       size="sm"
-                                      variant={dryCleanItems[product.id] ? "default" : "outline"}
-                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
-                                      onClick={() => {
-                                        setDryCleanItems(prev => ({
-                                          ...prev,
-                                          [product.id]: !prev[product.id]
-                                        }));
-                                        if (!dryCleanItems[product.id]) {
-                                          setIronOnlyItems(prev => ({ ...prev, [product.id]: false }));
-                                        }
-                                      }}
+                                      variant={getServiceTypeQuantity(product.id, "dc") > 0 ? "default" : "outline"}
+                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${getServiceTypeQuantity(product.id, "dc") > 0 ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                                      onClick={() => handleQuantityChange(product.id, 1, "dc")}
                                       data-testid={`button-fav-dryClean-${product.id}`}
                                     >
-                                      DC
+                                      DC {getServiceTypeQuantity(product.id, "dc") > 0 && `(${getServiceTypeQuantity(product.id, "dc")})`}
                                     </Button>
                                     <Button
                                       size="sm"
-                                      variant={ironOnlyItems[product.id] ? "default" : "outline"}
-                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${ironOnlyItems[product.id] ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-                                      onClick={() => {
-                                        setIronOnlyItems(prev => ({
-                                          ...prev,
-                                          [product.id]: !prev[product.id]
-                                        }));
-                                        if (!ironOnlyItems[product.id]) {
-                                          setDryCleanItems(prev => ({ ...prev, [product.id]: false }));
-                                        }
-                                      }}
+                                      variant={getServiceTypeQuantity(product.id, "iron") > 0 ? "default" : "outline"}
+                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${getServiceTypeQuantity(product.id, "iron") > 0 ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                                      onClick={() => handleQuantityChange(product.id, 1, "iron")}
                                       data-testid={`button-fav-ironOnly-${product.id}`}
                                     >
-                                      Iron
+                                      Iron {getServiceTypeQuantity(product.id, "iron") > 0 && `(${getServiceTypeQuantity(product.id, "iron")})`}
                                     </Button>
                                   </div>
                                   <div className="flex gap-0.5">
@@ -2152,23 +2192,23 @@ export default function Products() {
                               // Show price based on service selection when item is added
                               <div
                                 className={`text-sm sm:text-lg font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${
-                                  ironOnlyItems[product.id]
+                                  hasIronOnlyItems(product.id)
                                     ? "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30"
-                                    : dryCleanItems[product.id] 
+                                    : hasDryCleanItems(product.id) 
                                     ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30" 
                                     : "text-primary bg-primary/10"
                                 }`}
                                 data-testid={`text-product-active-price-${product.id}`}
                               >
                                 {(() => {
-                                  // For all items, show the price based on service type
-                                  if (ironOnlyItems[product.id]) {
-                                    return `${product.ironOnlyPrice ? parseFloat(product.ironOnlyPrice).toFixed(0) : "-"} AED`;
-                                  } else if (dryCleanItems[product.id]) {
-                                    return `${product.dryCleanPrice ? parseFloat(product.dryCleanPrice).toFixed(0) : "-"} AED`;
-                                  } else {
-                                    return `${product.price ? parseFloat(product.price).toFixed(0) : "-"} AED`;
-                                  }
+                                  const dcQty = getServiceTypeQuantity(product.id, "dc");
+                                  const ironQty = getServiceTypeQuantity(product.id, "iron");
+                                  const normalQty = getServiceTypeQuantity(product.id, "normal");
+                                  const prices: string[] = [];
+                                  if (normalQty > 0) prices.push(`${normalQty}x ${product.price ? parseFloat(product.price).toFixed(0) : "-"}`);
+                                  if (dcQty > 0) prices.push(`${dcQty}x DC`);
+                                  if (ironQty > 0) prices.push(`${ironQty}x IO`);
+                                  return prices.length > 0 ? prices.join(", ") : `${product.price ? parseFloat(product.price).toFixed(0) : "-"} AED`;
                                 })()}
                               </div>
                             ) : (
@@ -2211,14 +2251,14 @@ export default function Products() {
                               </div>
                             )}
 
-                          {(quantities[product.id] || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) ? (
+                          {(getTotalQuantityForProduct(product.id) > 0 || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) ? (
                             <>
                               <div
                                 className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <span data-testid={`text-qty-${product.id}`}>
-                                  {quantities[product.id] || getSizedItemQuantity(product.name)}
+                                  {getTotalQuantityForProduct(product.id) || getSizedItemQuantity(product.name)}
                                 </span>
                               </div>
                               <div
@@ -2228,37 +2268,21 @@ export default function Products() {
                                 <div className="flex gap-0.5">
                                   <Button
                                     size="sm"
-                                    variant={dryCleanItems[product.id] ? "default" : "outline"}
-                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${dryCleanItems[product.id] ? "bg-purple-600 hover:bg-purple-700" : ""}`}
-                                    onClick={() => {
-                                      setDryCleanItems(prev => ({
-                                        ...prev,
-                                        [product.id]: !prev[product.id]
-                                      }));
-                                      if (!dryCleanItems[product.id]) {
-                                        setIronOnlyItems(prev => ({ ...prev, [product.id]: false }));
-                                      }
-                                    }}
+                                    variant={getServiceTypeQuantity(product.id, "dc") > 0 ? "default" : "outline"}
+                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${getServiceTypeQuantity(product.id, "dc") > 0 ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                                    onClick={() => handleQuantityChange(product.id, 1, "dc")}
                                     data-testid={`button-dryClean-${product.id}`}
                                   >
-                                    DC
+                                    DC {getServiceTypeQuantity(product.id, "dc") > 0 && `(${getServiceTypeQuantity(product.id, "dc")})`}
                                   </Button>
                                   <Button
                                     size="sm"
-                                    variant={ironOnlyItems[product.id] ? "default" : "outline"}
-                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${ironOnlyItems[product.id] ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-                                    onClick={() => {
-                                      setIronOnlyItems(prev => ({
-                                        ...prev,
-                                        [product.id]: !prev[product.id]
-                                      }));
-                                      if (!ironOnlyItems[product.id]) {
-                                        setDryCleanItems(prev => ({ ...prev, [product.id]: false }));
-                                      }
-                                    }}
+                                    variant={getServiceTypeQuantity(product.id, "iron") > 0 ? "default" : "outline"}
+                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${getServiceTypeQuantity(product.id, "iron") > 0 ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                                    onClick={() => handleQuantityChange(product.id, 1, "iron")}
                                     data-testid={`button-ironOnly-${product.id}`}
                                   >
-                                    Iron
+                                    Iron {getServiceTypeQuantity(product.id, "iron") > 0 && `(${getServiceTypeQuantity(product.id, "iron")})`}
                                   </Button>
                                 </div>
                                 <div className="flex gap-0.5">
