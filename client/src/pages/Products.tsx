@@ -924,10 +924,16 @@ export default function Products() {
       let price: number;
       
       // Check if this is a sqm-priced item (like carpet)
+      // DC = 2x normal, Iron = 0.5x normal
       if (item.product.isSqmPriced && item.sqm) {
-        // Price = sqm × price per sqm
         const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
-        return sum + (item.sqm * sqmPrice);
+        let multiplier = 1;
+        if (item.serviceType === "dc") {
+          multiplier = 2;
+        } else if (item.serviceType === "iron") {
+          multiplier = 0.5;
+        }
+        return sum + (item.sqm * sqmPrice * multiplier);
       }
       
       if (customPrices[item.product.id] !== undefined) {
@@ -1656,9 +1662,16 @@ export default function Products() {
               let displayPrice: number;
               
               // For sqm-priced items (carpet), calculate total price from sqm
+              // DC = 2x normal, Iron = 0.5x normal
               if (item.product.isSqmPriced && item.sqm) {
                 const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
-                displayPrice = item.sqm * sqmPrice;
+                let multiplier = 1;
+                if (item.serviceType === "dc") {
+                  multiplier = 2;
+                } else if (item.serviceType === "iron") {
+                  multiplier = 0.5;
+                }
+                displayPrice = item.sqm * sqmPrice * multiplier;
                 basePrice = displayPrice;
               } else if (item.serviceType === "iron") {
                 basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
@@ -3331,7 +3344,11 @@ export default function Products() {
               .map((entry, index) => {
                 const product = products?.find(p => p.id === entry.productId);
                 const sqmPrice = parseFloat(product?.sqmPrice || product?.price || "12");
-                const totalPrice = entry.sqm * sqmPrice;
+                // Apply multiplier based on service type: DC = 2x, Iron = 0.5x
+                let multiplier = 1;
+                if (entry.serviceType === "dc") multiplier = 2;
+                else if (entry.serviceType === "iron") multiplier = 0.5;
+                const totalPrice = entry.sqm * sqmPrice * multiplier;
                 const isSelected = entry.serviceType === carpetServiceDialog.serviceType;
                 
                 return (
