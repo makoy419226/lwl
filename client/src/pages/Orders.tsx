@@ -238,6 +238,8 @@ export default function Orders() {
   const [editDeliveryHour, setEditDeliveryHour] = useState("12");
   const [editDeliveryMinute, setEditDeliveryMinute] = useState("00");
   const [editDeliveryPeriod, setEditDeliveryPeriod] = useState<"AM" | "PM">("PM");
+  
+  const [orderDetailDialog, setOrderDetailDialog] = useState<Order | null>(null);
 
   const { data: orders, isLoading, refetch: refetchOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -1742,9 +1744,13 @@ export default function Orders() {
                         >
                           <CardHeader className="flex flex-row items-center justify-between gap-2 p-3 pb-2 bg-muted/30">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-primary">
+                              <button
+                                className="font-mono font-bold text-primary hover:underline cursor-pointer"
+                                onClick={() => setOrderDetailDialog(order)}
+                                data-testid={`button-order-detail-${order.id}`}
+                              >
                                 {order.orderNumber}
-                              </span>
+                              </button>
                               {order.deliveryType === "delivery" && (
                                 <Truck className="w-4 h-4 text-muted-foreground" />
                               )}
@@ -2243,7 +2249,13 @@ export default function Orders() {
                                     data-testid={`row-order-${order.id}`}
                                   >
                                     <TableCell className="font-mono font-bold text-xs lg:text-sm truncate">
-                                      {order.orderNumber.replace("ORD-", "")}
+                                      <button
+                                        className="text-primary hover:underline cursor-pointer"
+                                        onClick={() => setOrderDetailDialog(order)}
+                                        data-testid={`button-order-detail-table-${order.id}`}
+                                      >
+                                        {order.orderNumber.replace("ORD-", "")}
+                                      </button>
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell">
                                       {order.billId ? (
@@ -4189,6 +4201,165 @@ export default function Orders() {
                   Report Incident
                 </Button>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Detail Dialog */}
+      <Dialog
+        open={!!orderDetailDialog}
+        onOpenChange={(open) => !open && setOrderDetailDialog(null)}
+      >
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              Order Details
+            </DialogTitle>
+            <DialogDescription>
+              Order #{orderDetailDialog?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+          {orderDetailDialog && (
+            <div className="space-y-4">
+              {/* Processing Phase Indicator */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm font-medium text-muted-foreground mb-3">Current Processing Phase</p>
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex flex-col items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${!orderDetailDialog.tagDone ? "bg-blue-600 text-white ring-2 ring-blue-300" : "bg-green-600 text-white"}`}>
+                      <Tag className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs mt-1 font-medium">Tagging</span>
+                    {!orderDetailDialog.tagDone && (
+                      <span className="text-[10px] text-blue-600 font-semibold">IN PROGRESS</span>
+                    )}
+                  </div>
+                  <div className={`flex-1 h-1 max-w-6 ${orderDetailDialog.tagDone ? "bg-green-600" : "bg-gray-200 dark:bg-gray-700"}`} />
+                  <div className="flex flex-col items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${orderDetailDialog.tagDone && !orderDetailDialog.washingDone ? "bg-blue-600 text-white ring-2 ring-blue-300" : orderDetailDialog.washingDone ? "bg-green-600 text-white" : "bg-gray-200 dark:bg-gray-700"}`}>
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs mt-1 font-medium">Washing</span>
+                    {orderDetailDialog.tagDone && !orderDetailDialog.washingDone && (
+                      <span className="text-[10px] text-blue-600 font-semibold">IN PROGRESS</span>
+                    )}
+                  </div>
+                  <div className={`flex-1 h-1 max-w-6 ${orderDetailDialog.washingDone ? "bg-green-600" : "bg-gray-200 dark:bg-gray-700"}`} />
+                  <div className="flex flex-col items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${orderDetailDialog.washingDone && !orderDetailDialog.packingDone ? "bg-blue-600 text-white ring-2 ring-blue-300" : orderDetailDialog.packingDone ? "bg-green-600 text-white" : "bg-gray-200 dark:bg-gray-700"}`}>
+                      <Package className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs mt-1 font-medium">Packing</span>
+                    {orderDetailDialog.washingDone && !orderDetailDialog.packingDone && (
+                      <span className="text-[10px] text-blue-600 font-semibold">IN PROGRESS</span>
+                    )}
+                  </div>
+                  <div className={`flex-1 h-1 max-w-6 ${orderDetailDialog.delivered ? "bg-green-600" : "bg-gray-200 dark:bg-gray-700"}`} />
+                  <div className="flex flex-col items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${orderDetailDialog.packingDone && !orderDetailDialog.delivered ? "bg-blue-600 text-white ring-2 ring-blue-300" : orderDetailDialog.delivered ? "bg-green-600 text-white" : "bg-gray-200 dark:bg-gray-700"}`}>
+                      <Truck className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs mt-1 font-medium">Delivery</span>
+                    {orderDetailDialog.packingDone && !orderDetailDialog.delivered && (
+                      <span className="text-[10px] text-blue-600 font-semibold">READY</span>
+                    )}
+                    {orderDetailDialog.delivered && (
+                      <span className="text-[10px] text-green-600 font-semibold">DONE</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Info */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Customer:</span>
+                  <p className="font-medium">
+                    {clients?.find((c) => c.id === orderDetailDialog.clientId)?.name || 
+                     orderDetailDialog.customerName || "Walk-in"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Type:</span>
+                  <p className="font-medium capitalize">
+                    {orderDetailDialog.deliveryType || "Pickup"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Entry Date:</span>
+                  <p className="font-medium">
+                    {orderDetailDialog.entryDate 
+                      ? format(new Date(orderDetailDialog.entryDate), "dd/MM/yyyy hh:mm a")
+                      : "-"}
+                  </p>
+                </div>
+                {orderDetailDialog.expectedDeliveryAt && (
+                  <div>
+                    <span className="text-muted-foreground">Expected:</span>
+                    <p className="font-medium">
+                      {typeof orderDetailDialog.expectedDeliveryAt === 'string' 
+                        ? orderDetailDialog.expectedDeliveryAt 
+                        : format(new Date(orderDetailDialog.expectedDeliveryAt), "dd/MM/yyyy hh:mm a")}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Items List */}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Items in Order</p>
+                <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+                  {parseOrderItems(orderDetailDialog.items).map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 hover:bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        {getCategoryIcon(products?.find(p => p.name === item.name)?.category || null, "w-4 h-4")}
+                        <span className="text-sm">{item.name}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        x{item.quantity}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between items-center mt-2 pt-2 border-t">
+                  <span className="font-medium">Total Items:</span>
+                  <span className="font-bold">
+                    {parseOrderItems(orderDetailDialog.items).reduce((sum, item) => sum + item.quantity, 0)} items
+                  </span>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {orderDetailDialog.notes && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                  <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mb-1">Order Notes</p>
+                  <p className="text-sm text-amber-900 dark:text-amber-200">{orderDetailDialog.notes}</p>
+                </div>
+              )}
+
+              {/* Staff Info */}
+              <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                {orderDetailDialog.tagBy && (
+                  <div>Tagged by: <span className="font-medium text-foreground">{orderDetailDialog.tagBy}</span></div>
+                )}
+                {orderDetailDialog.packingBy && (
+                  <div>Packed by: <span className="font-medium text-foreground">{orderDetailDialog.packingBy}</span></div>
+                )}
+                {orderDetailDialog.deliveryBy && (
+                  <div>Delivered by: <span className="font-medium text-foreground">{orderDetailDialog.deliveryBy}</span></div>
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setOrderDetailDialog(null)}
+                data-testid="button-close-order-detail"
+              >
+                Close
+              </Button>
             </div>
           )}
         </DialogContent>
