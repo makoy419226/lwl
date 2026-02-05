@@ -226,6 +226,16 @@ export default function Products() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [draggingProduct, setDraggingProduct] = useState<{ id: number; name: string } | null>(null);
   const [dragOverTab, setDragOverTab] = useState<string | null>(null);
+  
+  // SQM pricing dialog state (for carpet and similar items)
+  const [sqmDialog, setSqmDialog] = useState<{ open: boolean; productId: number | null; productName: string; sqmPrice: string }>({ 
+    open: false, 
+    productId: null, 
+    productName: "", 
+    sqmPrice: "12.00" 
+  });
+  const [sqmInput, setSqmInput] = useState("");
+  const [sqmValues, setSqmValues] = useState<Record<number, number>>({});
 
   // Check if a product has size pricing defined in the database
   const hasSizeOption = (product: { name: string; smallPrice?: string | null; mediumPrice?: string | null; largePrice?: string | null }) => {
@@ -550,6 +560,35 @@ export default function Products() {
 
   // Handle quantity change - simple add/remove from total quantity
   const handleQuantityChange = (productId: number, delta: number) => {
+    const product = products?.find(p => p.id === productId);
+    
+    // Check if sqm-priced and adding (not removing)
+    if (product?.isSqmPriced && delta > 0) {
+      const currentQty = quantities[productId] || 0;
+      if (currentQty === 0) {
+        // First time adding - show sqm dialog
+        setSqmDialog({
+          open: true,
+          productId,
+          productName: product.name,
+          sqmPrice: product.sqmPrice || product.price || "12.00"
+        });
+        setSqmInput("");
+        return;
+      }
+    }
+    
+    // If removing sqm-priced product, also clear sqm value
+    if (delta < 0) {
+      const current = quantities[productId] || 0;
+      if (current + delta <= 0) {
+        setSqmValues((prev) => {
+          const { [productId]: _, ...rest } = prev;
+          return rest;
+        });
+      }
+    }
+    
     setQuantities((prev) => {
       const current = prev[productId] || 0;
       const newQty = Math.max(0, current + delta);
@@ -586,6 +625,21 @@ export default function Products() {
       }
       return { ...prev, [productId]: newQty };
     });
+  };
+  
+  // Handle SQM dialog confirmation
+  const handleSqmConfirm = () => {
+    const sqm = parseFloat(sqmInput);
+    if (!sqm || sqm <= 0 || !sqmDialog.productId) {
+      toast({ title: "Please enter a valid square meter value", variant: "destructive" });
+      return;
+    }
+    
+    // Set quantity to 1 (one carpet entry) and store sqm value
+    setQuantities(prev => ({ ...prev, [sqmDialog.productId!]: 1 }));
+    setSqmValues(prev => ({ ...prev, [sqmDialog.productId!]: sqm }));
+    setSqmDialog({ open: false, productId: null, productName: "", sqmPrice: "12.00" });
+    setSqmInput("");
   };
 
   // Open dialog to set DC quantity
@@ -740,7 +794,7 @@ export default function Products() {
   // Build order items with service type splits (Normal, DC, Iron as separate lines)
   const orderItems = useMemo(() => {
     if (!allProducts) return [];
-    const items: { product: (typeof allProducts)[0]; quantity: number; serviceType: "normal" | "dc" | "iron" }[] = [];
+    const items: { product: (typeof allProducts)[0]; quantity: number; serviceType: "normal" | "dc" | "iron"; sqm?: number }[] = [];
     
     Object.entries(quantities).forEach(([productIdStr, totalQty]) => {
       const productId = parseInt(productIdStr);
@@ -749,30 +803,39 @@ export default function Products() {
       const product = allProducts.find((p) => p.id === productId);
       if (!product) return;
       
+      const sqm = sqmValues[productId]; // Get sqm value if exists
       const dcQty = dcQuantities[productId] || 0;
       const ironQty = ironQuantities[productId] || 0;
       const normalQty = Math.max(0, totalQty - dcQty - ironQty);
       
       // Add normal items first
       if (normalQty > 0) {
-        items.push({ product, quantity: normalQty, serviceType: "normal" });
+        items.push({ product, quantity: normalQty, serviceType: "normal", sqm });
       }
       // Add DC items
       if (dcQty > 0) {
-        items.push({ product, quantity: dcQty, serviceType: "dc" });
+        items.push({ product, quantity: dcQty, serviceType: "dc", sqm });
       }
       // Add Iron Only items
       if (ironQty > 0) {
-        items.push({ product, quantity: ironQty, serviceType: "iron" });
+        items.push({ product, quantity: ironQty, serviceType: "iron", sqm });
       }
     });
     
     return items;
-  }, [quantities, dcQuantities, ironQuantities, allProducts]);
+  }, [quantities, dcQuantities, ironQuantities, allProducts, sqmValues]);
 
   const orderTotal = useMemo(() => {
     const productTotal = orderItems.reduce((sum, item) => {
       let price: number;
+      
+      // Check if this is a sqm-priced item (like carpet)
+      if (item.product.isSqmPriced && item.sqm) {
+        // Price = sqm × price per sqm
+        const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
+        return sum + (item.sqm * sqmPrice);
+      }
+      
       if (customPrices[item.product.id] !== undefined) {
         price = customPrices[item.product.id];
       } else if (item.serviceType === "iron") {
@@ -1006,6 +1069,14 @@ export default function Products() {
         const serviceLabel = item.serviceType === "iron" ? "IO" : item.serviceType === "dc" ? "DC" : "N";
         const hasCustomPrice = customPrices[item.product.id] !== undefined;
         const priceLabel = hasCustomPrice ? ` @ ${customPrices[item.product.id]} AED` : "";
+        
+        // For sqm-priced items (like carpet), show sqm × price
+        if (item.product.isSqmPriced && item.sqm) {
+          const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
+          const totalPrice = item.sqm * sqmPrice;
+          return `${item.sqm} sqm ${item.product.name} @ ${totalPrice.toFixed(2)} AED`;
+        }
+        
         return `${item.quantity}x ${item.product.name} [${serviceLabel}] (${packing})${priceLabel}`;
       });
       const customItemsText = customItems.map(
@@ -1059,6 +1130,7 @@ export default function Products() {
     setQuantities({});
     setDcQuantities({});
     setIronQuantities({});
+    setSqmValues({});
     setCustomPrices({});
     setPackingTypes({});
     setCustomItems([]);
@@ -3064,6 +3136,62 @@ export default function Products() {
                 )}
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* SQM Pricing Dialog (for Carpet) */}
+      <Dialog open={sqmDialog.open} onOpenChange={(open) => !open && setSqmDialog({ open: false, productId: null, productName: "", sqmPrice: "12.00" })}>
+        <DialogContent aria-describedby={undefined} className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg">Carpet Size</DialogTitle>
+            <DialogDescription className="text-center">
+              {sqmDialog.productName} is priced at <span className="font-bold text-foreground">{sqmDialog.sqmPrice} AED per square meter</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">How many square meters is the carpet?</Label>
+              <Input
+                type="number"
+                step="0.1"
+                min="0.1"
+                placeholder="Enter square meters (e.g., 5)"
+                value={sqmInput}
+                onChange={(e) => setSqmInput(e.target.value)}
+                className="text-center text-lg font-bold h-14"
+                autoFocus
+                data-testid="input-sqm-value"
+              />
+            </div>
+            {sqmInput && parseFloat(sqmInput) > 0 && (
+              <div className="text-center p-3 bg-primary/10 rounded-lg">
+                <div className="text-sm text-muted-foreground">Total Price:</div>
+                <div className="text-2xl font-bold text-primary">
+                  {(parseFloat(sqmInput) * parseFloat(sqmDialog.sqmPrice)).toFixed(2)} AED
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {sqmInput} sqm × {sqmDialog.sqmPrice} AED/sqm
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1 h-12"
+                onClick={() => setSqmDialog({ open: false, productId: null, productName: "", sqmPrice: "12.00" })}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 h-12"
+                onClick={handleSqmConfirm}
+                disabled={!sqmInput || parseFloat(sqmInput) <= 0}
+                data-testid="button-confirm-sqm"
+              >
+                Add to Order
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
