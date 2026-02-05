@@ -4272,9 +4272,7 @@ function OrderForm({
       "Ladies' Clothes",
       "Baby Clothes",
       "Linens",
-      "Shop Items",
       "General Items",
-      "Shoes, Carpets & More",
     ];
     
     filteredProducts.forEach((product) => {

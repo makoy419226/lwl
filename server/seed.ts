@@ -734,6 +734,9 @@ export async function seedDatabase() {
   
   // Fix delivered orders with missing deliveredByWorkerId
   await fixDeliveredOrdersWorkerId();
+  
+  // Consolidate categories (merge "Shoes, Carpets & More" and "Shop Items" into "General Items")
+  await migrateCategories();
 }
 
 async function migratePhoneNumbers() {
@@ -845,6 +848,21 @@ async function fixDeliveredOrdersWorkerId() {
     console.log("Fixed delivered/packed/tagged/entry orders with missing worker IDs");
   } catch (error) {
     console.log("Worker ID migration skipped or error:", error);
+  }
+}
+
+async function migrateCategories() {
+  try {
+    // Migrate "Shoes, Carpets & More" and "Shop Items" to "General Items"
+    const result = await db.execute(`
+      UPDATE products 
+      SET category = 'General Items'
+      WHERE category = 'Shoes, Carpets & More' OR category = 'Shop Items'
+    `);
+    
+    console.log("Category migration completed (consolidated into 6 categories)");
+  } catch (error) {
+    console.log("Category migration skipped or error:", error);
   }
 }
 
