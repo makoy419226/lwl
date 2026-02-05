@@ -200,6 +200,10 @@ export default function Products() {
   const [sizeDialogProduct, setSizeDialogProduct] = useState<{
     id: number;
     name: string;
+    smallPrice: string | null;
+    mediumPrice: string | null;
+    largePrice: string | null;
+    price: string | null;
   } | null>(null);
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [staffPin, setStaffPin] = useState("");
@@ -223,28 +227,26 @@ export default function Products() {
   const [draggingProduct, setDraggingProduct] = useState<{ id: number; name: string } | null>(null);
   const [dragOverTab, setDragOverTab] = useState<string | null>(null);
 
-  const sizeOptions: Record<string, { small: number; medium: number; large: number }> = {
-    Towel: { small: 5, medium: 6, large: 8 },
-    Comfort: { small: 25, medium: 30, large: 35 },
-    Blanket: { small: 15, medium: 20, large: 25 },
-    "Duvet Cover": { small: 10, medium: 12, large: 15 },
-    "Bed Sheet": { small: 5, medium: 6, large: 8 },
-    "Curtain/Window Screen": { small: 15, medium: 20, large: 25 },
+  // Check if a product has size pricing defined in the database
+  const hasSizeOption = (product: { name: string; smallPrice?: string | null; mediumPrice?: string | null; largePrice?: string | null }) => {
+    // Product has size option if it has at least small and large prices defined
+    const hasDbPrices = !!(product.smallPrice || product.largePrice);
+    // Also check it's not already a sized variant
+    const isNotSizedVariant = !product.name.includes("(Small)") && 
+                              !product.name.includes("(Medium)") && 
+                              !product.name.includes("(Large)");
+    return hasDbPrices && isNotSizedVariant;
   };
 
-  const hasSizeOption = (productName: string) => {
-    return Object.keys(sizeOptions).some(
+  // Legacy function for backwards compatibility - checks product name patterns
+  const hasSizeOptionByName = (productName: string) => {
+    const sizeKeywords = ["Towel", "Comfort", "Blanket", "Duvet Cover", "Bed Sheet", "Curtain", "Window Screen"];
+    return sizeKeywords.some(
       (key) =>
         productName.toLowerCase().includes(key.toLowerCase()) &&
         !productName.includes("(Small)") &&
         !productName.includes("(Medium)") &&
         !productName.includes("(Large)"),
-    );
-  };
-
-  const getSizeOptionKey = (productName: string) => {
-    return Object.keys(sizeOptions).find((key) =>
-      productName.toLowerCase().includes(key.toLowerCase()),
     );
   };
 
@@ -256,11 +258,11 @@ export default function Products() {
   };
 
   // Check if a product is selected (either in cart or in customItems for sized items)
-  const isProductSelected = (product: { id: number; name: string }) => {
+  const isProductSelected = (product: { id: number; name: string; smallPrice?: string | null; largePrice?: string | null }) => {
     // Check if in cart (any service type)
     if (getTotalQuantityForProduct(product.id) > 0) return true;
     // Check if size-based product is in customItems
-    if (hasSizeOption(product.name)) {
+    if (hasSizeOption(product)) {
       return customItems.some(item => 
         item.name.toLowerCase().startsWith(product.name.toLowerCase())
       );
@@ -635,9 +637,19 @@ export default function Products() {
     id: number;
     name: string;
     price?: string | null;
+    smallPrice?: string | null;
+    mediumPrice?: string | null;
+    largePrice?: string | null;
   }) => {
-    if (hasSizeOption(product.name)) {
-      setSizeDialogProduct(product);
+    if (hasSizeOption(product)) {
+      setSizeDialogProduct({
+        id: product.id,
+        name: product.name,
+        price: product.price || null,
+        smallPrice: product.smallPrice || null,
+        mediumPrice: product.mediumPrice || null,
+        largePrice: product.largePrice || null,
+      });
       setShowSizeDialog(true);
     } else if (isGutraProduct(product.name)) {
       setGutraDialogProduct({
@@ -691,10 +703,20 @@ export default function Products() {
 
   const handleAddSizedItem = (size: "small" | "medium" | "large") => {
     if (!sizeDialogProduct) return;
-    const sizeKey = getSizeOptionKey(sizeDialogProduct.name);
-    if (!sizeKey) return;
 
-    const price = sizeOptions[sizeKey][size];
+    // Get price from database - use the product's size prices
+    let price = 0;
+    if (size === "small" && sizeDialogProduct.smallPrice) {
+      price = parseFloat(sizeDialogProduct.smallPrice);
+    } else if (size === "medium" && sizeDialogProduct.mediumPrice) {
+      price = parseFloat(sizeDialogProduct.mediumPrice);
+    } else if (size === "medium" && sizeDialogProduct.price) {
+      // Fall back to normal price for medium if mediumPrice not set
+      price = parseFloat(sizeDialogProduct.price);
+    } else if (size === "large" && sizeDialogProduct.largePrice) {
+      price = parseFloat(sizeDialogProduct.largePrice);
+    }
+    
     const sizeLabel = size === "small" ? "Small" : size === "medium" ? "Medium" : "Large";
     const itemName = `${sizeDialogProduct.name} (${sizeLabel})`;
 
@@ -2102,7 +2124,7 @@ export default function Products() {
                                 </div>
                               )}
                             </div>
-                            {(getTotalQuantityForProduct(product.id) > 0 || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) ? (
+                            {(getTotalQuantityForProduct(product.id) > 0 || (hasSizeOption(product) && getSizedItemQuantity(product.name) > 0)) ? (
                               <>
                                 <div
                                   className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
@@ -2346,7 +2368,7 @@ export default function Products() {
                               </div>
                             )}
 
-                          {(getTotalQuantityForProduct(product.id) > 0 || (hasSizeOption(product.name) && getSizedItemQuantity(product.name) > 0)) ? (
+                          {(getTotalQuantityForProduct(product.id) > 0 || (hasSizeOption(product) && getSizedItemQuantity(product.name) > 0)) ? (
                             <>
                               <div
                                 className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-background animate-pulse"
@@ -2996,56 +3018,50 @@ export default function Products() {
               </div>
             </div>
 
-            {sizeDialogProduct && getSizeOptionKey(sizeDialogProduct.name) && (
+            {sizeDialogProduct && (
               <div className="grid grid-cols-3 gap-3">
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
-                  onClick={() => handleAddSizedItem("small")}
-                  data-testid="button-size-small"
-                >
-                  <div className="text-2xl font-black text-primary">S</div>
-                  <div className="font-bold">Small</div>
-                  <div className="text-sm font-bold text-primary">
-                    {
-                      sizeOptions[getSizeOptionKey(sizeDialogProduct.name)!]
-                        ?.small
-                    }{" "}
-                    AED
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
-                  onClick={() => handleAddSizedItem("medium")}
-                  data-testid="button-size-medium"
-                >
-                  <div className="text-2xl font-black text-primary">M</div>
-                  <div className="font-bold">Medium</div>
-                  <div className="text-sm font-bold text-primary">
-                    {
-                      sizeOptions[getSizeOptionKey(sizeDialogProduct.name)!]
-                        ?.medium
-                    }{" "}
-                    AED
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
-                  onClick={() => handleAddSizedItem("large")}
-                  data-testid="button-size-large"
-                >
-                  <div className="text-2xl font-black text-primary">L</div>
-                  <div className="font-bold">Large</div>
-                  <div className="text-sm font-bold text-primary">
-                    {
-                      sizeOptions[getSizeOptionKey(sizeDialogProduct.name)!]
-                        ?.large
-                    }{" "}
-                    AED
-                  </div>
-                </Button>
+                {sizeDialogProduct.smallPrice && (
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
+                    onClick={() => handleAddSizedItem("small")}
+                    data-testid="button-size-small"
+                  >
+                    <div className="text-2xl font-black text-primary">S</div>
+                    <div className="font-bold">Small</div>
+                    <div className="text-sm font-bold text-primary">
+                      {parseFloat(sizeDialogProduct.smallPrice).toFixed(0)} AED
+                    </div>
+                  </Button>
+                )}
+                {(sizeDialogProduct.mediumPrice || sizeDialogProduct.price) && (
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
+                    onClick={() => handleAddSizedItem("medium")}
+                    data-testid="button-size-medium"
+                  >
+                    <div className="text-2xl font-black text-primary">M</div>
+                    <div className="font-bold">Medium</div>
+                    <div className="text-sm font-bold text-primary">
+                      {parseFloat(sizeDialogProduct.mediumPrice || sizeDialogProduct.price || "0").toFixed(0)} AED
+                    </div>
+                  </Button>
+                )}
+                {sizeDialogProduct.largePrice && (
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
+                    onClick={() => handleAddSizedItem("large")}
+                    data-testid="button-size-large"
+                  >
+                    <div className="text-2xl font-black text-primary">L</div>
+                    <div className="font-bold">Large</div>
+                    <div className="text-sm font-bold text-primary">
+                      {parseFloat(sizeDialogProduct.largePrice).toFixed(0)} AED
+                    </div>
+                  </Button>
+                )}
               </div>
             )}
           </div>

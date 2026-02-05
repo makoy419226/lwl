@@ -29,6 +29,9 @@ const formSchema = insertProductSchema.extend({
   price: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
   dryCleanPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
   ironOnlyPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
+  smallPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
+  mediumPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
+  largePrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -130,6 +133,9 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
       price: defaultValues.price || "",
       dryCleanPrice: defaultValues.dryCleanPrice || "",
       ironOnlyPrice: defaultValues.ironOnlyPrice || "",
+      smallPrice: defaultValues.smallPrice || "",
+      mediumPrice: defaultValues.mediumPrice || "",
+      largePrice: defaultValues.largePrice || "",
       description: defaultValues.description || "",
       sku: defaultValues.sku || "",
       imageUrl: defaultValues.imageUrl || "",
@@ -142,6 +148,9 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
       price: "",
       dryCleanPrice: "",
       ironOnlyPrice: "",
+      smallPrice: "",
+      mediumPrice: "",
+      largePrice: "",
       sku: "",
       imageUrl: "",
     },
@@ -268,6 +277,53 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">Size Pricing (for blankets, towels, etc.)</p>
+          <div className="grid grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="smallPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Small (AED)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="mediumPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Medium (AED)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="largePrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Large (AED)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         <FormField

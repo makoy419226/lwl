@@ -111,6 +111,9 @@ export function useUpdateProduct() {
         price: updates.price ? String(updates.price) : undefined,
         dryCleanPrice: updates.dryCleanPrice ? String(updates.dryCleanPrice) : undefined,
         ironOnlyPrice: updates.ironOnlyPrice ? String(updates.ironOnlyPrice) : undefined,
+        smallPrice: updates.smallPrice ? String(updates.smallPrice) : undefined,
+        mediumPrice: updates.mediumPrice ? String(updates.mediumPrice) : undefined,
+        largePrice: updates.largePrice ? String(updates.largePrice) : undefined,
         description: updates.description !== undefined ? (updates.description || null) : undefined,
       };
 
