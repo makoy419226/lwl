@@ -330,15 +330,19 @@ export default function Workers() {
   }, [staffMembers]);
 
   // Universal worker stats - all individual staff members tracked by PIN
+  // Match by NAME instead of ID to avoid ID collision between users and staff_members tables
   const workerStats = useMemo(() => {
     if (!allStaffMembers.length || !orders) return [];
     const { start, end } = getDateRange();
 
     return allStaffMembers
       .map((worker) => {
-        // Orders created by this worker
+        const workerName = worker.name?.toLowerCase() || '';
+        
+        // Orders created by this worker - match by name
         const createdOrders = orders.filter((o) => {
-          if (o.entryByWorkerId !== worker.id) return false;
+          const entryName = o.entryBy?.toLowerCase() || '';
+          if (entryName !== workerName) return false;
           if (!o.entryDate) return false;
           try {
             const entryDate = new Date(o.entryDate);
@@ -349,7 +353,8 @@ export default function Workers() {
         });
 
         const taggedOrders = orders.filter((o) => {
-          if (o.tagWorkerId !== worker.id) return false;
+          const tagName = o.tagBy?.toLowerCase() || '';
+          if (tagName !== workerName) return false;
           if (!o.tagDate) return false;
           try {
             const tagDate = new Date(o.tagDate);
@@ -360,7 +365,8 @@ export default function Workers() {
         });
 
         const packedOrders = orders.filter((o) => {
-          if (o.packingWorkerId !== worker.id) return false;
+          const packName = o.packingBy?.toLowerCase() || '';
+          if (packName !== workerName) return false;
           if (!o.packingDate) return false;
           try {
             const packDate = new Date(o.packingDate);
@@ -371,7 +377,8 @@ export default function Workers() {
         });
 
         const deliveredOrders = orders.filter((o) => {
-          if (o.deliveredByWorkerId !== worker.id) return false;
+          const delName = o.deliveryBy?.toLowerCase() || '';
+          if (delName !== workerName) return false;
           if (!o.deliveryDate) return false;
           try {
             const delDate = new Date(o.deliveryDate);
@@ -383,7 +390,8 @@ export default function Workers() {
 
         const createdBills =
           bills?.filter((b) => {
-            if (b.createdByWorkerId !== worker.id) return false;
+            const billName = b.createdBy?.toLowerCase() || '';
+            if (billName !== workerName) return false;
             if (!b.isPaid) return false; // Only count paid bills
             if (!b.billDate) return false;
             try {
@@ -444,9 +452,16 @@ export default function Workers() {
     };
     const { start, end } = getDateRange();
     
-    // Orders created by admin (entryByWorkerId is null)
+    // Match by name "Admin" or "Administrator" (case insensitive) instead of checking for null IDs
+    const isAdmin = (name: string | null | undefined) => {
+      if (!name) return false;
+      const lowerName = name.toLowerCase();
+      return lowerName === 'admin' || lowerName === 'administrator';
+    };
+    
+    // Orders created by admin (match by name)
     const adminOrders = orders.filter((o) => {
-      if (o.entryByWorkerId !== null) return false;
+      if (!isAdmin(o.entryBy)) return false;
       if (!o.entryDate) return false;
       try {
         const entryDate = new Date(o.entryDate);
@@ -456,9 +471,9 @@ export default function Workers() {
       }
     });
     
-    // Paid bills by admin (createdByWorkerId is null AND isPaid is true)
+    // Paid bills by admin (match by name)
     const adminBills = bills.filter((b) => {
-      if (b.createdByWorkerId !== null) return false;
+      if (!isAdmin(b.createdBy)) return false;
       if (!b.isPaid) return false; // Only count paid bills
       if (!b.billDate) return false;
       try {
@@ -469,9 +484,9 @@ export default function Workers() {
       }
     });
     
-    // Tagged by admin (tagWorkerId is null)
+    // Tagged by admin (match by name)
     const taggedOrders = orders.filter((o) => {
-      if (o.tagWorkerId !== null) return false;
+      if (!isAdmin(o.tagBy)) return false;
       if (!o.tagDate) return false;
       try {
         const tagDateVal = new Date(o.tagDate);
@@ -481,9 +496,9 @@ export default function Workers() {
       }
     });
     
-    // Packed by admin (packingWorkerId is null)
+    // Packed by admin (match by name)
     const packedOrders = orders.filter((o) => {
-      if (o.packingWorkerId !== null) return false;
+      if (!isAdmin(o.packingBy)) return false;
       if (!o.packingDate) return false;
       try {
         const packingDateVal = new Date(o.packingDate);
@@ -493,9 +508,9 @@ export default function Workers() {
       }
     });
     
-    // Delivered by admin (deliveredByWorkerId is null)
+    // Delivered by admin (match by name)
     const deliveredOrders = orders.filter((o) => {
-      if (o.deliveredByWorkerId !== null) return false;
+      if (!isAdmin(o.deliveryBy)) return false;
       if (!o.deliveryDate) return false;
       try {
         const deliveredDateVal = new Date(o.deliveryDate);
