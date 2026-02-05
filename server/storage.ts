@@ -209,9 +209,19 @@ export class DatabaseStorage implements IStorage {
     id: number,
     updates: UpdateProductRequest,
   ): Promise<Product> {
+    // Convert empty strings to null for price fields
+    const cleanedUpdates = {
+      ...updates,
+      price: updates.price === "" ? null : updates.price,
+      dryCleanPrice: updates.dryCleanPrice === "" ? null : updates.dryCleanPrice,
+      ironOnlyPrice: updates.ironOnlyPrice === "" ? null : updates.ironOnlyPrice,
+      smallPrice: updates.smallPrice === "" ? null : updates.smallPrice,
+      mediumPrice: updates.mediumPrice === "" ? null : updates.mediumPrice,
+      largePrice: updates.largePrice === "" ? null : updates.largePrice,
+    };
     const [updated] = await db
       .update(products)
-      .set(updates)
+      .set(cleanedUpdates)
       .where(eq(products.id, id))
       .returning();
     return updated;
