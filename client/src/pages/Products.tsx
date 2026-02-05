@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useContext } from "react";
+import { useState, useMemo, useEffect, useContext, useRef } from "react";
 import { useSearch, useLocation } from "wouter";
 import { UserContext } from "@/App";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
@@ -235,6 +235,7 @@ export default function Products() {
     sqmPrice: "12.00" 
   });
   const [sqmInput, setSqmInput] = useState("");
+  const sqmDialogProcessing = useRef(false); // Prevent rapid clicks from crashing
   const [sqmValues, setSqmValues] = useState<Record<number, number>>({});
   
   // Track multiple carpet entries with different sqm values
@@ -592,6 +593,12 @@ export default function Products() {
     
     // Check if sqm-priced (carpet) - ALWAYS prompt for sqm on every add
     if (product?.isSqmPriced && delta > 0) {
+      // Prevent rapid clicks from crashing - ignore if dialog is already processing
+      if (sqmDialogProcessing.current || sqmDialog.open) {
+        return;
+      }
+      sqmDialogProcessing.current = true;
+      
       // Always show sqm dialog for carpet - allows multiple entries with different sqm
       setSqmDialog({
         open: true,
@@ -600,6 +607,11 @@ export default function Products() {
         sqmPrice: product.sqmPrice || product.price || "12.00"
       });
       setSqmInput("");
+      
+      // Reset processing flag after a short delay
+      setTimeout(() => {
+        sqmDialogProcessing.current = false;
+      }, 300);
       return;
     }
     
