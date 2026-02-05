@@ -110,6 +110,8 @@ export function useUpdateProduct() {
             : undefined,
         price: updates.price ? String(updates.price) : undefined,
         dryCleanPrice: updates.dryCleanPrice ? String(updates.dryCleanPrice) : undefined,
+        ironOnlyPrice: updates.ironOnlyPrice ? String(updates.ironOnlyPrice) : undefined,
+        description: updates.description !== undefined ? (updates.description || null) : undefined,
       };
 
       const url = buildUrl(api.products.update.path, { id });
