@@ -1639,19 +1639,29 @@ export default function Products() {
             </tr>
           </thead>
           <tbody>
-            {orderItems.map((item) => {
+            {orderItems.map((item, idx) => {
               let basePrice: number;
-              if (item.serviceType === "iron") {
+              let displayPrice: number;
+              
+              // For sqm-priced items (carpet), calculate total price from sqm
+              if (item.product.isSqmPriced && item.sqm) {
+                const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
+                displayPrice = item.sqm * sqmPrice;
+                basePrice = displayPrice;
+              } else if (item.serviceType === "iron") {
                 basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+                displayPrice = basePrice;
               } else if (item.serviceType === "dc") {
                 basePrice = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
+                displayPrice = basePrice;
               } else {
                 basePrice = parseFloat(item.product.price || "0");
+                displayPrice = basePrice;
               }
-              const itemPrice = customPrices[item.product.id] !== undefined ? customPrices[item.product.id] : basePrice;
-              const hasCustomPrice = customPrices[item.product.id] !== undefined;
+              const itemPrice = item.product.isSqmPriced ? displayPrice : (customPrices[item.product.id] !== undefined ? customPrices[item.product.id] : basePrice);
+              const hasCustomPrice = !item.product.isSqmPriced && customPrices[item.product.id] !== undefined;
               const bgClass = item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
-              const itemKey = `${item.product.id}-${item.serviceType}`;
+              const itemKey = item.product.isSqmPriced ? `carpet-${idx}` : `${item.product.id}-${item.serviceType}`;
               return (
                 <tr key={itemKey} className={`border-b ${bgClass}`}>
                   <td className="py-2 px-2 font-medium">
@@ -1659,8 +1669,13 @@ export default function Products() {
                     {item.serviceType === "dc" && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
                     {item.serviceType === "iron" && <span className="ml-1 text-[9px] bg-orange-500 text-white px-1 rounded">IO</span>}
                   </td>
-                  <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
+                  <td className="py-2 px-1 text-center font-bold">
+                    {item.product.isSqmPriced && item.sqm ? `${item.sqm} sqm` : item.quantity}
+                  </td>
                   <td className="py-1 px-1 text-right">
+                    {item.product.isSqmPriced ? (
+                      <span className="font-bold text-sm">{itemPrice.toFixed(0)}</span>
+                    ) : (
                     <input
                       type="number"
                       data-testid={`input-price-${item.product.id}`}
@@ -1673,6 +1688,7 @@ export default function Products() {
                       min="0"
                       step="0.5"
                     />
+                    )}
                   </td>
                 </tr>
               );
