@@ -3316,7 +3316,7 @@ export default function Products() {
         open={carpetServiceDialog.open} 
         onOpenChange={(open) => !open && setCarpetServiceDialog({ open: false, productId: null, productName: "", serviceType: "dc" })}
       >
-        <DialogContent aria-describedby={undefined} className="max-w-sm">
+        <DialogContent aria-describedby={undefined} className="max-w-sm max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-center text-lg">
               Select Carpet for {carpetServiceDialog.serviceType === "dc" ? "Dry Clean" : "Iron Only"}
@@ -3325,7 +3325,7 @@ export default function Products() {
               You have multiple carpets. Which one would you like to apply {carpetServiceDialog.serviceType === "dc" ? "Dry Clean" : "Iron Only"} to?
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-4">
+          <div className="space-y-3 py-4 flex-1 overflow-y-auto max-h-[50vh]">
             {carpetServiceDialog.productId && carpetEntries
               .filter(e => e.productId === carpetServiceDialog.productId)
               .map((entry, index) => {
