@@ -1595,18 +1595,22 @@ export default function Products() {
             >
               <option value="">Choose client...</option>
               <option value="walkin">Walk-in Customer</option>
-              {clients?.filter((client) => {
-                if (!clientSearchTerm.trim()) return true;
+              {(() => {
+                if (!clientSearchTerm.trim()) return null;
                 const search = clientSearchTerm.toLowerCase();
-                return (
+                const matched = clients?.find((client) =>
                   client.name.toLowerCase().includes(search) ||
                   (client.phone && client.phone.toLowerCase().includes(search))
                 );
-              }).map((client) => (
-                <option key={client.id} value={client.id.toString()}>
-                  {client.name} - {client.phone || "No phone"}
-                </option>
-              ))}
+                if (matched) {
+                  return (
+                    <option key={matched.id} value={matched.id.toString()}>
+                      {matched.name} - {matched.phone || "No phone"}
+                    </option>
+                  );
+                }
+                return null;
+              })()}
             </select>
           </div>
 
