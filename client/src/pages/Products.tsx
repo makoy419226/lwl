@@ -1662,15 +1662,19 @@ export default function Products() {
               const hasCustomPrice = !item.product.isSqmPriced && customPrices[item.product.id] !== undefined;
               const bgClass = item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
               const itemKey = item.product.isSqmPriced ? `carpet-${idx}` : `${item.product.id}-${item.serviceType}`;
+              const carpetIndex = item.product.isSqmPriced ? orderItems.filter((o, i) => o.product.isSqmPriced && i <= idx).length : 0;
+              const displayName = item.product.isSqmPriced && item.sqm 
+                ? `Carpet #${carpetIndex} (${item.sqm}sqm)` 
+                : item.product.name;
               return (
                 <tr key={itemKey} className={`border-b ${bgClass}`}>
                   <td className="py-2 px-2 font-medium">
-                    {item.product.name}
+                    {displayName}
                     {item.serviceType === "dc" && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
                     {item.serviceType === "iron" && <span className="ml-1 text-[9px] bg-orange-500 text-white px-1 rounded">IO</span>}
                   </td>
                   <td className="py-2 px-1 text-center font-bold">
-                    {item.product.isSqmPriced && item.sqm ? `${item.sqm} sqm` : item.quantity}
+                    {item.quantity}
                   </td>
                   <td className="py-1 px-1 text-right">
                     {item.product.isSqmPriced ? (
