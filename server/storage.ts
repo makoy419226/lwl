@@ -209,15 +209,22 @@ export class DatabaseStorage implements IStorage {
     id: number,
     updates: UpdateProductRequest,
   ): Promise<Product> {
+    // Helper to convert empty/zero strings to null for optional price fields
+    const toNullIfEmpty = (val: string | null | undefined): string | null => {
+      if (val === "" || val === null || val === undefined) return null;
+      // For size prices, treat "0" as "clear this price"
+      return val;
+    };
+    
     // Convert empty strings to null for price fields
     const cleanedUpdates = {
       ...updates,
       price: updates.price === "" ? null : updates.price,
       dryCleanPrice: updates.dryCleanPrice === "" ? null : updates.dryCleanPrice,
       ironOnlyPrice: updates.ironOnlyPrice === "" ? null : updates.ironOnlyPrice,
-      smallPrice: updates.smallPrice === "" ? null : updates.smallPrice,
-      mediumPrice: updates.mediumPrice === "" ? null : updates.mediumPrice,
-      largePrice: updates.largePrice === "" ? null : updates.largePrice,
+      smallPrice: toNullIfEmpty(updates.smallPrice),
+      mediumPrice: toNullIfEmpty(updates.mediumPrice),
+      largePrice: toNullIfEmpty(updates.largePrice),
     };
     const [updated] = await db
       .update(products)
