@@ -830,6 +830,8 @@ export default function Products() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] }); // Refresh products to show updated stock
       setQuantities({});
+      setDcQuantities({});
+      setIronQuantities({});
       setCustomerName("");
       setSearchTerm("");
       
@@ -1031,6 +1033,8 @@ export default function Products() {
 
   const clearOrder = () => {
     setQuantities({});
+    setDcQuantities({});
+    setIronQuantities({});
     setCustomPrices({});
     setPackingTypes({});
     setCustomItems([]);
