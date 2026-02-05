@@ -581,10 +581,12 @@ const laundryItems = [
   {
     name: "Carpet (per SQ MTR)",
     description: "Carpet cleaning per square meter",
-    price: "15.00",
+    price: "12.00",
     category: "Shoes, Carpets & More",
     stockQuantity: 0,
     sku: "CAR-001",
+    isSqmPriced: true,
+    sqmPrice: "12.00",
   },
   {
     name: "Rug (Small)",

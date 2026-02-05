@@ -4436,6 +4436,14 @@ function OrderForm({
     customerPhone: "0",
   });
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [sqmValues, setSqmValues] = useState<Record<number, number>>({});
+  const [sqmDialog, setSqmDialog] = useState<{ open: boolean; productId: number | null; productName: string; sqmPrice: string }>({ 
+    open: false, 
+    productId: null, 
+    productName: "",
+    sqmPrice: "12.00" 
+  });
+  const [sqmInput, setSqmInput] = useState("");
   const [productSearch, setProductSearch] = useState("");
 
   const selectedClient = clients.find(
@@ -4496,22 +4504,80 @@ function OrderForm({
   }, [filteredProducts]);
 
   const handleQuantityChange = (productId: number, delta: number) => {
+    const product = products?.find(p => p.id === productId);
+    
+    // Check if sqm-priced and adding (not removing)
+    if (product?.isSqmPriced && delta > 0) {
+      const currentQty = quantities[productId] || 0;
+      if (currentQty === 0) {
+        // First time adding - show sqm dialog
+        setSqmDialog({
+          open: true,
+          productId,
+          productName: product.name,
+          sqmPrice: product.sqmPrice || "12.00"
+        });
+        setSqmInput("");
+        return;
+      }
+    }
+    
     setQuantities((prev) => {
       const current = prev[productId] || 0;
       const newQty = Math.max(0, current + delta);
       if (newQty === 0) {
         const { [productId]: _, ...rest } = prev;
+        // Also clear sqm value when quantity becomes 0
+        setSqmValues((prevSqm) => {
+          const { [productId]: _, ...restSqm } = prevSqm;
+          return restSqm;
+        });
         return rest;
       }
       return { ...prev, [productId]: newQty };
     });
   };
 
+  const handleSqmConfirm = () => {
+    const sqm = parseFloat(sqmInput);
+    if (!sqm || sqm <= 0 || !sqmDialog.productId) {
+      toast({ title: "Please enter a valid square meter value", variant: "destructive" });
+      return;
+    }
+    
+    // Set quantity to 1 (one carpet entry) and store sqm value
+    setQuantities(prev => ({ ...prev, [sqmDialog.productId!]: 1 }));
+    setSqmValues(prev => ({ ...prev, [sqmDialog.productId!]: sqm }));
+    setSqmDialog({ open: false, productId: null, productName: "", sqmPrice: "12.00" });
+    setSqmInput("");
+  };
+
   const handleManualQuantity = (productId: number, value: string) => {
+    const product = products?.find(p => p.id === productId);
+    
+    // For sqm-priced items, open dialog instead
+    if (product?.isSqmPriced) {
+      const qty = parseInt(value) || 0;
+      if (qty > 0 && !sqmValues[productId]) {
+        setSqmDialog({
+          open: true,
+          productId,
+          productName: product.name,
+          sqmPrice: product.sqmPrice || "12.00"
+        });
+        setSqmInput("");
+        return;
+      }
+    }
+    
     const qty = parseInt(value) || 0;
     setQuantities((prev) => {
       if (qty <= 0) {
         const { [productId]: _, ...rest } = prev;
+        setSqmValues((prevSqm) => {
+          const { [productId]: _, ...restSqm } = prevSqm;
+          return restSqm;
+        });
         return rest;
       }
       return { ...prev, [productId]: qty };
@@ -4524,13 +4590,18 @@ function OrderForm({
       .filter(([_, qty]) => qty > 0)
       .map(([productId, qty]) => {
         const product = products.find((p) => p.id === parseInt(productId));
-        return product ? { product, quantity: qty } : null;
+        const sqm = sqmValues[parseInt(productId)];
+        return product ? { product, quantity: qty, sqm } : null;
       })
-      .filter(Boolean) as { product: Product; quantity: number }[];
-  }, [quantities, products]);
+      .filter(Boolean) as { product: Product; quantity: number; sqm?: number }[];
+  }, [quantities, products, sqmValues]);
 
   const orderTotal = useMemo(() => {
     return orderItems.reduce((sum, item) => {
+      if (item.product.isSqmPriced && item.sqm) {
+        // For sqm-priced items: sqm × sqmPrice × quantity
+        return sum + item.sqm * parseFloat(item.product.sqmPrice || item.product.price || "0") * item.quantity;
+      }
       return sum + parseFloat(item.product.price || "0") * item.quantity;
     }, 0);
   }, [orderItems]);
@@ -4586,7 +4657,13 @@ function OrderForm({
     if (!formData.clientId) return;
 
     const itemsText = orderItems
-      .map((item) => `${item.quantity}x ${item.product.name}`)
+      .map((item) => {
+        if (item.product.isSqmPriced && item.sqm) {
+          const price = item.sqm * parseFloat(item.product.sqmPrice || item.product.price || "0");
+          return `${item.sqm} sqm ${item.product.name} (${price.toFixed(2)} AED)`;
+        }
+        return `${item.quantity}x ${item.product.name}`;
+      })
       .join(", ");
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
 
@@ -4949,17 +5026,23 @@ function OrderForm({
             <span className="text-sm font-bold text-primary">{orderTotal.toFixed(2)} AED</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {orderItems.map((item) => (
-              <Badge 
-                key={item.product.id} 
-                variant="secondary" 
-                className="text-xs cursor-pointer hover:bg-destructive/20"
-                onClick={() => handleQuantityChange(item.product.id, -item.quantity)}
-              >
-                {item.quantity}x {item.product.name} ({(parseFloat(item.product.price || "0") * item.quantity).toFixed(0)} AED)
-                <X className="w-3 h-3 ml-1" />
-              </Badge>
-            ))}
+            {orderItems.map((item) => {
+              const isSqm = item.product.isSqmPriced && item.sqm;
+              const itemPrice = isSqm 
+                ? item.sqm! * parseFloat(item.product.sqmPrice || item.product.price || "0") * item.quantity
+                : parseFloat(item.product.price || "0") * item.quantity;
+              return (
+                <Badge 
+                  key={item.product.id} 
+                  variant="secondary" 
+                  className="text-xs cursor-pointer hover:bg-destructive/20"
+                  onClick={() => handleQuantityChange(item.product.id, -item.quantity)}
+                >
+                  {isSqm ? `${item.sqm} sqm` : `${item.quantity}x`} {item.product.name} ({itemPrice.toFixed(0)} AED)
+                  <X className="w-3 h-3 ml-1" />
+                </Badge>
+              );
+            })}
           </div>
         </div>
       )}
@@ -4996,45 +5079,73 @@ function OrderForm({
                         >
                           <TableCell className="font-medium text-sm py-2">
                             {product.name}
+                            {product.isSqmPriced && sqmValues[product.id] && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {sqmValues[product.id]} sqm
+                              </Badge>
+                            )}
                           </TableCell>
-                          <TableCell className="text-right text-sm text-primary font-semibold w-16 py-2">
-                            {product.price
-                              ? `${parseFloat(product.price).toFixed(0)}`
-                              : "-"}
+                          <TableCell className="text-right text-sm text-primary font-semibold w-20 py-2">
+                            {product.isSqmPriced ? (
+                              <span className="text-xs">{parseFloat(product.sqmPrice || product.price || "0").toFixed(0)}/sqm</span>
+                            ) : product.price ? (
+                              `${parseFloat(product.price).toFixed(0)}`
+                            ) : "-"}
                           </TableCell>
                           <TableCell className="w-40 py-2">
-                            <div className="flex items-center justify-center gap-2">
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="outline"
-                                className="h-10 w-10 touch-manipulation"
-                                onClick={() => handleQuantityChange(product.id, -1)}
-                                disabled={!quantities[product.id]}
-                              >
-                                <Minus className="w-4 h-4" />
-                              </Button>
-                              <Input
-                                type="number"
-                                min="0"
-                                value={quantities[product.id] || ""}
-                                onChange={(e) =>
-                                  handleManualQuantity(product.id, e.target.value)
-                                }
-                                className="w-14 h-10 text-center text-base font-bold p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                placeholder="0"
-                                data-testid={`input-qty-${product.id}`}
-                              />
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="outline"
-                                className="h-10 w-10 touch-manipulation"
-                                onClick={() => handleQuantityChange(product.id, 1)}
-                              >
-                                <Plus className="w-4 h-4" />
-                              </Button>
-                            </div>
+                            {product.isSqmPriced ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={quantities[product.id] ? "destructive" : "default"}
+                                  className="h-10 touch-manipulation"
+                                  onClick={() => {
+                                    if (quantities[product.id]) {
+                                      handleQuantityChange(product.id, -1);
+                                    } else {
+                                      handleQuantityChange(product.id, 1);
+                                    }
+                                  }}
+                                  data-testid={`button-sqm-${product.id}`}
+                                >
+                                  {quantities[product.id] ? "Remove" : "Add"}
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="outline"
+                                  className="h-10 w-10 touch-manipulation"
+                                  onClick={() => handleQuantityChange(product.id, -1)}
+                                  disabled={!quantities[product.id]}
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </Button>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={quantities[product.id] || ""}
+                                  onChange={(e) =>
+                                    handleManualQuantity(product.id, e.target.value)
+                                  }
+                                  className="w-14 h-10 text-center text-base font-bold p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  placeholder="0"
+                                  data-testid={`input-qty-${product.id}`}
+                                />
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="outline"
+                                  className="h-10 w-10 touch-manipulation"
+                                  onClick={() => handleQuantityChange(product.id, 1)}
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -5122,6 +5233,60 @@ function OrderForm({
             Delivery address is required for delivery orders
           </p>
         )}
+      
+      {/* Square Meter Dialog for Carpet */}
+      <Dialog open={sqmDialog.open} onOpenChange={(open) => !open && setSqmDialog({ open: false, productId: null, productName: "", sqmPrice: "12.00" })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enter Carpet Size</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {sqmDialog.productName} is priced at <span className="font-bold text-foreground">{sqmDialog.sqmPrice} AED per square meter</span>
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="sqm-input">Square Meters (SQM)</Label>
+              <Input
+                id="sqm-input"
+                type="number"
+                step="0.1"
+                min="0.1"
+                placeholder="e.g., 5.5"
+                value={sqmInput}
+                onChange={(e) => setSqmInput(e.target.value)}
+                autoFocus
+                data-testid="input-sqm"
+              />
+            </div>
+            {sqmInput && parseFloat(sqmInput) > 0 && (
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <p className="text-sm">
+                  Total: <span className="font-bold text-lg">{(parseFloat(sqmInput) * parseFloat(sqmDialog.sqmPrice)).toFixed(2)} AED</span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {sqmInput} sqm × {sqmDialog.sqmPrice} AED/sqm
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSqmDialog({ open: false, productId: null, productName: "", sqmPrice: "12.00" })}
+              data-testid="button-sqm-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSqmConfirm}
+              disabled={!sqmInput || parseFloat(sqmInput) <= 0}
+              data-testid="button-sqm-confirm"
+            >
+              Add to Order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

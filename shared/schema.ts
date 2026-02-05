@@ -20,6 +20,8 @@ export const products = pgTable("products", {
   smallPrice: numeric("small_price", { precision: 10, scale: 2 }),
   mediumPrice: numeric("medium_price", { precision: 10, scale: 2 }),
   largePrice: numeric("large_price", { precision: 10, scale: 2 }),
+  isSqmPriced: boolean("is_sqm_priced").default(false),
+  sqmPrice: numeric("sqm_price", { precision: 10, scale: 2 }),
   sku: text("sku"),
   category: text("category").default("Laundry"),
   stockQuantity: integer("stock_quantity").default(0),
