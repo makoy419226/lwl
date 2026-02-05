@@ -92,6 +92,16 @@
     font-family: var(--font-display);
     @apply font-bold tracking-tight;
   }
+  
+  /* Smooth global transitions */
+  button, a, input, select, textarea {
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  /* Smooth focus transitions */
+  *:focus-visible {
+    @apply transition-all duration-200;
+  }
 }
 
 /* Custom Utilities for Polish */
@@ -293,3 +303,141 @@
 .scrollbar-always-visible::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.7);
 }
+
+/* Fluid Animation Utilities */
+@layer utilities {
+  /* Fade in animation */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+  
+  /* Slide up animation */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+  }
+  
+  /* Slide down animation */
+  .animate-slide-down {
+    animation: slideDown 0.25s ease-out forwards;
+  }
+  
+  /* Scale in animation */
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out forwards;
+  }
+  
+  /* Bounce subtle */
+  .animate-bounce-subtle {
+    animation: bounceSubtle 0.4s ease-out;
+  }
+  
+  /* Pulse glow */
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+  
+  /* Smooth press effect for buttons */
+  .press-effect:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Keyframe animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+  }
+}
+
+/* Smooth transitions for cards and dialogs */
+[data-state="open"] {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Smooth accordion transitions */
+[data-state="open"] > [data-radix-accordion-content] {
+  animation: slideDown 0.25s ease-out;
+}
+
+/* Smooth tab transitions */
+[role="tabpanel"] {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Smooth badge hover */
+.badge-hover {
+  @apply transition-all duration-200 ease-out;
+}
+.badge-hover:hover {
+  transform: scale(1.05);
+}
+
+/* Smooth card interactions */
+.card-interactive {
+  @apply transition-all duration-300 ease-out;
+}
+.card-interactive:hover {
+  @apply shadow-md;
+  transform: translateY(-2px);
+}
+
+/* Stagger animation for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
