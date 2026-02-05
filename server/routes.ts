@@ -2844,21 +2844,27 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Driver PIN is required" });
     }
 
-    // Verify driver PIN - check against ALL active driver users
+    // Verify PIN - accept ANY user PIN (universal PIN system like billing)
     const allUsers = await db.select().from(users);
-    const activeDrivers = allUsers.filter(u => u.role === 'driver' && u.active);
+    const activeUsers = allUsers.filter(u => u.active);
     
-    // Find the driver whose PIN matches
-    let matchingDriver = activeDrivers.find(d => d.pin === pin);
+    // Find ANY user whose PIN matches (universal PIN system)
+    let matchingUser = activeUsers.find(u => u.pin === pin);
     
-    if (!matchingDriver) {
-      // Also check admin PIN as universal override
-      const adminUser = allUsers.find(u => u.role === 'admin');
-      if (adminUser && adminUser.pin === pin) {
-        // Use admin as the delivery confirmer
-        matchingDriver = adminUser;
+    if (!matchingUser) {
+      // Also check staff members
+      const staffMember = await storage.verifyStaffMemberPin(pin);
+      if (staffMember) {
+        // Create a pseudo-user object for staff members
+        matchingUser = { id: staffMember.id, name: staffMember.name, role: staffMember.roleType } as any;
       } else {
-        return res.status(403).json({ message: "Invalid Driver PIN" });
+        // Check delivery workers (legacy)
+        const deliveryWorker = await storage.verifyDeliveryWorkerPin(pin);
+        if (deliveryWorker) {
+          matchingUser = { id: deliveryWorker.id, name: deliveryWorker.name, role: 'driver' } as any;
+        } else {
+          return res.status(403).json({ message: "Invalid PIN" });
+        }
       }
     }
 
@@ -2886,8 +2892,8 @@ export async function registerRoutes(
       delivered: true,
       status: "delivered",
       deliveryDate: new Date().toISOString(),
-      deliveredByWorkerId: matchingDriver.id,
-      deliveryBy: matchingDriver.name || matchingDriver.username,
+      deliveredByWorkerId: matchingUser!.id,
+      deliveryBy: matchingUser!.name || (matchingUser as any).username,
     };
 
     // Add delivery photo if provided

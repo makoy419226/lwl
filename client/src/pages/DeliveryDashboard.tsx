@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -27,8 +34,10 @@ import {
   Camera,
   AlertTriangle,
   User,
+  Calendar,
+  Filter,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { UserContext } from "@/App";
@@ -82,6 +91,40 @@ export default function DeliveryDashboard() {
   const [itemCountConfirmed, setItemCountConfirmed] = useState(false);
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  
+  // Date filter state for delivery history
+  const [historyDateFilter, setHistoryDateFilter] = useState<"today" | "yesterday" | "monthly" | "yearly" | "custom">("today");
+  const [customStartDate, setCustomStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [customEndDate, setCustomEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  
+  // Helper function to get date range based on filter
+  const getDateRange = () => {
+    const now = new Date();
+    switch (historyDateFilter) {
+      case "today":
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case "yesterday":
+        return { start: startOfDay(subDays(now, 1)), end: endOfDay(subDays(now, 1)) };
+      case "monthly":
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "yearly":
+        return { start: startOfYear(now), end: endOfYear(now) };
+      case "custom": {
+        const startDate = new Date(customStartDate);
+        const endDate = new Date(customEndDate);
+        // Guard: if invalid dates or start > end, swap or fallback to today
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return { start: startOfDay(now), end: endOfDay(now) };
+        }
+        if (startDate > endDate) {
+          return { start: startOfDay(endDate), end: endOfDay(startDate) };
+        }
+        return { start: startOfDay(startDate), end: endOfDay(endDate) };
+      }
+      default:
+        return { start: startOfDay(now), end: endOfDay(now) };
+    }
+  };
 
   const { data: orders, isLoading: ordersLoading, refetch } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -275,82 +318,138 @@ export default function DeliveryDashboard() {
         </Card>
       )}
 
-      {/* Recently Delivered Section */}
+      {/* Delivery History Section with Date Filtering */}
       {(() => {
+        const dateRange = getDateRange();
         const deliveredOrders = orders?.filter((order) => {
-          if (!order.delivered) return false;
-          // Admin and drivers see all delivered orders (driver is a shared account)
-          // Individual deliveries are tracked by PIN/name in the order record
-          return true;
+          if (!order.delivered || !order.deliveryDate) return false;
+          // Filter by date range
+          const deliveryDate = new Date(order.deliveryDate);
+          return isWithinInterval(deliveryDate, { start: dateRange.start, end: dateRange.end });
         }).sort((a, b) => {
           // Sort by delivery date descending
           const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : 0;
           const dateB = b.deliveryDate ? new Date(b.deliveryDate).getTime() : 0;
           return dateB - dateA;
-        }).slice(0, 20) || [];
-
-        if (deliveredOrders.length === 0) return null;
+        }) || [];
 
         return (
           <div className="space-y-3">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-blue-600" />
-              Recently Delivered ({deliveredOrders.length})
-            </h2>
-            <div className="grid gap-3">
-              {deliveredOrders.map((order) => {
-                const client = getClient(order);
-                return (
-                  <Card key={order.id} className="p-4 bg-muted/30" data-testid={`card-delivered-${order.id}`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-bold">#{order.orderNumber}</span>
-                          <Badge className="bg-blue-500 text-white">Delivered</Badge>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{order.customerName || client?.name || "Unknown"}</span>
-                          </div>
-                          {client?.address && (
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-muted-foreground truncate">{client.address}</span>
-                            </div>
-                          )}
-                          {order.expectedDeliveryAt && (
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-blue-600">
-                                Expected: {format(new Date(order.expectedDeliveryAt), "dd MMM, h:mm a")}
-                              </span>
-                            </div>
-                          )}
-                          {order.deliveryDate && (
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="w-4 h-4 text-green-600" />
-                              <span className="text-green-600">
-                                Delivered: {format(new Date(order.deliveryDate), "dd MMM, h:mm a")}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedOrder(order)}
-                        data-testid={`button-view-delivered-${order.id}`}
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-blue-600" />
+                Delivery History ({deliveredOrders.length})
+              </h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={historyDateFilter} onValueChange={(v) => setHistoryDateFilter(v as any)}>
+                  <SelectTrigger className="w-[140px]" data-testid="select-history-date-filter">
+                    <Filter className="w-4 h-4 mr-1" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="yesterday">Yesterday</SelectItem>
+                    <SelectItem value="monthly">This Month</SelectItem>
+                    <SelectItem value="yearly">This Year</SelectItem>
+                    <SelectItem value="custom">Custom Range</SelectItem>
+                  </SelectContent>
+                </Select>
+                {historyDateFilter === "custom" && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="w-[130px]"
+                      data-testid="input-custom-start-date"
+                    />
+                    <span className="text-muted-foreground">to</span>
+                    <Input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="w-[130px]"
+                      data-testid="input-custom-end-date"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
+            
+            {deliveredOrders.length === 0 ? (
+              <Card className="p-6 text-center">
+                <Calendar className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">No deliveries found for the selected period</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {historyDateFilter === "today" && "No orders delivered today yet"}
+                  {historyDateFilter === "yesterday" && "No orders were delivered yesterday"}
+                  {historyDateFilter === "monthly" && "No orders delivered this month"}
+                  {historyDateFilter === "yearly" && "No orders delivered this year"}
+                  {historyDateFilter === "custom" && `No orders between ${customStartDate} and ${customEndDate}`}
+                </p>
+              </Card>
+            ) : (
+              <div className="grid gap-3">
+                {deliveredOrders.map((order) => {
+                  const client = getClient(order);
+                  return (
+                    <Card key={order.id} className="p-4 bg-muted/30" data-testid={`card-delivered-${order.id}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-bold">#{order.orderNumber}</span>
+                            <Badge className="bg-blue-500 text-white">Delivered</Badge>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-muted-foreground" />
+                              <span className="font-medium">{order.customerName || client?.name || "Unknown"}</span>
+                            </div>
+                            {client?.address && (
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-muted-foreground truncate">{client.address}</span>
+                              </div>
+                            )}
+                            {order.expectedDeliveryAt && (
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-blue-600">
+                                  Expected: {format(new Date(order.expectedDeliveryAt), "dd MMM, h:mm a")}
+                                </span>
+                              </div>
+                            )}
+                            {order.deliveryDate && (
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-green-600">
+                                  Delivered: {format(new Date(order.deliveryDate), "dd MMM, h:mm a")}
+                                </span>
+                              </div>
+                            )}
+                            {order.deliveryBy && (
+                              <div className="flex items-center gap-2">
+                                <Truck className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">By: {order.deliveryBy}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedOrder(order)}
+                          data-testid={`button-view-delivered-${order.id}`}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })()}
