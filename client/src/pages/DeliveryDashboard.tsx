@@ -279,10 +279,9 @@ export default function DeliveryDashboard() {
       {(() => {
         const deliveredOrders = orders?.filter((order) => {
           if (!order.delivered) return false;
-          // Admin sees all delivered orders, drivers see only their own
-          if (user?.role === "admin") return true;
-          // For drivers, show orders delivered by them (match by user id)
-          return order.deliveredByWorkerId === user?.id;
+          // Admin and drivers see all delivered orders (driver is a shared account)
+          // Individual deliveries are tracked by PIN/name in the order record
+          return true;
         }).sort((a, b) => {
           // Sort by delivery date descending
           const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : 0;

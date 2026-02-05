@@ -2608,13 +2608,13 @@ export async function registerRoutes(
     const adminUser = await storage.getUserByUsername("admin");
     const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, worker: { id: null, name: "Admin", isUser: true } });
+      return res.json({ success: true, worker: { id: adminUser?.id || null, name: "Admin", isUser: true } });
     }
     
-    // Check for user PIN (admin, reception, staff roles) - use null ID to indicate user account
+    // Check for user PIN (admin, reception, staff roles)
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      return res.json({ success: true, worker: { id: null, name: user.name || user.username, isUser: true } });
+      return res.json({ success: true, worker: { id: user.id, name: user.name || user.username, isUser: true } });
     }
     
     // Check staff members (counter, section, driver staff)
@@ -2645,13 +2645,13 @@ export async function registerRoutes(
     const adminUser = await storage.getUserByUsername("admin");
     const adminPin = adminUser?.pin || process.env.ADMIN_PIN || "";
     if (adminPin && pin === adminPin) {
-      return res.json({ success: true, worker: { id: null, name: "Admin", isUser: true } });
+      return res.json({ success: true, worker: { id: adminUser?.id || null, name: "Admin", isUser: true } });
     }
     
-    // Check for any user PIN (admin, reception, staff, driver roles can all verify delivery) - use null ID for users
+    // Check for any user PIN (admin, reception, staff, driver roles can all verify delivery)
     const user = await storage.verifyUserPin(pin);
     if (user) {
-      return res.json({ success: true, worker: { id: null, name: user.name || user.username, isUser: true } });
+      return res.json({ success: true, worker: { id: user.id, name: user.name || user.username, isUser: true } });
     }
     
     // Check staff members (counter, section, driver staff)
