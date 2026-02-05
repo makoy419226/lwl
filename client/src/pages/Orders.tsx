@@ -232,6 +232,12 @@ export default function Orders() {
   const [editItemsPin, setEditItemsPin] = useState("");
   const [editItemsPinError, setEditItemsPinError] = useState("");
   const [isEditingItems, setIsEditingItems] = useState(false);
+  
+  const [editDeliveryTimeDialog, setEditDeliveryTimeDialog] = useState<Order | null>(null);
+  const [editDeliveryDate, setEditDeliveryDate] = useState("");
+  const [editDeliveryHour, setEditDeliveryHour] = useState("12");
+  const [editDeliveryMinute, setEditDeliveryMinute] = useState("00");
+  const [editDeliveryPeriod, setEditDeliveryPeriod] = useState<"AM" | "PM">("PM");
 
   const { data: orders, isLoading, refetch: refetchOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -1880,25 +1886,61 @@ export default function Orders() {
                               )}
                             </div>
 
-                            {/* Expected D&T - Centered */}
-                            {order.expectedDeliveryAt && (
-                              <div className="flex items-center justify-center py-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                <div className="flex items-center gap-2 text-center">
-                                  <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                  <div>
-                                    <span className="text-xs text-muted-foreground uppercase font-medium">
-                                      Expected {order.deliveryType === "delivery" ? "Delivery" : "Pickup"}
-                                    </span>
+                            {/* Expected D&T - Centered - Clickable to edit */}
+                            <div 
+                              className={`flex items-center justify-center py-2 rounded-lg border cursor-pointer hover-elevate ${
+                                order.expectedDeliveryAt 
+                                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800"
+                                  : "bg-muted/30 border-dashed border-muted-foreground/30"
+                              }`}
+                              onClick={() => {
+                                if (order.delivered) return;
+                                setEditDeliveryTimeDialog(order);
+                                if (order.expectedDeliveryAt) {
+                                  const d = new Date(order.expectedDeliveryAt);
+                                  setEditDeliveryDate(format(d, "yyyy-MM-dd"));
+                                  let h = d.getHours();
+                                  const period = h >= 12 ? "PM" : "AM";
+                                  if (h > 12) h -= 12;
+                                  if (h === 0) h = 12;
+                                  setEditDeliveryHour(h.toString());
+                                  setEditDeliveryMinute(d.getMinutes().toString().padStart(2, "0"));
+                                  setEditDeliveryPeriod(period);
+                                } else {
+                                  const tomorrow = new Date();
+                                  tomorrow.setDate(tomorrow.getDate() + 1);
+                                  setEditDeliveryDate(format(tomorrow, "yyyy-MM-dd"));
+                                  setEditDeliveryHour("6");
+                                  setEditDeliveryMinute("00");
+                                  setEditDeliveryPeriod("PM");
+                                }
+                              }}
+                              data-testid={`edit-expected-delivery-mobile-${order.id}`}
+                            >
+                              <div className="flex items-center gap-2 text-center">
+                                <Calendar className={`w-4 h-4 ${order.expectedDeliveryAt ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`} />
+                                <div>
+                                  <span className="text-xs text-muted-foreground uppercase font-medium">
+                                    Expected {order.deliveryType === "delivery" ? "Delivery" : "Pickup"}
+                                  </span>
+                                  {order.expectedDeliveryAt ? (
                                     <p className="font-semibold text-blue-700 dark:text-blue-300">
                                       {format(new Date(order.expectedDeliveryAt), "MMM d, h:mm a")}
                                     </p>
-                                  </div>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground italic">Not set - tap to edit</p>
+                                  )}
+                                </div>
+                                {order.expectedDeliveryAt && (
                                   <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 font-medium">
                                     {getTimeRemaining(order.expectedDeliveryAt)}
                                   </span>
-                                </div>
+                                )}
+                                {!order.delivered && (
+                                  <Edit className="w-3 h-3 text-muted-foreground" />
+                                )}
                               </div>
-                            )}
+                            </div>
 
                             {/* Items & Delivery Info Row */}
                             <div className="flex items-center justify-between gap-2">
@@ -2461,13 +2503,44 @@ export default function Orders() {
                                         </SelectContent>
                                       </Select>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                                      {order.expectedDeliveryAt ? (
-                                        <div>
-                                          <div>{format(new Date(order.expectedDeliveryAt), "MMM d, yyyy")}</div>
-                                          <div>{format(new Date(order.expectedDeliveryAt), "hh:mm a")}</div>
-                                        </div>
-                                      ) : "-"}
+                                    <TableCell className="hidden md:table-cell text-xs">
+                                      <div 
+                                        className={`cursor-pointer hover:underline ${order.expectedDeliveryAt ? "text-muted-foreground" : "text-muted-foreground/60 italic"}`}
+                                        onClick={() => {
+                                          if (order.delivered) return;
+                                          setEditDeliveryTimeDialog(order);
+                                          if (order.expectedDeliveryAt) {
+                                            const d = new Date(order.expectedDeliveryAt);
+                                            setEditDeliveryDate(format(d, "yyyy-MM-dd"));
+                                            let h = d.getHours();
+                                            const period = h >= 12 ? "PM" : "AM";
+                                            if (h > 12) h -= 12;
+                                            if (h === 0) h = 12;
+                                            setEditDeliveryHour(h.toString());
+                                            setEditDeliveryMinute(d.getMinutes().toString().padStart(2, "0"));
+                                            setEditDeliveryPeriod(period);
+                                          } else {
+                                            const tomorrow = new Date();
+                                            tomorrow.setDate(tomorrow.getDate() + 1);
+                                            setEditDeliveryDate(format(tomorrow, "yyyy-MM-dd"));
+                                            setEditDeliveryHour("6");
+                                            setEditDeliveryMinute("00");
+                                            setEditDeliveryPeriod("PM");
+                                          }
+                                        }}
+                                        data-testid={`edit-expected-delivery-desktop-${order.id}`}
+                                      >
+                                        {order.expectedDeliveryAt ? (
+                                          <>
+                                            <div>{format(new Date(order.expectedDeliveryAt), "MMM d, yyyy")}</div>
+                                            <div>{format(new Date(order.expectedDeliveryAt), "hh:mm a")}</div>
+                                          </>
+                                        ) : (
+                                          <span className="flex items-center gap-1">
+                                            Not set <Edit className="w-3 h-3" />
+                                          </span>
+                                        )}
+                                      </div>
                                     </TableCell>
                                     <TableCell>
                                       <div className="space-y-1">
@@ -3856,6 +3929,113 @@ export default function Orders() {
                     </>
                   ) : (
                     "Update Items"
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Expected Delivery Time Dialog */}
+      <Dialog
+        open={!!editDeliveryTimeDialog}
+        onOpenChange={(open) => !open && setEditDeliveryTimeDialog(null)}
+      >
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-500" />
+              Edit Expected {editDeliveryTimeDialog?.deliveryType === "delivery" ? "Delivery" : "Pickup"} Time
+            </DialogTitle>
+            <DialogDescription>
+              Set when order #{editDeliveryTimeDialog?.orderNumber} should be ready
+            </DialogDescription>
+          </DialogHeader>
+          {editDeliveryTimeDialog && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={editDeliveryDate}
+                  onChange={(e) => setEditDeliveryDate(e.target.value)}
+                  min={format(new Date(), "yyyy-MM-dd")}
+                  data-testid="input-edit-delivery-date"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Time</Label>
+                <div className="flex gap-2 items-center">
+                  <Select value={editDeliveryHour} onValueChange={setEditDeliveryHour}>
+                    <SelectTrigger className="w-20" data-testid="select-edit-delivery-hour">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((h) => (
+                        <SelectItem key={h} value={h.toString()}>{h}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-lg font-bold">:</span>
+                  <Select value={editDeliveryMinute} onValueChange={setEditDeliveryMinute}>
+                    <SelectTrigger className="w-20" data-testid="select-edit-delivery-minute">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["00", "15", "30", "45"].map((m) => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={editDeliveryPeriod} onValueChange={(v) => setEditDeliveryPeriod(v as "AM" | "PM")}>
+                    <SelectTrigger className="w-20" data-testid="select-edit-delivery-period">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AM">AM</SelectItem>
+                      <SelectItem value="PM">PM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditDeliveryTimeDialog(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!editDeliveryDate) {
+                      toast({ title: "Please select a date", variant: "destructive" });
+                      return;
+                    }
+                    let hour = parseInt(editDeliveryHour);
+                    if (editDeliveryPeriod === "PM" && hour !== 12) hour += 12;
+                    if (editDeliveryPeriod === "AM" && hour === 12) hour = 0;
+                    const dateTime = new Date(`${editDeliveryDate}T${hour.toString().padStart(2, "0")}:${editDeliveryMinute}:00`);
+                    
+                    updateOrderMutation.mutate(
+                      { id: editDeliveryTimeDialog.id, updates: { expectedDeliveryAt: dateTime.toISOString() } },
+                      {
+                        onSuccess: () => {
+                          toast({ title: "Expected delivery time updated" });
+                          setEditDeliveryTimeDialog(null);
+                        },
+                      }
+                    );
+                  }}
+                  disabled={updateOrderMutation.isPending}
+                  data-testid="button-save-delivery-time"
+                >
+                  {updateOrderMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
                   )}
                 </Button>
               </DialogFooter>
