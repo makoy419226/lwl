@@ -731,6 +731,9 @@ export async function seedDatabase() {
   
   // Migrate phone numbers from +971 format to 0 format
   await migratePhoneNumbers();
+  
+  // Fix delivered orders with missing deliveredByWorkerId
+  await fixDeliveredOrdersWorkerId();
 }
 
 async function migratePhoneNumbers() {
@@ -766,6 +769,82 @@ async function migratePhoneNumbers() {
     console.log("Phone number migration completed (converted +971 to 0 format)");
   } catch (error) {
     console.log("Phone migration skipped or already done");
+  }
+}
+
+async function fixDeliveredOrdersWorkerId() {
+  try {
+    // Get all users to create a name->id mapping
+    const allUsers = await db.select().from(users);
+    
+    // Fix delivered orders where deliveredByWorkerId is null but deliveryBy has a name
+    // Match by name or username
+    for (const user of allUsers) {
+      const nameToMatch = user.name || user.username;
+      if (!nameToMatch) continue;
+      
+      // Update orders where deliveryBy matches this user's name but deliveredByWorkerId is null
+      await db.execute(`
+        UPDATE orders 
+        SET delivered_by_worker_id = ${user.id}
+        WHERE delivered = true 
+          AND delivered_by_worker_id IS NULL 
+          AND delivery_by IS NOT NULL
+          AND (LOWER(delivery_by) = LOWER('${nameToMatch.replace(/'/g, "''")}') 
+               OR LOWER(delivery_by) = LOWER('${(user.username || '').replace(/'/g, "''")}'))
+      `);
+    }
+    
+    // Also fix packing orders where packingWorkerId is null but packingBy has a name
+    for (const user of allUsers) {
+      const nameToMatch = user.name || user.username;
+      if (!nameToMatch) continue;
+      
+      await db.execute(`
+        UPDATE orders 
+        SET packing_worker_id = ${user.id}
+        WHERE packing_done = true 
+          AND packing_worker_id IS NULL 
+          AND packing_by IS NOT NULL
+          AND (LOWER(packing_by) = LOWER('${nameToMatch.replace(/'/g, "''")}') 
+               OR LOWER(packing_by) = LOWER('${(user.username || '').replace(/'/g, "''")}'))
+      `);
+    }
+    
+    // Fix tagged orders where tagWorkerId is null but tagBy has a name
+    for (const user of allUsers) {
+      const nameToMatch = user.name || user.username;
+      if (!nameToMatch) continue;
+      
+      await db.execute(`
+        UPDATE orders 
+        SET tag_worker_id = ${user.id}
+        WHERE tag_done = true 
+          AND tag_worker_id IS NULL 
+          AND tag_by IS NOT NULL
+          AND (LOWER(tag_by) = LOWER('${nameToMatch.replace(/'/g, "''")}') 
+               OR LOWER(tag_by) = LOWER('${(user.username || '').replace(/'/g, "''")}'))
+      `);
+    }
+    
+    // Fix entry orders where entryByWorkerId is null but entryBy has a name
+    for (const user of allUsers) {
+      const nameToMatch = user.name || user.username;
+      if (!nameToMatch) continue;
+      
+      await db.execute(`
+        UPDATE orders 
+        SET entry_by_worker_id = ${user.id}
+        WHERE entry_by_worker_id IS NULL 
+          AND entry_by IS NOT NULL
+          AND (LOWER(entry_by) = LOWER('${nameToMatch.replace(/'/g, "''")}') 
+               OR LOWER(entry_by) = LOWER('${(user.username || '').replace(/'/g, "''")}'))
+      `);
+    }
+    
+    console.log("Fixed delivered/packed/tagged/entry orders with missing worker IDs");
+  } catch (error) {
+    console.log("Worker ID migration skipped or error:", error);
   }
 }
 
