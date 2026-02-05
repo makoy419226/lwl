@@ -2293,6 +2293,11 @@ export default function Products() {
                                   }`}
                                 >
                                   {(() => {
+                                    // For sqm-priced products (carpet), always show price per sqm
+                                    if (product.isSqmPriced) {
+                                      const sqmPrice = product.sqmPrice ? parseFloat(product.sqmPrice).toFixed(0) : (product.price ? parseFloat(product.price).toFixed(0) : "12");
+                                      return `${sqmPrice}aed/sqm`;
+                                    }
                                     const dcQty = dcQuantities[product.id] || 0;
                                     const ironQty = ironQuantities[product.id] || 0;
                                     const normalQty = getNormalQuantity(product.id);
@@ -2529,6 +2534,11 @@ export default function Products() {
                                 data-testid={`text-product-active-price-${product.id}`}
                               >
                                 {(() => {
+                                  // For sqm-priced products (carpet), always show price per sqm
+                                  if (product.isSqmPriced) {
+                                    const sqmPrice = product.sqmPrice ? parseFloat(product.sqmPrice).toFixed(0) : (product.price ? parseFloat(product.price).toFixed(0) : "12");
+                                    return `${sqmPrice}aed/sqm`;
+                                  }
                                   const dcQty = dcQuantities[product.id] || 0;
                                   const ironQty = ironQuantities[product.id] || 0;
                                   const normalQty = getNormalQuantity(product.id);
