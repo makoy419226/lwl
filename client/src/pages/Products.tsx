@@ -223,13 +223,13 @@ export default function Products() {
   const [draggingProduct, setDraggingProduct] = useState<{ id: number; name: string } | null>(null);
   const [dragOverTab, setDragOverTab] = useState<string | null>(null);
 
-  const sizeOptions: Record<string, { small: number; large: number }> = {
-    Towel: { small: 5, large: 8 },
-    Comfort: { small: 25, large: 35 },
-    Blanket: { small: 15, large: 25 },
-    "Duvet Cover": { small: 10, large: 15 },
-    "Bed Sheet": { small: 5, large: 8 },
-    "Curtain/Window Screen": { small: 15, large: 25 },
+  const sizeOptions: Record<string, { small: number; medium: number; large: number }> = {
+    Towel: { small: 5, medium: 6, large: 8 },
+    Comfort: { small: 25, medium: 30, large: 35 },
+    Blanket: { small: 15, medium: 20, large: 25 },
+    "Duvet Cover": { small: 10, medium: 12, large: 15 },
+    "Bed Sheet": { small: 5, medium: 6, large: 8 },
+    "Curtain/Window Screen": { small: 15, medium: 20, large: 25 },
   };
 
   const hasSizeOption = (productName: string) => {
@@ -237,6 +237,7 @@ export default function Products() {
       (key) =>
         productName.toLowerCase().includes(key.toLowerCase()) &&
         !productName.includes("(Small)") &&
+        !productName.includes("(Medium)") &&
         !productName.includes("(Large)"),
     );
   };
@@ -688,13 +689,14 @@ export default function Products() {
     toast({ title: "Added", description: `${itemName} added to order.` });
   };
 
-  const handleAddSizedItem = (size: "small" | "large") => {
+  const handleAddSizedItem = (size: "small" | "medium" | "large") => {
     if (!sizeDialogProduct) return;
     const sizeKey = getSizeOptionKey(sizeDialogProduct.name);
     if (!sizeKey) return;
 
     const price = sizeOptions[sizeKey][size];
-    const itemName = `${sizeDialogProduct.name} (${size === "small" ? "Small" : "Large"})`;
+    const sizeLabel = size === "small" ? "Small" : size === "medium" ? "Medium" : "Large";
+    const itemName = `${sizeDialogProduct.name} (${sizeLabel})`;
 
     setCustomItems((prev) => {
       const existing = prev.find((item) => item.name === itemName);
@@ -2995,7 +2997,7 @@ export default function Products() {
             </div>
 
             {sizeDialogProduct && getSizeOptionKey(sizeDialogProduct.name) && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <Button
                   variant="outline"
                   className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
@@ -3008,6 +3010,22 @@ export default function Products() {
                     {
                       sizeOptions[getSizeOptionKey(sizeDialogProduct.name)!]
                         ?.small
+                    }{" "}
+                    AED
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2 border-2 hover:border-primary hover:bg-primary/10"
+                  onClick={() => handleAddSizedItem("medium")}
+                  data-testid="button-size-medium"
+                >
+                  <div className="text-2xl font-black text-primary">M</div>
+                  <div className="font-bold">Medium</div>
+                  <div className="text-sm font-bold text-primary">
+                    {
+                      sizeOptions[getSizeOptionKey(sizeDialogProduct.name)!]
+                        ?.medium
                     }{" "}
                     AED
                   </div>
