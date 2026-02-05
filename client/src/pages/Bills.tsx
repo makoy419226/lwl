@@ -261,6 +261,13 @@ export default function Bills() {
       );
     }
     
+    // Sort by most recent first (newest bills at top)
+    filtered = [...filtered].sort((a, b) => {
+      const dateA = new Date(a.billDate).getTime();
+      const dateB = new Date(b.billDate).getTime();
+      return dateB - dateA;
+    });
+    
     return filtered;
   }, [bills, searchTerm, timePeriod]);
   const { data: clients = [] } = useClients();
