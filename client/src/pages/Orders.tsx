@@ -4301,6 +4301,19 @@ export default function Orders() {
                   </p>
                 </div>
                 <div>
+                  <span className="text-muted-foreground">Payment:</span>
+                  {(() => {
+                    const bill = bills?.find(b => b.id === orderDetailDialog.billId);
+                    if (!bill) return <p className="font-medium text-muted-foreground">-</p>;
+                    const isPaid = bill.isPaid || parseFloat(bill.paidAmount || "0") >= parseFloat(bill.amount);
+                    return (
+                      <Badge variant={isPaid ? "default" : "destructive"} className="mt-0.5">
+                        {isPaid ? "Paid" : "Unpaid"}
+                      </Badge>
+                    );
+                  })()}
+                </div>
+                <div>
                   <span className="text-muted-foreground">Entry Date:</span>
                   <p className="font-medium">
                     {orderDetailDialog.entryDate 
