@@ -139,10 +139,20 @@ export default function Products() {
     dryCleanPrice: string;
     ironOnlyPrice: string;
   } | null>(null);
-  // Cart uses composite keys: "productId-serviceType" where serviceType is "normal", "dc", or "iron"
-  // This allows the same product to be added with different service types
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
+  // Simple quantities: productId -> total quantity
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
+  // Service type splits: how many of each product are DC or Iron Only
+  const [dcQuantities, setDcQuantities] = useState<Record<number, number>>({});
+  const [ironQuantities, setIronQuantities] = useState<Record<number, number>>({});
+  // Dialog for selecting service type quantity
+  const [serviceTypeDialog, setServiceTypeDialog] = useState<{
+    productId: number;
+    productName: string;
+    type: "dc" | "iron";
+    maxQty: number;
+  } | null>(null);
+  const [serviceTypeQty, setServiceTypeQty] = useState("");
+  const [customPrices, setCustomPrices] = useState<Record<number, number>>({});
   const [packingTypes, setPackingTypes] = useState<
     Record<number, "hanging" | "folding">
   >({});
@@ -261,13 +271,19 @@ export default function Products() {
     return false;
   };
   
-  // Get total quantity for a product across all service types
+  // Get total quantity for a product (simple lookup)
   const getTotalQuantityForProduct = (productId: number): number => {
-    return (
-      getServiceTypeQuantity(productId, "normal") +
-      getServiceTypeQuantity(productId, "dc") +
-      getServiceTypeQuantity(productId, "iron")
-    );
+    return quantities[productId] || 0;
+  };
+  
+  // Check if product has DC items
+  const hasDcItems = (productId: number): boolean => {
+    return (dcQuantities[productId] || 0) > 0;
+  };
+  
+  // Check if product has Iron Only items
+  const hasIronItems = (productId: number): boolean => {
+    return (ironQuantities[productId] || 0) > 0;
   };
 
   const normalizePhone = (phone: string): string => {
@@ -527,37 +543,89 @@ export default function Products() {
     setStockValue("");
   };
 
-  // Handle quantity change with service type - adds to specific service type entry
-  const handleQuantityChange = (productId: number, delta: number, serviceType: "normal" | "dc" | "iron" = "normal") => {
-    const cartKey = createCartKey(productId, serviceType);
+  // Handle quantity change - simple add/remove from total quantity
+  const handleQuantityChange = (productId: number, delta: number) => {
     setQuantities((prev) => {
-      const current = prev[cartKey] || 0;
+      const current = prev[productId] || 0;
       const newQty = Math.max(0, current + delta);
       if (newQty === 0) {
-        const { [cartKey]: _, ...rest } = prev;
+        const { [productId]: _, ...rest } = prev;
+        // Also clear DC/Iron quantities when removing product
+        setDcQuantities((p) => {
+          const { [productId]: __, ...r } = p;
+          return r;
+        });
+        setIronQuantities((p) => {
+          const { [productId]: __, ...r } = p;
+          return r;
+        });
         return rest;
       }
-      return { ...prev, [cartKey]: newQty };
-    });
-  };
-
-  // Remove all entries for a product (all service types)
-  const removeAllProductEntries = (productId: number) => {
-    setQuantities((prev) => {
-      const result: Record<string, number> = {};
-      Object.entries(prev).forEach(([key, qty]) => {
-        if (parseCartKey(key).productId !== productId) {
-          result[key] = qty;
+      // If reducing quantity, also reduce DC/Iron if needed
+      if (delta < 0) {
+        const dcQty = dcQuantities[productId] || 0;
+        const ironQty = ironQuantities[productId] || 0;
+        const totalSpecial = dcQty + ironQty;
+        if (totalSpecial > newQty) {
+          // Reduce from iron first, then dc
+          let excess = totalSpecial - newQty;
+          if (ironQty > 0) {
+            const reduceIron = Math.min(excess, ironQty);
+            setIronQuantities((p) => ({ ...p, [productId]: ironQty - reduceIron }));
+            excess -= reduceIron;
+          }
+          if (excess > 0 && dcQty > 0) {
+            setDcQuantities((p) => ({ ...p, [productId]: dcQty - excess }));
+          }
         }
-      });
-      return result;
+      }
+      return { ...prev, [productId]: newQty };
     });
   };
 
-  // Get quantity for a specific service type
-  const getServiceTypeQuantity = (productId: number, serviceType: "normal" | "dc" | "iron"): number => {
-    const cartKey = createCartKey(productId, serviceType);
-    return quantities[cartKey] || 0;
+  // Open dialog to set DC quantity
+  const openServiceTypeDialog = (productId: number, productName: string, type: "dc" | "iron") => {
+    const totalQty = quantities[productId] || 0;
+    if (totalQty === 0) return;
+    
+    const currentDc = dcQuantities[productId] || 0;
+    const currentIron = ironQuantities[productId] || 0;
+    const currentValue = type === "dc" ? currentDc : currentIron;
+    
+    setServiceTypeDialog({
+      productId,
+      productName,
+      type,
+      maxQty: totalQty,
+    });
+    setServiceTypeQty(currentValue.toString());
+  };
+
+  // Apply service type quantity from dialog
+  const applyServiceTypeQty = () => {
+    if (!serviceTypeDialog) return;
+    
+    const qty = parseInt(serviceTypeQty) || 0;
+    const { productId, type, maxQty } = serviceTypeDialog;
+    const otherQty = type === "dc" ? (ironQuantities[productId] || 0) : (dcQuantities[productId] || 0);
+    const clampedQty = Math.min(Math.max(0, qty), maxQty - otherQty);
+    
+    if (type === "dc") {
+      setDcQuantities((prev) => ({ ...prev, [productId]: clampedQty }));
+    } else {
+      setIronQuantities((prev) => ({ ...prev, [productId]: clampedQty }));
+    }
+    
+    setServiceTypeDialog(null);
+    setServiceTypeQty("");
+  };
+
+  // Get normal quantity (total - dc - iron)
+  const getNormalQuantity = (productId: number): number => {
+    const total = quantities[productId] || 0;
+    const dc = dcQuantities[productId] || 0;
+    const iron = ironQuantities[productId] || 0;
+    return Math.max(0, total - dc - iron);
   };
 
   const handleProductClick = (product: {
@@ -643,55 +711,44 @@ export default function Products() {
     toast({ title: "Added", description: `${itemName} added to order.` });
   };
 
-  // Parse composite key: "productId-serviceType" -> { productId, serviceType }
-  const parseCartKey = (key: string): { productId: number; serviceType: "normal" | "dc" | "iron" } => {
-    const parts = key.split("-");
-    const serviceType = parts.pop() as "normal" | "dc" | "iron";
-    const productId = parseInt(parts.join("-"));
-    return { productId, serviceType };
-  };
-
-  // Create composite key
-  const createCartKey = (productId: number, serviceType: "normal" | "dc" | "iron"): string => {
-    return `${productId}-${serviceType}`;
-  };
-
-  // Get total quantity for a product across all service types
-  const getProductTotalQuantity = (productId: number): number => {
-    return Object.entries(quantities)
-      .filter(([key]) => parseCartKey(key).productId === productId)
-      .reduce((sum, [_, qty]) => sum + qty, 0);
-  };
-
-  // Check if product has any DC items
-  const hasDryCleanItems = (productId: number): boolean => {
-    const key = createCartKey(productId, "dc");
-    return (quantities[key] || 0) > 0;
-  };
-
-  // Check if product has any Iron items
-  const hasIronOnlyItems = (productId: number): boolean => {
-    const key = createCartKey(productId, "iron");
-    return (quantities[key] || 0) > 0;
-  };
-
+  // Build order items with service type splits (Normal, DC, Iron as separate lines)
   const orderItems = useMemo(() => {
     if (!allProducts) return [];
-    return Object.entries(quantities)
-      .filter(([_, qty]) => qty > 0)
-      .map(([cartKey, qty]) => {
-        const { productId, serviceType } = parseCartKey(cartKey);
-        const product = allProducts.find((p) => p.id === productId);
-        return product ? { product, quantity: qty, serviceType, cartKey } : null;
-      })
-      .filter(Boolean) as { product: (typeof allProducts)[0]; quantity: number; serviceType: "normal" | "dc" | "iron"; cartKey: string }[];
-  }, [quantities, allProducts]);
+    const items: { product: (typeof allProducts)[0]; quantity: number; serviceType: "normal" | "dc" | "iron" }[] = [];
+    
+    Object.entries(quantities).forEach(([productIdStr, totalQty]) => {
+      const productId = parseInt(productIdStr);
+      if (isNaN(productId) || totalQty <= 0) return;
+      
+      const product = allProducts.find((p) => p.id === productId);
+      if (!product) return;
+      
+      const dcQty = dcQuantities[productId] || 0;
+      const ironQty = ironQuantities[productId] || 0;
+      const normalQty = Math.max(0, totalQty - dcQty - ironQty);
+      
+      // Add normal items first
+      if (normalQty > 0) {
+        items.push({ product, quantity: normalQty, serviceType: "normal" });
+      }
+      // Add DC items
+      if (dcQty > 0) {
+        items.push({ product, quantity: dcQty, serviceType: "dc" });
+      }
+      // Add Iron Only items
+      if (ironQty > 0) {
+        items.push({ product, quantity: ironQty, serviceType: "iron" });
+      }
+    });
+    
+    return items;
+  }, [quantities, dcQuantities, ironQuantities, allProducts]);
 
   const orderTotal = useMemo(() => {
     const productTotal = orderItems.reduce((sum, item) => {
       let price: number;
-      if (customPrices[item.cartKey] !== undefined) {
-        price = customPrices[item.cartKey];
+      if (customPrices[item.product.id] !== undefined) {
+        price = customPrices[item.product.id];
       } else if (item.serviceType === "iron") {
         price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
       } else if (item.serviceType === "dc") {
@@ -919,8 +976,8 @@ export default function Products() {
       const productItemsText = orderItems.map((item) => {
         const packing = packingTypes[item.product.id] || "folding";
         const serviceLabel = item.serviceType === "iron" ? "IO" : item.serviceType === "dc" ? "DC" : "N";
-        const hasCustomPrice = customPrices[item.cartKey] !== undefined;
-        const priceLabel = hasCustomPrice ? ` @ ${customPrices[item.cartKey]} AED` : "";
+        const hasCustomPrice = customPrices[item.product.id] !== undefined;
+        const priceLabel = hasCustomPrice ? ` @ ${customPrices[item.product.id]} AED` : "";
         return `${item.quantity}x ${item.product.name} [${serviceLabel}] (${packing})${priceLabel}`;
       });
       const customItemsText = customItems.map(
@@ -1406,11 +1463,12 @@ export default function Products() {
               } else {
                 basePrice = parseFloat(item.product.price || "0");
               }
-              const itemPrice = customPrices[item.cartKey] !== undefined ? customPrices[item.cartKey] : basePrice;
-              const hasCustomPrice = customPrices[item.cartKey] !== undefined;
+              const itemPrice = customPrices[item.product.id] !== undefined ? customPrices[item.product.id] : basePrice;
+              const hasCustomPrice = customPrices[item.product.id] !== undefined;
               const bgClass = item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
+              const itemKey = `${item.product.id}-${item.serviceType}`;
               return (
-                <tr key={item.cartKey} className={`border-b ${bgClass}`}>
+                <tr key={itemKey} className={`border-b ${bgClass}`}>
                   <td className="py-2 px-2 font-medium">
                     {item.product.name}
                     {item.serviceType === "dc" && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
@@ -1968,19 +2026,19 @@ export default function Products() {
                               {isProductSelected(product) ? (
                                 <div
                                   className={`text-sm sm:text-lg font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${
-                                    hasIronOnlyItems(product.id)
+                                    hasIronItems(product.id)
                                       ? "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30"
-                                      : hasDryCleanItems(product.id) 
+                                      : hasDcItems(product.id) 
                                       ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30" 
                                       : "text-primary bg-primary/10"
                                   }`}
                                 >
                                   {(() => {
-                                    const dcQty = getServiceTypeQuantity(product.id, "dc");
-                                    const ironQty = getServiceTypeQuantity(product.id, "iron");
-                                    const normalQty = getServiceTypeQuantity(product.id, "normal");
+                                    const dcQty = dcQuantities[product.id] || 0;
+                                    const ironQty = ironQuantities[product.id] || 0;
+                                    const normalQty = getNormalQuantity(product.id);
                                     const prices: string[] = [];
-                                    if (normalQty > 0) prices.push(`${normalQty}x ${product.price ? parseFloat(product.price).toFixed(0) : "-"}`);
+                                    if (normalQty > 0) prices.push(`${normalQty}x N`);
                                     if (dcQty > 0) prices.push(`${dcQty}x DC`);
                                     if (ironQty > 0) prices.push(`${ironQty}x IO`);
                                     return prices.length > 0 ? prices.join(", ") : `${product.price ? parseFloat(product.price).toFixed(0) : "-"} AED`;
@@ -2022,21 +2080,21 @@ export default function Products() {
                                   <div className="flex gap-0.5">
                                     <Button
                                       size="sm"
-                                      variant={getServiceTypeQuantity(product.id, "dc") > 0 ? "default" : "outline"}
-                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${getServiceTypeQuantity(product.id, "dc") > 0 ? "bg-purple-600 hover:bg-purple-700" : ""}`}
-                                      onClick={() => handleQuantityChange(product.id, 1, "dc")}
+                                      variant={(dcQuantities[product.id] || 0) > 0 ? "default" : "outline"}
+                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${(dcQuantities[product.id] || 0) > 0 ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                                      onClick={() => openServiceTypeDialog(product.id, product.name, "dc")}
                                       data-testid={`button-fav-dryClean-${product.id}`}
                                     >
-                                      DC {getServiceTypeQuantity(product.id, "dc") > 0 && `(${getServiceTypeQuantity(product.id, "dc")})`}
+                                      DC {(dcQuantities[product.id] || 0) > 0 && `(${dcQuantities[product.id]})`}
                                     </Button>
                                     <Button
                                       size="sm"
-                                      variant={getServiceTypeQuantity(product.id, "iron") > 0 ? "default" : "outline"}
-                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${getServiceTypeQuantity(product.id, "iron") > 0 ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-                                      onClick={() => handleQuantityChange(product.id, 1, "iron")}
+                                      variant={(ironQuantities[product.id] || 0) > 0 ? "default" : "outline"}
+                                      className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${(ironQuantities[product.id] || 0) > 0 ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                                      onClick={() => openServiceTypeDialog(product.id, product.name, "iron")}
                                       data-testid={`button-fav-ironOnly-${product.id}`}
                                     >
-                                      Iron {getServiceTypeQuantity(product.id, "iron") > 0 && `(${getServiceTypeQuantity(product.id, "iron")})`}
+                                      Iron {(ironQuantities[product.id] || 0) > 0 && `(${ironQuantities[product.id]})`}
                                     </Button>
                                   </div>
                                   <div className="flex gap-0.5">
@@ -2192,20 +2250,20 @@ export default function Products() {
                               // Show price based on service selection when item is added
                               <div
                                 className={`text-sm sm:text-lg font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full ${
-                                  hasIronOnlyItems(product.id)
+                                  hasIronItems(product.id)
                                     ? "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30"
-                                    : hasDryCleanItems(product.id) 
+                                    : hasDcItems(product.id) 
                                     ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30" 
                                     : "text-primary bg-primary/10"
                                 }`}
                                 data-testid={`text-product-active-price-${product.id}`}
                               >
                                 {(() => {
-                                  const dcQty = getServiceTypeQuantity(product.id, "dc");
-                                  const ironQty = getServiceTypeQuantity(product.id, "iron");
-                                  const normalQty = getServiceTypeQuantity(product.id, "normal");
+                                  const dcQty = dcQuantities[product.id] || 0;
+                                  const ironQty = ironQuantities[product.id] || 0;
+                                  const normalQty = getNormalQuantity(product.id);
                                   const prices: string[] = [];
-                                  if (normalQty > 0) prices.push(`${normalQty}x ${product.price ? parseFloat(product.price).toFixed(0) : "-"}`);
+                                  if (normalQty > 0) prices.push(`${normalQty}x N`);
                                   if (dcQty > 0) prices.push(`${dcQty}x DC`);
                                   if (ironQty > 0) prices.push(`${ironQty}x IO`);
                                   return prices.length > 0 ? prices.join(", ") : `${product.price ? parseFloat(product.price).toFixed(0) : "-"} AED`;
@@ -2268,21 +2326,21 @@ export default function Products() {
                                 <div className="flex gap-0.5">
                                   <Button
                                     size="sm"
-                                    variant={getServiceTypeQuantity(product.id, "dc") > 0 ? "default" : "outline"}
-                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${getServiceTypeQuantity(product.id, "dc") > 0 ? "bg-purple-600 hover:bg-purple-700" : ""}`}
-                                    onClick={() => handleQuantityChange(product.id, 1, "dc")}
+                                    variant={(dcQuantities[product.id] || 0) > 0 ? "default" : "outline"}
+                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${(dcQuantities[product.id] || 0) > 0 ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+                                    onClick={() => openServiceTypeDialog(product.id, product.name, "dc")}
                                     data-testid={`button-dryClean-${product.id}`}
                                   >
-                                    DC {getServiceTypeQuantity(product.id, "dc") > 0 && `(${getServiceTypeQuantity(product.id, "dc")})`}
+                                    DC {(dcQuantities[product.id] || 0) > 0 && `(${dcQuantities[product.id]})`}
                                   </Button>
                                   <Button
                                     size="sm"
-                                    variant={getServiceTypeQuantity(product.id, "iron") > 0 ? "default" : "outline"}
-                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${getServiceTypeQuantity(product.id, "iron") > 0 ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-                                    onClick={() => handleQuantityChange(product.id, 1, "iron")}
+                                    variant={(ironQuantities[product.id] || 0) > 0 ? "default" : "outline"}
+                                    className={`flex-1 h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 ${(ironQuantities[product.id] || 0) > 0 ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                                    onClick={() => openServiceTypeDialog(product.id, product.name, "iron")}
                                     data-testid={`button-ironOnly-${product.id}`}
                                   >
-                                    Iron {getServiceTypeQuantity(product.id, "iron") > 0 && `(${getServiceTypeQuantity(product.id, "iron")})`}
+                                    Iron {(ironQuantities[product.id] || 0) > 0 && `(${ironQuantities[product.id]})`}
                                   </Button>
                                 </div>
                                 <div className="flex gap-0.5">
@@ -3010,6 +3068,66 @@ export default function Products() {
             >
               Add to Order
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Service Type Quantity Dialog */}
+      <Dialog 
+        open={!!serviceTypeDialog} 
+        onOpenChange={(open) => !open && setServiceTypeDialog(null)}
+      >
+        <DialogContent aria-describedby={undefined} className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              {serviceTypeDialog?.type === "dc" ? "Dry Clean" : "Iron Only"} Items
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center text-sm text-muted-foreground">
+              <div className="font-bold text-foreground text-lg">
+                {serviceTypeDialog?.productName}
+              </div>
+              <div className="text-muted-foreground text-sm mt-1">
+                Total items: {serviceTypeDialog?.maxQty}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">
+                How many for {serviceTypeDialog?.type === "dc" ? "Dry Clean" : "Iron Only"}?
+              </Label>
+              <Input
+                type="number"
+                min="0"
+                max={serviceTypeDialog?.maxQty || 0}
+                value={serviceTypeQty}
+                onChange={(e) => setServiceTypeQty(e.target.value)}
+                placeholder="0"
+                className="text-center text-lg font-bold"
+                data-testid="input-service-type-qty"
+              />
+              <div className="text-xs text-muted-foreground text-center">
+                Remaining will be Normal service
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setServiceTypeDialog(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className={`flex-1 ${serviceTypeDialog?.type === "dc" ? "bg-purple-600 hover:bg-purple-700" : "bg-orange-500 hover:bg-orange-600"}`}
+                onClick={applyServiceTypeQty}
+                data-testid="button-apply-service-type"
+              >
+                Apply
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
