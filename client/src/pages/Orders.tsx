@@ -4282,6 +4282,19 @@ export default function Orders() {
                   </p>
                 </div>
                 <div>
+                  <span className="text-muted-foreground">Phone:</span>
+                  <p className="font-medium">
+                    {clients?.find((c) => c.id === orderDetailDialog.clientId)?.phone || "-"}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Address:</span>
+                  <p className="font-medium">
+                    {orderDetailDialog.deliveryAddress || 
+                     clients?.find((c) => c.id === orderDetailDialog.clientId)?.address || "-"}
+                  </p>
+                </div>
+                <div>
                   <span className="text-muted-foreground">Type:</span>
                   <p className="font-medium capitalize">
                     {orderDetailDialog.deliveryType || "Pickup"}
