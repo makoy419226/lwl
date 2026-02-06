@@ -140,7 +140,7 @@ export default function Orders() {
     }
   }, [searchParams]);
   const [activeTab, setActiveTab] = useState("all");
-  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "custom">("today");
+  const [dateFilter, setDateFilter] = useState<"all_time" | "today" | "yesterday" | "custom">("all_time");
   const [customDateFrom, setCustomDateFrom] = useState("");
   const [customDateTo, setCustomDateTo] = useState("");
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
@@ -1366,7 +1366,9 @@ export default function Orders() {
     yesterday.setDate(yesterday.getDate() - 1);
     
     let matchesDate = true;
-    if (dateFilter === "today") {
+    if (dateFilter === "all_time") {
+      matchesDate = true;
+    } else if (dateFilter === "today") {
       const orderDay = new Date(orderDate);
       orderDay.setHours(0, 0, 0, 0);
       matchesDate = orderDay.getTime() === today.getTime();
@@ -1621,6 +1623,14 @@ export default function Orders() {
         <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-muted/50 rounded-lg border">
           <span className="text-sm font-medium text-muted-foreground">Date:</span>
           <div className="flex gap-1">
+            <Button
+              variant={dateFilter === "all_time" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("all_time")}
+              data-testid="button-filter-all-time"
+            >
+              All Time
+            </Button>
             <Button
               variant={dateFilter === "yesterday" ? "default" : "outline"}
               size="sm"
