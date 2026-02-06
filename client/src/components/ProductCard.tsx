@@ -1,12 +1,14 @@
 import { Product } from "@shared/schema";
-import { Edit2, Trash2, Package, Shirt, Footprints, Home, Sparkles } from "lucide-react";
+import { Edit2, Trash2, Package, Shirt, Footprints, Home, Sparkles, Loader2 } from "lucide-react";
 import { getProductImage } from "@/lib/productImages";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ProductForm } from "./ProductForm";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useDeleteProduct } from "@/hooks/use-products";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 
 const getCategoryIcon = (category: string | null) => {
   switch (category) {
@@ -54,7 +56,17 @@ export function ProductCard({ product, canEdit = true, allocatedCount }: Product
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [colorIndex, setColorIndex] = useState(() => Math.floor(Math.random() * activeColors.length));
+  const [showOrdersDialog, setShowOrdersDialog] = useState(false);
   const deleteProduct = useDeleteProduct();
+
+  const { data: productOrders, isLoading: ordersLoading } = useQuery<{ orderNumber: string; quantity: number; orderId: number }[]>({
+    queryKey: ["/api/products/orders-by-product", product.name],
+    queryFn: async () => {
+      const res = await fetch(`/api/products/orders-by-product?name=${encodeURIComponent(product.name)}`);
+      return res.json();
+    },
+    enabled: showOrdersDialog,
+  });
 
   const handleCardClick = () => {
     setIsActive(!isActive);
@@ -180,7 +192,16 @@ export function ProductCard({ product, canEdit = true, allocatedCount }: Product
         </p>
 
         <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
-          <div className="flex items-center text-sm text-muted-foreground">
+          <div 
+            className={`flex items-center text-sm text-muted-foreground ${allocatedCount !== undefined && allocatedCount > 0 ? "cursor-pointer hover:underline" : ""}`}
+            onClick={(e) => {
+              if (allocatedCount !== undefined && allocatedCount > 0) {
+                e.stopPropagation();
+                setShowOrdersDialog(true);
+              }
+            }}
+            data-testid={`button-stock-${product.id}`}
+          >
             <Package className="w-4 h-4 mr-1.5" />
             {allocatedCount !== undefined ? (
               <span className={allocatedCount > 0 ? "text-primary font-semibold" : ""}>
@@ -197,6 +218,39 @@ export function ProductCard({ product, canEdit = true, allocatedCount }: Product
           </div>
         </div>
       </div>
+
+      <Dialog open={showOrdersDialog} onOpenChange={setShowOrdersDialog}>
+        <DialogContent className="sm:max-w-[400px] max-h-[70vh]" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>{product.name}</DialogTitle>
+            <DialogDescription>
+              {allocatedCount || 0} items across undelivered orders
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[50vh]">
+            {ordersLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : productOrders && productOrders.length > 0 ? (
+              <div className="space-y-1.5">
+                {productOrders.map((order, idx) => (
+                  <div
+                    key={`${order.orderNumber}-${idx}`}
+                    className="flex items-center justify-between p-2.5 rounded-md border"
+                    data-testid={`row-order-${order.orderId}`}
+                  >
+                    <span className="font-mono font-semibold text-sm">{order.orderNumber}</span>
+                    <Badge variant="secondary">{order.quantity}x</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No orders found</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

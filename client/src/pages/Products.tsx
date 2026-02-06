@@ -246,6 +246,17 @@ export default function Products() {
     serviceType: "normal" | "dc" | "iron";
   }>>([]);
   
+  // Stock orders dialog - shows which orders contain a product
+  const [stockOrdersDialog, setStockOrdersDialog] = useState<{ open: boolean; productName: string; count: number }>({ open: false, productName: "", count: 0 });
+  const { data: stockProductOrders, isLoading: stockOrdersLoading } = useQuery<{ orderNumber: string; quantity: number; orderId: number }[]>({
+    queryKey: ["/api/products/orders-by-product", stockOrdersDialog.productName],
+    queryFn: async () => {
+      const res = await fetch(`/api/products/orders-by-product?name=${encodeURIComponent(stockOrdersDialog.productName)}`);
+      return res.json();
+    },
+    enabled: stockOrdersDialog.open && !!stockOrdersDialog.productName,
+  });
+
   // Dialog for selecting which carpet to apply DC/Iron to
   const [carpetServiceDialog, setCarpetServiceDialog] = useState<{
     open: boolean;
@@ -2586,8 +2597,15 @@ export default function Products() {
                           {allocatedStock && (
                               <div className="flex flex-col items-center mt-1 gap-0.5">
                                 <div
-                                  className="text-[10px] font-medium text-muted-foreground"
+                                  className={`text-[10px] font-medium ${(allocatedStock[product.name] || 0) > 0 ? "text-primary cursor-pointer hover:underline font-semibold" : "text-muted-foreground"}`}
                                   data-testid={`text-stock-${product.id}`}
+                                  onClick={(e) => {
+                                    const count = allocatedStock[product.name] || 0;
+                                    if (count > 0) {
+                                      e.stopPropagation();
+                                      setStockOrdersDialog({ open: true, productName: product.name, count });
+                                    }
+                                  }}
                                 >
                                   Stock: {allocatedStock[product.name] || 0}
                                 </div>
@@ -3705,6 +3723,39 @@ export default function Products() {
                 Print Later
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={stockOrdersDialog.open} onOpenChange={(open) => setStockOrdersDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-[400px] max-h-[70vh]">
+          <DialogHeader>
+            <DialogTitle>{stockOrdersDialog.productName}</DialogTitle>
+            <DialogDescription>
+              {stockOrdersDialog.count} items across undelivered orders
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[50vh]">
+            {stockOrdersLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : stockProductOrders && stockProductOrders.length > 0 ? (
+              <div className="space-y-1.5">
+                {stockProductOrders.map((order, idx) => (
+                  <div
+                    key={`${order.orderNumber}-${idx}`}
+                    className="flex items-center justify-between p-2.5 rounded-md border"
+                    data-testid={`row-stock-order-${order.orderId}`}
+                  >
+                    <span className="font-mono font-semibold text-sm">{order.orderNumber}</span>
+                    <Badge variant="secondary">{order.quantity}x</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No orders found</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>

@@ -972,6 +972,19 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/products/orders-by-product", async (req, res) => {
+    try {
+      const productName = req.query.name as string;
+      if (!productName) {
+        return res.status(400).json({ message: "Product name is required" });
+      }
+      const ordersList = await storage.getOrdersForProduct(productName);
+      res.json(ordersList);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   app.get(api.products.get.path, async (req, res) => {
     const id = Number(req.params.id);
     if (isNaN(id)) {

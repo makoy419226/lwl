@@ -152,6 +152,7 @@ export interface IStorage {
   ): Promise<Incident>;
   deleteIncident(id: number): Promise<void>;
   getAllocatedStock(): Promise<Record<string, number>>;
+  getOrdersForProduct(productName: string): Promise<{ orderNumber: string; quantity: number; orderId: number }[]>;
   addStockForOrder(orderId: number): Promise<void>;
   deductStockForOrder(orderId: number): Promise<void>;
   getMissingItems(search?: string): Promise<MissingItem[]>;
@@ -1371,6 +1372,47 @@ export class DatabaseStorage implements IStorage {
     }
 
     return allocatedStock;
+  }
+
+  async getOrdersForProduct(productName: string): Promise<{ orderNumber: string; quantity: number; orderId: number }[]> {
+    const allOrders = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.delivered, false));
+    const allProducts = await db.select().from(products);
+    const productNames = allProducts.map(p => p.name.toLowerCase());
+    const result: { orderNumber: string; quantity: number; orderId: number }[] = [];
+
+    for (const order of allOrders) {
+      if (!order.items) continue;
+      const parsedItems = this.parseOrderItems(order.items);
+      for (const item of parsedItems) {
+        let baseName = item.name
+          .replace(/\s*\[(N|DC|IO)\]/g, "")
+          .replace(/\s*\((folding|hanging)\)/g, "")
+          .trim();
+
+        if (!productNames.includes(baseName.toLowerCase())) {
+          const withoutLastParen = baseName.replace(/\s*\([^)]*\)$/, "").trim();
+          if (productNames.includes(withoutLastParen.toLowerCase())) {
+            baseName = withoutLastParen;
+          }
+        }
+
+        const matchedProduct = allProducts.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+        const finalName = matchedProduct ? matchedProduct.name : baseName;
+
+        if (finalName.toLowerCase() === productName.toLowerCase()) {
+          result.push({
+            orderNumber: order.orderNumber,
+            quantity: item.quantity,
+            orderId: order.id,
+          });
+        }
+      }
+    }
+
+    return result;
   }
 
   async addStockForOrder(orderId: number): Promise<void> {
