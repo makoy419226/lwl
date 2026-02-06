@@ -963,6 +963,15 @@ export async function registerRoutes(
     res.json(products);
   });
 
+  app.get("/api/products/allocated-stock", async (req, res) => {
+    try {
+      const allocatedStock = await storage.getAllocatedStock();
+      res.json(allocatedStock);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   app.get(api.products.get.path, async (req, res) => {
     const id = Number(req.params.id);
     if (isNaN(id)) {
@@ -1021,16 +1030,6 @@ export async function registerRoutes(
     }
     await storage.deleteProduct(productId);
     res.status(204).send();
-  });
-
-  // Get allocated stock for all products (from non-delivered orders)
-  app.get("/api/products/allocated-stock", async (req, res) => {
-    try {
-      const allocatedStock = await storage.getAllocatedStock();
-      res.json(allocatedStock);
-    } catch (err: any) {
-      res.status(500).json({ message: err.message });
-    }
   });
 
   // Bill routes

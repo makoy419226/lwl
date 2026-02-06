@@ -1340,14 +1340,33 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(orders)
       .where(eq(orders.delivered, false));
+    const allProducts = await db.select().from(products);
+    const productNames = allProducts.map(p => p.name.toLowerCase());
     const allocatedStock: Record<string, number> = {};
 
     for (const order of allOrders) {
       if (!order.items) continue;
       const parsedItems = this.parseOrderItems(order.items);
       for (const item of parsedItems) {
-        allocatedStock[item.name] =
-          (allocatedStock[item.name] || 0) + item.quantity;
+        let baseName = item.name
+          .replace(/\s*\[(N|DC|IO)\]/g, "")
+          .replace(/\s*\((folding|hanging)\)/g, "")
+          .trim();
+
+        // If no exact match, try removing the trailing size parenthetical
+        if (!productNames.includes(baseName.toLowerCase())) {
+          const withoutLastParen = baseName.replace(/\s*\([^)]*\)$/, "").trim();
+          if (productNames.includes(withoutLastParen.toLowerCase())) {
+            baseName = withoutLastParen;
+          }
+        }
+
+        // Match to actual product name casing
+        const matchedProduct = allProducts.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+        const finalName = matchedProduct ? matchedProduct.name : baseName;
+
+        allocatedStock[finalName] =
+          (allocatedStock[finalName] || 0) + item.quantity;
       }
     }
 
