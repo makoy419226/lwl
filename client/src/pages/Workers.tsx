@@ -2471,12 +2471,15 @@ export default function Workers() {
                                     <TableRow>
                                       <TableHead>Name</TableHead>
                                       <TableHead>PIN</TableHead>
+                                      <TableHead className="text-center">Deliveries</TableHead>
                                       <TableHead className="text-center">Active</TableHead>
                                       <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {driverStaffMembers.map((member) => (
+                                    {driverStaffMembers.map((member) => {
+                                      const memberDeliveries = orders?.filter(o => o.delivered && (o.deliveredByWorkerId === member.id || o.deliveryBy === member.name)) || [];
+                                      return (
                                       <TableRow key={member.id}>
                                         <TableCell className="font-medium">{member.name}</TableCell>
                                         <TableCell>
@@ -2488,6 +2491,17 @@ export default function Workers() {
                                               {visibleStaffPins.has(member.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                                             </Button>
                                           </div>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setSelectedDriverHistory({ id: member.id, name: member.name })}
+                                            data-testid={`button-view-deliveries-${member.id}`}
+                                          >
+                                            <Truck className="w-3 h-3 mr-1" />
+                                            {memberDeliveries.length}
+                                          </Button>
                                         </TableCell>
                                         <TableCell className="text-center">
                                           <div className="flex items-center justify-center gap-2">
@@ -2506,7 +2520,8 @@ export default function Workers() {
                                           </div>
                                         </TableCell>
                                       </TableRow>
-                                    ))}
+                                      );
+                                    })}
                                   </TableBody>
                                 </Table>
                               )}
@@ -2787,46 +2802,84 @@ export default function Workers() {
 
       {/* Driver Delivery History Dialog */}
       <Dialog open={!!selectedDriverHistory} onOpenChange={() => setSelectedDriverHistory(null)}>
-        <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="w-5 h-5 text-green-600" />
-              Delivery History - {selectedDriverHistory?.name}
+              Orders Delivered
+              {(() => {
+                const dId = selectedDriverHistory?.id;
+                const dName = selectedDriverHistory?.name;
+                const count = orders?.filter(order => 
+                  order.delivered && (order.deliveredByWorkerId === dId || order.deliveryBy === dName)
+                ).length || 0;
+                return <Badge variant="outline" className="ml-1">{count}</Badge>;
+              })()}
             </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Delivered by: {selectedDriverHistory?.name}
+            </p>
           </DialogHeader>
-          <div className="space-y-3">
-            {orders?.filter(order => 
-              order.delivered && order.deliveredByWorkerId === selectedDriverHistory?.id
+          {(() => {
+            const driverId = selectedDriverHistory?.id;
+            const driverName = selectedDriverHistory?.name;
+            const deliveredOrders = orders?.filter(order => 
+              order.delivered && (
+                order.deliveredByWorkerId === driverId || 
+                order.deliveryBy === driverName
+              )
             ).sort((a, b) => {
               const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : 0;
               const dateB = b.deliveryDate ? new Date(b.deliveryDate).getTime() : 0;
               return dateB - dateA;
-            }).map((order) => (
-              <Card key={order.id} className="p-3" data-testid={`card-driver-history-${order.id}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-bold">#{order.orderNumber}</div>
-                    <div className="text-sm text-muted-foreground">{order.customerName || "Walk-in"}</div>
-                  </div>
-                  <div className="text-right">
-                    <Badge className="bg-green-500 text-white mb-1">Delivered</Badge>
-                    {order.deliveryDate && (
-                      <div className="text-xs text-muted-foreground">
-                        {format(new Date(order.deliveryDate), "dd MMM yyyy, h:mm a")}
-                      </div>
-                    )}
-                  </div>
+            }) || [];
+            
+            if (deliveredOrders.length === 0) {
+              return (
+                <div className="text-center py-8 text-muted-foreground">
+                  No deliveries found for this driver
                 </div>
-              </Card>
-            ))}
-            {(!orders?.filter(order => 
-              order.delivered && order.deliveredByWorkerId === selectedDriverHistory?.id
-            ).length) && (
-              <div className="text-center py-8 text-muted-foreground">
-                No deliveries found for this driver
+              );
+            }
+            
+            return (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order #</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deliveredOrders.map((order) => {
+                      const clientName = clients?.find(c => c.id === order.clientId)?.name || order.customerName || "-";
+                      return (
+                        <TableRow key={order.id} data-testid={`row-driver-delivery-${order.id}`}>
+                          <TableCell className="font-medium text-blue-600">
+                            {order.orderNumber}
+                          </TableCell>
+                          <TableCell>{clientName}</TableCell>
+                          <TableCell>
+                            {order.deliveryDate ? format(new Date(order.deliveryDate), "MMM d, yyyy") : "-"}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate text-muted-foreground text-sm">
+                            {order.items || "No items"}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {order.finalAmount || order.totalAmount || "0"} AED
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-          </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

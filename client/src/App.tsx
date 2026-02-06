@@ -35,10 +35,10 @@ const rolePermissions: Record<string, string[]> = {
   "/dashboard": ["admin", "counter", "section"],
   "/delivery": ["driver"],
   "/inventory": ["admin", "counter"],
-  "/products": ["admin", "counter"],
-  "/clients": ["admin", "counter"],
-  "/bills": ["admin", "counter"],
-  "/orders": ["admin", "counter", "section"],
+  "/products": ["admin", "counter", "driver"],
+  "/clients": ["admin", "counter", "driver"],
+  "/bills": ["admin", "counter", "driver"],
+  "/orders": ["admin", "counter", "section", "driver"],
   "/workers": ["admin"],
   "/sales-reports": ["admin"],
   "/incidents": ["admin", "counter", "section", "driver"],
@@ -74,6 +74,11 @@ function Router() {
         <Route path="/" component={DeliveryDashboard} />
         <Route path="/delivery" component={DeliveryDashboard} />
         <Route path="/delivery-history" component={DeliveryHistory} />
+        <Route path="/products" component={Products} />
+        <Route path="/orders" component={Orders} />
+        <Route path="/bills" component={Bills} />
+        <Route path="/clients" component={Clients} />
+        <Route path="/clients/:id" component={ClientDetails} />
         <Route path="/incidents" component={Incidents} />
         <Route path="/contact" component={Contact} />
         <Route path="/track" component={TrackOrder} />

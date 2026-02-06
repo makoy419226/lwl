@@ -82,8 +82,8 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       collapsible: false,
       items: [
         { href: "/inventory", icon: Package, label: "Inventory", active: isInventory, testId: "nav-inventory", roles: ["admin", "counter", "reception"] },
-        { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "counter", "reception"] },
-        { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "counter", "reception"] },
+        { href: "/clients", icon: Users, label: "Clients", active: isClients, testId: "nav-clients", roles: ["admin", "counter", "reception", "driver"] },
+        { href: "/bills", icon: FileText, label: "Bills", active: isBills, testId: "nav-bills", roles: ["admin", "counter", "reception", "driver"] },
         { href: "/due-customers", icon: CircleDollarSign, label: "Due Customers", active: isDueCustomers, testId: "nav-due-customers", roles: ["admin", "counter", "reception"] },
       ]
     },
