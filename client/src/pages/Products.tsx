@@ -2583,19 +2583,13 @@ export default function Products() {
                             )}
                           </div>
 
-                          {product.stockQuantity !== null &&
-                            product.stockQuantity !== undefined && (
+                          {allocatedStock && (
                               <div className="flex flex-col items-center mt-1 gap-0.5">
                                 <div
                                   className="text-[10px] font-medium text-muted-foreground"
                                   data-testid={`text-stock-${product.id}`}
                                 >
-                                  Stock: {product.stockQuantity}
-                                  {allocatedStock && allocatedStock[product.name] ? (
-                                    <span className="text-amber-600 dark:text-amber-400 ml-1">
-                                      ({allocatedStock[product.name]} pending)
-                                    </span>
-                                  ) : null}
+                                  Stock: {allocatedStock[product.name] || 0}
                                 </div>
                               </div>
                             )}
