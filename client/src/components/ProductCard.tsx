@@ -36,6 +36,7 @@ const getCategoryIcon = (category: string | null) => {
 interface ProductCardProps {
   product: Product;
   canEdit?: boolean;
+  allocatedCount?: number;
 }
 
 const activeColors = [
@@ -49,7 +50,7 @@ const activeColors = [
   "from-emerald-500 to-emerald-600",
 ];
 
-export function ProductCard({ product, canEdit = true }: ProductCardProps) {
+export function ProductCard({ product, canEdit = true, allocatedCount }: ProductCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [colorIndex, setColorIndex] = useState(() => Math.floor(Math.random() * activeColors.length));
@@ -181,9 +182,15 @@ export function ProductCard({ product, canEdit = true }: ProductCardProps) {
         <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
           <div className="flex items-center text-sm text-muted-foreground">
             <Package className="w-4 h-4 mr-1.5" />
-            <span className={product.stockQuantity && product.stockQuantity < 10 ? "text-amber-500 font-semibold" : ""}>
-              {product.stockQuantity || 0} in stock
-            </span>
+            {allocatedCount !== undefined ? (
+              <span className={allocatedCount > 0 ? "text-primary font-semibold" : ""}>
+                {allocatedCount} in orders
+              </span>
+            ) : (
+              <span className={product.stockQuantity && product.stockQuantity < 10 ? "text-amber-500 font-semibold" : ""}>
+                {product.stockQuantity || 0} in stock
+              </span>
+            )}
           </div>
           <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
             {product.sku || "NO-SKU"}

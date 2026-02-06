@@ -35,6 +35,11 @@ export default function Dashboard() {
     enabled: isSection,
   });
 
+  const { data: allocatedStock } = useQuery<Record<string, number>>({
+    queryKey: ["/api/products/allocated-stock"],
+    staleTime: 30000,
+  });
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -265,7 +270,11 @@ export default function Dashboard() {
           >
             {products?.map((product) => (
               <motion.div key={product.id} variants={item}>
-                <ProductCard product={product} canEdit={isAdmin} />
+                <ProductCard 
+                  product={product} 
+                  canEdit={isAdmin} 
+                  allocatedCount={allocatedStock?.[product.name] ?? 0}
+                />
               </motion.div>
             ))}
           </motion.div>
