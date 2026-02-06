@@ -36,7 +36,7 @@ export default function DeliveryHistory() {
 
   const deliveredOrders = orders?.filter((order) => {
     if (!order.delivered) return false;
-    if (user?.role === "admin") return true;
+    if (user?.role === "admin" || user?.role === "driver") return true;
     return order.deliveredByWorkerId === user?.id;
   }).sort((a, b) => {
     const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : 0;
@@ -72,7 +72,7 @@ export default function DeliveryHistory() {
             Delivery History
           </h1>
           <p className="text-muted-foreground text-sm">
-            {user?.role === "admin" ? "All delivery history" : "Your delivery history"}
+            {(user?.role === "admin" || user?.role === "driver") ? "All delivery history" : "Your delivery history"}
           </p>
         </div>
         <div className="flex items-center gap-2">
