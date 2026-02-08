@@ -596,13 +596,16 @@ export default function Orders() {
 
     const itemsHtml = parsedItems
       .map(
-        (item, idx) =>
-          `<tr style="border-bottom: 1px solid #e5e5e5;">
+        (item, idx) => {
+          const unitPrice = getItemPrice(item.name);
+          const lineTotal = unitPrice * item.quantity;
+          return `<tr style="border-bottom: 1px solid #e5e5e5;">
         <td style="padding: 5px 4px; font-size: 9px;">${idx + 1}</td>
         <td style="padding: 5px 4px; font-size: 9px;">${item.name}</td>
         <td style="padding: 5px 4px; font-size: 9px; text-align: center; font-weight: bold;">${item.quantity}</td>
-        <td style="padding: 5px 4px; font-size: 9px; text-align: right;">${item.quantity} pcs</td>
-      </tr>`,
+        <td style="padding: 5px 4px; font-size: 9px; text-align: right;">${lineTotal.toFixed(2)}</td>
+      </tr>`;
+        },
       )
       .join("");
 
@@ -678,7 +681,7 @@ export default function Orders() {
             </tbody>
             <tfoot>
               <tr style="background: #f8f9fa; border-top: 1px solid #000;">
-                <td colspan="2" style="padding: 6px 4px; font-size: 10px; font-weight: bold;">Total: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} pcs</td>
+                <td colspan="2" style="padding: 6px 4px; font-size: 10px; font-weight: bold;">Total: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} items</td>
                 <td colspan="2" style="padding: 6px 4px; font-size: 12px; font-weight: bold; text-align: right;">AED ${parseFloat(order.totalAmount).toFixed(2)}</td>
               </tr>
             </tfoot>
