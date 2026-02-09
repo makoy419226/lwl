@@ -1964,10 +1964,33 @@ export default function Orders() {
                             {/* Items & Delivery Info Row */}
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="gap-1">
-                                  <Package className="w-3 h-3" />
-                                  {totalItems} items
-                                </Badge>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button data-testid={`button-items-popup-${order.id}`}>
+                                      <Badge variant="outline" className="gap-1 cursor-pointer">
+                                        <Package className="w-3 h-3" />
+                                        {totalItems} items
+                                      </Badge>
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 p-0" align="start">
+                                    <div className="p-3">
+                                      <h4 className="font-semibold text-sm mb-2">Order Items</h4>
+                                      <div className="space-y-1 max-h-60 overflow-y-auto">
+                                        {items.map((item, idx) => (
+                                          <div key={idx} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
+                                            <span className="text-muted-foreground">{item.name}</span>
+                                            <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-sm">
+                                        <span>Total</span>
+                                        <span>{totalItems}</span>
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                                 <Select
                                   value={order.deliveryType || ""}
                                   onValueChange={(newType) => {
@@ -2480,12 +2503,33 @@ export default function Orders() {
                                       </>
                                     ) : null}
                                     <TableCell>
-                                      <div className="flex items-center gap-1 text-xs sm:text-sm" data-testid={`text-items-count-${order.id}`}>
-                                        <Package className="w-3 h-3 text-muted-foreground" />
-                                        <span className="font-medium">
-                                          {parseOrderItems(order.items).reduce((sum, item) => sum + item.quantity, 0)}
-                                        </span>
-                                      </div>
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <button className="flex items-center gap-1 text-xs sm:text-sm cursor-pointer hover:underline" data-testid={`button-items-popup-table-${order.id}`}>
+                                            <Package className="w-3 h-3 text-muted-foreground" />
+                                            <span className="font-medium">
+                                              {parseOrderItems(order.items).reduce((sum, item) => sum + item.quantity, 0)}
+                                            </span>
+                                          </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-64 p-0" align="start">
+                                          <div className="p-3">
+                                            <h4 className="font-semibold text-sm mb-2">Order Items</h4>
+                                            <div className="space-y-1 max-h-60 overflow-y-auto">
+                                              {parseOrderItems(order.items).map((item, idx) => (
+                                                <div key={idx} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
+                                                  <span className="text-muted-foreground">{item.name}</span>
+                                                  <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
+                                                </div>
+                                              ))}
+                                            </div>
+                                            <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-sm">
+                                              <span>Total</span>
+                                              <span>{parseOrderItems(order.items).reduce((sum, item) => sum + item.quantity, 0)}</span>
+                                            </div>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
                                     </TableCell>
                                     {activeTab !== "create" && (
                                       <TableCell className="font-semibold hidden md:table-cell text-xs">
