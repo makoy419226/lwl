@@ -713,29 +713,8 @@ export default function Products() {
   const openServiceTypeDialog = (productId: number, productName: string, type: "dc" | "iron") => {
     const product = products?.find(p => p.id === productId);
     
-    // For carpet (sqm-priced), show carpet picker if there are entries
-    if (product?.isSqmPriced) {
-      const entriesForProduct = carpetEntries.filter(e => e.productId === productId);
-      if (entriesForProduct.length === 0) return;
-      
-      if (entriesForProduct.length === 1) {
-        // Only one carpet - toggle directly
-        const entry = entriesForProduct[0];
-        const newServiceType = entry.serviceType === type ? "normal" : type;
-        setCarpetEntries(prev => prev.map(e => 
-          e.id === entry.id ? { ...e, serviceType: newServiceType } : e
-        ));
-      } else {
-        // Multiple carpets - show picker dialog
-        setCarpetServiceDialog({
-          open: true,
-          productId,
-          productName,
-          serviceType: type
-        });
-      }
-      return;
-    }
+    // Carpet (sqm-priced) items have no DC/Iron option
+    if (product?.isSqmPriced) return;
     
     const totalQty = quantities[productId] || 0;
     if (totalQty === 0) return;
@@ -934,16 +913,10 @@ export default function Products() {
     const productTotal = orderItems.reduce((sum, item) => {
       let price: number;
       
-      // Check if this is a sqm-priced item (like carpet)
-      // DC = 2x normal, Iron = 0.5x normal
+      // Check if this is a sqm-priced item (like carpet) - always normal service only
       if (item.product.isSqmPriced && item.sqm) {
         const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
-        let multiplier = 1;
-        if (item.serviceType === "dc") {
-          multiplier = 2;
-        } else if (item.serviceType === "iron") {
-          multiplier = 0.5;
-        }
+        const multiplier = 1;
         return sum + (item.sqm * sqmPrice * multiplier);
       }
       
@@ -2626,6 +2599,7 @@ export default function Products() {
                                 className="flex flex-col gap-0.5 sm:gap-1 mt-1.5 sm:mt-2 w-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
+                                {!product.isSqmPriced && (
                                 <div className="flex gap-0.5">
                                   <Button
                                     size="sm"
@@ -2646,6 +2620,7 @@ export default function Products() {
                                     Iron {(ironQuantities[product.id] || 0) > 0 && `(${ironQuantities[product.id]})`}
                                   </Button>
                                 </div>
+                              )}
                                 <div className="flex gap-0.5">
                                   <Button
                                     size="sm"

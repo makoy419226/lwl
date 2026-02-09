@@ -172,17 +172,9 @@ export function ProductCard({ product, canEdit = true, allocatedCount }: Product
           </span>
           <div className="flex flex-col items-end gap-0.5">
             {product.isSqmPriced ? (
-              <>
-                <span className="text-sm font-bold text-primary font-display">
-                  {product.sqmPrice ? Number(product.sqmPrice).toFixed(2) : product.price ? Number(product.price).toFixed(2) : '0.00'}/sqm
-                </span>
-                <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
-                  DC: {product.sqmPrice ? (Number(product.sqmPrice) * 2).toFixed(2) : product.dryCleanPrice ? Number(product.dryCleanPrice).toFixed(2) : '-'}/sqm
-                </span>
-                <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
-                  IO: {product.sqmPrice ? (Number(product.sqmPrice) * 0.5).toFixed(2) : product.ironOnlyPrice ? Number(product.ironOnlyPrice).toFixed(2) : '-'}/sqm
-                </span>
-              </>
+              <span className="text-sm font-bold text-primary font-display">
+                {product.sqmPrice ? Number(product.sqmPrice).toFixed(2) : product.price ? Number(product.price).toFixed(2) : '0.00'}/sqm
+              </span>
             ) : (
               <>
                 <span className="text-sm font-bold text-primary font-display">
