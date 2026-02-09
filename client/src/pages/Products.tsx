@@ -909,10 +909,14 @@ export default function Products() {
   }, [quantities, dcQuantities, ironQuantities, allProducts, carpetEntries]);
 
   const orderTotal = useMemo(() => {
-    const productTotal = orderItems.reduce((sum, item) => {
+    const productTotal = orderItems.reduce((sum, item, idx) => {
       let price: number;
       
       if (item.product.isSqmPriced && item.sqm) {
+        const carpetKey = `carpet-${idx}`;
+        if (customPrices[carpetKey] !== undefined) {
+          return sum + customPrices[carpetKey];
+        }
         const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
         const calcPrice = item.sqm * sqmPrice;
         return sum + (item.sqm < 5 ? Math.max(50, calcPrice) : calcPrice);
@@ -1147,7 +1151,7 @@ export default function Products() {
 
       const data = await res.json();
 
-      const productItemsText = orderItems.map((item) => {
+      const productItemsText = orderItems.map((item, idx) => {
         const packing = packingTypes[item.product.id] || "folding";
         const serviceLabel = item.serviceType === "iron" ? "IO" : item.serviceType === "dc" ? "DC" : "N";
         const itemPriceKey = `${item.product.id}-${item.serviceType}`;
@@ -1155,6 +1159,10 @@ export default function Products() {
         const priceLabel = hasCustomPrice ? ` @ ${customPrices[itemPriceKey]} AED` : "";
         
         if (item.product.isSqmPriced && item.sqm) {
+          const carpetKey = `carpet-${idx}`;
+          if (customPrices[carpetKey] !== undefined) {
+            return `${item.sqm} sqm ${item.product.name} @ ${customPrices[carpetKey].toFixed(2)} AED (custom)`;
+          }
           const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
           const calcPrice = item.sqm * sqmPrice;
           const totalPrice = item.sqm < 5 ? Math.max(50, calcPrice) : calcPrice;
@@ -1646,6 +1654,7 @@ export default function Products() {
               let basePrice: number;
               let displayPrice: number;
               
+              const carpetPriceKey = item.product.isSqmPriced ? `carpet-${idx}` : "";
               if (item.product.isSqmPriced && item.sqm) {
                 const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
                 const calcPrice = item.sqm * sqmPrice;
@@ -1661,10 +1670,14 @@ export default function Products() {
                 basePrice = parseFloat(item.product.price || "0");
                 displayPrice = basePrice;
               }
-              const priceKey = `${item.product.id}-${item.serviceType}`;
+              const priceKey = item.product.isSqmPriced ? carpetPriceKey : `${item.product.id}-${item.serviceType}`;
               const unitPrice = customPrices[priceKey] !== undefined ? customPrices[priceKey] : basePrice;
-              const itemPrice = item.product.isSqmPriced ? displayPrice : unitPrice * item.quantity;
-              const hasCustomPrice = !item.product.isSqmPriced && customPrices[priceKey] !== undefined;
+              const itemPrice = item.product.isSqmPriced 
+                ? (customPrices[carpetPriceKey] !== undefined ? customPrices[carpetPriceKey] : displayPrice) 
+                : unitPrice * item.quantity;
+              const hasCustomPrice = item.product.isSqmPriced 
+                ? customPrices[carpetPriceKey] !== undefined 
+                : customPrices[priceKey] !== undefined;
               const bgClass = item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
               const itemKey = item.product.isSqmPriced ? `carpet-${idx}` : `${item.product.id}-${item.serviceType}`;
               const carpetIndex = item.product.isSqmPriced ? orderItems.filter((o, i) => o.product.isSqmPriced && i <= idx).length : 0;
@@ -1683,7 +1696,7 @@ export default function Products() {
                   </td>
                   <td className="py-1 px-1 text-right">
                     {item.product.isSqmPriced ? (
-                      <span className="text-muted-foreground text-[10px]">-</span>
+                      <span className="text-muted-foreground text-[10px]">{item.sqm}sqm</span>
                     ) : (
                       <input
                         type="number"
@@ -1699,8 +1712,23 @@ export default function Products() {
                       />
                     )}
                   </td>
-                  <td className="py-2 px-1 text-right font-bold text-sm">
-                    {itemPrice.toFixed(0)}
+                  <td className="py-1 px-1 text-right">
+                    {item.product.isSqmPriced ? (
+                      <input
+                        type="number"
+                        data-testid={`input-carpet-price-${idx}`}
+                        value={itemPrice}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setCustomPrices(prev => ({ ...prev, [carpetPriceKey]: val }));
+                        }}
+                        className={`w-16 text-right font-bold px-1 py-0.5 rounded border text-sm ${hasCustomPrice ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300" : "bg-transparent border-transparent"}`}
+                        min="0"
+                        step="1"
+                      />
+                    ) : (
+                      <span className="font-bold text-sm">{itemPrice.toFixed(0)}</span>
+                    )}
                   </td>
                 </tr>
               );
