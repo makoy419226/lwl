@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
-import { users, passwordResetTokens, stageChecklists, packingWorkers, bills, orders } from "@shared/schema";
+import { users, passwordResetTokens, stageChecklists, packingWorkers, bills, orders, clientTransactions } from "@shared/schema";
 import { eq, and, gt, ne } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
 import { sendDailySalesReportEmailSMTP, sendSalesReportEmailSMTP, type DailySalesData, type SalesReportData, type ReportPeriod } from "./smtp";
@@ -3960,6 +3960,27 @@ export async function registerRoutes(
           amount: newAmount.toString(),
           paidAmount: newAmount.toString(),
         });
+      }
+
+      // Also fix related client transactions and balance
+      if (order.billId && order.clientId) {
+        const transactions = await storage.getClientTransactions(order.clientId);
+        const relatedTxs = transactions.filter(t => t.billId === order.billId);
+        const client = await storage.getClient(order.clientId);
+        let balanceAdjust = 0;
+        for (const tx of relatedTxs) {
+          const oldAmt = parseFloat(tx.amount);
+          if (oldAmt !== newAmount) {
+            balanceAdjust += oldAmt - newAmount;
+            await db.update(clientTransactions)
+              .set({ amount: newAmount.toFixed(2) })
+              .where(eq(clientTransactions.id, tx.id));
+          }
+        }
+        if (client && balanceAdjust !== 0) {
+          const newBalance = parseFloat(client.balance) + balanceAdjust;
+          await storage.updateClient(client.id, { balance: newBalance.toFixed(2) });
+        }
       }
 
       res.json({ success: true, message: `Order ${orderNumber} and bill updated to ${newAmount}` });
