@@ -170,6 +170,7 @@ export default function Orders() {
   const [tagPin, setTagPin] = useState("");
   const [tagPinError, setTagPinError] = useState("");
   const [newCreatedOrder, setNewCreatedOrder] = useState<Order | null>(null);
+  const [highlightedOrderId, setHighlightedOrderId] = useState<number | null>(null);
   const [viewPhotoOrder, setViewPhotoOrder] = useState<Order | null>(null);
   const pdfReceiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -872,6 +873,27 @@ export default function Orders() {
       return () => clearTimeout(timer);
     }
   }, [newCreatedOrder]);
+
+  useEffect(() => {
+    if (highlightedOrderId) {
+      const timer = setTimeout(() => setHighlightedOrderId(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedOrderId]);
+
+  const navigateToOrderTracking = (order: Order, printTag: boolean) => {
+    setActiveTab("all");
+    setDateFilter("today");
+    setHighlightedOrderId(order.id);
+    if (printTag) {
+      generateTagReceipt(order);
+    }
+    setNewCreatedOrder(null);
+    setTimeout(() => {
+      const el = document.querySelector(`[data-testid="card-order-${order.id}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+  };
 
   const verifyPinMutation = useMutation({
     mutationFn: async (pin: string) => {
@@ -1752,7 +1774,7 @@ export default function Orders() {
                       return (
                         <Card
                           key={order.id}
-                          className="border shadow-sm"
+                          className={`border shadow-sm transition-all duration-500 ${highlightedOrderId === order.id ? "ring-2 ring-primary ring-offset-2 bg-primary/5" : ""}`}
                           data-testid={`card-order-${order.id}`}
                         >
                           <CardHeader className="flex flex-row items-center justify-between gap-2 p-3 pb-2 bg-muted/30">
@@ -2925,8 +2947,21 @@ export default function Orders() {
                 <Printer className="w-4 h-4 mr-2" />
                 Print Full
               </Button>
-              <Button onClick={() => setNewCreatedOrder(null)} variant="ghost">
-                Close
+              <Button
+                onClick={() => navigateToOrderTracking(newCreatedOrder!, true)}
+                variant="outline"
+                className="bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800"
+                data-testid="button-print-tag-navigate"
+              >
+                <Tag className="w-4 h-4 mr-2" />
+                Print Tag
+              </Button>
+              <Button
+                onClick={() => navigateToOrderTracking(newCreatedOrder!, false)}
+                variant="ghost"
+                data-testid="button-print-tag-later"
+              >
+                Print Tag Later
               </Button>
             </div>
             <div ref={pdfReceiptRef} className="bg-card p-6 rounded-lg border">
