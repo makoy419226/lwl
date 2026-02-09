@@ -1545,9 +1545,14 @@ export default function Orders() {
             <div className="relative flex-1 lg:flex-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search..."
+                placeholder="Order #, name, phone, address..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (e.target.value && dateFilter !== "all_time") {
+                    setDateFilter("all_time");
+                  }
+                }}
                 className="pl-10 w-full lg:w-64 h-11 touch-manipulation"
                 data-testid="input-search-orders"
               />
