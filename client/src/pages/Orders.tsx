@@ -140,7 +140,7 @@ export default function Orders() {
     }
   }, [searchParams]);
   const [activeTab, setActiveTab] = useState("all");
-  const [dateFilter, setDateFilter] = useState<"all_time" | "today" | "yesterday" | "custom">("all_time");
+  const [dateFilter, setDateFilter] = useState<"all_time" | "today" | "yesterday" | "custom">("today");
   const [customDateFrom, setCustomDateFrom] = useState("");
   const [customDateTo, setCustomDateTo] = useState("");
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
