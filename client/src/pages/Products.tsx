@@ -1688,17 +1688,18 @@ export default function Products() {
                       <input
                         type="number"
                         data-testid={`input-price-${item.product.id}`}
-                        value={unitPrice}
+                        value={itemPrice}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value) || 0;
-                          setCustomPrices(prev => ({ ...prev, [priceKey]: val }));
+                          const perUnit = item.quantity > 0 ? val / item.quantity : val;
+                          setCustomPrices(prev => ({ ...prev, [priceKey]: perUnit }));
                         }}
                         className={`w-16 text-right font-bold px-1 py-0.5 rounded border text-sm ${hasCustomPrice ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300" : "bg-transparent border-transparent"}`}
                         min="0"
                         step="0.5"
                       />
                       {item.quantity > 1 && (
-                        <span className="text-[9px] text-muted-foreground">={itemPrice.toFixed(0)}</span>
+                        <span className="text-[9px] text-muted-foreground">@{unitPrice.toFixed(0)} each</span>
                       )}
                     </div>
                     )}
@@ -1719,6 +1720,19 @@ export default function Products() {
               </tr>
             ))}
           </tbody>
+          {(orderItems.length > 0 || customItems.length > 0) && (
+            <tfoot>
+              <tr className="bg-muted/50 font-bold text-xs">
+                <td className="py-2 px-2">Total</td>
+                <td className="py-2 px-1 text-center" data-testid="text-total-quantity">
+                  {orderItems.reduce((sum, item) => sum + item.quantity, 0) + customItems.reduce((sum, item) => sum + item.quantity, 0)}
+                </td>
+                <td className="py-2 px-2 text-right" data-testid="text-total-price">
+                  {orderTotal.toFixed(0)}
+                </td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
