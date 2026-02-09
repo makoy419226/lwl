@@ -1637,7 +1637,8 @@ export default function Products() {
             <tr className="border-b">
               <th className="text-left py-2 px-2 font-bold">Item</th>
               <th className="text-center py-2 px-1 font-bold">Qty</th>
-              <th className="text-right py-2 px-2 font-bold">Price</th>
+              <th className="text-right py-2 px-1 font-bold">Unit</th>
+              <th className="text-right py-2 px-1 font-bold">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -1645,7 +1646,6 @@ export default function Products() {
               let basePrice: number;
               let displayPrice: number;
               
-              // For sqm-priced items (carpet), calculate total price from sqm using inventory prices
               if (item.product.isSqmPriced && item.sqm) {
                 const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
                 displayPrice = item.sqm * sqmPrice;
@@ -1682,27 +1682,24 @@ export default function Products() {
                   </td>
                   <td className="py-1 px-1 text-right">
                     {item.product.isSqmPriced ? (
-                      <span className="font-bold text-sm">{itemPrice.toFixed(0)}</span>
+                      <span className="text-muted-foreground text-[10px]">-</span>
                     ) : (
-                    <div className="flex flex-col items-end">
                       <input
                         type="number"
                         data-testid={`input-price-${item.product.id}`}
-                        value={itemPrice}
+                        value={unitPrice}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value) || 0;
-                          const perUnit = item.quantity > 0 ? val / item.quantity : val;
-                          setCustomPrices(prev => ({ ...prev, [priceKey]: perUnit }));
+                          setCustomPrices(prev => ({ ...prev, [priceKey]: val }));
                         }}
-                        className={`w-16 text-right font-bold px-1 py-0.5 rounded border text-sm ${hasCustomPrice ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300" : "bg-transparent border-transparent"}`}
+                        className={`w-14 text-right font-medium px-1 py-0.5 rounded border text-[11px] ${hasCustomPrice ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300" : "bg-transparent border-transparent"}`}
                         min="0"
                         step="0.5"
                       />
-                      {item.quantity > 1 && (
-                        <span className="text-[9px] text-muted-foreground">@{unitPrice.toFixed(0)} each</span>
-                      )}
-                    </div>
                     )}
+                  </td>
+                  <td className="py-2 px-1 text-right font-bold text-sm">
+                    {itemPrice.toFixed(0)}
                   </td>
                 </tr>
               );
@@ -1716,7 +1713,8 @@ export default function Products() {
                   </button>
                 </td>
                 <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
-                <td className="py-2 px-2 text-right font-bold">{(item.price * item.quantity).toFixed(0)}</td>
+                <td className="py-2 px-1 text-right text-[11px] text-muted-foreground">{item.price.toFixed(0)}</td>
+                <td className="py-2 px-1 text-right font-bold">{(item.price * item.quantity).toFixed(0)}</td>
               </tr>
             ))}
           </tbody>
@@ -1727,7 +1725,8 @@ export default function Products() {
                 <td className="py-2 px-1 text-center" data-testid="text-total-quantity">
                   {orderItems.reduce((sum, item) => sum + item.quantity, 0) + customItems.reduce((sum, item) => sum + item.quantity, 0)}
                 </td>
-                <td className="py-2 px-2 text-right" data-testid="text-total-price">
+                <td className="py-2 px-1"></td>
+                <td className="py-2 px-1 text-right" data-testid="text-total-price">
                   {orderTotal.toFixed(0)}
                 </td>
               </tr>
