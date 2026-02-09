@@ -1667,7 +1667,8 @@ export default function Products() {
                 basePrice = parseFloat(item.product.price || "0");
                 displayPrice = basePrice;
               }
-              const itemPrice = item.product.isSqmPriced ? displayPrice : (customPrices[item.product.id] !== undefined ? customPrices[item.product.id] : basePrice);
+              const unitPrice = customPrices[item.product.id] !== undefined ? customPrices[item.product.id] : basePrice;
+              const itemPrice = item.product.isSqmPriced ? displayPrice : unitPrice * item.quantity;
               const hasCustomPrice = !item.product.isSqmPriced && customPrices[item.product.id] !== undefined;
               const bgClass = item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
               const itemKey = item.product.isSqmPriced ? `carpet-${idx}` : `${item.product.id}-${item.serviceType}`;
@@ -1689,18 +1690,23 @@ export default function Products() {
                     {item.product.isSqmPriced ? (
                       <span className="font-bold text-sm">{itemPrice.toFixed(0)}</span>
                     ) : (
-                    <input
-                      type="number"
-                      data-testid={`input-price-${item.product.id}`}
-                      value={itemPrice}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0;
-                        setCustomPrices(prev => ({ ...prev, [item.product.id]: val }));
-                      }}
-                      className={`w-16 text-right font-bold px-1 py-0.5 rounded border text-sm ${hasCustomPrice ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300" : "bg-transparent border-transparent"}`}
-                      min="0"
-                      step="0.5"
-                    />
+                    <div className="flex flex-col items-end">
+                      <input
+                        type="number"
+                        data-testid={`input-price-${item.product.id}`}
+                        value={unitPrice}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setCustomPrices(prev => ({ ...prev, [item.product.id]: val }));
+                        }}
+                        className={`w-16 text-right font-bold px-1 py-0.5 rounded border text-sm ${hasCustomPrice ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300" : "bg-transparent border-transparent"}`}
+                        min="0"
+                        step="0.5"
+                      />
+                      {item.quantity > 1 && (
+                        <span className="text-[9px] text-muted-foreground">={itemPrice.toFixed(0)}</span>
+                      )}
+                    </div>
                     )}
                   </td>
                 </tr>
