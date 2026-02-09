@@ -95,10 +95,6 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.match(/^image\/(jpeg|jpg|png|webp|gif)$/)) {
-        return;
-      }
-      
       try {
         const processedBase64 = await processImage(file);
         setImagePreview(processedBase64);
