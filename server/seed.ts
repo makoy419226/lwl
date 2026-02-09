@@ -742,6 +742,9 @@ export async function seedDatabase() {
 
   // Fix carpet products: ensure sqm pricing flags are set correctly
   await migrateCarpetSqmPricing();
+
+  // Uppercase all client names and addresses
+  await migrateClientNamesToUppercase();
 }
 
 async function migrateCarpetSqmPricing() {
@@ -922,3 +925,31 @@ export const defaultUsers = [
     active: true,
   },
 ];
+
+async function migrateClientNamesToUppercase() {
+  try {
+    await db.execute(`
+      UPDATE clients 
+      SET name = UPPER(name)
+      WHERE name IS NOT NULL AND name != UPPER(name)
+    `);
+    await db.execute(`
+      UPDATE clients 
+      SET address = UPPER(address)
+      WHERE address IS NOT NULL AND address != UPPER(address)
+    `);
+    await db.execute(`
+      UPDATE orders 
+      SET customer_name = UPPER(customer_name)
+      WHERE customer_name IS NOT NULL AND customer_name != UPPER(customer_name)
+    `);
+    await db.execute(`
+      UPDATE orders 
+      SET delivery_address = UPPER(delivery_address)
+      WHERE delivery_address IS NOT NULL AND delivery_address != UPPER(delivery_address)
+    `);
+    console.log("Client names/addresses uppercase migration completed");
+  } catch (error) {
+    console.error("Error migrating client names to uppercase:", error);
+  }
+}

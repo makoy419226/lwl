@@ -723,6 +723,9 @@ export async function registerRoutes(
     try {
       const input = api.clients.create.input.parse(req.body);
 
+      if (input.name) input.name = input.name.trim().toUpperCase();
+      if (input.address) input.address = input.address.trim().toUpperCase();
+
       // Check if phone number already exists (phone must be unique)
       if (input.phone) {
         const existingClientByPhone = await storage.findClientByPhone(input.phone);
@@ -774,6 +777,9 @@ export async function registerRoutes(
       if (isNaN(clientId)) {
         return res.status(400).json({ message: "Invalid client ID" });
       }
+
+      if (input.name) input.name = input.name.trim().toUpperCase();
+      if (input.address) input.address = input.address.trim().toUpperCase();
 
       // Get current client data for comparison
       const currentClient = await storage.getClient(clientId);
@@ -1566,6 +1572,9 @@ export async function registerRoutes(
         createdBy,
         creatorRole,
       } = req.body;
+
+      if (customerName) customerName = customerName.trim().toUpperCase();
+      if (deliveryAddress) deliveryAddress = deliveryAddress.trim().toUpperCase();
       
       // All PINs are universal - any valid PIN can create orders
       // createdBy and creatorRole are used for tracking only, not for access control

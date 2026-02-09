@@ -31,7 +31,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
     defaultValues: {
       name: client?.name || "",
       address: client?.address || "",
-      phone: client?.phone || "+971",
+      phone: client?.phone || "0",
       amount: client?.amount || "0",
       deposit: client?.deposit || "0",
       balance: client?.balance || "0",
@@ -133,7 +133,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
       return;
     }
 
-    if (!data.phone || data.phone.trim() === "" || data.phone.trim() === "+971") {
+    if (!data.phone || data.phone.trim() === "" || data.phone.trim() === "0") {
       toast({
         title: "Missing Information",
         description: "Please enter the client's phone number.",
@@ -234,25 +234,23 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
               <FormLabel>Phone Number *</FormLabel>
               <FormControl>
                 <div className="flex flex-col gap-1">
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                      +971
-                    </span>
-                    <Input 
-                      className={`rounded-l-none ${field.value.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
-                      placeholder="XXXXXXXXX" 
-                      value={field.value.replace(/^\+971/, "").replace(/\D/g, "").slice(0, 9)}
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
-                        field.onChange("+971" + digits);
-                      }}
-                      inputMode="numeric"
-                      maxLength={9}
-                      data-testid="input-phone" 
-                    />
-                  </div>
-                  {field.value.replace(/^\+971/, "").replace(/\D/g, "").length >= 9 && (
-                    <p className="text-xs text-green-600 font-medium">9 digits - limit reached</p>
+                  <Input 
+                    className={`${field.value.replace(/\D/g, "").length >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""}`}
+                    placeholder="05XXXXXXXX" 
+                    value={field.value.replace(/\D/g, "").slice(0, 10)}
+                    onChange={(e) => {
+                      let digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      if (digits.length > 0 && !digits.startsWith("0")) {
+                        digits = "0" + digits.slice(0, 9);
+                      }
+                      field.onChange(digits || "0");
+                    }}
+                    inputMode="numeric"
+                    maxLength={10}
+                    data-testid="input-phone" 
+                  />
+                  {field.value.replace(/\D/g, "").length >= 10 && (
+                    <p className="text-xs text-green-600 font-medium">10 digits - limit reached</p>
                   )}
                 </div>
               </FormControl>

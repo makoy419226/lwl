@@ -4803,9 +4803,9 @@ function OrderForm({
         clientId,
         selectedBillId: "",
         billOption: "new",
-        customerName: client?.name || "",
+        customerName: (client?.name || "").toUpperCase(),
         customerPhone: client?.phone || "0",
-        deliveryAddress: client?.address || "",
+        deliveryAddress: (client?.address || "").toUpperCase(),
       });
     }
   }
