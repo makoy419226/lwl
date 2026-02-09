@@ -2079,49 +2079,50 @@ export default function Products() {
 
           {/* Bulk Service Type Buttons */}
           {orderItems.length > 0 && (
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 h-9 text-xs border-orange-400 text-orange-600 dark:text-orange-400"
-                data-testid={isPopup ? "popup-button-iron-all" : "sidebar-button-iron-all"}
-                onClick={() => {
-                  if (!window.confirm("Do you want all items to be iron only? All item status will change to Iron Only.")) return;
-                  const newIron: Record<number, number> = {};
-                  Object.entries(quantities).forEach(([pid, qty]) => {
-                    const id = parseInt(pid);
-                    const product = allProducts?.find(p => p.id === id);
-                    if (product && !product.isSqmPriced && qty > 0) {
-                      newIron[id] = qty;
-                    }
-                  });
-                  setIronQuantities(newIron);
-                  setDcQuantities({});
-                }}
-              >
-                Iron Only All
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 h-9 text-xs border-purple-400 text-purple-600 dark:text-purple-400"
-                data-testid={isPopup ? "popup-button-dc-all" : "sidebar-button-dc-all"}
-                onClick={() => {
-                  if (!window.confirm("Do you want all items to be dry cleaned? All item status will change to Dry Clean Only.")) return;
-                  const newDc: Record<number, number> = {};
-                  Object.entries(quantities).forEach(([pid, qty]) => {
-                    const id = parseInt(pid);
-                    const product = allProducts?.find(p => p.id === id);
-                    if (product && !product.isSqmPriced && qty > 0) {
-                      newDc[id] = qty;
-                    }
-                  });
-                  setDcQuantities(newDc);
-                  setIronQuantities({});
-                }}
-              >
-                Dry Clean All
-              </Button>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground italic">Use these buttons if customer desires all items to be the same service type. Items can still be edited individually on their cards after use.</p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  className="flex-1 h-9 text-xs bg-orange-500 hover:bg-orange-600 text-white"
+                  data-testid={isPopup ? "popup-button-iron-all" : "sidebar-button-iron-all"}
+                  onClick={() => {
+                    if (!window.confirm("Do you want all items to be iron only? All item status will change to Iron Only.")) return;
+                    const newIron: Record<number, number> = {};
+                    Object.entries(quantities).forEach(([pid, qty]) => {
+                      const id = parseInt(pid);
+                      const product = allProducts?.find(p => p.id === id);
+                      if (product && !product.isSqmPriced && qty > 0) {
+                        newIron[id] = qty;
+                      }
+                    });
+                    setIronQuantities(newIron);
+                    setDcQuantities({});
+                  }}
+                >
+                  Iron Only All
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 h-9 text-xs bg-violet-600 hover:bg-violet-700 text-white"
+                  data-testid={isPopup ? "popup-button-dc-all" : "sidebar-button-dc-all"}
+                  onClick={() => {
+                    if (!window.confirm("Do you want all items to be dry cleaned? All item status will change to Dry Clean Only.")) return;
+                    const newDc: Record<number, number> = {};
+                    Object.entries(quantities).forEach(([pid, qty]) => {
+                      const id = parseInt(pid);
+                      const product = allProducts?.find(p => p.id === id);
+                      if (product && !product.isSqmPriced && qty > 0) {
+                        newDc[id] = qty;
+                      }
+                    });
+                    setDcQuantities(newDc);
+                    setIronQuantities({});
+                  }}
+                >
+                  Dry Clean All
+                </Button>
+              </div>
             </div>
           )}
 
