@@ -912,11 +912,10 @@ export default function Products() {
     const productTotal = orderItems.reduce((sum, item) => {
       let price: number;
       
-      // Check if this is a sqm-priced item (like carpet) - always normal service only
       if (item.product.isSqmPriced && item.sqm) {
         const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
-        const multiplier = 1;
-        return sum + (item.sqm * sqmPrice * multiplier);
+        const calcPrice = item.sqm * sqmPrice;
+        return sum + (item.sqm < 5 ? Math.max(50, calcPrice) : calcPrice);
       }
       
       const priceKey = `${item.product.id}-${item.serviceType}`;
@@ -1155,11 +1154,11 @@ export default function Products() {
         const hasCustomPrice = customPrices[itemPriceKey] !== undefined;
         const priceLabel = hasCustomPrice ? ` @ ${customPrices[itemPriceKey]} AED` : "";
         
-        // For sqm-priced items (like carpet), show sqm × price
         if (item.product.isSqmPriced && item.sqm) {
           const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
-          const totalPrice = item.sqm * sqmPrice;
-          return `${item.sqm} sqm ${item.product.name} @ ${totalPrice.toFixed(2)} AED`;
+          const calcPrice = item.sqm * sqmPrice;
+          const totalPrice = item.sqm < 5 ? Math.max(50, calcPrice) : calcPrice;
+          return `${item.sqm} sqm ${item.product.name} @ ${totalPrice.toFixed(2)} AED${item.sqm < 5 ? " (min 50)" : ""}`;
         }
         
         return `${item.quantity}x ${item.product.name} [${serviceLabel}] (${packing})${priceLabel}`;
@@ -1649,7 +1648,8 @@ export default function Products() {
               
               if (item.product.isSqmPriced && item.sqm) {
                 const sqmPrice = parseFloat(item.product.sqmPrice || item.product.price || "12");
-                displayPrice = item.sqm * sqmPrice;
+                const calcPrice = item.sqm * sqmPrice;
+                displayPrice = item.sqm < 5 ? Math.max(50, calcPrice) : calcPrice;
                 basePrice = displayPrice;
               } else if (item.serviceType === "iron") {
                 basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
@@ -3388,17 +3388,22 @@ export default function Products() {
                 data-testid="input-sqm-value"
               />
             </div>
-            {sqmInput && parseFloat(sqmInput) > 0 && (
-              <div className="text-center p-3 bg-primary/10 rounded-lg">
-                <div className="text-sm text-muted-foreground">Total Price:</div>
-                <div className="text-2xl font-bold text-primary">
-                  {(parseFloat(sqmInput) * parseFloat(sqmDialog.sqmPrice)).toFixed(2)} AED
+            {sqmInput && parseFloat(sqmInput) > 0 && (() => {
+              const sqmVal = parseFloat(sqmInput);
+              const calcPrice = sqmVal * parseFloat(sqmDialog.sqmPrice);
+              const finalPrice = sqmVal < 5 ? Math.max(50, calcPrice) : calcPrice;
+              return (
+                <div className="text-center p-3 bg-primary/10 rounded-lg">
+                  <div className="text-sm text-muted-foreground">Total Price:</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {finalPrice.toFixed(2)} AED
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {sqmVal < 5 ? `Min 50 AED (below 5 sqm)` : `${sqmInput} sqm × ${sqmDialog.sqmPrice} AED/sqm`}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {sqmInput} sqm × {sqmDialog.sqmPrice} AED/sqm
-                </div>
-              </div>
-            )}
+              );
+            })()}
             <div className="flex gap-3">
               <Button 
                 variant="outline" 
@@ -3440,7 +3445,8 @@ export default function Products() {
               .map((entry, index) => {
                 const product = products?.find(p => p.id === entry.productId);
                 const sqmPrice = parseFloat(product?.sqmPrice || product?.price || "12");
-                const totalPrice = entry.sqm * sqmPrice;
+                const calcPrice = entry.sqm * sqmPrice;
+                const totalPrice = entry.sqm < 5 ? Math.max(50, calcPrice) : calcPrice;
                 const isSelected = entry.serviceType === carpetServiceDialog.serviceType;
                 
                 return (
@@ -3458,7 +3464,7 @@ export default function Products() {
                       </span>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {entry.sqm} sqm = {totalPrice.toFixed(2)} AED
+                      {entry.sqm} sqm = {totalPrice.toFixed(2)} AED{entry.sqm < 5 ? " (min 50)" : ""}
                     </div>
                     {isSelected && (
                       <div className="text-xs text-primary font-semibold">Click to remove {carpetServiceDialog.serviceType === "dc" ? "DC" : "Iron"}</div>
