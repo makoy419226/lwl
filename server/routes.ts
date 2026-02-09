@@ -999,7 +999,14 @@ export async function registerRoutes(
 
   app.post(api.products.create.path, async (req, res) => {
     try {
-      const input = api.products.create.input.parse(req.body);
+      const numericFields = ['price', 'dryCleanPrice', 'ironOnlyPrice', 'smallPrice', 'mediumPrice', 'largePrice', 'sqmPrice'];
+      const sanitized = { ...req.body };
+      for (const field of numericFields) {
+        if (sanitized[field] === '' || sanitized[field] === undefined) {
+          sanitized[field] = null;
+        }
+      }
+      const input = api.products.create.input.parse(sanitized);
       const product = await storage.createProduct(input);
       res.status(201).json(product);
     } catch (err) {
@@ -1015,7 +1022,14 @@ export async function registerRoutes(
 
   app.put(api.products.update.path, async (req, res) => {
     try {
-      const input = api.products.update.input.parse(req.body);
+      const numericFields = ['price', 'dryCleanPrice', 'ironOnlyPrice', 'smallPrice', 'mediumPrice', 'largePrice', 'sqmPrice'];
+      const sanitized = { ...req.body };
+      for (const field of numericFields) {
+        if (sanitized[field] === '' || sanitized[field] === undefined) {
+          sanitized[field] = null;
+        }
+      }
+      const input = api.products.update.input.parse(sanitized);
       const productId = Number(req.params.id);
       if (isNaN(productId)) {
         return res.status(400).json({ message: "Invalid product ID" });
