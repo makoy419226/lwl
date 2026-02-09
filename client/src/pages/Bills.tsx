@@ -79,10 +79,21 @@ function parseDescriptionItems(description: string, products?: Product[]): { nam
     if (match) {
       const qty = parseInt(match[1]);
       const name = match[2].trim();
+      
+      const embeddedPriceMatch = name.match(/@\s*([\d.]+)\s*AED/i);
+      if (embeddedPriceMatch) {
+        const price = parseFloat(embeddedPriceMatch[1]);
+        return { name, qty, price, total: qty * price };
+      }
+      
       const baseName = name.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s*\[[^\]]*\]\s*/g, '').trim();
       let product = products?.find(p => p.name.toLowerCase() === name.toLowerCase());
       if (!product) {
         product = products?.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+      }
+      if (!product) {
+        const nameWithoutSize = name.replace(/\s*\(Small\)|\(Medium\)|\(Large\)/gi, '').replace(/\s*\[[^\]]*\]/g, '').trim();
+        product = products?.find(p => p.name.toLowerCase() === nameWithoutSize.toLowerCase());
       }
       const price = product ? parseFloat(product.price || '0') : 0;
       return { name, qty, price, total: qty * price };
