@@ -1865,6 +1865,7 @@ export default function Clients() {
               <Input
                 id="cashier-pin"
                 type="tel"
+                inputMode="numeric"
                 maxLength={5}
                 placeholder="Enter 5-digit PIN"
                 value={cashierPin}

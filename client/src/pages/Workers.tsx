@@ -2579,6 +2579,7 @@ export default function Workers() {
               <Input
                 id="edit-worker-pin"
                 type="tel"
+                inputMode="numeric"
                 maxLength={5}
                 placeholder="Leave empty to keep current PIN"
                 value={formData.pin}
@@ -2681,6 +2682,7 @@ export default function Workers() {
               <Label>PIN (5 digits)</Label>
               <Input
                 type="password"
+                inputMode="numeric"
                 placeholder="Enter 5-digit PIN"
                 value={userFormData.pin}
                 onChange={(e) =>
@@ -2767,6 +2769,7 @@ export default function Workers() {
               </Label>
               <Input
                 type="tel"
+                inputMode="numeric"
                 maxLength={5}
                 placeholder="Enter 5-digit PIN"
                 value={userFormData.pin}
@@ -3024,6 +3027,7 @@ export default function Workers() {
               </Label>
               <Input
                 type="tel"
+                inputMode="numeric"
                 maxLength={5}
                 placeholder="Enter 5-digit PIN"
                 value={staffMemberFormData.pin}
@@ -3094,6 +3098,7 @@ export default function Workers() {
               </Label>
               <Input
                 type="tel"
+                inputMode="numeric"
                 maxLength={5}
                 placeholder="Enter new 5-digit PIN"
                 value={staffMemberFormData.pin}

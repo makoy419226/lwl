@@ -744,6 +744,7 @@ export default function DeliveryDashboard() {
               <Label className="mb-2 block">Enter Driver PIN</Label>
               <Input
                 type="password"
+                inputMode="numeric"
                 placeholder="Enter 5-digit PIN"
                 value={deliveryPin}
                 onChange={(e) => setDeliveryPin(e.target.value)}

@@ -978,6 +978,7 @@ export default function Incidents() {
             </p>
             <Input
               type="password"
+              inputMode="numeric"
               maxLength={5}
               placeholder="Enter 5-digit PIN"
               value={userPin}

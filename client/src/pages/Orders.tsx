@@ -3183,19 +3183,19 @@ export default function Orders() {
               data-testid="input-packing-notes"
             />
             <Input
-              id="packing-pin" // Good practice to have an ID
-              type="tel" // Changed to 'tel' to stop password managers
+              id="packing-pin"
+              type="tel"
+              inputMode="numeric"
               maxLength={5}
               placeholder="Enter 5-digit PIN"
               value={packingPin}
-              autoComplete="off" // Prevents autofill suggestions
+              autoComplete="off"
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, "").slice(0, 5);
                 setPackingPin(val);
                 setPinError("");
               }}
               onKeyDown={(e) => e.key === "Enter" && submitPackingPin()}
-              // Added [-webkit-text-security:disc] to mask the input
               className="text-center text-2xl tracking-widest [-webkit-text-security:disc]"
               data-testid="input-packing-pin"
             />
@@ -3246,6 +3246,7 @@ export default function Orders() {
             <Input
               id="tag-pin"
               type="tel"
+              inputMode="numeric"
               maxLength={5}
               placeholder="Enter 5-digit PIN"
               value={tagPin}
@@ -3470,6 +3471,7 @@ export default function Orders() {
               <Input
                 id="delivery-pin"
                 type="tel"
+                inputMode="numeric"
                 maxLength={5}
                 placeholder="Enter 5-digit PIN"
                 value={deliveryPin}
@@ -3765,6 +3767,7 @@ export default function Orders() {
                     <Label className="text-xs">Your PIN (5 digits)</Label>
                     <Input
                       type="password"
+                      inputMode="numeric"
                       maxLength={5}
                       value={paymentPin}
                       onChange={(e) => { setPaymentPin(e.target.value.replace(/\D/g, '')); setPaymentPinError(''); }}

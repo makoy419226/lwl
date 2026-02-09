@@ -1862,6 +1862,7 @@ export default function Bills() {
               <Input
                 id="creator-pin"
                 type="tel"
+                inputMode="numeric"
                 value={creatorPin}
                 autoComplete="off"
                 onChange={(e) => {
@@ -1934,6 +1935,7 @@ export default function Bills() {
               <Input
                 id="cashier-pin"
                 type="password"
+                inputMode="numeric"
                 maxLength={5}
                 value={cashierPin}
                 onChange={(e) => {
