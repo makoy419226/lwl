@@ -1865,8 +1865,8 @@ export default function Products() {
                   placeholder="Enter name..."
                   value={walkInName}
                   onChange={(e) => {
-                    setWalkInName(e.target.value);
-                    setCustomerName(e.target.value || "Walk-in Customer");
+                    setWalkInName(e.target.value.toUpperCase());
+                    setCustomerName(e.target.value.toUpperCase() || "Walk-in Customer");
                   }}
                   data-testid={isPopup ? "popup-input-walkin-name" : "sidebar-input-walkin-name"}
                 />
@@ -1929,7 +1929,7 @@ export default function Products() {
                   className="h-8 text-xs mt-1"
                   placeholder="Enter address..."
                   value={walkInAddress}
-                  onChange={(e) => setWalkInAddress(e.target.value)}
+                  onChange={(e) => setWalkInAddress(e.target.value.toUpperCase())}
                   data-testid={isPopup ? "popup-input-walkin-address" : "sidebar-input-walkin-address"}
                 />
               </div>
@@ -3065,7 +3065,7 @@ export default function Products() {
                 <Input
                   placeholder="Client name"
                   value={newClientName}
-                  onChange={(e) => setNewClientName(e.target.value)}
+                  onChange={(e) => setNewClientName(e.target.value.toUpperCase())}
                   data-testid="input-new-client-name"
                 />
               </div>
@@ -3150,7 +3150,7 @@ export default function Products() {
               <Input
                 placeholder="Full address"
                 value={newClientAddress}
-                onChange={(e) => setNewClientAddress(e.target.value)}
+                onChange={(e) => setNewClientAddress(e.target.value.toUpperCase())}
                 data-testid="input-new-client-address"
               />
             </div>
@@ -3159,7 +3159,7 @@ export default function Products() {
               <Input
                 placeholder="Contact person name"
                 value={newClientContact}
-                onChange={(e) => setNewClientContact(e.target.value)}
+                onChange={(e) => setNewClientContact(e.target.value.toUpperCase())}
                 data-testid="input-new-client-contact"
               />
             </div>
