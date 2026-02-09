@@ -153,7 +153,7 @@ export default function Products() {
     maxQty: number;
   } | null>(null);
   const [serviceTypeQty, setServiceTypeQty] = useState("");
-  const [customPrices, setCustomPrices] = useState<Record<number, number>>({});
+  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const [packingTypes, setPackingTypes] = useState<
     Record<number, "hanging" | "folding">
   >({});
@@ -600,7 +600,7 @@ export default function Products() {
 
   // Handle quantity change - simple add/remove from total quantity
   const handleQuantityChange = (productId: number, delta: number) => {
-    const product = products?.find(p => p.id === productId);
+    const product = allProducts?.find(p => p.id === productId) || products?.find(p => p.id === productId);
     
     // Check if sqm-priced (carpet) - ALWAYS prompt for sqm on every add
     if (product?.isSqmPriced && delta > 0) {
@@ -920,8 +920,9 @@ export default function Products() {
         return sum + (item.sqm * sqmPrice * multiplier);
       }
       
-      if (customPrices[item.product.id] !== undefined) {
-        price = customPrices[item.product.id];
+      const priceKey = `${item.product.id}-${item.serviceType}`;
+      if (customPrices[priceKey] !== undefined) {
+        price = customPrices[priceKey];
       } else if (item.serviceType === "iron") {
         price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
       } else if (item.serviceType === "dc") {
@@ -1151,8 +1152,9 @@ export default function Products() {
       const productItemsText = orderItems.map((item) => {
         const packing = packingTypes[item.product.id] || "folding";
         const serviceLabel = item.serviceType === "iron" ? "IO" : item.serviceType === "dc" ? "DC" : "N";
-        const hasCustomPrice = customPrices[item.product.id] !== undefined;
-        const priceLabel = hasCustomPrice ? ` @ ${customPrices[item.product.id]} AED` : "";
+        const itemPriceKey = `${item.product.id}-${item.serviceType}`;
+        const hasCustomPrice = customPrices[itemPriceKey] !== undefined;
+        const priceLabel = hasCustomPrice ? ` @ ${customPrices[itemPriceKey]} AED` : "";
         
         // For sqm-priced items (like carpet), show sqm × price
         if (item.product.isSqmPriced && item.sqm) {
@@ -1667,9 +1669,10 @@ export default function Products() {
                 basePrice = parseFloat(item.product.price || "0");
                 displayPrice = basePrice;
               }
-              const unitPrice = customPrices[item.product.id] !== undefined ? customPrices[item.product.id] : basePrice;
+              const priceKey = `${item.product.id}-${item.serviceType}`;
+              const unitPrice = customPrices[priceKey] !== undefined ? customPrices[priceKey] : basePrice;
               const itemPrice = item.product.isSqmPriced ? displayPrice : unitPrice * item.quantity;
-              const hasCustomPrice = !item.product.isSqmPriced && customPrices[item.product.id] !== undefined;
+              const hasCustomPrice = !item.product.isSqmPriced && customPrices[priceKey] !== undefined;
               const bgClass = item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
               const itemKey = item.product.isSqmPriced ? `carpet-${idx}` : `${item.product.id}-${item.serviceType}`;
               const carpetIndex = item.product.isSqmPriced ? orderItems.filter((o, i) => o.product.isSqmPriced && i <= idx).length : 0;
@@ -1697,7 +1700,7 @@ export default function Products() {
                         value={unitPrice}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value) || 0;
-                          setCustomPrices(prev => ({ ...prev, [item.product.id]: val }));
+                          setCustomPrices(prev => ({ ...prev, [priceKey]: val }));
                         }}
                         className={`w-16 text-right font-bold px-1 py-0.5 rounded border text-sm ${hasCustomPrice ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300" : "bg-transparent border-transparent"}`}
                         min="0"
