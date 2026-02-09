@@ -2595,11 +2595,11 @@ export default function Products() {
                                   {getTotalQuantityForProduct(product.id) || getSizedItemQuantity(product.name)}
                                 </span>
                               </div>
+                              {!product.isSqmPriced && (
                               <div
                                 className="flex flex-col gap-0.5 sm:gap-1 mt-1.5 sm:mt-2 w-full"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                {!product.isSqmPriced && (
                                 <div className="flex gap-0.5">
                                   <Button
                                     size="sm"
@@ -2620,7 +2620,6 @@ export default function Products() {
                                     Iron {(ironQuantities[product.id] || 0) > 0 && `(${ironQuantities[product.id]})`}
                                   </Button>
                                 </div>
-                              )}
                                 <div className="flex gap-0.5">
                                   <Button
                                     size="sm"
@@ -2655,6 +2654,7 @@ export default function Products() {
                                   </Button>
                                 </div>
                               </div>
+                              )}
                               <Button
                                 size="icon"
                                 variant="destructive"

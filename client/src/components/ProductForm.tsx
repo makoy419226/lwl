@@ -182,10 +182,11 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
     }
   }, [watchedName, watchedCategory, mode, products, form]);
 
-  const isCarpetCategory = watchedCategory === CARPET_CATEGORY;
+  const watchedIsSqmPriced = form.watch("isSqmPriced");
+  const isCarpetCategory = watchedCategory === CARPET_CATEGORY || !!watchedIsSqmPriced;
 
   useEffect(() => {
-    if (isCarpetCategory) {
+    if (watchedCategory === CARPET_CATEGORY) {
       form.setValue("isSqmPriced", true);
       form.setValue("price", "");
       form.setValue("dryCleanPrice", "");
@@ -193,16 +194,13 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
       form.setValue("smallPrice", "");
       form.setValue("mediumPrice", "");
       form.setValue("largePrice", "");
-    } else {
-      form.setValue("isSqmPriced", false);
-      form.setValue("sqmPrice", "");
     }
-  }, [isCarpetCategory, form]);
+  }, [watchedCategory, form]);
 
   const onSubmit = (values: FormValues) => {
     const submitValues = {
       ...values,
-      isSqmPriced: values.category === CARPET_CATEGORY,
+      isSqmPriced: values.category === CARPET_CATEGORY || !!values.isSqmPriced,
     };
     if (mode === "create") {
       createProduct.mutate(submitValues, {
