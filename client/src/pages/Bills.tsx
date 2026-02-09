@@ -75,6 +75,15 @@ function parseDescriptionItems(description: string, products?: Product[]): { nam
   const itemParts = itemsText.split(',').map(s => s.trim()).filter(Boolean);
   
   return itemParts.map(part => {
+    const sqmMatch = part.match(/^([\d.]+)\s*sqm\s+(.+?)\s*@\s*([\d.]+)\s*AED/i);
+    if (sqmMatch) {
+      const sqm = parseFloat(sqmMatch[1]);
+      const productName = sqmMatch[2].trim();
+      const totalPrice = parseFloat(sqmMatch[3]);
+      const displayName = `${sqm} sqm ${productName} (per SQ MTR) @ ${totalPrice.toFixed(2)} AED`;
+      return { name: displayName, qty: 1, price: totalPrice, total: totalPrice };
+    }
+
     const match = part.match(/^(\d+)x\s+(.+)$/i);
     if (match) {
       const qty = parseInt(match[1]);
@@ -172,7 +181,7 @@ export default function Bills() {
   const [billDescription, setBillDescription] = useState("");
   const [createdBill, setCreatedBill] = useState<{
     bill: Bill;
-    items: { name: string; qty: number; price: number }[];
+    items: { name: string; qty: number; price: number; total?: number }[];
   } | null>(null);
   const [viewBillDetails, setViewBillDetails] = useState<Bill | null>(null);
   const [showNewItemDialog, setShowNewItemDialog] = useState(false);
@@ -1681,7 +1690,7 @@ export default function Bills() {
                     <td style={{ textAlign: 'left', padding: '10px 8px', border: '1px solid #333' }}>{item.name}</td>
                     <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{item.qty}</td>
                     <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333' }}>{item.price.toFixed(2)}</td>
-                    <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333', fontWeight: '500' }}>{(item.price * item.qty).toFixed(2)}</td>
+                    <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333', fontWeight: '500' }}>{(item.total || item.price * item.qty).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
