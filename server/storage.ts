@@ -954,7 +954,7 @@ export class DatabaseStorage implements IStorage {
       expectedDeliveryAt: insertOrder.expectedDeliveryAt
         ? new Date(insertOrder.expectedDeliveryAt)
         : null,
-      entryDate: new Date(insertOrder.entryDate),
+      entryDate: new Date(),
       entryBy: insertOrder.entryBy,
       washingDone: insertOrder.washingDone || false,
       washingDate: insertOrder.washingDate
