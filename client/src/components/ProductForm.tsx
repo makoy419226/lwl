@@ -18,12 +18,10 @@ const CATEGORIES = [
   "Ladies' Clothes",
   "Baby Clothes",
   "Linens",
-  "Shop Items",
   "General Items",
-  "Shoes, Carpets & More",
 ];
 
-const CARPET_CATEGORY = "Shoes, Carpets & More";
+const CARPET_CATEGORY = "General Items";
 
 // Extend schema to coerce numbers from string inputs
 const formSchema = insertProductSchema.extend({
@@ -183,24 +181,12 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
   }, [watchedName, watchedCategory, mode, products, form]);
 
   const watchedIsSqmPriced = form.watch("isSqmPriced");
-  const isCarpetCategory = watchedCategory === CARPET_CATEGORY || !!watchedIsSqmPriced;
-
-  useEffect(() => {
-    if (watchedCategory === CARPET_CATEGORY) {
-      form.setValue("isSqmPriced", true);
-      form.setValue("price", "");
-      form.setValue("dryCleanPrice", "");
-      form.setValue("ironOnlyPrice", "");
-      form.setValue("smallPrice", "");
-      form.setValue("mediumPrice", "");
-      form.setValue("largePrice", "");
-    }
-  }, [watchedCategory, form]);
+  const isCarpetCategory = !!watchedIsSqmPriced;
 
   const onSubmit = (values: FormValues) => {
     const submitValues = {
       ...values,
-      isSqmPriced: values.category === CARPET_CATEGORY || !!values.isSqmPriced,
+      isSqmPriced: !!values.isSqmPriced,
     };
     if (mode === "create") {
       createProduct.mutate(submitValues, {

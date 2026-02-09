@@ -90,8 +90,6 @@ const getCategoryIcon = (category: string | null, size: string = "w-5 h-5") => {
       return <ShoppingCart className={`${size} text-cyan-600`} />;
     case "General Items":
       return <Package className={`${size} text-gray-600`} />;
-    case "Shoes, Carpets & More":
-      return <Footprints className={`${size} text-orange-600`} />;
     default:
       return <Shirt className={`${size} text-primary`} />;
   }
@@ -420,7 +418,7 @@ export default function Products() {
     { id: "ladies", label: "Ladies Clothes", dbCategories: ["Ladies' Clothes"] },
     { id: "babies", label: "Babies Clothes", dbCategories: ["Baby Clothes"] },
     { id: "linens", label: "Linens", dbCategories: ["Linens"] },
-    { id: "general", label: "General Items", dbCategories: ["General Items", "Shoes, Carpets & More", "Shop Items"] },
+    { id: "general", label: "General Items", dbCategories: ["General Items", "Shop Items"] },
   ];
 
   const groupedProducts = useMemo(() => {
@@ -437,8 +435,8 @@ export default function Products() {
     
     products.forEach((product) => {
       let category = product.category || "General Items";
-      // Merge "Shoes, Carpets & More" and "Shop Items" into "General Items"
-      if (category === "Shoes, Carpets & More" || category === "Shop Items") {
+      // Merge "Shop Items" into "General Items"
+      if (category === "Shop Items") {
         category = "General Items";
       }
       if (!groups[category]) {

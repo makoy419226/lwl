@@ -108,8 +108,6 @@ const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
       return <ShoppingCart className={`${size} text-cyan-600`} />;
     case "General Items":
       return <Package className={`${size} text-gray-600`} />;
-    case "Shoes, Carpets & More":
-      return <Footprints className={`${size} text-orange-600`} />;
     default:
       return <Shirt className={`${size} text-primary`} />;
   }
