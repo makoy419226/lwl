@@ -774,11 +774,15 @@ export default function Workers() {
     if (!orders) return [];
     const { start, end } = getDateRange();
     
-    // "paid" type returns paid bills by this staff member
+    const staffMember = allStaffMembers.find(s => s.id === staffId);
+    const staffName = staffMember?.name?.toLowerCase() || '';
+    
     if (type === "paid") {
       return bills?.filter(b => {
-        if (b.createdByWorkerId !== staffId) return false;
-        if (!b.isPaid) return false; // Only paid bills
+        const matchById = b.createdByWorkerId === staffId;
+        const matchByName = staffName && b.createdBy?.toLowerCase() === staffName;
+        if (!matchById && !matchByName) return false;
+        if (!b.isPaid) return false;
         if (!b.billDate) return false;
         const billDate = new Date(b.billDate);
         return billDate >= start && billDate <= end;
@@ -788,22 +792,30 @@ export default function Workers() {
     return orders.filter((o) => {
       let dateField: string | Date | null | undefined;
       let workerField: number | null | undefined;
+      let nameField: string | null | undefined;
       
       if (type === "created") {
         dateField = o.entryDate;
         workerField = o.entryByWorkerId;
+        nameField = o.entryBy;
       } else if (type === "tagged") {
         dateField = o.tagDate;
         workerField = o.tagWorkerId;
+        nameField = o.tagBy;
       } else if (type === "packed") {
         dateField = o.packingDate;
         workerField = o.packingWorkerId;
+        nameField = o.packingBy;
       } else if (type === "delivered") {
         dateField = o.deliveryDate;
         workerField = o.deliveredByWorkerId;
+        nameField = o.deliveryBy;
       }
       
-      if (workerField !== staffId || !dateField) return false;
+      const matchById = workerField === staffId;
+      const matchByName = staffName && nameField?.toLowerCase() === staffName;
+      if (!matchById && !matchByName) return false;
+      if (!dateField) return false;
       const date = new Date(dateField);
       return date >= start && date <= end;
     });
