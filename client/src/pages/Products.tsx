@@ -1714,7 +1714,20 @@ export default function Products() {
                   </button>
                 </td>
                 <td className="py-2 px-1 text-center font-bold">{item.quantity}</td>
-                <td className="py-2 px-1 text-right text-[11px] text-muted-foreground">{item.price.toFixed(0)}</td>
+                <td className="py-1 px-1 text-right">
+                  <input
+                    type="number"
+                    data-testid={`input-custom-price-${idx}`}
+                    value={item.price}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setCustomItems(prev => prev.map((ci, i) => i === idx ? { ...ci, price: val } : ci));
+                    }}
+                    className="w-14 text-right font-medium px-1 py-0.5 rounded border bg-transparent border-transparent text-[11px] focus:border-blue-300 focus:bg-blue-50 dark:focus:bg-blue-900/30"
+                    min="0"
+                    step="0.5"
+                  />
+                </td>
                 <td className="py-2 px-1 text-right font-bold">{(item.price * item.quantity).toFixed(0)}</td>
               </tr>
             ))}
