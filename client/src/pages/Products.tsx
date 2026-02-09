@@ -2092,7 +2092,8 @@ export default function Products() {
                     Object.entries(quantities).forEach(([pid, qty]) => {
                       const id = parseInt(pid);
                       const product = allProducts?.find(p => p.id === id);
-                      if (product && !product.isSqmPriced && qty > 0) {
+                      const ironPrice = parseFloat(product?.ironOnlyPrice || "0");
+                      if (product && !product.isSqmPriced && qty > 0 && ironPrice > 0) {
                         newIron[id] = qty;
                       }
                     });
@@ -2112,7 +2113,8 @@ export default function Products() {
                     Object.entries(quantities).forEach(([pid, qty]) => {
                       const id = parseInt(pid);
                       const product = allProducts?.find(p => p.id === id);
-                      if (product && !product.isSqmPriced && qty > 0) {
+                      const dcPrice = parseFloat(product?.dryCleanPrice || "0");
+                      if (product && !product.isSqmPriced && qty > 0 && dcPrice > 0) {
                         newDc[id] = qty;
                       }
                     });
