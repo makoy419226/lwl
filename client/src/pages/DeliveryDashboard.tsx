@@ -92,6 +92,9 @@ export default function DeliveryDashboard() {
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   
+  const [deliveryDateFilter, setDeliveryDateFilter] = useState<"today" | "yesterday" | "custom">("today");
+  const [deliveryCustomDate, setDeliveryCustomDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+
   // Date filter state for delivery history
   const [historyDateFilter, setHistoryDateFilter] = useState<"today" | "yesterday" | "monthly" | "yearly" | "custom">("today");
   const [customStartDate, setCustomStartDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
@@ -157,11 +160,30 @@ export default function DeliveryDashboard() {
     return clients?.find((c) => c.id === order.clientId);
   };
 
+  const getDeliveryDateRange = () => {
+    const now = new Date();
+    switch (deliveryDateFilter) {
+      case "today":
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case "yesterday":
+        return { start: startOfDay(subDays(now, 1)), end: endOfDay(subDays(now, 1)) };
+      case "custom": {
+        const d = new Date(deliveryCustomDate);
+        if (isNaN(d.getTime())) return { start: startOfDay(now), end: endOfDay(now) };
+        return { start: startOfDay(d), end: endOfDay(d) };
+      }
+      default:
+        return { start: startOfDay(now), end: endOfDay(now) };
+    }
+  };
+
   const readyForDeliveryOrders = orders?.filter((order) => {
-    // Show orders that are packed but not yet delivered
     if (!order.packingDone) return false;
     if (order.delivered) return false;
-    return true;
+    const range = getDeliveryDateRange();
+    const orderDate = order.expectedDeliveryAt ? new Date(order.expectedDeliveryAt) : (order.entryDate ? new Date(order.entryDate) : null);
+    if (!orderDate) return false;
+    return isWithinInterval(orderDate, { start: range.start, end: range.end });
   }) || [];
 
   const filteredOrders = readyForDeliveryOrders.filter((order) => {
@@ -174,7 +196,6 @@ export default function DeliveryDashboard() {
     );
   });
 
-  // Drivers only see delivery orders, not pickup orders
   const deliveryOrders = filteredOrders.filter((o) => o.deliveryType === "delivery");
 
   const handleDeliveryConfirm = (order: Order) => {
@@ -232,10 +253,47 @@ export default function DeliveryDashboard() {
         </div>
       </div>
 
-      <Card className="p-4 text-center w-fit">
-        <div className="text-3xl font-bold text-green-600">{deliveryOrders.length}</div>
-        <div className="text-sm text-muted-foreground">Ready for Delivery</div>
-      </Card>
+      <div className="flex flex-wrap items-end gap-3">
+        <Card className="p-4 text-center w-fit">
+          <div className="text-3xl font-bold text-green-600">{deliveryOrders.length}</div>
+          <div className="text-sm text-muted-foreground">Ready for Delivery</div>
+        </Card>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={deliveryDateFilter === "today" ? "default" : "outline"}
+            onClick={() => setDeliveryDateFilter("today")}
+            data-testid="button-delivery-filter-today"
+          >
+            <Calendar className="w-4 h-4 mr-1" />
+            Today
+          </Button>
+          <Button
+            variant={deliveryDateFilter === "yesterday" ? "default" : "outline"}
+            onClick={() => setDeliveryDateFilter("yesterday")}
+            data-testid="button-delivery-filter-yesterday"
+          >
+            <Clock className="w-4 h-4 mr-1" />
+            Yesterday
+          </Button>
+          <Button
+            variant={deliveryDateFilter === "custom" ? "default" : "outline"}
+            onClick={() => setDeliveryDateFilter("custom")}
+            data-testid="button-delivery-filter-custom"
+          >
+            <Filter className="w-4 h-4 mr-1" />
+            Custom Date
+          </Button>
+          {deliveryDateFilter === "custom" && (
+            <Input
+              type="date"
+              value={deliveryCustomDate}
+              onChange={(e) => setDeliveryCustomDate(e.target.value)}
+              className="w-auto"
+              data-testid="input-delivery-custom-date"
+            />
+          )}
+        </div>
+      </div>
 
       {deliveryOrders.length > 0 && (
         <div className="space-y-3">
@@ -314,7 +372,11 @@ export default function DeliveryDashboard() {
       {deliveryOrders.length === 0 && (
         <Card className="p-8 text-center">
           <Truck className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">No orders ready for delivery</p>
+          <p className="text-muted-foreground">
+            {deliveryDateFilter === "today" && "No orders ready for delivery today"}
+            {deliveryDateFilter === "yesterday" && "No orders ready for delivery from yesterday"}
+            {deliveryDateFilter === "custom" && `No orders ready for delivery on ${deliveryCustomDate}`}
+          </p>
         </Card>
       )}
 
