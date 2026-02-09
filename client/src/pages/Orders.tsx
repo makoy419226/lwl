@@ -3458,8 +3458,8 @@ export default function Orders() {
                 <Textarea
                   placeholder="Enter delivery address..."
                   value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
-                  className="min-h-[80px] resize-none"
+                  onChange={(e) => setDeliveryAddress(e.target.value.toUpperCase())}
+                  className="min-h-[80px] resize-none uppercase"
                   data-testid="input-delivery-address"
                 />
               </div>
@@ -4840,9 +4840,9 @@ function OrderForm({
             <Input
               placeholder="Enter customer name"
               value={formData.customerName}
-              onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, customerName: e.target.value.toUpperCase() })}
               data-testid="input-customer-name"
-              className="h-12 text-base"
+              className="h-12 text-base uppercase"
             />
           </div>
           <div className="space-y-2">
@@ -4943,10 +4943,10 @@ function OrderForm({
             placeholder="Enter delivery address..."
             value={formData.deliveryAddress}
             onChange={(e) =>
-              setFormData({ ...formData, deliveryAddress: e.target.value })
+              setFormData({ ...formData, deliveryAddress: e.target.value.toUpperCase() })
             }
             data-testid="input-delivery-address"
-            className="min-h-[80px] text-base"
+            className="min-h-[80px] text-base uppercase"
             required
           />
         </div>

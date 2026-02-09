@@ -205,7 +205,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
             <FormItem>
               <FormLabel>Client Name *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter client name" {...field} data-testid="input-name" />
+                <Input placeholder="Enter client name" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} className="uppercase" data-testid="input-name" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -219,7 +219,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
             <FormItem>
               <FormLabel>Address *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter address" {...field} data-testid="input-address" />
+                <Input placeholder="Enter address" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} className="uppercase" data-testid="input-address" />
               </FormControl>
               <FormMessage />
             </FormItem>
