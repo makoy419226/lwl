@@ -99,17 +99,23 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 
-  // One-time migration: Update bill BILL-ORD-638750 amount from 417 to 427
+  // One-time migration: Update bill & order ORD-638750 amount from 417 to 427
   (async () => {
     try {
       const bills = await storage.getBills();
       const bill = bills.find(b => b.referenceNumber === 'BILL-ORD-638750');
       if (bill && parseFloat(bill.amount) === 417) {
         await storage.updateBill(bill.id, { amount: "427.00" });
-        log("Migration: Updated BILL-ORD-638750 amount from 417 to 427");
+        log("Migration: Updated BILL-ORD-638750 bill amount from 417 to 427");
+      }
+      const orders = await storage.getOrders();
+      const order = orders.find(o => o.orderNumber === 'ORD-638750');
+      if (order && parseFloat(order.totalAmount) === 417) {
+        await storage.updateOrder(order.id, { totalAmount: "427.00", finalAmount: "427.00" });
+        log("Migration: Updated ORD-638750 order amount from 417 to 427");
       }
     } catch (e) {
-      // Ignore if bill not found
+      // Ignore if not found
     }
   })();
 
