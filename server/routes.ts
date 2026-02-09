@@ -3934,5 +3934,39 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/fix-order-amount", async (req, res) => {
+    try {
+      const { orderNumber, newAmount, adminPin } = req.body;
+      if (adminPin !== "11111") {
+        return res.status(403).json({ message: "Invalid admin PIN" });
+      }
+      if (!orderNumber || newAmount === undefined) {
+        return res.status(400).json({ message: "orderNumber and newAmount required" });
+      }
+
+      const allOrders = await storage.getOrders();
+      const order = allOrders.find(o => o.orderNumber === orderNumber);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      await storage.updateOrder(order.id, {
+        totalAmount: newAmount.toString(),
+        finalAmount: newAmount.toString(),
+      });
+
+      if (order.billId) {
+        await storage.updateBill(order.billId, {
+          amount: newAmount.toString(),
+          paidAmount: newAmount.toString(),
+        });
+      }
+
+      res.json({ success: true, message: `Order ${orderNumber} and bill updated to ${newAmount}` });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   return httpServer;
 }
