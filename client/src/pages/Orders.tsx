@@ -1376,10 +1376,16 @@ export default function Orders() {
   };
 
   const filteredOrders = orders?.filter((order) => {
+    const client = clients?.find((c) => c.id === order.clientId);
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
       !searchTerm ||
-      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.items?.toLowerCase().includes(searchTerm.toLowerCase());
+      order.orderNumber.toLowerCase().includes(term) ||
+      order.items?.toLowerCase().includes(term) ||
+      (client?.name || "").toLowerCase().includes(term) ||
+      (client?.phone || "").toLowerCase().includes(term) ||
+      (client?.address || "").toLowerCase().includes(term) ||
+      (order.deliveryAddress || "").toLowerCase().includes(term);
 
     // Date filtering
     const orderDate = new Date(order.entryDate);
