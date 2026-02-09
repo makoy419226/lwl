@@ -23,6 +23,8 @@ const CATEGORIES = [
   "Shoes, Carpets & More",
 ];
 
+const CARPET_CATEGORY = "Shoes, Carpets & More";
+
 // Extend schema to coerce numbers from string inputs
 const formSchema = insertProductSchema.extend({
   stockQuantity: z.coerce.number().min(0).optional(),
@@ -32,6 +34,8 @@ const formSchema = insertProductSchema.extend({
   smallPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
   mediumPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
   largePrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
+  sqmPrice: z.string().optional().refine((val) => !val || !isNaN(Number(val)), "Must be a valid number"),
+  isSqmPriced: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -132,6 +136,8 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
       smallPrice: defaultValues.smallPrice || "",
       mediumPrice: defaultValues.mediumPrice || "",
       largePrice: defaultValues.largePrice || "",
+      sqmPrice: defaultValues.sqmPrice || "",
+      isSqmPriced: defaultValues.isSqmPriced || false,
       description: defaultValues.description || "",
       sku: defaultValues.sku || "",
       imageUrl: defaultValues.imageUrl || "",
@@ -147,6 +153,8 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
       smallPrice: "",
       mediumPrice: "",
       largePrice: "",
+      sqmPrice: "",
+      isSqmPriced: false,
       sku: "",
       imageUrl: "",
     },
@@ -174,16 +182,37 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
     }
   }, [watchedName, watchedCategory, mode, products, form]);
 
+  const isCarpetCategory = watchedCategory === CARPET_CATEGORY;
+
+  useEffect(() => {
+    if (isCarpetCategory) {
+      form.setValue("isSqmPriced", true);
+      form.setValue("price", "");
+      form.setValue("dryCleanPrice", "");
+      form.setValue("ironOnlyPrice", "");
+      form.setValue("smallPrice", "");
+      form.setValue("mediumPrice", "");
+      form.setValue("largePrice", "");
+    } else {
+      form.setValue("isSqmPriced", false);
+      form.setValue("sqmPrice", "");
+    }
+  }, [isCarpetCategory, form]);
+
   const onSubmit = (values: FormValues) => {
+    const submitValues = {
+      ...values,
+      isSqmPriced: values.category === CARPET_CATEGORY,
+    };
     if (mode === "create") {
-      createProduct.mutate(values, {
+      createProduct.mutate(submitValues, {
         onSuccess: () => {
           form.reset();
           onSuccess?.();
         }
       });
     } else if (mode === "edit" && defaultValues) {
-      updateProduct.mutate({ id: defaultValues.id, ...values }, {
+      updateProduct.mutate({ id: defaultValues.id, ...submitValues }, {
         onSuccess: () => onSuccess?.()
       });
     }
@@ -231,96 +260,118 @@ export function ProductForm({ defaultValues, onSuccess, mode }: ProductFormProps
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Normal Price (AED)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="dryCleanPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Dry Clean Price (AED)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="ironOnlyPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Iron Only Price (AED)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Size Pricing (for blankets, towels, etc.)</p>
-          <div className="grid grid-cols-3 gap-4">
+        {isCarpetCategory ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Per Square Meter Pricing (carpet items)</p>
+            <p className="text-xs text-muted-foreground">DC = 2x rate, Iron = 0.5x rate. Price is calculated by multiplying the rate by the area in sqm.</p>
             <FormField
               control={form.control}
-              name="smallPrice"
+              name="sqmPrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Small (AED)</FormLabel>
+                  <FormLabel>Price per SQM (AED)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="mediumPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Medium (AED)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="largePrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Large (AED)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                    <Input data-testid="input-sqm-price" type="number" step="0.01" placeholder="12.00" {...field} value={field.value || ""} className="rounded-lg" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Normal Price (AED)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dryCleanPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dry Clean Price (AED)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="ironOnlyPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Iron Only Price (AED)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Size Pricing (for blankets, towels, etc.)</p>
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="smallPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Small (AED)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="mediumPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Medium (AED)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="largePrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Large (AED)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value || ""} className="rounded-lg" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         <FormField
           control={form.control}
