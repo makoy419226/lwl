@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useContext, useRef } from "react";
+import { AnalogClockPicker } from "@/components/AnalogClockPicker";
 import { useSearch, useLocation } from "wouter";
 import { UserContext } from "@/App";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
@@ -2047,19 +2048,17 @@ export default function Products() {
             {expectedDeliveryAt && (
               <div className="flex items-center gap-1">
                 <Label className="text-xs text-muted-foreground whitespace-nowrap">Time (Optional):</Label>
-                <Input
-                  type="time"
-                  className="flex-1 h-8 text-xs"
+                <AnalogClockPicker
                   value={expectedDeliveryAt?.split("T")[1] || ""}
-                  onChange={(e) => {
+                  onChange={(time) => {
                     const date = expectedDeliveryAt?.split("T")[0] || expectedDeliveryAt;
-                    if (e.target.value) {
-                      setExpectedDeliveryAt(`${date}T${e.target.value}`);
+                    if (time) {
+                      setExpectedDeliveryAt(`${date}T${time}`);
                     } else {
                       setExpectedDeliveryAt(date);
                     }
                   }}
-                  data-testid={isPopup ? "popup-input-pickup-time" : "sidebar-input-pickup-time"}
+                  testIdPrefix={isPopup ? "popup-" : "sidebar-"}
                 />
                 {expectedDeliveryAt?.includes("T") && (
                   <Button
