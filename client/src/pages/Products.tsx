@@ -163,7 +163,7 @@ export default function Products() {
   const [walkInPhone, setWalkInPhone] = useState("0");
   const [walkInAddress, setWalkInAddress] = useState("");
   const [orderType, setOrderType] = useState<"normal" | "urgent">("normal");
-  const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery" | "iron_only">("pickup");
+  const [deliveryType, setDeliveryType] = useState<"pickup" | "delivery" | "iron_only">("delivery");
   const [expectedDeliveryAt, setExpectedDeliveryAt] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
