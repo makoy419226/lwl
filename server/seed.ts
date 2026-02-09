@@ -739,6 +739,25 @@ export async function seedDatabase() {
   
   // Consolidate categories (merge "Shoes, Carpets & More" and "Shop Items" into "General Items")
   await migrateCategories();
+
+  // Fix carpet products: ensure sqm pricing flags are set correctly
+  await migrateCarpetSqmPricing();
+}
+
+async function migrateCarpetSqmPricing() {
+  try {
+    const result = await db.execute(`
+      UPDATE products 
+      SET is_sqm_priced = true, 
+          sqm_price = 12.00, 
+          category = 'Shoes, Carpets & More'
+      WHERE name ILIKE '%carpet%per sq%' 
+        AND (is_sqm_priced = false OR is_sqm_priced IS NULL)
+    `);
+    console.log("Carpet sqm pricing migration completed");
+  } catch (error) {
+    console.error("Error migrating carpet sqm pricing:", error);
+  }
 }
 
 async function migratePhoneNumbers() {
