@@ -1648,6 +1648,172 @@ export default function Products() {
   // Render order slip content (reusable for both sidebar and popup)
   const renderOrderSlipContent = (isPopup: boolean = false) => (
     <div className={`${isPopup ? "p-4 space-y-3 flex-1 overflow-y-auto pb-32" : "p-3 space-y-3 flex-1 overflow-y-auto"}`}>
+      {/* Client Selection */}
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold">Select Client</Label>
+            <div className="relative">
+              <Input
+                placeholder="Click to select or type to search..."
+                value={clientSearchTerm}
+                onChange={(e) => {
+                  setClientSearchTerm(e.target.value);
+                  setShowClientDropdown(true);
+                }}
+                onFocus={() => setShowClientDropdown(true)}
+                onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
+                className="h-12 text-base pr-8"
+                data-testid={isPopup ? "popup-search-client" : "sidebar-search-client"}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+              {showClientDropdown && (
+                <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-48 overflow-y-auto">
+                  <div
+                    className="px-3 py-2 cursor-pointer hover:bg-accent font-medium text-primary border-b"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setSelectedClientId(null);
+                      setIsWalkIn(true);
+                      setCustomerName("Walk-in Customer");
+                      setClientSearchTerm("");
+                      setShowClientDropdown(false);
+                    }}
+                    data-testid="option-walkin"
+                  >
+                    Walk-in Customer
+                  </div>
+                  {clients?.filter((client) => {
+                    if (!clientSearchTerm.trim()) return true;
+                    const search = clientSearchTerm.toLowerCase();
+                    return (
+                      client.name.toLowerCase().includes(search) ||
+                      (client.phone && client.phone.toLowerCase().includes(search))
+                    );
+                  }).slice(0, 10).map((client) => (
+                    <div
+                      key={client.id}
+                      className="px-3 py-2 cursor-pointer hover:bg-accent text-sm"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setIsWalkIn(false);
+                        setSelectedClientId(client.id);
+                        setCustomerName(client.name);
+                        setCustomerPhone(client.phone || "");
+                        if (client.discountPercent) setDiscountPercent(client.discountPercent);
+                        setClientSearchTerm("");
+                        setShowClientDropdown(false);
+                      }}
+                      data-testid={`option-client-${client.id}`}
+                    >
+                      {client.name} - {client.phone || "No phone"}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {(selectedClientId || isWalkIn) && (
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                Selected: <span className="font-medium text-foreground">{isWalkIn ? "Walk-in Customer" : customerName}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1 ml-2 text-xs"
+                  onClick={() => {
+                    setSelectedClientId(null);
+                    setIsWalkIn(false);
+                    setCustomerName("");
+                    setCustomerPhone("");
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Walk-in Customer Fields */}
+          {isWalkIn && (
+            <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+              <div>
+                <Label className="text-xs font-semibold">Customer Name</Label>
+                <Input
+                  className="h-8 text-xs mt-1"
+                  placeholder="Enter name..."
+                  value={walkInName}
+                  onChange={(e) => {
+                    setWalkInName(e.target.value.toUpperCase());
+                    setCustomerName(e.target.value.toUpperCase() || "Walk-in Customer");
+                  }}
+                  data-testid={isPopup ? "popup-input-walkin-name" : "sidebar-input-walkin-name"}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Phone Number</Label>
+                <div className="flex flex-col gap-1 mt-1">
+                  <Input
+                    className={`h-8 text-xs ${walkInPhone.replace(/\D/g, "").length >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
+                    placeholder="05XXXXXXXX"
+                    value={walkInPhone.replace(/\D/g, "").slice(0, 10)}
+                    onChange={(e) => {
+                      let digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      if (digits.length > 0 && !digits.startsWith("0")) {
+                        digits = "0" + digits.slice(0, 9);
+                      }
+                      setWalkInPhone(digits || "0");
+                    }}
+                    inputMode="numeric"
+                    maxLength={10}
+                    data-testid={isPopup ? "popup-input-walkin-phone" : "sidebar-input-walkin-phone"}
+                  />
+                  {walkInPhone.replace(/\D/g, "").length >= 10 && (
+                    <p className="text-xs text-green-600 font-medium">10 digits - complete</p>
+                  )}
+                </div>
+              </div>
+              {clientMatch && (
+                <div className="bg-red-100 dark:bg-red-950 border border-red-500 rounded-lg p-2 text-xs">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-bold text-red-700 dark:text-red-300">
+                        {clientMatch.message}: {clientMatch.client.name}
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="mt-1 text-xs h-7 bg-red-50 dark:bg-red-900 border-red-300"
+                        onClick={() => {
+                          setIsWalkIn(false);
+                          setSelectedClientId(clientMatch.client.id);
+                          setCustomerName(clientMatch.client.name);
+                          setCustomerPhone(clientMatch.client.phone || "");
+                          setWalkInAddress(clientMatch.client.address || "");
+                          setWalkInName("");
+                          setWalkInPhone("0");
+                        }}
+                      >
+                        Use existing: {clientMatch.client.name}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label className="text-xs font-semibold">Address <span className="text-destructive">*</span></Label>
+                <Input
+                  className="h-8 text-xs mt-1"
+                  placeholder="Enter address..."
+                  value={walkInAddress}
+                  onChange={(e) => setWalkInAddress(e.target.value.toUpperCase())}
+                  data-testid={isPopup ? "popup-input-walkin-address" : "sidebar-input-walkin-address"}
+                />
+              </div>
+            </div>
+          )}
+
       {/* Items Table */}
       <div className="border rounded-lg overflow-hidden">
         <table className="w-full text-xs">
@@ -1836,172 +2002,6 @@ export default function Products() {
             </div>
           </div>
       )}
-
-          {/* Client Selection */}
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold">Select Client</Label>
-            <div className="relative">
-              <Input
-                placeholder="Click to select or type to search..."
-                value={clientSearchTerm}
-                onChange={(e) => {
-                  setClientSearchTerm(e.target.value);
-                  setShowClientDropdown(true);
-                }}
-                onFocus={() => setShowClientDropdown(true)}
-                onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
-                className="h-12 text-base pr-8"
-                data-testid={isPopup ? "popup-search-client" : "sidebar-search-client"}
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </div>
-              {showClientDropdown && (
-                <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-48 overflow-y-auto">
-                  <div
-                    className="px-3 py-2 cursor-pointer hover:bg-accent font-medium text-primary border-b"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      setSelectedClientId(null);
-                      setIsWalkIn(true);
-                      setCustomerName("Walk-in Customer");
-                      setClientSearchTerm("");
-                      setShowClientDropdown(false);
-                    }}
-                    data-testid="option-walkin"
-                  >
-                    Walk-in Customer
-                  </div>
-                  {clients?.filter((client) => {
-                    if (!clientSearchTerm.trim()) return true;
-                    const search = clientSearchTerm.toLowerCase();
-                    return (
-                      client.name.toLowerCase().includes(search) ||
-                      (client.phone && client.phone.toLowerCase().includes(search))
-                    );
-                  }).slice(0, 10).map((client) => (
-                    <div
-                      key={client.id}
-                      className="px-3 py-2 cursor-pointer hover:bg-accent text-sm"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        setIsWalkIn(false);
-                        setSelectedClientId(client.id);
-                        setCustomerName(client.name);
-                        setCustomerPhone(client.phone || "");
-                        if (client.discountPercent) setDiscountPercent(client.discountPercent);
-                        setClientSearchTerm("");
-                        setShowClientDropdown(false);
-                      }}
-                      data-testid={`option-client-${client.id}`}
-                    >
-                      {client.name} - {client.phone || "No phone"}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {(selectedClientId || isWalkIn) && (
-              <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                Selected: <span className="font-medium text-foreground">{isWalkIn ? "Walk-in Customer" : customerName}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 px-1 ml-2 text-xs"
-                  onClick={() => {
-                    setSelectedClientId(null);
-                    setIsWalkIn(false);
-                    setCustomerName("");
-                    setCustomerPhone("");
-                  }}
-                >
-                  Clear
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Walk-in Customer Fields */}
-          {isWalkIn && (
-            <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
-              <div>
-                <Label className="text-xs font-semibold">Customer Name</Label>
-                <Input
-                  className="h-8 text-xs mt-1"
-                  placeholder="Enter name..."
-                  value={walkInName}
-                  onChange={(e) => {
-                    setWalkInName(e.target.value.toUpperCase());
-                    setCustomerName(e.target.value.toUpperCase() || "Walk-in Customer");
-                  }}
-                  data-testid={isPopup ? "popup-input-walkin-name" : "sidebar-input-walkin-name"}
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold">Phone Number</Label>
-                <div className="flex flex-col gap-1 mt-1">
-                  <Input
-                    className={`h-8 text-xs ${walkInPhone.replace(/\D/g, "").length >= 10 ? "border-green-500 focus-visible:ring-green-500" : ""} ${clientMatch ? "border-red-500 ring-2 ring-red-300" : ""}`}
-                    placeholder="05XXXXXXXX"
-                    value={walkInPhone.replace(/\D/g, "").slice(0, 10)}
-                    onChange={(e) => {
-                      let digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-                      if (digits.length > 0 && !digits.startsWith("0")) {
-                        digits = "0" + digits.slice(0, 9);
-                      }
-                      setWalkInPhone(digits || "0");
-                    }}
-                    inputMode="numeric"
-                    maxLength={10}
-                    data-testid={isPopup ? "popup-input-walkin-phone" : "sidebar-input-walkin-phone"}
-                  />
-                  {walkInPhone.replace(/\D/g, "").length >= 10 && (
-                    <p className="text-xs text-green-600 font-medium">10 digits - complete</p>
-                  )}
-                </div>
-              </div>
-              {clientMatch && (
-                <div className="bg-red-100 dark:bg-red-950 border border-red-500 rounded-lg p-2 text-xs">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-bold text-red-700 dark:text-red-300">
-                        {clientMatch.message}: {clientMatch.client.name}
-                      </p>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="mt-1 text-xs h-7 bg-red-50 dark:bg-red-900 border-red-300"
-                        onClick={() => {
-                          setIsWalkIn(false);
-                          setSelectedClientId(clientMatch.client.id);
-                          setCustomerName(clientMatch.client.name);
-                          setCustomerPhone(clientMatch.client.phone || "");
-                          setWalkInAddress(clientMatch.client.address || "");
-                          setWalkInName("");
-                          setWalkInPhone("0");
-                        }}
-                      >
-                        Use existing: {clientMatch.client.name}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div>
-                <Label className="text-xs font-semibold">Address <span className="text-destructive">*</span></Label>
-                <Input
-                  className="h-8 text-xs mt-1"
-                  placeholder="Enter address..."
-                  value={walkInAddress}
-                  onChange={(e) => setWalkInAddress(e.target.value.toUpperCase())}
-                  data-testid={isPopup ? "popup-input-walkin-address" : "sidebar-input-walkin-address"}
-                />
-              </div>
-            </div>
-          )}
 
           {/* Order Type */}
           <div className="flex gap-2">
