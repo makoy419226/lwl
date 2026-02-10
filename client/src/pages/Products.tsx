@@ -1740,13 +1740,21 @@ export default function Products() {
               )}
             </div>
             {(selectedClientId || isWalkIn) && (
-              <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                Selected: <span className="font-medium text-foreground">{isWalkIn ? "Walk-in Customer" : customerName}</span>{!isWalkIn && customerPhone && <span className="ml-1">- {customerPhone}</span>}{!isWalkIn && selectedClientId && (() => { const c = clients?.find((cl: any) => cl.id === selectedClientId); return c?.address ? <span className="ml-1">| {c.address}</span> : null; })()}
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5 space-y-0.5">
+                {isWalkIn ? (
+                  <div className="flex items-center gap-1"><User className="w-3 h-3" /><span className="font-medium text-foreground">Walk-in Customer</span></div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1"><User className="w-3 h-3" /><span className="font-medium text-foreground">{customerName}</span></div>
+                    {customerPhone && <div className="flex items-center gap-1"><Phone className="w-3 h-3" /><span>{customerPhone}</span></div>}
+                    {selectedClientId && (() => { const c = clients?.find((cl: any) => cl.id === selectedClientId); return c?.address ? <div className="flex items-center gap-1"><MapPin className="w-3 h-3" /><span>{c.address}</span></div> : null; })()}
+                  </>
+                )}
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-5 px-1 ml-2 text-xs"
+                  className="h-5 px-1 text-xs"
                   onClick={() => {
                     setSelectedClientId(null);
                     setIsWalkIn(false);
