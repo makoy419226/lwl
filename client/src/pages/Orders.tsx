@@ -445,7 +445,7 @@ export default function Orders() {
   };
 
   // Get item price from item name format like "Abaya [N] (folding)" or "Jacket (Large) @ 8 AED"
-  const getItemPrice = (itemName: string, deliveryType?: string | null): number => {
+  const getItemPrice = (itemName: string, deliveryType?: string | null, isUrgent?: boolean): number => {
     const customPriceMatch = itemName.match(/(.+?)\s*@\s*([\d.]+)\s*AED/i);
     if (customPriceMatch) {
       return parseFloat(customPriceMatch[2]);
@@ -463,11 +463,16 @@ export default function Orders() {
     const product = products?.find((p) => p.name.toLowerCase() === baseProductName.toLowerCase());
     if (product) {
       if (deliveryType === "iron_only") {
+        if (isUrgent) {
+          return parseFloat(product.price || "0");
+        }
         return parseFloat(product.ironOnlyPrice || product.price || "0");
       }
-      return isDryClean 
+      let price = isDryClean 
         ? parseFloat(product.dryCleanPrice || product.price || "0")
         : parseFloat(product.price || "0");
+      if (isUrgent) price *= 2;
+      return price;
     }
     
     return 0;
@@ -477,7 +482,7 @@ export default function Orders() {
     if (!editItemsDialog) return 0;
     let total = 0;
     Object.entries(editItemsQuantities).forEach(([name, qty]) => {
-      const unitPrice = getItemPrice(name, editItemsDialog.deliveryType);
+      const unitPrice = getItemPrice(name, editItemsDialog.deliveryType, editItemsDialog.urgent === true);
       total += unitPrice * qty;
     });
     return total;
@@ -641,7 +646,7 @@ export default function Orders() {
     const itemsHtml = parsedItems
       .map(
         (item, idx) => {
-          const unitPrice = getItemPrice(item.name, order.deliveryType);
+          const unitPrice = getItemPrice(item.name, order.deliveryType, order.urgent === true);
           const lineTotal = unitPrice * item.quantity;
           return `<tr style="border-bottom: 1px solid #e5e5e5;">
         <td style="padding: 5px 4px; font-size: 9px;">${idx + 1}</td>
@@ -4282,7 +4287,7 @@ export default function Orders() {
                 <Label>Items</Label>
                 <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
                   {parseOrderItems(editItemsDialog.items).map((item) => {
-                    const itemPrice = getItemPrice(item.name, editItemsDialog.deliveryType);
+                    const itemPrice = getItemPrice(item.name, editItemsDialog.deliveryType, editItemsDialog.urgent === true);
                     const qty = editItemsQuantities[item.name] || 0;
                     const lineTotal = itemPrice * qty;
                     return (

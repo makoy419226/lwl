@@ -1839,12 +1839,19 @@ export async function registerRoutes(
         const product = allProducts.find((p: any) => p.name.toLowerCase() === baseProductName.toLowerCase());
         if (product) {
           let basePrice: number;
+          const isUrgent = order.urgent === true;
           if (order.deliveryType === "iron_only") {
-            basePrice = parseFloat(product.ironOnlyPrice || product.price || "0");
+            if (isUrgent) {
+              basePrice = parseFloat(product.price || "0");
+            } else {
+              basePrice = parseFloat(product.ironOnlyPrice || product.price || "0");
+            }
           } else if (isDryClean) {
             basePrice = parseFloat(product.dryCleanPrice || product.price || "0");
+            if (isUrgent) basePrice *= 2;
           } else {
             basePrice = parseFloat(product.price || "0");
+            if (isUrgent) basePrice *= 2;
           }
           newTotal += basePrice * item.quantity;
           itemsArray.push(`${item.quantity}x ${item.name}`);

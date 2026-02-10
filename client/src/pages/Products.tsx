@@ -937,11 +937,17 @@ export default function Products() {
       if (customPrices[priceKey] !== undefined) {
         price = customPrices[priceKey];
       } else if (item.serviceType === "iron") {
-        price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+        if (orderType === "urgent") {
+          price = parseFloat(item.product.price || "0");
+        } else {
+          price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+        }
       } else if (item.serviceType === "dc") {
         price = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
+        if (orderType === "urgent") price *= 2;
       } else {
         price = parseFloat(item.product.price || "0");
+        if (orderType === "urgent") price *= 2;
       }
       return sum + price * item.quantity;
     }, 0);
@@ -1870,13 +1876,19 @@ export default function Products() {
                 displayPrice = item.sqm < 5 ? Math.max(50, calcPrice) : calcPrice;
                 basePrice = displayPrice;
               } else if (item.serviceType === "iron") {
-                basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+                if (orderType === "urgent") {
+                  basePrice = parseFloat(item.product.price || "0");
+                } else {
+                  basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+                }
                 displayPrice = basePrice;
               } else if (item.serviceType === "dc") {
                 basePrice = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
+                if (orderType === "urgent") basePrice *= 2;
                 displayPrice = basePrice;
               } else {
                 basePrice = parseFloat(item.product.price || "0");
+                if (orderType === "urgent") basePrice *= 2;
                 displayPrice = basePrice;
               }
               const priceKey = item.product.isSqmPriced ? carpetPriceKey : `${item.product.id}-${item.serviceType}`;
