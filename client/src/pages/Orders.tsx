@@ -91,6 +91,7 @@ import {
   Zap,
   Check,
   Trash2,
+  DollarSign,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -1825,6 +1826,32 @@ export default function Orders() {
                     data-testid="text-delivered-count"
                   >
                     {dateFilteredOrders?.filter((o) => o.delivered).length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="responsive-card">
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
+                  <DollarSign className="w-5 h-5 lg:w-6 lg:h-6 text-red-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Outstanding
+                  </p>
+                  <p
+                    className="text-xl lg:text-2xl font-bold text-red-600 dark:text-red-400"
+                    data-testid="text-outstanding-amount"
+                  >
+                    {(() => {
+                      const dateOrderBillIds = dateFilteredOrders?.map(o => o.billId).filter(Boolean) || [];
+                      const outstanding = bills?.filter(b => dateOrderBillIds.includes(b.id) && !b.isPaid)
+                        .reduce((sum, b) => sum + (parseFloat(b.amount) - parseFloat(b.paidAmount || "0")), 0) || 0;
+                      return `${outstanding.toFixed(0)} AED`;
+                    })()}
                   </p>
                 </div>
               </div>
