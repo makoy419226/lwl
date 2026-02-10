@@ -27,6 +27,7 @@ import {
   X,
   Pencil,
   DollarSign,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   Dialog,
@@ -89,6 +90,7 @@ export default function Clients() {
     "all",
   );
   const [showDueClientsOnly, setShowDueClientsOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"alphabetical" | "newest" | "oldest" | "high_unpaid" | "total_credits">("alphabetical");
   const [payingBillId, setPayingBillId] = useState<number | null>(null);
   const [billPaymentAmount, setBillPaymentAmount] = useState("");
   const [billPaymentMethod, setBillPaymentMethod] = useState("cash");
@@ -950,11 +952,29 @@ export default function Clients() {
 
   const displayedClients = useMemo(() => {
     if (!clients) return [];
-    if (showDueClientsOnly) {
-      return clients.filter((c) => getClientBalanceDue(c) > 0);
+    let filtered = showDueClientsOnly
+      ? clients.filter((c) => getClientBalanceDue(c) > 0)
+      : [...clients];
+
+    switch (sortBy) {
+      case "alphabetical":
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "newest":
+        filtered.sort((a, b) => b.id - a.id);
+        break;
+      case "oldest":
+        filtered.sort((a, b) => a.id - b.id);
+        break;
+      case "high_unpaid":
+        filtered.sort((a, b) => getClientBalanceDue(b) - getClientBalanceDue(a));
+        break;
+      case "total_credits":
+        filtered.sort((a, b) => getClientTotalDeposits(b) - getClientTotalDeposits(a));
+        break;
     }
-    return clients;
-  }, [clients, showDueClientsOnly, allOrders]);
+    return filtered;
+  }, [clients, showDueClientsOnly, allOrders, sortBy]);
 
   const dueClientsCount =
     clients?.filter((c) => getClientBalanceDue(c) > 0).length || 0;
@@ -1066,6 +1086,23 @@ export default function Clients() {
             </Button>
           </div>
         )}
+
+        <div className="mb-4 flex items-center gap-2">
+          <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Sort by:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+            data-testid="select-sort-clients"
+          >
+            <option value="alphabetical">A - Z (Alphabetical)</option>
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="high_unpaid">Highest Unpaid Bills</option>
+            <option value="total_credits">Highest Credits</option>
+          </select>
+        </div>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
