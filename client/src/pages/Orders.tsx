@@ -253,6 +253,7 @@ export default function Orders() {
   const [paymentPin, setPaymentPin] = useState("");
   const [paymentPinError, setPaymentPinError] = useState("");
 
+  const [deleteOrderConfirmDialog, setDeleteOrderConfirmDialog] = useState(false);
   const [deleteOrderDialog, setDeleteOrderDialog] = useState(false);
   const [deleteOrderAdminPassword, setDeleteOrderAdminPassword] = useState("");
   const [deleteOrderAdminError, setDeleteOrderAdminError] = useState("");
@@ -1209,7 +1210,7 @@ export default function Orders() {
     setPendingDeleteOrderId(orderId);
     setDeleteOrderAdminPassword("");
     setDeleteOrderAdminError("");
-    setDeleteOrderDialog(true);
+    setDeleteOrderConfirmDialog(true);
   };
 
   const handleConfirmDeleteOrder = async () => {
@@ -4748,16 +4749,52 @@ export default function Orders() {
                 )}
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setOrderDetailDialog(null)}
-                data-testid="button-close-order-detail"
-              >
-                Close
-              </Button>
+              <div className="flex gap-2 w-full">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setOrderDetailDialog(null)}
+                  data-testid="button-close-order-detail"
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => {
+                    if (orderDetailDialog) {
+                      setPendingDeleteOrderId(orderDetailDialog.id);
+                      setOrderDetailDialog(null);
+                      setDeleteOrderConfirmDialog(true);
+                    }
+                  }}
+                  data-testid="button-delete-order-detail"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete Order
+                </Button>
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOrderConfirmDialog} onOpenChange={(open) => { if (!open) { setDeleteOrderConfirmDialog(false); setPendingDeleteOrderId(null); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Order</DialogTitle>
+            <DialogDescription>
+              Deleting this order will also delete its bill and the client history of the current bill to be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setDeleteOrderConfirmDialog(false); setPendingDeleteOrderId(null); }} data-testid="button-cancel-delete-confirm">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => { setDeleteOrderConfirmDialog(false); setDeleteOrderDialog(true); }} data-testid="button-proceed-delete-confirm">
+              Proceed
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
