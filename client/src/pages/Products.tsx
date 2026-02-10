@@ -173,6 +173,8 @@ export default function Products() {
   const [orderNotes, setOrderNotes] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
   const [tips, setTips] = useState("");
+  const [customTotal, setCustomTotal] = useState<string>("");
+  const [priceNote, setPriceNote] = useState("");
   const [showUrgentDialog, setShowUrgentDialog] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [showCartPopup, setShowCartPopup] = useState(false);
@@ -1300,6 +1302,8 @@ export default function Products() {
     setDeliveryType("pickup");
     setExpectedDeliveryAt("");
     setOrderNotes("");
+    setCustomTotal("");
+    setPriceNote("");
   };
 
   const parseOrderItems = (items: string) => {
