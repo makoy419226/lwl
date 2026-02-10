@@ -88,6 +88,7 @@ import {
   CreditCard,
   Users,
   Calendar,
+  Zap,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -1783,10 +1784,10 @@ export default function Orders() {
                       return (
                         <Card
                           key={order.id}
-                          className={`border shadow-sm transition-all duration-500 ${highlightedOrderId === order.id ? "ring-2 ring-primary ring-offset-2 bg-primary/5" : ""}`}
+                          className={`border shadow-sm transition-all duration-500 ${order.urgent ? "border-red-400 dark:border-red-700" : ""} ${highlightedOrderId === order.id ? "ring-2 ring-primary ring-offset-2 bg-primary/5" : ""}`}
                           data-testid={`card-order-${order.id}`}
                         >
-                          <CardHeader className="flex flex-row items-center justify-between gap-2 p-3 pb-2 bg-muted/30">
+                          <CardHeader className={`flex flex-row items-center justify-between gap-2 p-3 pb-2 ${order.urgent ? "bg-red-50 dark:bg-red-950/30" : "bg-muted/30"}`}>
                             <div className="flex items-center gap-2">
                               <button
                                 className="font-mono font-bold text-primary hover:underline cursor-pointer"
@@ -1795,6 +1796,9 @@ export default function Orders() {
                               >
                                 {order.orderNumber}
                               </button>
+                              {order.urgent && (
+                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">URGENT</Badge>
+                              )}
                               {order.deliveryType === "delivery" && (
                                 <Truck className="w-4 h-4 text-muted-foreground" />
                               )}
@@ -2023,6 +2027,39 @@ export default function Orders() {
                                   </PopoverContent>
                                 </Popover>
                                 <Select
+                                  value={order.urgent ? "urgent" : "normal"}
+                                  onValueChange={(val) => {
+                                    updateOrderMutation.mutate({
+                                      id: order.id,
+                                      updates: { urgent: val === "urgent" },
+                                    });
+                                  }}
+                                  disabled={order.delivered === true}
+                                >
+                                  <SelectTrigger
+                                    className={`w-24 h-7 text-xs font-semibold ${order.urgent ? "text-red-600 dark:text-red-400 border-red-300 dark:border-red-700" : "text-green-600 dark:text-green-400 border-green-300 dark:border-green-700"} ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}
+                                    data-testid={`select-mobile-order-type-${order.id}`}
+                                  >
+                                    <SelectValue>
+                                      {order.urgent ? (
+                                        <div className="flex items-center gap-1">
+                                          <Zap className="w-3 h-3" />
+                                          Urgent
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-1">
+                                          <Clock className="w-3 h-3" />
+                                          Normal
+                                        </div>
+                                      )}
+                                    </SelectValue>
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="normal"><span className="text-green-600 dark:text-green-400 font-semibold">Normal</span></SelectItem>
+                                    <SelectItem value="urgent"><span className="text-red-600 dark:text-red-400 font-semibold">Urgent</span></SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Select
                                   value={order.deliveryType || ""}
                                   onValueChange={(newType) => {
                                     updateOrderMutation.mutate({
@@ -2242,6 +2279,9 @@ export default function Orders() {
                                 Amount
                               </TableHead>
                             )}
+                            <TableHead className="hidden md:table-cell w-[80px]">
+                              Priority
+                            </TableHead>
                             <TableHead className="hidden md:table-cell w-[90px]">
                               Type
                             </TableHead>
@@ -2293,6 +2333,7 @@ export default function Orders() {
                                 return clientOrders?.map((order, idx) => (
                                   <TableRow
                                     key={order.id}
+                                    className={order.urgent ? "bg-red-50/50 dark:bg-red-950/20" : ""}
                                     data-testid={`row-order-${order.id}`}
                                   >
                                     <TableCell className="font-mono font-bold text-xs lg:text-sm truncate">
@@ -2547,6 +2588,41 @@ export default function Orders() {
                                         {order.totalAmount} AED
                                       </TableCell>
                                     )}
+                                    <TableCell className="hidden md:table-cell">
+                                      <Select
+                                        value={order.urgent ? "urgent" : "normal"}
+                                        onValueChange={(val) => {
+                                          updateOrderMutation.mutate({
+                                            id: order.id,
+                                            updates: { urgent: val === "urgent" },
+                                          });
+                                        }}
+                                        disabled={order.delivered === true}
+                                      >
+                                        <SelectTrigger
+                                          className={`w-20 h-7 text-xs font-semibold ${order.urgent ? "text-red-600 dark:text-red-400 border-red-300 dark:border-red-700" : "text-green-600 dark:text-green-400 border-green-300 dark:border-green-700"} ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}
+                                          data-testid={`select-order-type-${order.id}`}
+                                        >
+                                          <SelectValue>
+                                            {order.urgent ? (
+                                              <div className="flex items-center gap-1">
+                                                <Zap className="w-3 h-3" />
+                                                Urgent
+                                              </div>
+                                            ) : (
+                                              <div className="flex items-center gap-1">
+                                                <Clock className="w-3 h-3" />
+                                                Normal
+                                              </div>
+                                            )}
+                                          </SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="normal"><span className="text-green-600 dark:text-green-400 font-semibold">Normal</span></SelectItem>
+                                          <SelectItem value="urgent"><span className="text-red-600 dark:text-red-400 font-semibold">Urgent</span></SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
                                     <TableCell className="hidden md:table-cell">
                                       <Select
                                         value={order.deliveryType || ""}
