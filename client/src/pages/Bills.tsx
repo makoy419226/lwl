@@ -285,7 +285,7 @@ export default function Bills() {
 
     // Search filter
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+      const term = searchTerm.toLowerCase().replace(/^#/, "");
       filtered = filtered.filter(b => 
         b.referenceNumber?.toLowerCase().includes(term) ||
         b.customerName?.toLowerCase().includes(term) ||
