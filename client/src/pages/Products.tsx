@@ -1707,11 +1707,13 @@ export default function Products() {
                       }}
                       data-testid={`option-client-${client.id}`}
                     >
-                      <div className="whitespace-nowrap overflow-hidden group-hover/client:overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-                        <span className="font-medium">{client.name}</span> - {client.phone || "No phone"}
-                        {client.address && (
-                          <span className="text-muted-foreground text-xs ml-1">| {client.address}</span>
-                        )}
+                      <div className="whitespace-nowrap overflow-hidden">
+                        <div className="inline-block group-hover/client:animate-[marquee_5s_linear_infinite]">
+                          <span className="font-medium">{client.name}</span> - {client.phone || "No phone"}
+                          {client.address && (
+                            <span className="text-muted-foreground text-xs ml-1">| {client.address}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
