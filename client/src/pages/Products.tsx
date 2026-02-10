@@ -2194,10 +2194,10 @@ export default function Products() {
           {orderItems.length > 0 && (
             <div className="space-y-1">
               <p className="text-[10px] text-muted-foreground italic">Use these buttons if customer desires all items to be the same service type. Items can still be edited individually on their cards after use.</p>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
-                  className="flex-1 h-9 text-xs bg-orange-500 hover:bg-orange-600 text-white"
+                  className="h-8 text-[10px] sm:text-xs bg-orange-500 hover:bg-orange-600 text-white"
                   data-testid={isPopup ? "popup-button-iron-all" : "sidebar-button-iron-all"}
                   onClick={() => {
                     if (!window.confirm("Do you want all items to be iron only? All item status will change to Iron Only.")) return;
@@ -2218,7 +2218,7 @@ export default function Products() {
                 </Button>
                 <Button
                   type="button"
-                  className="flex-1 h-9 text-xs bg-violet-600 hover:bg-violet-700 text-white"
+                  className="h-8 text-[10px] sm:text-xs bg-violet-600 hover:bg-violet-700 text-white"
                   data-testid={isPopup ? "popup-button-dc-all" : "sidebar-button-dc-all"}
                   onClick={() => {
                     if (!window.confirm("Do you want all items to be dry cleaned? All item status will change to Dry Clean Only.")) return;
@@ -2239,7 +2239,7 @@ export default function Products() {
                 </Button>
                 <Button
                   type="button"
-                  className={`flex-1 h-9 text-xs ${Object.values(urgentQuantities).some(q => q > 0) ? "bg-orange-600 hover:bg-orange-700" : "bg-orange-500 hover:bg-orange-600"} text-white`}
+                  className={`col-span-2 h-8 text-[10px] sm:text-xs ${Object.values(urgentQuantities).some(q => q > 0) ? "bg-red-600 hover:bg-red-700" : "bg-orange-500 hover:bg-orange-600"} text-white`}
                   data-testid={isPopup ? "popup-button-urgent-all" : "sidebar-button-urgent-all"}
                   onClick={() => {
                     const hasAnyUrgent = Object.values(urgentQuantities).some(q => q > 0);
