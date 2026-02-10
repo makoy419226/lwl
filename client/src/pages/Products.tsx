@@ -1712,7 +1712,7 @@ export default function Products() {
                   }).map((client) => (
                     <div
                       key={client.id}
-                      className="px-3 py-2 cursor-pointer hover:bg-accent text-sm overflow-hidden group/client"
+                      className="px-3 py-2 cursor-pointer hover:bg-accent/40 text-sm overflow-hidden group/client"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         setIsWalkIn(false);
