@@ -96,11 +96,9 @@ export default function TrackOrder() {
     try {
       const parsed = JSON.parse(items);
       if (Array.isArray(parsed)) {
-        return parsed.map((item: { name: string; quantity: number }) => {
-          const isUrg = item.name.includes('[URG]');
-          const cleanName = item.name.replace(/\s*\[URG\]\s*/g, '');
-          return `${item.quantity}x ${cleanName}${isUrg ? ' [URGENT]' : ''}`;
-        });
+        return parsed.map((item: { name: string; quantity: number }) => 
+          `${item.quantity}x ${item.name}`
+        );
       }
     } catch {}
     return items.split(",").map(item => item.trim()).filter(Boolean);
