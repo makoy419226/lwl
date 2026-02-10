@@ -245,6 +245,8 @@ export default function Orders() {
   
   // Payment state for bill dialog
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showPaymentChoice, setShowPaymentChoice] = useState(false);
+  const [payAllBills, setPayAllBills] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "transfer">("cash");
   const [paymentPin, setPaymentPin] = useState("");
@@ -1118,6 +1120,8 @@ export default function Orders() {
         description: "The payment has been successfully recorded.",
       });
       setShowPaymentForm(false);
+      setShowPaymentChoice(false);
+      setPayAllBills(false);
       setPaymentAmount("");
       setPaymentPin("");
       setPaymentPinError("");
@@ -1144,17 +1148,49 @@ export default function Orders() {
       return;
     }
     
-    // Verify staff PIN first
     try {
       const res = await apiRequest("POST", "/api/staff-members/verify-pin", { pin: paymentPin });
       const data = await res.json();
       if (data.success) {
-        recordPaymentMutation.mutate({
-          billId: selectedBill.id,
-          amount,
-          method: paymentMethod,
-          staffName: data.member.name,
-        });
+        if (payAllBills) {
+          const otherUnpaidBills = bills?.filter(
+            (b) => b.clientId === selectedBill.clientId && 
+                   b.id !== selectedBill.id && 
+                   !b.isPaid
+          ) || [];
+          const allBillsToPay = [selectedBill, ...otherUnpaidBills];
+          for (const bill of allBillsToPay) {
+            const billDue = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
+            if (billDue > 0) {
+              await apiRequest("POST", `/api/bills/${bill.id}/pay`, {
+                amount: billDue.toFixed(2),
+                paymentMethod: paymentMethod,
+                notes: `Recorded by ${data.member.name} via Orders (batch payment)`,
+              });
+            }
+          }
+          queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+          toast({
+            title: "Payment Recorded",
+            description: `${allBillsToPay.length} bill(s) have been paid successfully.`,
+          });
+          setShowPaymentForm(false);
+          setShowPaymentChoice(false);
+          setPayAllBills(false);
+          setPaymentAmount("");
+          setPaymentPin("");
+          setPaymentPinError("");
+          setShowBillDialog(false);
+        } else {
+          recordPaymentMutation.mutate({
+            billId: selectedBill.id,
+            amount,
+            method: paymentMethod,
+            staffName: data.member.name,
+          });
+        }
       } else {
         setPaymentPinError("Invalid PIN");
       }
@@ -3836,10 +3872,60 @@ export default function Orders() {
                 </div>
               )}
 
+              {/* Payment Choice - current bill only or all bills */}
+              {showPaymentChoice && !showPaymentForm && (() => {
+                const otherUnpaidBills = bills?.filter(
+                  (b) => b.clientId === selectedBill?.clientId && 
+                         b.id !== selectedBill?.id && 
+                         !b.isPaid
+                ) || [];
+                const currentBillDue = parseFloat(selectedBill?.amount || "0") - parseFloat(selectedBill?.paidAmount || "0");
+                const totalPreviousDue = otherUnpaidBills.reduce((sum, b) => sum + (parseFloat(b.amount) - parseFloat(b.paidAmount || "0")), 0);
+                const grandTotal = currentBillDue + totalPreviousDue;
+                return (
+                  <div className="border-t pt-4 mt-4 space-y-3">
+                    <h4 className="font-medium text-sm">This client has {otherUnpaidBills.length} previous unpaid bill(s). How would you like to pay?</h4>
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between"
+                        onClick={() => {
+                          setPaymentAmount(currentBillDue.toFixed(2));
+                          setPayAllBills(false);
+                          setShowPaymentChoice(false);
+                          setShowPaymentForm(true);
+                        }}
+                        data-testid="button-pay-current-only"
+                      >
+                        <span>Pay Current Bill Only</span>
+                        <span className="font-bold text-blue-600">{currentBillDue.toFixed(2)} AED</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between border-amber-400 bg-amber-50 dark:bg-amber-950/30"
+                        onClick={() => {
+                          setPaymentAmount(grandTotal.toFixed(2));
+                          setPayAllBills(true);
+                          setShowPaymentChoice(false);
+                          setShowPaymentForm(true);
+                        }}
+                        data-testid="button-pay-all-bills"
+                      >
+                        <span>Pay All Bills ({otherUnpaidBills.length + 1})</span>
+                        <span className="font-bold text-amber-600">{grandTotal.toFixed(2)} AED</span>
+                      </Button>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setShowPaymentChoice(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                );
+              })()}
+
               {/* Payment Form */}
               {showPaymentForm && (
                 <div className="border-t pt-4 mt-4 space-y-3">
-                  <h4 className="font-medium text-sm">Record Payment</h4>
+                  <h4 className="font-medium text-sm">{payAllBills ? "Pay All Bills" : "Record Payment"}</h4>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Amount (AED)</Label>
@@ -3880,7 +3966,7 @@ export default function Orders() {
                     {paymentPinError && <p className="text-xs text-destructive mt-1">{paymentPinError}</p>}
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => { setShowPaymentForm(false); setPaymentPin(''); setPaymentPinError(''); }}>
+                    <Button variant="outline" size="sm" onClick={() => { setShowPaymentForm(false); setShowPaymentChoice(false); setPayAllBills(false); setPaymentPin(''); setPaymentPinError(''); }}>
                       Cancel
                     </Button>
                     <Button size="sm" onClick={handleRecordPayment} disabled={recordPaymentMutation.isPending}>
@@ -3894,18 +3980,28 @@ export default function Orders() {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => { setShowBillDialog(false); setShowPaymentForm(false); setPaymentPin(''); }}
+                  onClick={() => { setShowBillDialog(false); setShowPaymentForm(false); setShowPaymentChoice(false); setPayAllBills(false); setPaymentPin(''); }}
                 >
                   Close
                 </Button>
-                {!showPaymentForm && !selectedBill?.isPaid && (
+                {!showPaymentForm && !showPaymentChoice && !selectedBill?.isPaid && (
                   <Button
                     variant="default"
                     className="flex-1"
                     onClick={() => {
-                      const remainingAmount = parseFloat(selectedBill?.amount || "0") - parseFloat(selectedBill?.paidAmount || "0");
-                      setPaymentAmount(remainingAmount.toFixed(2));
-                      setShowPaymentForm(true);
+                      const otherUnpaidBills = bills?.filter(
+                        (b) => b.clientId === selectedBill?.clientId && 
+                               b.id !== selectedBill?.id && 
+                               !b.isPaid
+                      ) || [];
+                      if (otherUnpaidBills.length > 0) {
+                        setShowPaymentChoice(true);
+                      } else {
+                        const remainingAmount = parseFloat(selectedBill?.amount || "0") - parseFloat(selectedBill?.paidAmount || "0");
+                        setPaymentAmount(remainingAmount.toFixed(2));
+                        setPayAllBills(false);
+                        setShowPaymentForm(true);
+                      }
                     }}
                     data-testid="button-record-payment"
                   >
