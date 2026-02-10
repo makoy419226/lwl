@@ -33,6 +33,9 @@ import {
   Banknote,
   Star,
   ChevronDown,
+  User,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import { Input } from "@/components/ui/input";
