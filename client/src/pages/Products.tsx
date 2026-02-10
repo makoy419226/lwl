@@ -2237,6 +2237,31 @@ export default function Products() {
                 >
                   Dry Clean All
                 </Button>
+                <Button
+                  type="button"
+                  className={`flex-1 h-9 text-xs ${Object.values(urgentQuantities).some(q => q > 0) ? "bg-orange-600 hover:bg-orange-700" : "bg-orange-500 hover:bg-orange-600"} text-white`}
+                  data-testid={isPopup ? "popup-button-urgent-all" : "sidebar-button-urgent-all"}
+                  onClick={() => {
+                    const hasAnyUrgent = Object.values(urgentQuantities).some(q => q > 0);
+                    if (hasAnyUrgent) {
+                      if (!window.confirm("Remove urgent from all items?")) return;
+                      setUrgentQuantities({});
+                    } else {
+                      if (!window.confirm("Mark all items as urgent? All quantities will be set to urgent.")) return;
+                      const newUrgent: Record<number, number> = {};
+                      Object.entries(quantities).forEach(([pid, qty]) => {
+                        const id = parseInt(pid);
+                        if (qty > 0) {
+                          newUrgent[id] = qty;
+                        }
+                      });
+                      setUrgentQuantities(newUrgent);
+                    }
+                  }}
+                >
+                  <Zap className="w-3 h-3 mr-1" />
+                  {Object.values(urgentQuantities).some(q => q > 0) ? "Remove Urgent All" : "Urgent All"}
+                </Button>
               </div>
             </div>
           )}
