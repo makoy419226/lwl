@@ -2490,7 +2490,7 @@ export default function Orders() {
                                             data-testid={`button-bill-${order.billId}`}
                                           >
                                             <Receipt className="w-3 h-3" />
-                                            #{order.billId}
+                                            #{bills?.find((b) => b.id === order.billId)?.referenceNumber || order.billId}
                                           </Button>
                                           {(() => {
                                             const bill = bills?.find((b) => b.id === order.billId);
