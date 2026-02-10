@@ -1645,6 +1645,24 @@ export default function Products() {
     }
   };
 
+  const MarqueeText = ({ children }: { children: React.ReactNode }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const textRef = useRef<HTMLDivElement>(null);
+    const [isOverflowing, setIsOverflowing] = useState(false);
+    useEffect(() => {
+      if (containerRef.current && textRef.current) {
+        setIsOverflowing(textRef.current.scrollWidth > containerRef.current.clientWidth);
+      }
+    });
+    return (
+      <div ref={containerRef} className="whitespace-nowrap overflow-hidden">
+        <div ref={textRef} className={`inline-block ${isOverflowing ? "group-hover/client:animate-[marquee_5s_linear_infinite]" : ""}`}>
+          {children}
+        </div>
+      </div>
+    );
+  };
+
   // Render order slip content (reusable for both sidebar and popup)
   const renderOrderSlipContent = (isPopup: boolean = false) => (
     <div className={`${isPopup ? "p-4 space-y-3 flex-1 overflow-y-auto pb-32" : "p-3 space-y-3 flex-1 overflow-y-auto"}`}>
@@ -1707,14 +1725,12 @@ export default function Products() {
                       }}
                       data-testid={`option-client-${client.id}`}
                     >
-                      <div className="whitespace-nowrap overflow-hidden">
-                        <div className="inline-block group-hover/client:animate-[marquee_5s_linear_infinite]">
-                          <span className="font-medium">{client.name}</span> - {client.phone || "No phone"}
-                          {client.address && (
-                            <span className="text-muted-foreground text-xs ml-1">| {client.address}</span>
-                          )}
-                        </div>
-                      </div>
+                      <MarqueeText>
+                        <span className="font-medium">{client.name}</span> - {client.phone || "No phone"}
+                        {client.address && (
+                          <span className="text-muted-foreground text-xs ml-1">| {client.address}</span>
+                        )}
+                      </MarqueeText>
                     </div>
                   ))}
                 </div>
