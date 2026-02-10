@@ -1490,6 +1490,43 @@ export default function Orders() {
     });
   };
 
+  const matchesDateFilter = (order: Order) => {
+    const orderDate = new Date(order.entryDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (dateFilter === "all_time") {
+      return true;
+    } else if (dateFilter === "today") {
+      const orderDay = new Date(orderDate);
+      orderDay.setHours(0, 0, 0, 0);
+      return orderDay.getTime() === today.getTime();
+    } else if (dateFilter === "yesterday") {
+      const orderDay = new Date(orderDate);
+      orderDay.setHours(0, 0, 0, 0);
+      return orderDay.getTime() === yesterday.getTime();
+    } else if (dateFilter === "custom" && customDateFrom && customDateTo) {
+      const fromDate = new Date(customDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      const toDate = new Date(customDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      return orderDate >= fromDate && orderDate <= toDate;
+    } else if (dateFilter === "custom" && customDateFrom) {
+      const fromDate = new Date(customDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      return orderDate >= fromDate;
+    } else if (dateFilter === "custom" && customDateTo) {
+      const toDate = new Date(customDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      return orderDate <= toDate;
+    }
+    return true;
+  };
+
+  const dateFilteredOrders = orders?.filter(matchesDateFilter);
+
   const filteredOrders = orders?.filter((order) => {
     const client = clients?.find((c) => c.id === order.clientId);
     const term = searchTerm.toLowerCase();
@@ -1503,41 +1540,7 @@ export default function Orders() {
       (order.deliveryAddress || "").toLowerCase().includes(term) ||
       (order.billId && String(order.billId).includes(term));
 
-    // Date filtering
-    const orderDate = new Date(order.entryDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    let matchesDate = true;
-    if (dateFilter === "all_time") {
-      matchesDate = true;
-    } else if (dateFilter === "today") {
-      const orderDay = new Date(orderDate);
-      orderDay.setHours(0, 0, 0, 0);
-      matchesDate = orderDay.getTime() === today.getTime();
-    } else if (dateFilter === "yesterday") {
-      const orderDay = new Date(orderDate);
-      orderDay.setHours(0, 0, 0, 0);
-      matchesDate = orderDay.getTime() === yesterday.getTime();
-    } else if (dateFilter === "custom" && customDateFrom && customDateTo) {
-      const fromDate = new Date(customDateFrom);
-      fromDate.setHours(0, 0, 0, 0);
-      const toDate = new Date(customDateTo);
-      toDate.setHours(23, 59, 59, 999);
-      matchesDate = orderDate >= fromDate && orderDate <= toDate;
-    } else if (dateFilter === "custom" && customDateFrom) {
-      const fromDate = new Date(customDateFrom);
-      fromDate.setHours(0, 0, 0, 0);
-      matchesDate = orderDate >= fromDate;
-    } else if (dateFilter === "custom" && customDateTo) {
-      const toDate = new Date(customDateTo);
-      toDate.setHours(23, 59, 59, 999);
-      matchesDate = orderDate <= toDate;
-    }
-
-    if (!matchesDate) return false;
+    if (!matchesDateFilter(order)) return false;
 
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "create") return matchesSearch && !order.tagDone;
@@ -1678,98 +1681,7 @@ export default function Orders() {
       </div>
 
       <main className="flex-1 container mx-auto px-4 py-4 lg:py-6 overflow-auto">
-        <div className="stats-grid mb-4 lg:mb-6">
-          <Card className="responsive-card">
-            <CardContent className="p-3 lg:pt-6 lg:px-6">
-              <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
-                  <Shirt className="w-5 h-5 lg:w-6 lg:h-6 text-orange-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">
-                    Received
-                  </p>
-                  <p
-                    className="text-xl lg:text-2xl font-bold"
-                    data-testid="text-entry-count"
-                  >
-                    {orders?.filter((o) => !o.washingDone).length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="responsive-card">
-            <CardContent className="p-3 lg:pt-6 lg:px-6">
-              <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
-                  <Clock
-                    className="w-5 h-5 lg:w-6 lg:h-6 text-blue-500 animate-spin"
-                    style={{ animationDuration: "3s" }}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">
-                    Washing
-                  </p>
-                  <p
-                    className="text-xl lg:text-2xl font-bold"
-                    data-testid="text-washing-count"
-                  >
-                    {orders?.filter((o) => o.washingDone && !o.packingDone)
-                      .length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="responsive-card">
-            <CardContent className="p-3 lg:pt-6 lg:px-6">
-              <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
-                  <Package className="w-5 h-5 lg:w-6 lg:h-6 text-purple-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">
-                    Ready
-                  </p>
-                  <p
-                    className="text-xl lg:text-2xl font-bold"
-                    data-testid="text-packing-count"
-                  >
-                    {orders?.filter((o) => o.packingDone && !o.delivered)
-                      .length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="responsive-card">
-            <CardContent className="p-3 lg:pt-6 lg:px-6">
-              <div className="flex items-center gap-2 lg:gap-3">
-                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
-                  <CheckCircle2 className="w-5 h-5 lg:w-6 lg:h-6 text-green-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs lg:text-sm text-muted-foreground">
-                    Released
-                  </p>
-                  <p
-                    className="text-xl lg:text-2xl font-bold"
-                    data-testid="text-delivered-count"
-                  >
-                    {orders?.filter((o) => o.delivered).length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Date Filter */}
+        {/* Date Filter - Above Stats */}
         <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-muted/50 rounded-lg border">
           <span className="text-sm font-medium text-muted-foreground">Date:</span>
           <div className="flex gap-1">
@@ -1827,6 +1739,97 @@ export default function Orders() {
               />
             </div>
           )}
+        </div>
+
+        <div className="stats-grid mb-4 lg:mb-6">
+          <Card className="responsive-card">
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
+                  <Shirt className="w-5 h-5 lg:w-6 lg:h-6 text-orange-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Received
+                  </p>
+                  <p
+                    className="text-xl lg:text-2xl font-bold"
+                    data-testid="text-entry-count"
+                  >
+                    {dateFilteredOrders?.filter((o) => !o.washingDone).length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="responsive-card">
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
+                  <Clock
+                    className="w-5 h-5 lg:w-6 lg:h-6 text-blue-500 animate-spin"
+                    style={{ animationDuration: "3s" }}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Washing
+                  </p>
+                  <p
+                    className="text-xl lg:text-2xl font-bold"
+                    data-testid="text-washing-count"
+                  >
+                    {dateFilteredOrders?.filter((o) => o.washingDone && !o.packingDone)
+                      .length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="responsive-card">
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
+                  <Package className="w-5 h-5 lg:w-6 lg:h-6 text-purple-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Ready
+                  </p>
+                  <p
+                    className="text-xl lg:text-2xl font-bold"
+                    data-testid="text-packing-count"
+                  >
+                    {dateFilteredOrders?.filter((o) => o.packingDone && !o.delivered)
+                      .length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="responsive-card">
+            <CardContent className="p-3 lg:pt-6 lg:px-6">
+              <div className="flex items-center gap-2 lg:gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 transition-all duration-200">
+                  <CheckCircle2 className="w-5 h-5 lg:w-6 lg:h-6 text-green-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground">
+                    Released
+                  </p>
+                  <p
+                    className="text-xl lg:text-2xl font-bold"
+                    data-testid="text-delivered-count"
+                  >
+                    {dateFilteredOrders?.filter((o) => o.delivered).length || 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
