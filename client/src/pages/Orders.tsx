@@ -457,6 +457,7 @@ export default function Orders() {
     const baseProductName = itemName
       .replace(/\s*\[N\]\s*/g, '')
       .replace(/\s*\[D\]\s*/g, '')
+      .replace(/\s*\[URG\]\s*/g, '')
       .replace(/\s*\(folding\)\s*/gi, '')
       .replace(/\s*\(hanger\)\s*/gi, '')
       .trim();
@@ -647,11 +648,14 @@ export default function Orders() {
     const itemsHtml = parsedItems
       .map(
         (item, idx) => {
+          const isItemUrgent = item.name.includes('[URG]');
+          const cleanName = item.name.replace(/\s*\[URG\]\s*/g, '');
           const unitPrice = getItemPrice(item.name, order.deliveryType, order.urgent === true);
           const lineTotal = unitPrice * item.quantity;
-          return `<tr style="border-bottom: 1px solid #e5e5e5;">
+          const urgBadge = isItemUrgent ? `<span style="background: #f97316; color: white; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: bold; margin-left: 4px;">URG</span>` : '';
+          return `<tr style="border-bottom: 1px solid #e5e5e5;${isItemUrgent ? ' background: #fff7ed;' : ''}">
         <td style="padding: 5px 4px; font-size: 9px;">${idx + 1}</td>
-        <td style="padding: 5px 4px; font-size: 9px;">${item.name}</td>
+        <td style="padding: 5px 4px; font-size: 9px;">${cleanName}${urgBadge}</td>
         <td style="padding: 5px 4px; font-size: 9px; text-align: center; font-weight: bold;">${item.quantity}</td>
         <td style="padding: 5px 4px; font-size: 9px; text-align: right;">${lineTotal.toFixed(2)}</td>
       </tr>`;
@@ -2210,12 +2214,19 @@ export default function Orders() {
                                     <div className="p-3">
                                       <h4 className="font-semibold text-sm mb-2">Order Items</h4>
                                       <div className="space-y-1 max-h-60 overflow-y-auto">
-                                        {items.map((item, idx) => (
-                                          <div key={idx} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
-                                            <span className="text-muted-foreground">{item.name}</span>
-                                            <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
-                                          </div>
-                                        ))}
+                                        {items.map((item, idx) => {
+                                          const isItemUrgent = item.name.includes('[URG]');
+                                          const displayName = item.name.replace(/\s*\[URG\]\s*/g, '');
+                                          return (
+                                            <div key={idx} className={`flex items-center justify-between text-sm py-1 border-b last:border-0 ${isItemUrgent ? "bg-orange-50 dark:bg-orange-900/20" : ""}`}>
+                                              <span className="text-muted-foreground flex items-center gap-1">
+                                                {displayName}
+                                                {isItemUrgent && <span className="text-[9px] bg-orange-500 text-white px-1 rounded font-bold">URG</span>}
+                                              </span>
+                                              <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
+                                            </div>
+                                          );
+                                        })}
                                       </div>
                                       <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-sm">
                                         <span>Total</span>
@@ -2759,12 +2770,19 @@ export default function Orders() {
                                           <div className="p-3">
                                             <h4 className="font-semibold text-sm mb-2">Order Items</h4>
                                             <div className="space-y-1 max-h-60 overflow-y-auto">
-                                              {parseOrderItems(order.items).map((item, idx) => (
-                                                <div key={idx} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
-                                                  <span className="text-muted-foreground">{item.name}</span>
-                                                  <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
-                                                </div>
-                                              ))}
+                                              {parseOrderItems(order.items).map((item, idx) => {
+                                                const isItemUrgent = item.name.includes('[URG]');
+                                                const displayName = item.name.replace(/\s*\[URG\]\s*/g, '');
+                                                return (
+                                                  <div key={idx} className={`flex items-center justify-between text-sm py-1 border-b last:border-0 ${isItemUrgent ? "bg-orange-50 dark:bg-orange-900/20" : ""}`}>
+                                                    <span className="text-muted-foreground flex items-center gap-1">
+                                                      {displayName}
+                                                      {isItemUrgent && <span className="text-[9px] bg-orange-500 text-white px-1 rounded font-bold">URG</span>}
+                                                    </span>
+                                                    <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
+                                                  </div>
+                                                );
+                                              })}
                                             </div>
                                             <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-sm">
                                               <span>Total</span>
@@ -4776,17 +4794,22 @@ export default function Orders() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-2">Items in Order</p>
                 <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
-                  {parseOrderItems(orderDetailDialog.items).map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 hover:bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        {getCategoryIcon(products?.find(p => p.name === item.name)?.category || null, "w-4 h-4")}
-                        <span className="text-sm">{item.name}</span>
+                  {parseOrderItems(orderDetailDialog.items).map((item, idx) => {
+                    const isItemUrgent = item.name.includes('[URG]');
+                    const displayName = item.name.replace(/\s*\[URG\]\s*/g, '');
+                    return (
+                      <div key={idx} className={`flex items-center justify-between p-2 hover:bg-muted/30 ${isItemUrgent ? "bg-orange-50 dark:bg-orange-900/20" : ""}`}>
+                        <div className="flex items-center gap-2">
+                          {getCategoryIcon(products?.find(p => p.name.toLowerCase() === displayName.toLowerCase())?.category || null, "w-4 h-4")}
+                          <span className="text-sm">{displayName}</span>
+                          {isItemUrgent && <span className="text-[9px] bg-orange-500 text-white px-1 rounded font-bold">URG</span>}
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          x{item.quantity}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        x{item.quantity}
-                      </Badge>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="flex justify-between items-center mt-2 pt-2 border-t">
                   <span className="font-medium">Total Items:</span>
