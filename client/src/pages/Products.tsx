@@ -1800,7 +1800,6 @@ export default function Products() {
 
       {/* Totals */}
       {(orderItems.length > 0 || customItems.length > 0) && (
-        <>
           <div className="border rounded-lg p-3 space-y-1 bg-muted/30">
             <div className="flex justify-between text-xs">
               <span>Subtotal</span>
@@ -1836,6 +1835,7 @@ export default function Products() {
               </span>
             </div>
           </div>
+      )}
 
           {/* Client Selection */}
           <div className="space-y-2">
@@ -2227,8 +2227,6 @@ export default function Products() {
               Pay Now
             </Button>
           </div>
-        </>
-      )}
     </div>
   );
 
