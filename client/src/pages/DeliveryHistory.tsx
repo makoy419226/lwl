@@ -112,7 +112,7 @@ export default function DeliveryHistory() {
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Delivered
                         </Badge>
-                        {order.items?.includes('[URG]') && <Badge className="bg-red-600 text-white">Urgent</Badge>}
+                        {order.urgent && <Badge className="bg-red-500 text-white">Urgent</Badge>}
                       </div>
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center gap-2">

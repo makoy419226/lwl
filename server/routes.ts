@@ -1839,19 +1839,19 @@ export async function registerRoutes(
         const product = allProducts.find((p: any) => p.name.toLowerCase() === baseProductName.toLowerCase());
         if (product) {
           let basePrice: number;
-          const isItemUrgent = item.name.includes('[URG]');
+          const isUrgent = order.urgent === true;
           if (order.deliveryType === "iron_only") {
-            if (isItemUrgent) {
+            if (isUrgent) {
               basePrice = parseFloat(product.price || "0");
             } else {
               basePrice = parseFloat(product.ironOnlyPrice || product.price || "0");
             }
           } else if (isDryClean) {
             basePrice = parseFloat(product.dryCleanPrice || product.price || "0");
-            if (isItemUrgent) basePrice *= 2;
+            if (isUrgent) basePrice *= 2;
           } else {
             basePrice = parseFloat(product.price || "0");
-            if (isItemUrgent) basePrice *= 2;
+            if (isUrgent) basePrice *= 2;
           }
           newTotal += basePrice * item.quantity;
           itemsArray.push(`${item.quantity}x ${item.name}`);
@@ -2367,8 +2367,8 @@ export async function registerRoutes(
     const totalRevenue = todaysOrders.reduce((sum, o) => sum + parseFloat(o.finalAmount || "0"), 0);
     const paidAmount = todaysOrders.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
     const pendingAmount = totalRevenue - paidAmount;
-    const urgentOrders = todaysOrders.filter(o => o.items && o.items.includes('[URG]')).length;
-    const normalOrders = totalOrders - urgentOrders;
+    const normalOrders = todaysOrders.filter(o => !o.urgent).length;
+    const urgentOrders = todaysOrders.filter(o => o.urgent).length;
     const pickupOrders = todaysOrders.filter(o => o.deliveryType === "pickup").length;
     const deliveryOrders = todaysOrders.filter(o => o.deliveryType === "delivery").length;
     
@@ -2471,8 +2471,8 @@ export async function registerRoutes(
     const totalRevenue = filteredOrders.reduce((sum, o) => sum + parseFloat(o.finalAmount || "0"), 0);
     const paidAmount = filteredOrders.reduce((sum, o) => sum + parseFloat(o.paidAmount || "0"), 0);
     const pendingAmount = totalRevenue - paidAmount;
-    const urgentOrders = filteredOrders.filter(o => o.items && o.items.includes('[URG]')).length;
-    const normalOrders = totalOrders - urgentOrders;
+    const normalOrders = filteredOrders.filter(o => !o.urgent).length;
+    const urgentOrders = filteredOrders.filter(o => o.urgent).length;
     const pickupOrders = filteredOrders.filter(o => o.deliveryType === "pickup").length;
     const deliveryOrders = filteredOrders.filter(o => o.deliveryType === "delivery").length;
     
@@ -2864,6 +2864,7 @@ export async function registerRoutes(
       washingDone: order.washingDone,
       packingDone: order.packingDone,
       delivered: order.delivered,
+      urgent: order.urgent,
       clientName,
       deliveryPhotos: order.deliveryPhotos || [],
       deliveryPhoto: order.deliveryPhoto,
@@ -2914,6 +2915,7 @@ export async function registerRoutes(
       delivered: order.delivered,
       deliveryBy: order.deliveryBy,
       deliveryDate: order.deliveryDate,
+      urgent: order.urgent,
       expectedDeliveryAt: order.expectedDeliveryAt,
       deliveryPhotos: order.deliveryPhotos || [],
       deliveryPhoto: order.deliveryPhoto,

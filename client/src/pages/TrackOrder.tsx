@@ -22,6 +22,7 @@ interface TrackOrderData {
   delivered: boolean;
   deliveryBy: string | null;
   deliveryDate: string | null;
+  urgent: boolean;
   expectedDeliveryAt: string | null;
   deliveryPhotos: string[];
   deliveryPhoto: string | null;
@@ -183,7 +184,7 @@ export default function TrackOrder() {
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <CardTitle className="text-lg">Order #{order.orderNumber}</CardTitle>
                   <div className="flex gap-1 flex-wrap">
-                    {order.items?.includes('[URG]') && <Badge variant="destructive">Has Urgent Items</Badge>}
+                    {order.urgent && <Badge variant="destructive">Urgent</Badge>}
                     <Badge variant={order.deliveryType === "Delivery" ? "default" : "secondary"}>
                       {order.deliveryType || "Take Away"}
                     </Badge>
