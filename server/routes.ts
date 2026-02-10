@@ -1756,6 +1756,52 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/orders/:id/adjust-total", async (req, res) => {
+    try {
+      const orderId = Number(req.params.id);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+      const { adjustedTotal, reason, staffPin } = req.body;
+      if (!adjustedTotal || !reason) {
+        return res.status(400).json({ message: "Adjusted total and reason are required" });
+      }
+
+      const allStaff = await storage.getStaffMembers();
+      const allUsers = await storage.getUsers();
+      const staffMember = allStaff.find((s: any) => s.pin === staffPin);
+      const userMatch = allUsers.find((u: any) => u.pin === staffPin);
+      if (!staffMember && !userMatch) {
+        return res.status(401).json({ message: "Invalid staff PIN" });
+      }
+      const staffName = staffMember?.name || userMatch?.name || userMatch?.username || "Unknown";
+
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      const adjustedVal = parseFloat(adjustedTotal);
+      const fullReason = `${reason} (by ${staffName})`;
+
+      const updatedOrder = await storage.updateOrder(orderId, {
+        adjustedTotal: adjustedVal.toFixed(2),
+        priceAdjustReason: fullReason,
+        finalAmount: adjustedVal.toFixed(2),
+      });
+
+      if (order.billId) {
+        await storage.updateBill(order.billId, {
+          amount: adjustedVal.toFixed(2),
+        });
+      }
+
+      res.json(updatedOrder);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
   // Update order items and recalculate bill
   app.post("/api/orders/:id/update-items", async (req, res) => {
     try {
@@ -1874,11 +1920,13 @@ export async function registerRoutes(
       const oldFinalAmount = parseFloat(order.finalAmount || order.totalAmount || "0");
       const amountDifference = finalAmount - oldFinalAmount;
       
-      // Update order
+      // Update order (clear adjusted total since items changed)
       const updatedOrder = await storage.updateOrder(orderId, {
         items: newItemsText,
         totalAmount: newTotal.toFixed(2),
         finalAmount: finalAmount.toFixed(2),
+        adjustedTotal: null,
+        priceAdjustReason: null,
         notes: `${order.notes || ""}\n[${new Date().toLocaleString()}] Items updated by ${verifiedUser}. Amount changed from AED ${oldFinalAmount.toFixed(2)} to AED ${finalAmount.toFixed(2)}`,
       });
       

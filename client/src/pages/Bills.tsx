@@ -960,6 +960,9 @@ export default function Bills() {
       </table>
     ` : '';
     
+    const relatedOrder = allOrders?.find(o => o.billId === bill.id);
+    const priceAdjustReason = relatedOrder?.priceAdjustReason;
+
     const paidStamp = bill.isPaid ? `
       <div style="text-align: center; margin: 20px 0;">
         <div style="display: inline-block; border: 3px solid #22c55e; color: #22c55e; padding: 8px 30px; font-size: 24px; font-weight: bold; border-radius: 5px; transform: rotate(-5deg);">
@@ -1007,6 +1010,7 @@ export default function Bills() {
               <span>TOTAL:</span>
               <span>AED ${amount}</span>
             </div>
+            ${priceAdjustReason ? `<div style="font-size: 11px; color: #b45309; font-style: italic; margin-top: 5px;">Price adjusted: ${priceAdjustReason}</div>` : ''}
             ${paidStamp}
           </body>
         </html>

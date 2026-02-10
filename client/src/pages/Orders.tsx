@@ -287,6 +287,12 @@ export default function Orders() {
   const [editDeliveryPeriod, setEditDeliveryPeriod] = useState<"AM" | "PM">("PM");
   
   const [orderDetailDialog, setOrderDetailDialog] = useState<Order | null>(null);
+  const [adjustPriceDialog, setAdjustPriceDialog] = useState<Order | null>(null);
+  const [adjustPriceValue, setAdjustPriceValue] = useState("");
+  const [adjustPriceReason, setAdjustPriceReason] = useState("");
+  const [adjustPricePin, setAdjustPricePin] = useState("");
+  const [adjustPricePinError, setAdjustPricePinError] = useState("");
+  const [isAdjustingPrice, setIsAdjustingPrice] = useState(false);
 
   const { data: orders, isLoading, refetch: refetchOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -731,8 +737,9 @@ export default function Orders() {
             <tfoot>
               <tr style="background: #f8f9fa; border-top: 1px solid #000;">
                 <td colspan="2" style="padding: 6px 4px; font-size: 10px; font-weight: bold;">Total: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} items</td>
-                <td colspan="2" style="padding: 6px 4px; font-size: 12px; font-weight: bold; text-align: right;">AED ${parseFloat(order.totalAmount).toFixed(2)}</td>
+                <td colspan="2" style="padding: 6px 4px; font-size: 12px; font-weight: bold; text-align: right;">AED ${parseFloat(order.adjustedTotal != null ? order.adjustedTotal : (order.finalAmount ?? order.totalAmount)).toFixed(2)}</td>
               </tr>
+              ${order.priceAdjustReason ? `<tr><td colspan="4" style="padding: 4px; font-size: 9px; color: #b45309; font-style: italic;">Price adjusted: ${order.priceAdjustReason}</td></tr>` : ''}
             </tfoot>
           </table>
         </div>
@@ -778,9 +785,9 @@ export default function Orders() {
         <div style="background: #dc3545; color: white; border-radius: 4px; padding: 12px; margin-bottom: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 12px; font-weight: bold;">GRAND TOTAL DUE:</span>
-            <span style="font-size: 18px; font-weight: bold;">AED ${(parseFloat(order.totalAmount) + totalPreviousDue).toFixed(2)}</span>
+            <span style="font-size: 18px; font-weight: bold;">AED ${(parseFloat(order.adjustedTotal != null ? order.adjustedTotal : (order.finalAmount ?? order.totalAmount)) + totalPreviousDue).toFixed(2)}</span>
           </div>
-          <div style="font-size: 9px; margin-top: 4px; opacity: 0.9;">(Current: ${parseFloat(order.totalAmount).toFixed(2)} + Previous: ${totalPreviousDue.toFixed(2)})</div>
+          <div style="font-size: 9px; margin-top: 4px; opacity: 0.9;">(Current: ${parseFloat(order.adjustedTotal != null ? order.adjustedTotal : (order.finalAmount ?? order.totalAmount)).toFixed(2)} + Previous: ${totalPreviousDue.toFixed(2)})</div>
         </div>
         `
             : ""
@@ -1389,6 +1396,58 @@ export default function Orders() {
       }
       return { ...prev, [itemName]: newQty };
     });
+  };
+
+  const submitAdjustPrice = async () => {
+    if (!adjustPriceDialog) return;
+    if (adjustPricePin.length !== 5) {
+      setAdjustPricePinError("PIN must be 5 digits");
+      return;
+    }
+    if (!adjustPriceValue || parseFloat(adjustPriceValue) < 0) {
+      setAdjustPricePinError("Please enter a valid price");
+      return;
+    }
+    if (!adjustPriceReason.trim()) {
+      setAdjustPricePinError("Please enter a reason for the price change");
+      return;
+    }
+
+    setIsAdjustingPrice(true);
+    try {
+      const res = await fetch(`/api/orders/${adjustPriceDialog.id}/adjust-total`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adjustedTotal: adjustPriceValue,
+          reason: adjustPriceReason.trim(),
+          staffPin: adjustPricePin,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setAdjustPricePinError(data.message || "Failed to adjust price");
+        return;
+      }
+
+      toast({
+        title: "Price Adjusted",
+        description: `Order total updated to AED ${parseFloat(adjustPriceValue).toFixed(2)}`,
+      });
+      setAdjustPriceDialog(null);
+      setAdjustPriceValue("");
+      setAdjustPriceReason("");
+      setAdjustPricePin("");
+      setAdjustPricePinError("");
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+    } catch (err) {
+      setAdjustPricePinError("Failed to adjust price");
+    } finally {
+      setIsAdjustingPrice(false);
+    }
   };
 
   const submitEditItems = async () => {
@@ -2040,8 +2099,20 @@ export default function Orders() {
                                   </div>
                                 </PopoverContent>
                               </Popover>
-                              <span className="font-semibold text-sm">
-                                {order.totalAmount} AED
+                              <span
+                                className="font-semibold text-sm cursor-pointer hover:underline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAdjustPriceDialog(order);
+                                  setAdjustPriceValue(order.adjustedTotal ?? order.finalAmount ?? order.totalAmount);
+                                  setAdjustPriceReason("");
+                                  setAdjustPricePin("");
+                                  setAdjustPricePinError("");
+                                }}
+                                data-testid={`text-total-mobile-${order.id}`}
+                              >
+                                {order.adjustedTotal != null ? order.adjustedTotal : (order.finalAmount ?? order.totalAmount)} AED
+                                {order.priceAdjustReason && <Edit className="w-3 h-3 inline ml-1 text-orange-500" />}
                               </span>
                             </div>
 
@@ -2741,8 +2812,20 @@ export default function Orders() {
                                       </Popover>
                                     </TableCell>
                                     {activeTab !== "create" && (
-                                      <TableCell className="font-semibold hidden md:table-cell text-xs">
-                                        {order.totalAmount} AED
+                                      <TableCell
+                                        className="font-semibold hidden md:table-cell text-xs cursor-pointer hover:underline"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAdjustPriceDialog(order);
+                                          setAdjustPriceValue(order.adjustedTotal ?? order.finalAmount ?? order.totalAmount);
+                                          setAdjustPriceReason("");
+                                          setAdjustPricePin("");
+                                          setAdjustPricePinError("");
+                                        }}
+                                        data-testid={`text-total-desktop-${order.id}`}
+                                      >
+                                        {order.adjustedTotal != null ? order.adjustedTotal : (order.finalAmount ?? order.totalAmount)} AED
+                                        {order.priceAdjustReason && <Edit className="w-3 h-3 inline ml-1 text-orange-500" />}
                                       </TableCell>
                                     )}
                                     <TableCell className="hidden md:table-cell">
@@ -4125,6 +4208,9 @@ export default function Orders() {
                     const amount = parseFloat(selectedBill.amount || "0").toFixed(2);
                     const client = clients?.find((c) => c.id === selectedBill.clientId);
 
+                    const relatedOrder = orders?.find(o => o.billId === selectedBill.id);
+                    const priceAdjustReason = relatedOrder?.priceAdjustReason;
+
                     const itemsHtml = parsedItems.length > 0 ? `
                       <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px;">
                         <thead>
@@ -4197,6 +4283,7 @@ export default function Orders() {
                               <span>TOTAL:</span>
                               <span>AED ${amount}</span>
                             </div>
+                            ${priceAdjustReason ? `<div style="font-size: 11px; color: #b45309; font-style: italic; margin-top: 5px;">Price adjusted: ${priceAdjustReason}</div>` : ''}
                             ${paidStamp}
                           </body>
                         </html>
@@ -4365,6 +4452,121 @@ export default function Orders() {
                     </>
                   ) : (
                     "Update Items"
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Adjust Price Dialog */}
+      <Dialog
+        open={!!adjustPriceDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAdjustPriceDialog(null);
+            setAdjustPriceValue("");
+            setAdjustPriceReason("");
+            setAdjustPricePin("");
+            setAdjustPricePinError("");
+          }
+        }}
+      >
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-orange-500" />
+              Adjust Total Price
+            </DialogTitle>
+            <DialogDescription>
+              Change the total price for order #{adjustPriceDialog?.orderNumber}. A reason is required.
+            </DialogDescription>
+          </DialogHeader>
+          {adjustPriceDialog && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Order:</span>
+                  <span className="font-medium">{adjustPriceDialog.orderNumber}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Customer:</span>
+                  <span className="font-medium">
+                    {clients?.find((c) => c.id === adjustPriceDialog.clientId)?.name || adjustPriceDialog.customerName || "Walk-in"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Original Total:</span>
+                  <span className="font-medium">AED {parseFloat(adjustPriceDialog.totalAmount).toFixed(2)}</span>
+                </div>
+                {adjustPriceDialog.priceAdjustReason && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Previous Reason:</span>
+                    <span className="font-medium text-orange-600 dark:text-orange-400 text-xs">{adjustPriceDialog.priceAdjustReason}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>New Total (AED)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Enter new total price"
+                  value={adjustPriceValue}
+                  onChange={(e) => setAdjustPriceValue(e.target.value)}
+                  data-testid="input-adjust-price-value"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Reason for Price Change</Label>
+                <Textarea
+                  placeholder="e.g. Customer negotiation, damaged items, loyalty discount..."
+                  value={adjustPriceReason}
+                  onChange={(e) => setAdjustPriceReason(e.target.value)}
+                  rows={2}
+                  data-testid="input-adjust-price-reason"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Staff PIN (5 digits)</Label>
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={5}
+                  placeholder="Enter your 5-digit PIN"
+                  value={adjustPricePin}
+                  onChange={(e) => {
+                    setAdjustPricePin(e.target.value.replace(/\D/g, "").slice(0, 5));
+                    setAdjustPricePinError("");
+                  }}
+                  data-testid="input-adjust-price-pin"
+                />
+                {adjustPricePinError && (
+                  <p className="text-sm text-destructive">{adjustPricePinError}</p>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setAdjustPriceDialog(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={submitAdjustPrice}
+                  disabled={isAdjustingPrice || adjustPricePin.length !== 5 || !adjustPriceReason.trim()}
+                  data-testid="button-submit-adjust-price"
+                >
+                  {isAdjustingPrice ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Price"
                   )}
                 </Button>
               </DialogFooter>
