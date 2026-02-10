@@ -178,6 +178,7 @@ export default function Orders() {
     }
   }, [searchParams]);
   const [activeTab, setActiveTab] = useState("all");
+  const [urgencyFilter, setUrgencyFilter] = useState<"all" | "urgent">("all");
   const [dateFilter, setDateFilter] = useState<"all_time" | "today" | "yesterday" | "custom">("today");
   const [customDateFrom, setCustomDateFrom] = useState("");
   const [customDateTo, setCustomDateTo] = useState("");
@@ -1545,6 +1546,8 @@ export default function Orders() {
 
     if (!matchesDateFilter(order)) return false;
 
+    if (urgencyFilter === "urgent" && !order.urgent) return false;
+
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "create") return matchesSearch && !order.tagDone;
     if (activeTab === "tag-complete")
@@ -1902,6 +1905,54 @@ export default function Orders() {
               </TabsList>
           </div>
 
+          {(() => {
+            const tabFiltered = orders?.filter(o => {
+              if (!matchesDateFilter(o)) return false;
+              const client = clients?.find((c) => c.id === o.clientId);
+              const term = searchTerm.toLowerCase();
+              const matchesSearch = !searchTerm ||
+                o.orderNumber.toLowerCase().includes(term) ||
+                o.items?.toLowerCase().includes(term) ||
+                (client?.name || "").toLowerCase().includes(term) ||
+                (client?.phone || "").toLowerCase().includes(term) ||
+                (client?.address || "").toLowerCase().includes(term) ||
+                (o.deliveryAddress || "").toLowerCase().includes(term) ||
+                (o.billId && String(o.billId).includes(term));
+              if (!matchesSearch) return false;
+              if (activeTab === "all") return true;
+              if (activeTab === "create") return !o.tagDone;
+              if (activeTab === "tag-complete") return o.tagDone && !o.packingDone;
+              if (activeTab === "packing-done") return o.packingDone && !o.delivered;
+              if (activeTab === "delivery") return o.delivered;
+              return true;
+            }) || [];
+            const allCount = tabFiltered.length;
+            const urgentCount = tabFiltered.filter(o => o.urgent).length;
+            return (
+              <div className="flex items-center gap-2 mb-3">
+                <Button
+                  variant={urgencyFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-xs font-semibold gap-1"
+                  onClick={() => setUrgencyFilter("all")}
+                  data-testid="button-filter-all-urgency"
+                >
+                  All ({allCount})
+                </Button>
+                <Button
+                  variant={urgencyFilter === "urgent" ? "default" : "outline"}
+                  size="sm"
+                  className={`h-7 text-xs font-semibold gap-1 ${urgencyFilter === "urgent" ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500 no-default-hover-elevate" : "text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700"}`}
+                  onClick={() => setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent")}
+                  data-testid="button-filter-urgent-only"
+                >
+                  <Zap className="w-3 h-3" />
+                  Urgent ({urgentCount})
+                </Button>
+              </div>
+            );
+          })()}
+
           <TabsContent value={activeTab}>
               {isLoading ? (
                 <div className="flex items-center justify-center py-20">
@@ -2173,39 +2224,22 @@ export default function Orders() {
                                     </div>
                                   </PopoverContent>
                                 </Popover>
-                                <Select
-                                  value={order.urgent ? "urgent" : "normal"}
-                                  onValueChange={(val) => {
+                                <Button
+                                  variant={order.urgent ? "default" : "outline"}
+                                  size="sm"
+                                  className={`h-7 text-xs font-semibold gap-1 ${order.urgent ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500 no-default-hover-elevate" : "text-muted-foreground"} ${order.delivered ? "opacity-60 pointer-events-none" : ""}`}
+                                  onClick={() => {
+                                    if (order.delivered) return;
                                     updateOrderMutation.mutate({
                                       id: order.id,
-                                      updates: { urgent: val === "urgent" },
+                                      updates: { urgent: !order.urgent },
                                     });
                                   }}
-                                  disabled={order.delivered === true}
+                                  data-testid={`button-mobile-urgent-${order.id}`}
                                 >
-                                  <SelectTrigger
-                                    className={`w-24 h-7 text-xs font-semibold ${order.urgent ? "text-red-600 dark:text-red-400 border-red-300 dark:border-red-700" : "text-green-600 dark:text-green-400 border-green-300 dark:border-green-700"} ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}
-                                    data-testid={`select-mobile-order-type-${order.id}`}
-                                  >
-                                    <SelectValue>
-                                      {order.urgent ? (
-                                        <div className="flex items-center gap-1">
-                                          <Zap className="w-3 h-3" />
-                                          Urgent
-                                        </div>
-                                      ) : (
-                                        <div className="flex items-center gap-1">
-                                          <Clock className="w-3 h-3" />
-                                          Normal
-                                        </div>
-                                      )}
-                                    </SelectValue>
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="normal"><span className="text-green-600 dark:text-green-400 font-semibold">Normal</span></SelectItem>
-                                    <SelectItem value="urgent"><span className="text-red-600 dark:text-red-400 font-semibold">Urgent</span></SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  <Zap className="w-3 h-3" />
+                                  {order.urgent ? "Urgent" : "Normal"}
+                                </Button>
                                 <Select
                                   value={order.deliveryType || ""}
                                   onValueChange={(newType) => {
@@ -2746,39 +2780,22 @@ export default function Orders() {
                                       </TableCell>
                                     )}
                                     <TableCell className="hidden md:table-cell">
-                                      <Select
-                                        value={order.urgent ? "urgent" : "normal"}
-                                        onValueChange={(val) => {
+                                      <Button
+                                        variant={order.urgent ? "default" : "outline"}
+                                        size="sm"
+                                        className={`h-7 text-xs font-semibold gap-1 ${order.urgent ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500 no-default-hover-elevate" : "text-muted-foreground"} ${order.delivered ? "opacity-60 pointer-events-none" : ""}`}
+                                        onClick={() => {
+                                          if (order.delivered) return;
                                           updateOrderMutation.mutate({
                                             id: order.id,
-                                            updates: { urgent: val === "urgent" },
+                                            updates: { urgent: !order.urgent },
                                           });
                                         }}
-                                        disabled={order.delivered === true}
+                                        data-testid={`button-desktop-urgent-${order.id}`}
                                       >
-                                        <SelectTrigger
-                                          className={`w-20 h-7 text-xs font-semibold ${order.urgent ? "text-red-600 dark:text-red-400 border-red-300 dark:border-red-700" : "text-green-600 dark:text-green-400 border-green-300 dark:border-green-700"} ${order.delivered ? "opacity-60 cursor-not-allowed" : ""}`}
-                                          data-testid={`select-order-type-${order.id}`}
-                                        >
-                                          <SelectValue>
-                                            {order.urgent ? (
-                                              <div className="flex items-center gap-1">
-                                                <Zap className="w-3 h-3" />
-                                                Urgent
-                                              </div>
-                                            ) : (
-                                              <div className="flex items-center gap-1">
-                                                <Clock className="w-3 h-3" />
-                                                Normal
-                                              </div>
-                                            )}
-                                          </SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="normal"><span className="text-green-600 dark:text-green-400 font-semibold">Normal</span></SelectItem>
-                                          <SelectItem value="urgent"><span className="text-red-600 dark:text-red-400 font-semibold">Urgent</span></SelectItem>
-                                        </SelectContent>
-                                      </Select>
+                                        <Zap className="w-3 h-3" />
+                                        {order.urgent ? "Urgent" : "Normal"}
+                                      </Button>
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell">
                                       <Select
