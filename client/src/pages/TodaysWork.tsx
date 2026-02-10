@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle, AlertTriangle, ArrowUp, ArrowDown, Minus, Timer, X } from "lucide-react";
+import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle, AlertTriangle, Timer } from "lucide-react";
 import { format } from "date-fns";
 import { UserContext } from "@/App";
 
@@ -67,18 +67,9 @@ export default function TodaysWork() {
 
   const todayStartEpoch = getUaeStartOfDay(new Date());
   const tomorrowStartEpoch = todayStartEpoch + 24 * 60 * 60 * 1000;
-  const yesterdayStartEpoch = todayStartEpoch - 24 * 60 * 60 * 1000;
-
-  const today = new Date(todayStartEpoch);
-
   const todaysOrders = orders.filter((order) => {
     const orderTime = new Date(order.entryDate).getTime();
     return orderTime >= todayStartEpoch && orderTime < tomorrowStartEpoch;
-  });
-
-  const yesterdaysOrders = orders.filter((order) => {
-    const orderTime = new Date(order.entryDate).getTime();
-    return orderTime >= yesterdayStartEpoch && orderTime < todayStartEpoch;
   });
 
   const pendingOrders = todaysOrders.filter(
@@ -117,10 +108,6 @@ export default function TodaysWork() {
     return sum + parseFloat(order.totalAmount || "0");
   }, 0);
 
-  const yesterdayRevenue = yesterdaysOrders.reduce((sum, order) => {
-    return sum + parseFloat(order.totalAmount || "0");
-  }, 0);
-
   const paidAmount = billPayments.filter((payment) => {
     const paymentTime = new Date(payment.paymentDate).getTime();
     return paymentTime >= todayStartEpoch && paymentTime < tomorrowStartEpoch;
@@ -135,9 +122,6 @@ export default function TodaysWork() {
     const billPaid = parseFloat(bill.paidAmount || "0");
     return sum + (billTotal - billPaid);
   }, 0);
-
-  const orderDiff = todaysOrders.length - yesterdaysOrders.length;
-  const revenueDiff = totalRevenue - yesterdayRevenue;
 
   const statusCounts = {
     pending: todaysOrders.filter(o => o.status === "pending").length,
@@ -162,25 +146,6 @@ export default function TodaysWork() {
       case "delivered": return "bg-green-500";
       default: return "bg-gray-400";
     }
-  };
-
-  const ComparisonBadge = ({ current, previous, label }: { current: number; previous: number; label: string }) => {
-    const diff = current - previous;
-    if (diff === 0) return (
-      <span className="text-xs text-muted-foreground flex items-center gap-1">
-        <Minus className="w-3 h-3" /> Same as yesterday
-      </span>
-    );
-    if (diff > 0) return (
-      <span className="text-xs text-green-600 flex items-center gap-1">
-        <ArrowUp className="w-3 h-3" /> +{label === "AED" ? diff.toFixed(0) : diff} {label} vs yesterday
-      </span>
-    );
-    return (
-      <span className="text-xs text-red-600 flex items-center gap-1">
-        <ArrowDown className="w-3 h-3" /> {label === "AED" ? diff.toFixed(0) : diff} {label} vs yesterday
-      </span>
-    );
   };
 
   if (isLoading) {
@@ -402,10 +367,7 @@ export default function TodaysWork() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground text-sm">Orders Billed Today</span>
-                <div className="text-right">
-                  <span className="font-bold text-lg" data-testid="text-orders-billed">{totalRevenue.toFixed(0)} AED</span>
-                  <div><ComparisonBadge current={totalRevenue} previous={yesterdayRevenue} label="AED" /></div>
-                </div>
+                <span className="font-bold text-lg" data-testid="text-orders-billed">{totalRevenue.toFixed(0)} AED</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground text-sm">Payments Received Today</span>
@@ -417,10 +379,7 @@ export default function TodaysWork() {
               </div>
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="text-muted-foreground text-sm">Orders Count</span>
-                <div className="text-right">
-                  <span className="font-bold text-lg" data-testid="text-orders-count">{todaysOrders.length}</span>
-                  <div><ComparisonBadge current={todaysOrders.length} previous={yesterdaysOrders.length} label="orders" /></div>
-                </div>
+                <span className="font-bold text-lg" data-testid="text-orders-count">{todaysOrders.length}</span>
               </div>
             </div>
           </Card>
