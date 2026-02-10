@@ -89,6 +89,7 @@ import {
   Users,
   Calendar,
   Zap,
+  Check,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -3788,6 +3789,16 @@ export default function Orders() {
                   </>
                 );
               })()}
+
+              {/* Bill Recorded message for paid bills */}
+              {selectedBill?.isPaid && !showPaymentForm && (
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center gap-2 text-green-600 bg-green-50 dark:bg-green-950/30 rounded px-3 py-2">
+                    <Check className="w-4 h-4" />
+                    <span className="font-medium text-sm">Bill Recorded</span>
+                  </div>
+                </div>
+              )}
 
               {/* Payment Form */}
               {showPaymentForm && (
