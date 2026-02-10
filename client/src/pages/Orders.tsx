@@ -445,17 +445,14 @@ export default function Orders() {
   };
 
   // Get item price from item name format like "Abaya [N] (folding)" or "Jacket (Large) @ 8 AED"
-  const getItemPrice = (itemName: string): number => {
-    // Check for custom price format: "ProductName (Size) @ price AED"
+  const getItemPrice = (itemName: string, deliveryType?: string | null): number => {
     const customPriceMatch = itemName.match(/(.+?)\s*@\s*([\d.]+)\s*AED/i);
     if (customPriceMatch) {
       return parseFloat(customPriceMatch[2]);
     }
     
-    // Check for dry clean service [D]
     const isDryClean = itemName.includes('[D]');
     
-    // Extract base product name by removing service indicator and packaging type
     const baseProductName = itemName
       .replace(/\s*\[N\]\s*/g, '')
       .replace(/\s*\[D\]\s*/g, '')
@@ -465,6 +462,9 @@ export default function Orders() {
     
     const product = products?.find((p) => p.name.toLowerCase() === baseProductName.toLowerCase());
     if (product) {
+      if (deliveryType === "iron_only") {
+        return parseFloat(product.ironOnlyPrice || product.price || "0");
+      }
       return isDryClean 
         ? parseFloat(product.dryCleanPrice || product.price || "0")
         : parseFloat(product.price || "0");
@@ -477,7 +477,7 @@ export default function Orders() {
     if (!editItemsDialog) return 0;
     let total = 0;
     Object.entries(editItemsQuantities).forEach(([name, qty]) => {
-      const unitPrice = getItemPrice(name);
+      const unitPrice = getItemPrice(name, editItemsDialog.deliveryType);
       total += unitPrice * qty;
     });
     return total;
@@ -641,7 +641,7 @@ export default function Orders() {
     const itemsHtml = parsedItems
       .map(
         (item, idx) => {
-          const unitPrice = getItemPrice(item.name);
+          const unitPrice = getItemPrice(item.name, order.deliveryType);
           const lineTotal = unitPrice * item.quantity;
           return `<tr style="border-bottom: 1px solid #e5e5e5;">
         <td style="padding: 5px 4px; font-size: 9px;">${idx + 1}</td>
@@ -4282,7 +4282,7 @@ export default function Orders() {
                 <Label>Items</Label>
                 <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
                   {parseOrderItems(editItemsDialog.items).map((item) => {
-                    const itemPrice = getItemPrice(item.name);
+                    const itemPrice = getItemPrice(item.name, editItemsDialog.deliveryType);
                     const qty = editItemsQuantities[item.name] || 0;
                     const lineTotal = itemPrice * qty;
                     return (
@@ -5083,12 +5083,14 @@ function OrderForm({
   const orderTotal = useMemo(() => {
     return orderItems.reduce((sum, item) => {
       if (item.product.isSqmPriced && item.sqm) {
-        // For sqm-priced items: sqm × sqmPrice × quantity
         return sum + item.sqm * parseFloat(item.product.sqmPrice || item.product.price || "0") * item.quantity;
+      }
+      if (formData.deliveryType === "iron_only") {
+        return sum + parseFloat(item.product.ironOnlyPrice || item.product.price || "0") * item.quantity;
       }
       return sum + parseFloat(item.product.price || "0") * item.quantity;
     }, 0);
-  }, [orderItems]);
+  }, [orderItems, formData.deliveryType]);
 
   // Check if entered info matches an existing client (moved before handleSubmit)
   const clientMatch = useMemo(() => {

@@ -1193,7 +1193,7 @@ export default function Products() {
       const hasDCItems = orderItems.some(item => item.serviceType === "dc");
       const hasIronItems = orderItems.some(item => item.serviceType === "iron");
 
-      let subtotal = pendingUrgent ? orderTotal * 2 : orderTotal;
+      let subtotal = orderTotal;
       const discPct = parseFloat(discountPercent) || 0;
       const discountAmt = (subtotal * discPct) / 100;
       const tipsAmt = parseFloat(tips) || 0;
@@ -2006,16 +2006,10 @@ export default function Products() {
               <span>Subtotal</span>
               <span className="font-semibold">{orderTotal.toFixed(2)} AED</span>
             </div>
-            {orderType === "urgent" && (
-              <div className="flex justify-between text-xs text-orange-600 font-semibold">
-                <span>Urgent (x2)</span>
-                <span>+{orderTotal.toFixed(2)} AED</span>
-              </div>
-            )}
             {parseFloat(discountPercent) > 0 && (
               <div className="flex justify-between text-xs text-green-600">
                 <span>Discount ({discountPercent}%)</span>
-                <span>-{(((orderType === "urgent" ? orderTotal * 2 : orderTotal) * parseFloat(discountPercent)) / 100).toFixed(2)} AED</span>
+                <span>-{((orderTotal * parseFloat(discountPercent)) / 100).toFixed(2)} AED</span>
               </div>
             )}
             {parseFloat(tips) > 0 && (
@@ -2028,10 +2022,9 @@ export default function Products() {
               <span>TOTAL</span>
               <span>
                 {(() => {
-                  const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
-                  const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
+                  const discountAmt = (orderTotal * (parseFloat(discountPercent) || 0)) / 100;
                   const tipsAmt = parseFloat(tips) || 0;
-                  return (base - discountAmt + tipsAmt).toFixed(2);
+                  return (orderTotal - discountAmt + tipsAmt).toFixed(2);
                 })()} AED
               </span>
             </div>
@@ -2052,7 +2045,7 @@ export default function Products() {
               className={`flex-1 h-9 text-xs ${orderType === "urgent" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
               onClick={() => setOrderType("urgent")}
             >
-              <Zap className="w-3 h-3 mr-1" /> Urgent 2x
+              <Zap className="w-3 h-3 mr-1" /> Urgent
             </Button>
           </div>
 
@@ -2241,10 +2234,9 @@ export default function Products() {
             >
               {createOrderMutation.isPending && !payNowAfterOrder ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {clientMatch ? "Use existing" : `${(() => {
-                const base = orderType === "urgent" ? orderTotal * 2 : orderTotal;
-                const discountAmt = (base * (parseFloat(discountPercent) || 0)) / 100;
+                const discountAmt = (orderTotal * (parseFloat(discountPercent) || 0)) / 100;
                 const tipsAmt = parseFloat(tips) || 0;
-                return (base - discountAmt + tipsAmt).toFixed(2);
+                return (orderTotal - discountAmt + tipsAmt).toFixed(2);
               })()} AED`}
             </Button>
             <Button
@@ -2872,7 +2864,7 @@ export default function Products() {
           </div>
           <span className="font-bold text-sm">
             {hasOrderItems 
-              ? `${orderType === "urgent" ? (orderTotal * 2).toFixed(0) : orderTotal.toFixed(0)} AED`
+              ? `${orderTotal.toFixed(0)} AED`
               : "Order Slip"
             }
           </span>
@@ -2908,10 +2900,6 @@ export default function Products() {
               <div className="font-semibold text-foreground text-lg mb-1">
                 Order Total: {orderTotal.toFixed(2)} AED
               </div>
-              <div className="text-xs">
-                Urgent service = Double price ({(orderTotal * 2).toFixed(2)}{" "}
-                AED)
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -2936,7 +2924,7 @@ export default function Products() {
               >
                 <Zap className="w-8 h-8" />
                 <div className="font-semibold">Urgent</div>
-                <div className="text-xs">{(orderTotal * 2).toFixed(2)} AED</div>
+                <div className="text-xs">{orderTotal.toFixed(2)} AED</div>
               </Button>
             </div>
           </div>

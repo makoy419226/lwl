@@ -1838,9 +1838,14 @@ export async function registerRoutes(
         
         const product = allProducts.find((p: any) => p.name.toLowerCase() === baseProductName.toLowerCase());
         if (product) {
-          const basePrice = isDryClean 
-            ? parseFloat(product.dryCleanPrice || product.price || "0")
-            : parseFloat(product.price || "0");
+          let basePrice: number;
+          if (order.deliveryType === "iron_only") {
+            basePrice = parseFloat(product.ironOnlyPrice || product.price || "0");
+          } else if (isDryClean) {
+            basePrice = parseFloat(product.dryCleanPrice || product.price || "0");
+          } else {
+            basePrice = parseFloat(product.price || "0");
+          }
           newTotal += basePrice * item.quantity;
           itemsArray.push(`${item.quantity}x ${item.name}`);
         } else {
