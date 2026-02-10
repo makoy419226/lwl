@@ -1503,7 +1503,7 @@ export default function Orders() {
       (client?.phone || "").toLowerCase().includes(term) ||
       (client?.address || "").toLowerCase().includes(term) ||
       (order.deliveryAddress || "").toLowerCase().includes(term) ||
-      (order.billId && (bills?.find((b) => b.id === order.billId)?.referenceNumber || "").toLowerCase().includes(term));
+      (order.billId && String(order.billId).includes(term));
 
     // Date filtering
     const orderDate = new Date(order.entryDate);
@@ -2491,7 +2491,7 @@ export default function Orders() {
                                             data-testid={`button-bill-${order.billId}`}
                                           >
                                             <Receipt className="w-3 h-3" />
-                                            #{bills?.find((b) => b.id === order.billId)?.referenceNumber || order.billId}
+                                            #{order.billId}
                                           </Button>
                                           {(() => {
                                             const bill = bills?.find((b) => b.id === order.billId);

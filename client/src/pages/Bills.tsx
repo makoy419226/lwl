@@ -1145,11 +1145,9 @@ export default function Bills() {
                             >
                               {bill.isPaid ? "PAID" : "UNPAID"}
                             </Badge>
-                            {bill.referenceNumber && (
-                              <span className="text-xs text-muted-foreground font-mono">
-                                #{bill.referenceNumber}
-                              </span>
-                            )}
+                            <span className="text-xs text-muted-foreground font-mono">
+                              #{bill.id}
+                            </span>
                           </div>
                           <CardTitle className="text-base font-bold truncate">
                             {bill.customerName || getClientName(bill.clientId!)}
