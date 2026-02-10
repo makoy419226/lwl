@@ -1031,8 +1031,10 @@ export async function registerRoutes(
       const numericFields = ['price', 'dryCleanPrice', 'ironOnlyPrice', 'smallPrice', 'mediumPrice', 'largePrice', 'sqmPrice'];
       const sanitized = { ...req.body };
       for (const field of numericFields) {
-        if (sanitized[field] === '' || sanitized[field] === undefined) {
+        if (sanitized[field] === '') {
           sanitized[field] = null;
+        } else if (sanitized[field] === undefined) {
+          delete sanitized[field];
         }
       }
       const input = api.products.update.input.parse(sanitized);

@@ -213,20 +213,21 @@ export class DatabaseStorage implements IStorage {
     // Helper to convert empty/zero strings to null for optional price fields
     const toNullIfEmpty = (val: string | null | undefined): string | null => {
       if (val === "" || val === null || val === undefined) return null;
-      // For size prices, treat "0" as "clear this price"
       return val;
     };
     
-    // Convert empty strings to null for price fields
-    const cleanedUpdates = {
-      ...updates,
-      price: updates.price === "" ? null : updates.price,
-      dryCleanPrice: updates.dryCleanPrice === "" ? null : updates.dryCleanPrice,
-      ironOnlyPrice: updates.ironOnlyPrice === "" ? null : updates.ironOnlyPrice,
-      smallPrice: toNullIfEmpty(updates.smallPrice),
-      mediumPrice: toNullIfEmpty(updates.mediumPrice),
-      largePrice: toNullIfEmpty(updates.largePrice),
-    };
+    // Only include price fields if they were actually provided in the update
+    const cleanedUpdates: Record<string, any> = { ...updates };
+    const priceFields = ['price', 'dryCleanPrice', 'ironOnlyPrice', 'smallPrice', 'mediumPrice', 'largePrice', 'sqmPrice'];
+    for (const field of priceFields) {
+      if ((updates as any)[field] === undefined) {
+        delete cleanedUpdates[field];
+      } else if ((updates as any)[field] === '') {
+        cleanedUpdates[field] = null;
+      } else if (['smallPrice', 'mediumPrice', 'largePrice'].includes(field)) {
+        cleanedUpdates[field] = toNullIfEmpty((updates as any)[field]);
+      }
+    }
     const [updated] = await db
       .update(products)
       .set(cleanedUpdates)
