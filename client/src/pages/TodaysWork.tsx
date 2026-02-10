@@ -17,6 +17,14 @@ export default function TodaysWork() {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<OrderWithClient[]>([]);
   const [dialogTitle, setDialogTitle] = useState("");
+  const [uaeTime, setUaeTime] = useState(() => new Date(Date.now() + 4 * 60 * 60 * 1000));
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setUaeTime(new Date(Date.now() + 4 * 60 * 60 * 1000));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   useEffect(() => {
     const checkForDayReset = () => {
@@ -158,19 +166,25 @@ export default function TodaysWork() {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      <Card className="p-5 text-center" data-testid="card-digital-clock">
+        <div className="font-mono text-5xl md:text-6xl lg:text-7xl font-bold tracking-widest text-foreground tabular-nums" data-testid="text-live-clock">
+          {String(uaeTime.getUTCHours()).padStart(2, "0")}
+          <span className="animate-pulse">:</span>
+          {String(uaeTime.getUTCMinutes()).padStart(2, "0")}
+          <span className="animate-pulse">:</span>
+          {String(uaeTime.getUTCSeconds()).padStart(2, "0")}
+        </div>
+        <p className="text-sm text-muted-foreground mt-2" data-testid="text-clock-date">
+          {format(new Date(todayStartEpoch + 12 * 60 * 60 * 1000), "EEEE, MMMM d, yyyy")} — UAE Time (GMT+4)
+        </p>
+      </Card>
+
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground" data-testid="heading-todays-work">Today's Work</h1>
-          <p className="text-muted-foreground text-sm">
-            {format(new Date(todayStartEpoch + 12 * 60 * 60 * 1000), "EEEE, MMMM d, yyyy")}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="border-blue-500 text-blue-600" data-testid="badge-live-updates">
-            <Clock className="w-3 h-3 mr-1" />
-            Live Updates
-          </Badge>
-        </div>
+        <h1 className="text-2xl font-bold text-foreground" data-testid="heading-todays-work">Today's Work</h1>
+        <Badge variant="outline" className="border-blue-500 text-blue-600" data-testid="badge-live-updates">
+          <Clock className="w-3 h-3 mr-1" />
+          Live Updates
+        </Badge>
       </div>
 
       {overdueOrders.length > 0 && (
