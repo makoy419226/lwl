@@ -1738,7 +1738,7 @@ export default function Products() {
             </div>
             {(selectedClientId || isWalkIn) && (
               <div className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                Selected: <span className="font-medium text-foreground">{isWalkIn ? "Walk-in Customer" : customerName}</span>
+                Selected: <span className="font-medium text-foreground">{isWalkIn ? "Walk-in Customer" : customerName}</span>{!isWalkIn && customerPhone && <span className="ml-1">- {customerPhone}</span>}{!isWalkIn && selectedClientId && (() => { const c = clients?.find((cl: any) => cl.id === selectedClientId); return c?.address ? <span className="ml-1">| {c.address}</span> : null; })()}
                 <Button
                   type="button"
                   variant="ghost"
