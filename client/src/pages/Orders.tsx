@@ -3992,16 +3992,16 @@ export default function Orders() {
                     </div>
                     <div>
                       <Label className="text-xs">Method</Label>
-                      <Select value={paymentMethod} onValueChange={(v: "cash" | "card" | "transfer") => setPaymentMethod(v)}>
-                        <SelectTrigger data-testid="select-payment-method">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cash">Cash</SelectItem>
-                          <SelectItem value="card">Card</SelectItem>
-                          <SelectItem value="transfer">Transfer</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card" | "transfer")}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        data-testid="select-payment-method"
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="transfer">Transfer</option>
+                      </select>
                     </div>
                   </div>
                   <div>
@@ -4350,36 +4350,36 @@ export default function Orders() {
               <div className="space-y-2">
                 <Label>Time</Label>
                 <div className="flex gap-2 items-center">
-                  <Select value={editDeliveryHour} onValueChange={setEditDeliveryHour}>
-                    <SelectTrigger className="w-20" data-testid="select-edit-delivery-hour">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((h) => (
-                        <SelectItem key={h} value={h.toString()}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <select
+                    value={editDeliveryHour}
+                    onChange={(e) => setEditDeliveryHour(e.target.value)}
+                    className="flex h-9 w-20 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    data-testid="select-edit-delivery-hour"
+                  >
+                    {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((h) => (
+                      <option key={h} value={h.toString()}>{h}</option>
+                    ))}
+                  </select>
                   <span className="text-lg font-bold">:</span>
-                  <Select value={editDeliveryMinute} onValueChange={setEditDeliveryMinute}>
-                    <SelectTrigger className="w-20" data-testid="select-edit-delivery-minute">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["00", "15", "30", "45"].map((m) => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={editDeliveryPeriod} onValueChange={(v) => setEditDeliveryPeriod(v as "AM" | "PM")}>
-                    <SelectTrigger className="w-20" data-testid="select-edit-delivery-period">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="AM">AM</SelectItem>
-                      <SelectItem value="PM">PM</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <select
+                    value={editDeliveryMinute}
+                    onChange={(e) => setEditDeliveryMinute(e.target.value)}
+                    className="flex h-9 w-20 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    data-testid="select-edit-delivery-minute"
+                  >
+                    {["00", "15", "30", "45"].map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={editDeliveryPeriod}
+                    onChange={(e) => setEditDeliveryPeriod(e.target.value as "AM" | "PM")}
+                    className="flex h-9 w-20 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    data-testid="select-edit-delivery-period"
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
                 </div>
               </div>
 
@@ -4471,19 +4471,17 @@ export default function Orders() {
 
               <div className="space-y-2">
                 <Label>Incident Type</Label>
-                <Select value={incidentType} onValueChange={setIncidentType}>
-                  <SelectTrigger data-testid="select-incident-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="missing_item">Missing Item</SelectItem>
-                    <SelectItem value="damage">Damage</SelectItem>
-                    <SelectItem value="complaint">
-                      Customer Complaint
-                    </SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select
+                  value={incidentType}
+                  onChange={(e) => setIncidentType(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  data-testid="select-incident-type"
+                >
+                  <option value="missing_item">Missing Item</option>
+                  <option value="damage">Damage</option>
+                  <option value="complaint">Customer Complaint</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -5428,29 +5426,19 @@ function OrderForm({
             </Button>
           </div>
           {formData.billOption === "existing" && (
-            <Select
+            <select
               value={formData.selectedBillId}
-              onValueChange={(v) =>
-                setFormData({ ...formData, selectedBillId: v })
-              }
+              onChange={(e) => setFormData({ ...formData, selectedBillId: e.target.value })}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              data-testid="select-existing-bill"
             >
-              <SelectTrigger data-testid="select-existing-bill">
-                <SelectValue placeholder="Select unpaid bill" />
-              </SelectTrigger>
-              <SelectContent className="z-[100]" position="popper" sideOffset={4} onCloseAutoFocus={(e) => e.preventDefault()}>
-                {clientUnpaidBills.map((bill) => (
-                  <SelectItem key={bill.id} value={bill.id.toString()}>
-                    Bill #{bill.referenceNumber || bill.id} -{" "}
-                    {format(new Date(bill.billDate), "dd/MM/yy")} (
-                    {(
-                      parseFloat(bill.amount) -
-                      parseFloat(bill.paidAmount || "0")
-                    ).toFixed(2)}{" "}
-                    AED due)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">Select unpaid bill</option>
+              {clientUnpaidBills.map((bill) => (
+                <option key={bill.id} value={bill.id.toString()}>
+                  Bill #{bill.referenceNumber || bill.id} - {format(new Date(bill.billDate), "dd/MM/yy")} ({(parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0")).toFixed(2)} AED due)
+                </option>
+              ))}
+            </select>
           )}
         </div>
       )}
