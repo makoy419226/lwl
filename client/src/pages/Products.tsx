@@ -977,17 +977,17 @@ export default function Products() {
       if (customPrices[priceKey] !== undefined) {
         price = customPrices[priceKey];
       } else if (item.serviceType === "iron") {
-        if (item.isUrgent || orderType === "urgent") {
+        if (item.isUrgent) {
           price = parseFloat(item.product.price || "0");
         } else {
           price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
         }
       } else if (item.serviceType === "dc") {
         price = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
-        if (item.isUrgent || orderType === "urgent") price *= 2;
+        if (item.isUrgent) price *= 2;
       } else {
         price = parseFloat(item.product.price || "0");
-        if (item.isUrgent || orderType === "urgent") price *= 2;
+        if (item.isUrgent) price *= 2;
       }
       return sum + price * item.quantity;
     }, 0);
@@ -1163,15 +1163,14 @@ export default function Products() {
       });
       return;
     }
-    // Use the selected order type directly
-    setPendingUrgent(orderType === "urgent");
+    setPendingUrgent(orderItems.some(item => item.isUrgent));
     setShowPinDialog(true);
     setStaffPin("");
     setPinError("");
   };
 
-  const submitOrder = (isUrgent: boolean) => {
-    setPendingUrgent(isUrgent);
+  const submitOrder = (_isUrgent: boolean) => {
+    setPendingUrgent(orderItems.some(item => item.isUrgent));
     setShowUrgentDialog(false);
     setShowPinDialog(true);
     setStaffPin("");
@@ -1919,7 +1918,7 @@ export default function Products() {
                 displayPrice = item.sqm < 5 ? Math.max(50, calcPrice) : calcPrice;
                 basePrice = displayPrice;
               } else if (item.serviceType === "iron") {
-                if (item.isUrgent || orderType === "urgent") {
+                if (item.isUrgent) {
                   basePrice = parseFloat(item.product.price || "0");
                 } else {
                   basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
@@ -1927,11 +1926,11 @@ export default function Products() {
                 displayPrice = basePrice;
               } else if (item.serviceType === "dc") {
                 basePrice = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
-                if (item.isUrgent || orderType === "urgent") basePrice *= 2;
+                if (item.isUrgent) basePrice *= 2;
                 displayPrice = basePrice;
               } else {
                 basePrice = parseFloat(item.product.price || "0");
-                if (item.isUrgent || orderType === "urgent") basePrice *= 2;
+                if (item.isUrgent) basePrice *= 2;
                 displayPrice = basePrice;
               }
               const priceKey = item.product.isSqmPriced ? carpetPriceKey : `${item.product.id}-${item.serviceType}`;
@@ -2082,24 +2081,6 @@ export default function Products() {
             </div>
           </div>
       )}
-
-          {/* Order Type */}
-          <div className="flex gap-2">
-            <Button
-              variant={orderType === "normal" ? "default" : "outline"}
-              className="flex-1 h-9 text-xs"
-              onClick={() => setOrderType("normal")}
-            >
-              <Clock className="w-3 h-3 mr-1" /> Normal
-            </Button>
-            <Button
-              variant={orderType === "urgent" ? "default" : "outline"}
-              className={`flex-1 h-9 text-xs ${orderType === "urgent" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-              onClick={() => setOrderType("urgent")}
-            >
-              <Zap className="w-3 h-3 mr-1" /> Urgent
-            </Button>
-          </div>
 
           {/* Delivery Type */}
           <div className="flex gap-2">
@@ -2918,11 +2899,11 @@ export default function Products() {
         <button
           onClick={() => setShowCartPopup(true)}
           className={`fixed bottom-4 right-4 z-50 flex xl:hidden items-center gap-2 px-4 py-3 rounded-full shadow-2xl ${
-            hasOrderItems
-              ? orderType === "urgent" 
-                ? "bg-gradient-to-r from-orange-500 to-red-500 text-white" 
-                : "bg-gradient-to-r from-primary to-primary/90 text-white"
-              : "bg-gradient-to-r from-primary/80 to-primary/70 text-white"
+            hasOrderItems && orderItems.some(item => item.isUrgent)
+              ? "bg-gradient-to-r from-orange-500 to-red-500 text-white"
+              : hasOrderItems
+                ? "bg-gradient-to-r from-primary to-primary/90 text-white"
+                : "bg-gradient-to-r from-primary/80 to-primary/70 text-white"
           }`}
           data-testid="button-open-cart"
         >
@@ -2974,29 +2955,20 @@ export default function Products() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Button
-                variant="outline"
-                className="h-24 flex flex-col gap-2"
+                className={`h-24 flex flex-col gap-2 ${orderItems.some(item => item.isUrgent) ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
                 onClick={() => submitOrder(false)}
                 disabled={createOrderMutation.isPending}
-                data-testid="button-normal-service"
+                data-testid="button-submit-order"
               >
-                <Clock className="w-8 h-8 text-blue-500" />
-                <div className="font-semibold">Normal</div>
-                <div className="text-xs text-muted-foreground">
+                {orderItems.some(item => item.isUrgent) ? <Zap className="w-8 h-8" /> : <ShoppingCart className="w-8 h-8" />}
+                <div className="font-semibold">
+                  {orderItems.some(item => item.isUrgent) ? "Submit Order (Has Urgent Items)" : "Submit Order"}
+                </div>
+                <div className="text-xs">
                   {orderTotal.toFixed(2)} AED
                 </div>
-              </Button>
-              <Button
-                className="h-24 flex flex-col gap-2 bg-orange-500 hover:bg-orange-600 text-white"
-                onClick={() => submitOrder(true)}
-                disabled={createOrderMutation.isPending}
-                data-testid="button-urgent-service"
-              >
-                <Zap className="w-8 h-8" />
-                <div className="font-semibold">Urgent</div>
-                <div className="text-xs">{orderTotal.toFixed(2)} AED</div>
               </Button>
             </div>
           </div>

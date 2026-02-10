@@ -538,7 +538,7 @@ export default function TodaysWork() {
                         >
                           {order.status}
                         </Badge>
-                        {order.urgent && <Badge className="bg-red-500 text-white text-xs" data-testid={`badge-urgent-${order.id}`}>Urgent</Badge>}
+                        {(order.urgent || (order.items && order.items.includes('[URG]'))) && <Badge className="bg-orange-500 text-white text-xs" data-testid={`badge-urgent-${order.id}`}>Urgent</Badge>}
                       </div>
                       <p className="text-sm font-medium" data-testid={`text-dialog-client-${order.id}`}>{order.clientName}</p>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">

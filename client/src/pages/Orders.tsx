@@ -633,7 +633,7 @@ export default function Orders() {
 
   const generateTagReceipt = (order: Order) => {
     const client = clients?.find((c) => c.id === order.clientId);
-    const isUrgent = order.urgent;
+    const isUrgent = order.urgent || (order.items && order.items.includes('[URG]'));
     const parsedItems = parseOrderItems(order.items);
 
     const previousBills =
@@ -836,7 +836,7 @@ export default function Orders() {
 
   const generateWashingReceipt = (order: Order) => {
     const client = clients?.find((c) => c.id === order.clientId);
-    const isUrgent = order.urgent;
+    const isUrgent = order.urgent || (order.items && order.items.includes('[URG]'));
 
     const content = document.createElement("div");
     content.innerHTML = `
@@ -1550,7 +1550,7 @@ export default function Orders() {
 
     if (!matchesDateFilter(order)) return false;
 
-    if (urgencyFilter === "urgent" && !order.urgent) return false;
+    if (urgencyFilter === "urgent" && !(order.urgent || (order.items && order.items.includes('[URG]')))) return false;
 
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "create") return matchesSearch && !order.tagDone;
@@ -1931,7 +1931,7 @@ export default function Orders() {
               return true;
             }) || [];
             const allCount = tabFiltered.length;
-            const urgentCount = tabFiltered.filter(o => o.urgent).length;
+            const urgentCount = tabFiltered.filter(o => o.urgent || (o.items && o.items.includes('[URG]'))).length;
             return (
               <div className="flex items-center gap-2 mb-3">
                 <Button
@@ -1986,10 +1986,10 @@ export default function Orders() {
                       return (
                         <Card
                           key={order.id}
-                          className={`border shadow-sm transition-all duration-500 ${order.urgent ? "border-red-400 dark:border-red-700" : ""} ${highlightedOrderId === order.id ? "ring-2 ring-primary ring-offset-2 bg-primary/5" : ""}`}
+                          className={`border shadow-sm transition-all duration-500 ${(order.urgent || (order.items && order.items.includes('[URG]'))) ? "border-orange-400 dark:border-orange-700" : ""} ${highlightedOrderId === order.id ? "ring-2 ring-primary ring-offset-2 bg-primary/5" : ""}`}
                           data-testid={`card-order-${order.id}`}
                         >
-                          <CardHeader className={`flex flex-row items-center justify-between gap-2 p-3 pb-2 ${order.urgent ? "bg-red-50 dark:bg-red-950/30" : "bg-muted/30"}`}>
+                          <CardHeader className={`flex flex-row items-center justify-between gap-2 p-3 pb-2 ${(order.urgent || (order.items && order.items.includes('[URG]'))) ? "bg-orange-50 dark:bg-orange-950/30" : "bg-muted/30"}`}>
                             <div className="flex items-center gap-2">
                               <button
                                 className="font-mono font-bold text-primary hover:underline cursor-pointer"
@@ -1998,8 +1998,8 @@ export default function Orders() {
                               >
                                 {order.orderNumber}
                               </button>
-                              {order.urgent && (
-                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">URGENT</Badge>
+                              {(order.urgent || (order.items && order.items.includes('[URG]'))) && (
+                                <Badge className="text-[10px] px-1.5 py-0 bg-orange-500 text-white">URGENT</Badge>
                               )}
                               {order.deliveryType === "delivery" && (
                                 <Truck className="w-4 h-4 text-muted-foreground" />
@@ -2235,22 +2235,6 @@ export default function Orders() {
                                     </div>
                                   </PopoverContent>
                                 </Popover>
-                                <Button
-                                  variant={order.urgent ? "default" : "outline"}
-                                  size="sm"
-                                  className={`h-7 text-xs font-semibold gap-1 ${order.urgent ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500 no-default-hover-elevate" : "text-muted-foreground"} ${order.delivered ? "opacity-60 pointer-events-none" : ""}`}
-                                  onClick={() => {
-                                    if (order.delivered) return;
-                                    updateOrderMutation.mutate({
-                                      id: order.id,
-                                      updates: { urgent: !order.urgent },
-                                    });
-                                  }}
-                                  data-testid={`button-mobile-urgent-${order.id}`}
-                                >
-                                  <Zap className="w-3 h-3" />
-                                  {order.urgent ? "Urgent" : "Normal"}
-                                </Button>
                                 <Select
                                   value={order.deliveryType || ""}
                                   onValueChange={(newType) => {
@@ -2535,7 +2519,7 @@ export default function Orders() {
                                 return clientOrders?.map((order, idx) => (
                                   <TableRow
                                     key={order.id}
-                                    className={order.urgent ? "bg-red-50/50 dark:bg-red-950/20" : ""}
+                                    className={(order.urgent || (order.items && order.items.includes('[URG]'))) ? "bg-orange-50/50 dark:bg-orange-950/20" : ""}
                                     data-testid={`row-order-${order.id}`}
                                   >
                                     <TableCell className="font-mono font-bold text-xs lg:text-sm truncate">
@@ -2797,24 +2781,6 @@ export default function Orders() {
                                         {order.totalAmount} AED
                                       </TableCell>
                                     )}
-                                    <TableCell className="hidden md:table-cell">
-                                      <Button
-                                        variant={order.urgent ? "default" : "outline"}
-                                        size="sm"
-                                        className={`h-7 text-xs font-semibold gap-1 ${order.urgent ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500 no-default-hover-elevate" : "text-muted-foreground"} ${order.delivered ? "opacity-60 pointer-events-none" : ""}`}
-                                        onClick={() => {
-                                          if (order.delivered) return;
-                                          updateOrderMutation.mutate({
-                                            id: order.id,
-                                            updates: { urgent: !order.urgent },
-                                          });
-                                        }}
-                                        data-testid={`button-desktop-urgent-${order.id}`}
-                                      >
-                                        <Zap className="w-3 h-3" />
-                                        {order.urgent ? "Urgent" : "Normal"}
-                                      </Button>
-                                    </TableCell>
                                     <TableCell className="hidden md:table-cell">
                                       <Select
                                         value={order.deliveryType || ""}
