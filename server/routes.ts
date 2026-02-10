@@ -1951,8 +1951,18 @@ export async function registerRoutes(
     if (isNaN(orderId)) {
       return res.status(400).json({ message: "Invalid order ID" });
     }
+    const order = await storage.getOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
     // Deduct stock before deleting
     await storage.deductStockForOrder(orderId);
+    // Delete linked bill if exists
+    if (order.billId) {
+      try {
+        await storage.deleteBill(order.billId);
+      } catch {}
+    }
     await storage.deleteOrder(orderId);
     res.status(204).send();
   });

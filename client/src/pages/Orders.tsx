@@ -90,6 +90,7 @@ import {
   Calendar,
   Zap,
   Check,
+  Trash2,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -251,6 +252,11 @@ export default function Orders() {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "transfer">("cash");
   const [paymentPin, setPaymentPin] = useState("");
   const [paymentPinError, setPaymentPinError] = useState("");
+
+  const [deleteOrderDialog, setDeleteOrderDialog] = useState(false);
+  const [deleteOrderAdminPassword, setDeleteOrderAdminPassword] = useState("");
+  const [deleteOrderAdminError, setDeleteOrderAdminError] = useState("");
+  const [pendingDeleteOrderId, setPendingDeleteOrderId] = useState<number | null>(null);
 
   const [incidentReportOrder, setIncidentReportOrder] = useState<Order | null>(
     null,
@@ -1196,6 +1202,42 @@ export default function Orders() {
       }
     } catch {
       setPaymentPinError("Invalid PIN");
+    }
+  };
+
+  const handleDeleteOrder = (orderId: number) => {
+    setPendingDeleteOrderId(orderId);
+    setDeleteOrderAdminPassword("");
+    setDeleteOrderAdminError("");
+    setDeleteOrderDialog(true);
+  };
+
+  const handleConfirmDeleteOrder = async () => {
+    if (!deleteOrderAdminPassword.trim()) {
+      setDeleteOrderAdminError("Please enter admin password");
+      return;
+    }
+    try {
+      const res = await apiRequest("POST", "/api/admin/verify", { adminPassword: deleteOrderAdminPassword });
+      const data = await res.json();
+      if (data.success && pendingDeleteOrderId !== null) {
+        await apiRequest("DELETE", `/api/orders/${pendingDeleteOrderId}`);
+        queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+        toast({
+          title: "Order Deleted",
+          description: "The order and its linked bill have been removed.",
+        });
+        setDeleteOrderDialog(false);
+        setPendingDeleteOrderId(null);
+        setDeleteOrderAdminPassword("");
+        setDeleteOrderAdminError("");
+      } else {
+        setDeleteOrderAdminError("Invalid admin password");
+      }
+    } catch {
+      setDeleteOrderAdminError("Invalid admin password");
     }
   };
 
@@ -2176,6 +2218,16 @@ export default function Orders() {
 
                           {/* Card Footer - Actions */}
                           <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => handleDeleteOrder(order.id)}
+                              title="Delete Order"
+                              data-testid={`button-delete-order-${order.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                             {!order.tagDone && (
                               <>
                                 <Button
@@ -4706,6 +4758,37 @@ export default function Orders() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOrderDialog} onOpenChange={(open) => { if (!open) { setDeleteOrderDialog(false); setPendingDeleteOrderId(null); setDeleteOrderAdminPassword(""); setDeleteOrderAdminError(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Admin Authorization Required</DialogTitle>
+            <DialogDescription>Enter admin password to delete this order and its linked bill.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm">Admin Password</Label>
+              <Input
+                type="password"
+                value={deleteOrderAdminPassword}
+                onChange={(e) => { setDeleteOrderAdminPassword(e.target.value); setDeleteOrderAdminError(""); }}
+                placeholder="Enter admin password"
+                onKeyDown={(e) => { if (e.key === "Enter") handleConfirmDeleteOrder(); }}
+                data-testid="input-admin-delete-order-password"
+              />
+              {deleteOrderAdminError && <p className="text-xs text-destructive mt-1">{deleteOrderAdminError}</p>}
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setDeleteOrderDialog(false); setPendingDeleteOrderId(null); setDeleteOrderAdminPassword(""); setDeleteOrderAdminError(""); }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDeleteOrder} data-testid="button-confirm-delete-order">
+              Delete Order
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
