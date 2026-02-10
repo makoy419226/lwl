@@ -142,6 +142,7 @@ export default function Bills() {
   const urlHighlightBill = new URLSearchParams(searchParams).get("highlightBill");
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [timePeriod, setTimePeriod] = useState<"today" | "week" | "month" | "year" | "all">("all");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "unpaid" | "paid">("all");
   const [highlightedBillId, setHighlightedBillId] = useState<number | null>(null);
   
   useEffect(() => {
@@ -270,6 +271,13 @@ export default function Bills() {
       });
     }
     
+    // Payment status filter
+    if (paymentFilter === "unpaid") {
+      filtered = filtered.filter(b => !b.isPaid);
+    } else if (paymentFilter === "paid") {
+      filtered = filtered.filter(b => b.isPaid);
+    }
+
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -289,7 +297,7 @@ export default function Bills() {
     });
     
     return filtered;
-  }, [bills, searchTerm, timePeriod]);
+  }, [bills, searchTerm, timePeriod, paymentFilter]);
   const { data: clients = [] } = useClients();
   const { mutate: deleteBill } = useDeleteBill();
   const { mutate: createProduct, isPending: isCreatingProduct } =
@@ -1022,7 +1030,18 @@ export default function Bills() {
                 <div className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
                   Showing: <span className="text-primary">{filteredBills?.length || 0}</span>
                 </div>
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-2 ml-auto flex-wrap">
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as typeof paymentFilter)}>
+                    <SelectTrigger className="w-32" data-testid="select-payment-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Bills</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <span className="text-sm text-muted-foreground">View:</span>
                   <Select value={timePeriod} onValueChange={(v) => setTimePeriod(v as typeof timePeriod)}>
                     <SelectTrigger className="w-32" data-testid="select-time-period">
