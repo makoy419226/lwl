@@ -953,9 +953,9 @@ export default function Bills() {
           ${parsedItems.map((item, idx) => {
             const isUrgItem = item.name.includes('[URG]');
             const cleanItemName = item.name.replace(/\s*\[URG\]\s*/g, '');
-            const urgLabel = isUrgItem ? '<span style="background: #f97316; color: white; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: bold; margin-left: 6px;">URG</span>' : '';
+            const urgLabel = isUrgItem ? '<span style="background: #dc2626; color: white; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: bold; margin-left: 6px;">URG</span>' : '';
             return `
-            <tr style="background: ${isUrgItem ? '#fff7ed' : (idx % 2 === 1 ? '#f5f5f5' : 'white')};">
+            <tr style="background: ${isUrgItem ? '#fef2f2' : (idx % 2 === 1 ? '#f5f5f5' : 'white')};">
               <td style="text-align: center; padding: 10px 8px; border: 1px solid #333;">${idx + 1}</td>
               <td style="text-align: left; padding: 10px 8px; border: 1px solid #333;">${cleanItemName}${urgLabel}</td>
               <td style="text-align: center; padding: 10px 8px; border: 1px solid #333;">${item.qty}</td>
@@ -1749,11 +1749,11 @@ export default function Bills() {
                   const isItemUrgent = item.name.includes('[URG]');
                   const displayName = item.name.replace(/\s*\[URG\]\s*/g, '');
                   return (
-                    <tr key={idx} style={{ background: isItemUrgent ? '#fff7ed' : (idx % 2 === 1 ? '#f5f5f5' : 'white') }}>
+                    <tr key={idx} style={{ background: isItemUrgent ? '#fef2f2' : (idx % 2 === 1 ? '#f5f5f5' : 'white') }}>
                       <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{idx + 1}</td>
                       <td style={{ textAlign: 'left', padding: '10px 8px', border: '1px solid #333' }}>
                         {displayName}
-                        {isItemUrgent && <span style={{ background: '#f97316', color: 'white', padding: '1px 5px', borderRadius: '3px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>URG</span>}
+                        {isItemUrgent && <span style={{ background: '#dc2626', color: 'white', padding: '1px 5px', borderRadius: '3px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>URG</span>}
                       </td>
                       <td style={{ textAlign: 'center', padding: '10px 8px', border: '1px solid #333' }}>{item.qty}</td>
                       <td style={{ textAlign: 'right', padding: '10px 8px', border: '1px solid #333' }}>{item.price.toFixed(2)}</td>

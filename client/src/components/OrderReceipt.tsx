@@ -29,6 +29,8 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
     queryKey: ["/api/products"],
   });
 
+  const hasUrgentItems = order.items ? order.items.includes('[URG]') : false;
+
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -106,19 +108,19 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
                 font-size: 10px;
               }
               .receipt-container { width: 100%; }
-              .header { text-align: center; margin-bottom: 8px; border-bottom: 1px dashed ${order.urgent ? "#dc2626" : "#000"}; padding-bottom: 8px; }
+              .header { text-align: center; margin-bottom: 8px; border-bottom: 1px dashed ${hasUrgentItems ? "#dc2626" : "#000"}; padding-bottom: 8px; }
               .logo { width: 50px; height: 50px; margin: 0 auto 5px; }
               .logo img { width: 100%; height: 100%; object-fit: contain; }
               .company-info { text-align: center; }
-              .company-name { font-size: 14px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#000"}; margin-bottom: 3px; }
+              .company-name { font-size: 14px; font-weight: bold; color: ${hasUrgentItems ? "#dc2626" : "#000"}; margin-bottom: 3px; }
               .company-address { font-size: 9px; color: #333; line-height: 1.3; }
-              .receipt-title { font-size: 12px; font-weight: bold; text-align: center; margin: 8px 0; color: ${order.urgent ? "#dc2626" : "#000"}; }
-              .service-type-banner { text-align: center; padding: 5px; margin: 5px 0; font-weight: bold; font-size: 11px; border: 1px solid ${order.urgent ? "#dc2626" : "#000"}; }
+              .receipt-title { font-size: 12px; font-weight: bold; text-align: center; margin: 8px 0; color: ${hasUrgentItems ? "#dc2626" : "#000"}; }
+              .service-type-banner { text-align: center; padding: 5px; margin: 5px 0; font-weight: bold; font-size: 11px; border: 1px solid ${hasUrgentItems ? "#dc2626" : "#000"}; }
               .info-row { margin-bottom: 5px; font-size: 9px; }
               .info-section { margin-bottom: 3px; }
               .info-label { font-size: 8px; color: #666; }
               .info-value { font-size: 10px; font-weight: bold; }
-              .order-number { font-size: 14px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#000"}; text-align: center; margin: 8px 0; padding: 5px; border: 1px dashed #000; }
+              .order-number { font-size: 14px; font-weight: bold; color: ${hasUrgentItems ? "#dc2626" : "#000"}; text-align: center; margin: 8px 0; padding: 5px; border: 1px dashed #000; }
               .items-section { margin: 8px 0; }
               .items-title { font-weight: bold; margin-bottom: 5px; font-size: 10px; }
               .items-table { width: 100%; border-collapse: collapse; font-size: 9px; border: 1px solid #000; }
@@ -133,7 +135,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               .status-pending { color: #dc2626; }
               .totals { margin-top: 8px; padding-top: 5px; border-top: 1px dashed #000; font-size: 10px; }
               .total-row { display: flex; justify-content: space-between; padding: 2px 0; }
-              .total-row.grand-total { font-size: 14px; font-weight: bold; color: ${order.urgent ? "#dc2626" : "#000"}; border-top: 2px solid ${order.urgent ? "#dc2626" : "#000"}; margin-top: 5px; padding-top: 5px; }
+              .total-row.grand-total { font-size: 14px; font-weight: bold; color: ${hasUrgentItems ? "#dc2626" : "#000"}; border-top: 2px solid ${hasUrgentItems ? "#dc2626" : "#000"}; margin-top: 5px; padding-top: 5px; }
               .footer { margin-top: 10px; text-align: center; padding-top: 8px; border-top: 1px dashed #000; }
               .footer p { font-size: 8px; color: #666; }
               .delivery-badge { display: inline-block; padding: 2px 6px; font-size: 9px; margin-top: 5px; border: 1px solid #000; }
@@ -203,7 +205,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
               <img src={logoBase64 || logoImage} alt="Company Logo" />
             </div>
             <div className="company-info">
-              <div className="company-name" style={order.urgent ? { color: "#dc2626" } : {}}>{companyInfo.name}</div>
+              <div className="company-name" style={hasUrgentItems ? { color: "#dc2626" } : {}}>{companyInfo.name}</div>
               <div className="company-address">
                 {companyInfo.address}<br />
                 {companyInfo.city}<br />
@@ -212,7 +214,7 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             </div>
           </div>
 
-          <div className="receipt-title" style={order.urgent ? { color: "#dc2626" } : {}}>ORDER RECEIPT</div>
+          <div className="receipt-title" style={hasUrgentItems ? { color: "#dc2626" } : {}}>ORDER RECEIPT</div>
 
           {/* Service Type Banner */}
           <div style={{
@@ -222,20 +224,20 @@ export function OrderReceipt({ order, client, onClose }: OrderReceiptProps) {
             borderRadius: "8px",
             fontWeight: "bold",
             fontSize: "16px",
-            background: order.urgent ? "#fef2f2" : "#f0f9ff",
-            color: order.urgent ? "#dc2626" : "#1e40af",
-            border: order.urgent ? "2px solid #dc2626" : "2px solid #1e40af"
+            background: hasUrgentItems ? "#fef2f2" : "#f0f9ff",
+            color: hasUrgentItems ? "#dc2626" : "#1e40af",
+            border: hasUrgentItems ? "2px solid #dc2626" : "2px solid #1e40af"
           }}>
-            {order.urgent ? "URGENT SERVICE" : "NORMAL SERVICE"}
+            {hasUrgentItems ? "URGENT SERVICE" : "NORMAL SERVICE"}
           </div>
 
-          <div className="order-number" style={order.urgent ? { color: "#dc2626", background: "#fef2f2" } : {}}>
+          <div className="order-number" style={hasUrgentItems ? { color: "#dc2626", background: "#fef2f2" } : {}}>
             Order # {order.orderNumber}
             <div style={{ marginTop: "8px" }}>
               <span className="delivery-badge delivery-type">
                 {order.deliveryType === "delivery" ? "for delivery" : "for pickup"}
               </span>
-              {order.urgent && <span className="delivery-badge urgent-badge">URGENT</span>}
+              {hasUrgentItems && <span className="delivery-badge urgent-badge">URGENT</span>}
             </div>
           </div>
 

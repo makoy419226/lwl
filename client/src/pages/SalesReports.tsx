@@ -253,7 +253,7 @@ export default function SalesReports({ embedded = false }: SalesReportsProps) {
     const orderRows = allOrdersList.map(order => {
       const client = allClients?.find(c => c.id === order.clientId);
       return {
-        type: order.urgent ? 'Bill (Urgent)' : 'Bill',
+        type: (order.items && order.items.includes('[URG]')) ? 'Bill (Has Urgent)' : 'Bill',
         client: order.customerName || client?.name || 'Walk-in',
         phone: client?.phone || '',
         description: `Order #${order.orderNumber || order.id}`,

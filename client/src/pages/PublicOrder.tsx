@@ -15,7 +15,6 @@ interface PublicOrderData {
   washingDone: boolean;
   packingDone: boolean;
   delivered: boolean;
-  urgent: boolean;
   clientName: string;
   deliveryPhotos: string[];
   deliveryPhoto: string | null;
@@ -123,7 +122,7 @@ export default function PublicOrder() {
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <CardTitle className="text-lg">Order #{order.orderNumber}</CardTitle>
               <div className="flex gap-1 flex-wrap">
-                {order.urgent && <Badge variant="destructive">Urgent</Badge>}
+                {order.items?.includes('[URG]') && <Badge variant="destructive">Has Urgent Items</Badge>}
                 <Badge variant={order.deliveryType === "Delivery" ? "default" : "secondary"}>
                   {order.deliveryType || "Take Away"}
                 </Badge>

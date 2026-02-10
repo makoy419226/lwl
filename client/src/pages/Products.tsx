@@ -1276,7 +1276,7 @@ export default function Products() {
         expectedDeliveryAt: expectedDeliveryAt.trim() || null,
         deliveryType: deliveryType,
         serviceType: hasIronItems ? "iron_only" : hasDCItems ? "dry_clean" : "normal",
-        urgent: pendingUrgent || orderItems.some(item => item.isUrgent),
+        urgent: false,
         entryBy: data.worker?.name || "Staff",
         entryByWorkerId: data.worker?.id || null,
         createdBy: data.worker?.name || user?.name || "Staff",
@@ -1331,7 +1331,7 @@ export default function Products() {
 
   const generateTagReceipt = (order: Order) => {
     const client = clients?.find((c) => c.id === order.clientId);
-    const isUrgent = order.urgent;
+    const isUrgent = order.items && order.items.includes('[URG]');
     const parsedItems = parseOrderItems(order.items || "");
 
     const previousBills = bills?.filter((b) => b.clientId === order.clientId) || [];
@@ -1957,7 +1957,7 @@ export default function Products() {
               const hasCustomPrice = item.product.isSqmPriced 
                 ? customPrices[carpetPriceKey] !== undefined 
                 : customPrices[priceKey] !== undefined;
-              const bgClass = item.isUrgent ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
+              const bgClass = item.isUrgent ? "bg-red-50 dark:bg-red-900/20" : item.serviceType === "iron" ? "bg-orange-50 dark:bg-orange-900/20" : item.serviceType === "dc" ? "bg-purple-50 dark:bg-purple-900/20" : "";
               const itemKey = item.product.isSqmPriced ? `carpet-${idx}` : `${item.product.id}-${item.serviceType}${item.isUrgent ? "-urg" : ""}`;
               const carpetIndex = item.product.isSqmPriced ? orderItems.filter((o, i) => o.product.isSqmPriced && i <= idx).length : 0;
               const displayName = item.product.isSqmPriced && item.sqm 
@@ -1969,7 +1969,7 @@ export default function Products() {
                     {displayName}
                     {item.serviceType === "dc" && <span className="ml-1 text-[9px] bg-purple-600 text-white px-1 rounded">DC</span>}
                     {item.serviceType === "iron" && <span className="ml-1 text-[9px] bg-orange-500 text-white px-1 rounded">IO</span>}
-                    {item.isUrgent && <span className="ml-1 text-[9px] bg-orange-500 text-white px-1 rounded">URG</span>}
+                    {item.isUrgent && <span className="ml-1 text-[9px] bg-red-600 text-white px-1 rounded">URG</span>}
                   </td>
                   <td className="py-2 px-1 text-center font-bold">
                     {item.quantity}
@@ -2255,7 +2255,7 @@ export default function Products() {
                 </Button>
                 <Button
                   type="button"
-                  className={`col-span-2 h-8 text-[10px] sm:text-xs ${Object.values(urgentQuantities).some(q => q > 0) ? "bg-red-600 hover:bg-red-700" : "bg-orange-500 hover:bg-orange-600"} text-white`}
+                  className={`col-span-2 h-8 text-[10px] sm:text-xs ${Object.values(urgentQuantities).some(q => q > 0) ? "bg-red-700 hover:bg-red-800" : "bg-red-600 hover:bg-red-700"} text-white`}
                   data-testid={isPopup ? "popup-button-urgent-all" : "sidebar-button-urgent-all"}
                   onClick={() => {
                     const hasAnyUrgent = Object.values(urgentQuantities).some(q => q > 0);
@@ -2579,7 +2579,7 @@ export default function Products() {
                                   <Button
                                     size="sm"
                                     variant={getTotalUrgent(product.id) > 0 ? "default" : "outline"}
-                                    className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 gap-1 ${getTotalUrgent(product.id) > 0 ? "bg-orange-500 hover:bg-orange-600 text-white no-default-hover-elevate" : "text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700"}`}
+                                    className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 gap-1 ${getTotalUrgent(product.id) > 0 ? "bg-red-600 hover:bg-red-700 text-white no-default-hover-elevate" : "text-red-600 dark:text-red-400 border-red-300 dark:border-red-700"}`}
                                     onClick={() => openServiceTypeDialog(product.id, product.name, "urgent")}
                                     data-testid={`button-fav-urgent-${product.id}`}
                                   >
@@ -2853,7 +2853,7 @@ export default function Products() {
                                 <Button
                                   size="sm"
                                   variant={getTotalUrgent(product.id) > 0 ? "default" : "outline"}
-                                  className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 gap-1 ${getTotalUrgent(product.id) > 0 ? "bg-orange-500 hover:bg-orange-600 text-white no-default-hover-elevate" : "text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700"}`}
+                                  className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 gap-1 ${getTotalUrgent(product.id) > 0 ? "bg-red-600 hover:bg-red-700 text-white no-default-hover-elevate" : "text-red-600 dark:text-red-400 border-red-300 dark:border-red-700"}`}
                                   onClick={() => openServiceTypeDialog(product.id, product.name, "urgent")}
                                   data-testid={`button-urgent-${product.id}`}
                                 >
@@ -3003,7 +3003,7 @@ export default function Products() {
 
             <div className="grid grid-cols-1 gap-3">
               <Button
-                className={`h-24 flex flex-col gap-2 ${orderItems.some(item => item.isUrgent) ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
+                className={`h-24 flex flex-col gap-2 ${orderItems.some(item => item.isUrgent) ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
                 onClick={() => submitOrder(false)}
                 disabled={createOrderMutation.isPending}
                 data-testid="button-submit-order"
@@ -3821,7 +3821,7 @@ export default function Products() {
                 Cancel
               </Button>
               <Button
-                className={`flex-1 ${serviceTypeDialog?.type === "dc" ? "bg-purple-600 hover:bg-purple-700" : "bg-orange-500 hover:bg-orange-600"}`}
+                className={`flex-1 ${serviceTypeDialog?.type === "dc" ? "bg-purple-600 hover:bg-purple-700" : serviceTypeDialog?.type === "urgent" ? "bg-red-600 hover:bg-red-700" : "bg-orange-500 hover:bg-orange-600"}`}
                 onClick={applyServiceTypeQty}
                 data-testid="button-apply-service-type"
               >

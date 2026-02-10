@@ -484,7 +484,7 @@ export default function Orders() {
     if (!editItemsDialog) return 0;
     let total = 0;
     Object.entries(editItemsQuantities).forEach(([name, qty]) => {
-      const unitPrice = getItemPrice(name, editItemsDialog.deliveryType, editItemsDialog.urgent === true);
+      const unitPrice = getItemPrice(name, editItemsDialog.deliveryType, name.includes('[URG]'));
       total += unitPrice * qty;
     });
     return total;
@@ -633,7 +633,7 @@ export default function Orders() {
 
   const generateTagReceipt = (order: Order) => {
     const client = clients?.find((c) => c.id === order.clientId);
-    const isUrgent = order.urgent || (order.items && order.items.includes('[URG]'));
+    const isUrgent = order.items && order.items.includes('[URG]');
     const parsedItems = parseOrderItems(order.items);
 
     const previousBills =
@@ -650,10 +650,10 @@ export default function Orders() {
         (item, idx) => {
           const isItemUrgent = item.name.includes('[URG]');
           const cleanName = item.name.replace(/\s*\[URG\]\s*/g, '');
-          const unitPrice = getItemPrice(item.name, order.deliveryType, order.urgent === true);
+          const unitPrice = getItemPrice(item.name, order.deliveryType, isItemUrgent);
           const lineTotal = unitPrice * item.quantity;
-          const urgBadge = isItemUrgent ? `<span style="background: #f97316; color: white; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: bold; margin-left: 4px;">URG</span>` : '';
-          return `<tr style="border-bottom: 1px solid #e5e5e5;${isItemUrgent ? ' background: #fff7ed;' : ''}">
+          const urgBadge = isItemUrgent ? `<span style="background: #dc2626; color: white; padding: 1px 4px; border-radius: 3px; font-size: 7px; font-weight: bold; margin-left: 4px;">URG</span>` : '';
+          return `<tr style="border-bottom: 1px solid #e5e5e5;${isItemUrgent ? ' background: #fef2f2;' : ''}">
         <td style="padding: 5px 4px; font-size: 9px;">${idx + 1}</td>
         <td style="padding: 5px 4px; font-size: 9px;">${cleanName}${urgBadge}</td>
         <td style="padding: 5px 4px; font-size: 9px; text-align: center; font-weight: bold;">${item.quantity}</td>
@@ -836,7 +836,7 @@ export default function Orders() {
 
   const generateWashingReceipt = (order: Order) => {
     const client = clients?.find((c) => c.id === order.clientId);
-    const isUrgent = order.urgent || (order.items && order.items.includes('[URG]'));
+    const isUrgent = order.items && order.items.includes('[URG]');
 
     const content = document.createElement("div");
     content.innerHTML = `
@@ -1550,7 +1550,7 @@ export default function Orders() {
 
     if (!matchesDateFilter(order)) return false;
 
-    if (urgencyFilter === "urgent" && !(order.urgent || (order.items && order.items.includes('[URG]')))) return false;
+    if (urgencyFilter === "urgent" && !(order.items && order.items.includes('[URG]'))) return false;
 
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "create") return matchesSearch && !order.tagDone;
@@ -1931,7 +1931,7 @@ export default function Orders() {
               return true;
             }) || [];
             const allCount = tabFiltered.length;
-            const urgentCount = tabFiltered.filter(o => o.urgent || (o.items && o.items.includes('[URG]'))).length;
+            const urgentCount = tabFiltered.filter(o => o.items && o.items.includes('[URG]')).length;
             return (
               <div className="flex items-center gap-2 mb-3">
                 <Button
@@ -1946,7 +1946,7 @@ export default function Orders() {
                 <Button
                   variant={urgencyFilter === "urgent" ? "default" : "outline"}
                   size="sm"
-                  className={`h-7 text-xs font-semibold gap-1 ${urgencyFilter === "urgent" ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500 no-default-hover-elevate" : "text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700"}`}
+                  className={`h-7 text-xs font-semibold gap-1 ${urgencyFilter === "urgent" ? "bg-red-600 hover:bg-red-700 text-white border-red-600 no-default-hover-elevate" : "text-red-600 dark:text-red-400 border-red-300 dark:border-red-700"}`}
                   onClick={() => setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent")}
                   data-testid="button-filter-urgent-only"
                 >
@@ -1986,10 +1986,10 @@ export default function Orders() {
                       return (
                         <Card
                           key={order.id}
-                          className={`border shadow-sm transition-all duration-500 ${(order.urgent || (order.items && order.items.includes('[URG]'))) ? "border-orange-400 dark:border-orange-700" : ""} ${highlightedOrderId === order.id ? "ring-2 ring-primary ring-offset-2 bg-primary/5" : ""}`}
+                          className={`border shadow-sm transition-all duration-500 ${(order.items && order.items.includes('[URG]')) ? "border-red-400 dark:border-red-700" : ""} ${highlightedOrderId === order.id ? "ring-2 ring-primary ring-offset-2 bg-primary/5" : ""}`}
                           data-testid={`card-order-${order.id}`}
                         >
-                          <CardHeader className={`flex flex-row items-center justify-between gap-2 p-3 pb-2 ${(order.urgent || (order.items && order.items.includes('[URG]'))) ? "bg-orange-50 dark:bg-orange-950/30" : "bg-muted/30"}`}>
+                          <CardHeader className={`flex flex-row items-center justify-between gap-2 p-3 pb-2 ${(order.items && order.items.includes('[URG]')) ? "bg-red-50 dark:bg-red-950/30" : "bg-muted/30"}`}>
                             <div className="flex items-center gap-2">
                               <button
                                 className="font-mono font-bold text-primary hover:underline cursor-pointer"
@@ -1998,8 +1998,8 @@ export default function Orders() {
                               >
                                 {order.orderNumber}
                               </button>
-                              {(order.urgent || (order.items && order.items.includes('[URG]'))) && (
-                                <Badge className="text-[10px] px-1.5 py-0 bg-orange-500 text-white">URGENT</Badge>
+                              {(order.items && order.items.includes('[URG]')) && (
+                                <Badge className="text-[10px] px-1.5 py-0 bg-red-600 text-white">URGENT</Badge>
                               )}
                               {order.deliveryType === "delivery" && (
                                 <Truck className="w-4 h-4 text-muted-foreground" />
@@ -2218,10 +2218,10 @@ export default function Orders() {
                                           const isItemUrgent = item.name.includes('[URG]');
                                           const displayName = item.name.replace(/\s*\[URG\]\s*/g, '');
                                           return (
-                                            <div key={idx} className={`flex items-center justify-between text-sm py-1 border-b last:border-0 ${isItemUrgent ? "bg-orange-50 dark:bg-orange-900/20" : ""}`}>
+                                            <div key={idx} className={`flex items-center justify-between text-sm py-1 border-b last:border-0 ${isItemUrgent ? "bg-red-50 dark:bg-red-900/20" : ""}`}>
                                               <span className="text-muted-foreground flex items-center gap-1">
                                                 {displayName}
-                                                {isItemUrgent && <span className="text-[9px] bg-orange-500 text-white px-1 rounded font-bold">URG</span>}
+                                                {isItemUrgent && <span className="text-[9px] bg-red-600 text-white px-1 rounded font-bold">URG</span>}
                                               </span>
                                               <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
                                             </div>
@@ -2519,7 +2519,7 @@ export default function Orders() {
                                 return clientOrders?.map((order, idx) => (
                                   <TableRow
                                     key={order.id}
-                                    className={(order.urgent || (order.items && order.items.includes('[URG]'))) ? "bg-orange-50/50 dark:bg-orange-950/20" : ""}
+                                    className={(order.items && order.items.includes('[URG]')) ? "bg-red-50/50 dark:bg-red-950/20" : ""}
                                     data-testid={`row-order-${order.id}`}
                                   >
                                     <TableCell className="font-mono font-bold text-xs lg:text-sm truncate">
@@ -2758,10 +2758,10 @@ export default function Orders() {
                                                 const isItemUrgent = item.name.includes('[URG]');
                                                 const displayName = item.name.replace(/\s*\[URG\]\s*/g, '');
                                                 return (
-                                                  <div key={idx} className={`flex items-center justify-between text-sm py-1 border-b last:border-0 ${isItemUrgent ? "bg-orange-50 dark:bg-orange-900/20" : ""}`}>
+                                                  <div key={idx} className={`flex items-center justify-between text-sm py-1 border-b last:border-0 ${isItemUrgent ? "bg-red-50 dark:bg-red-900/20" : ""}`}>
                                                     <span className="text-muted-foreground flex items-center gap-1">
                                                       {displayName}
-                                                      {isItemUrgent && <span className="text-[9px] bg-orange-500 text-white px-1 rounded font-bold">URG</span>}
+                                                      {isItemUrgent && <span className="text-[9px] bg-red-600 text-white px-1 rounded font-bold">URG</span>}
                                                     </span>
                                                     <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
                                                   </div>
@@ -4288,7 +4288,7 @@ export default function Orders() {
                 <Label>Items</Label>
                 <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
                   {parseOrderItems(editItemsDialog.items).map((item) => {
-                    const itemPrice = getItemPrice(item.name, editItemsDialog.deliveryType, editItemsDialog.urgent === true);
+                    const itemPrice = getItemPrice(item.name, editItemsDialog.deliveryType, item.name.includes('[URG]'));
                     const qty = editItemsQuantities[item.name] || 0;
                     const lineTotal = itemPrice * qty;
                     return (
@@ -4764,11 +4764,11 @@ export default function Orders() {
                     const isItemUrgent = item.name.includes('[URG]');
                     const displayName = item.name.replace(/\s*\[URG\]\s*/g, '');
                     return (
-                      <div key={idx} className={`flex items-center justify-between p-2 hover:bg-muted/30 ${isItemUrgent ? "bg-orange-50 dark:bg-orange-900/20" : ""}`}>
+                      <div key={idx} className={`flex items-center justify-between p-2 hover:bg-muted/30 ${isItemUrgent ? "bg-red-50 dark:bg-red-900/20" : ""}`}>
                         <div className="flex items-center gap-2">
                           {getCategoryIcon(products?.find(p => p.name.toLowerCase() === displayName.toLowerCase())?.category || null, "w-4 h-4")}
                           <span className="text-sm">{displayName}</span>
-                          {isItemUrgent && <span className="text-[9px] bg-orange-500 text-white px-1 rounded font-bold">URG</span>}
+                          {isItemUrgent && <span className="text-[9px] bg-red-600 text-white px-1 rounded font-bold">URG</span>}
                         </div>
                         <Badge variant="secondary" className="text-xs">
                           x{item.quantity}
@@ -5301,19 +5301,6 @@ function OrderForm({
           </div>
         </>
       )}
-
-      <div className="space-y-2">
-        <Label className="text-base">Order Type</Label>
-        <select
-          value={formData.orderType}
-          onChange={(e) => setFormData({ ...formData, orderType: e.target.value })}
-          className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          data-testid="select-order-type"
-        >
-          <option value="normal">Normal</option>
-          <option value="urgent">Urgent</option>
-        </select>
-      </div>
 
       <div className="space-y-2">
         <Label className="text-base">Delivery Type</Label>

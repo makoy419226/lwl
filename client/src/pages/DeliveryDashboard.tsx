@@ -318,7 +318,7 @@ export default function DeliveryDashboard() {
                               : "No date set"}
                           </span>
                         </div>
-                        {order.urgent && <Badge className="bg-red-500 text-white">Urgent</Badge>}
+                        {order.items?.includes('[URG]') && <Badge className="bg-red-600 text-white">Urgent</Badge>}
                       </div>
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center gap-2">
