@@ -147,7 +147,7 @@ export default function Products() {
   // Service type splits: how many of each product are DC or Iron Only
   const [dcQuantities, setDcQuantities] = useState<Record<number, number>>({});
   const [ironQuantities, setIronQuantities] = useState<Record<number, number>>({});
-  const [urgentQuantities, setUrgentQuantities] = useState<Record<number, number>>({});
+  const [urgentQuantities, setUrgentQuantities] = useState<Record<string, number>>({});
   // Dialog for selecting service type quantity
   const [serviceTypeDialog, setServiceTypeDialog] = useState<{
     productId: number;
@@ -156,6 +156,9 @@ export default function Products() {
     maxQty: number;
   } | null>(null);
   const [serviceTypeQty, setServiceTypeQty] = useState("");
+  const [urgentNormalQty, setUrgentNormalQty] = useState("");
+  const [urgentDcQty, setUrgentDcQty] = useState("");
+  const [urgentIronQty, setUrgentIronQty] = useState("");
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const [packingTypes, setPackingTypes] = useState<
     Record<number, "hanging" | "folding">
@@ -663,8 +666,11 @@ export default function Products() {
           return r;
         });
         setUrgentQuantities((p) => {
-          const { [productId]: __, ...r } = p;
-          return r;
+          const updated = { ...p };
+          delete updated[`${productId}-normal`];
+          delete updated[`${productId}-dc`];
+          delete updated[`${productId}-iron`];
+          return updated;
         });
         return rest;
       }
@@ -672,7 +678,6 @@ export default function Products() {
       if (delta < 0) {
         const dcQty = dcQuantities[productId] || 0;
         const ironQty = ironQuantities[productId] || 0;
-        const urgQty = urgentQuantities[productId] || 0;
         const totalSpecial = dcQty + ironQty;
         if (totalSpecial > newQty) {
           let excess = totalSpecial - newQty;
@@ -685,9 +690,15 @@ export default function Products() {
             setDcQuantities((p) => ({ ...p, [productId]: dcQty - excess }));
           }
         }
-        if (urgQty > newQty) {
-          setUrgentQuantities((p) => ({ ...p, [productId]: newQty }));
-        }
+        // Clamp urgent per service type
+        const newNormalQty = Math.max(0, newQty - dcQty - ironQty);
+        setUrgentQuantities((p) => {
+          const updated = { ...p };
+          if ((updated[`${productId}-normal`] || 0) > newNormalQty) updated[`${productId}-normal`] = newNormalQty;
+          if ((updated[`${productId}-dc`] || 0) > dcQty) updated[`${productId}-dc`] = dcQty;
+          if ((updated[`${productId}-iron`] || 0) > ironQty) updated[`${productId}-iron`] = ironQty;
+          return updated;
+        });
       }
       return { ...prev, [productId]: newQty };
     });
@@ -727,6 +738,12 @@ export default function Products() {
     setCarpetServiceDialog({ open: false, productId: null, productName: "", serviceType: "dc" });
   };
 
+  const getTotalUrgent = (productId: number) => {
+    return (urgentQuantities[`${productId}-normal`] || 0) +
+           (urgentQuantities[`${productId}-dc`] || 0) +
+           (urgentQuantities[`${productId}-iron`] || 0);
+  };
+
   // Open dialog to set DC quantity
   const openServiceTypeDialog = (productId: number, productName: string, type: "dc" | "iron" | "urgent") => {
     const product = products?.find(p => p.id === productId);
@@ -739,8 +756,7 @@ export default function Products() {
     
     const currentDc = dcQuantities[productId] || 0;
     const currentIron = ironQuantities[productId] || 0;
-    const currentUrgent = urgentQuantities[productId] || 0;
-    const currentValue = type === "dc" ? currentDc : type === "iron" ? currentIron : currentUrgent;
+    const currentValue = type === "dc" ? currentDc : type === "iron" ? currentIron : 0;
     
     setServiceTypeDialog({
       productId,
@@ -749,6 +765,12 @@ export default function Products() {
       maxQty: totalQty,
     });
     setServiceTypeQty(currentValue.toString());
+    if (type === "urgent") {
+      const normalQty = Math.max(0, totalQty - currentDc - currentIron);
+      setUrgentNormalQty((urgentQuantities[`${productId}-normal`] || 0).toString());
+      setUrgentDcQty((urgentQuantities[`${productId}-dc`] || 0).toString());
+      setUrgentIronQty((urgentQuantities[`${productId}-iron`] || 0).toString());
+    }
   };
 
   // Apply service type quantity from dialog
@@ -759,8 +781,18 @@ export default function Products() {
     const { productId, type, maxQty } = serviceTypeDialog;
     
     if (type === "urgent") {
-      const clampedQty = Math.min(Math.max(0, qty), maxQty);
-      setUrgentQuantities((prev) => ({ ...prev, [productId]: clampedQty }));
+      const dcQty = dcQuantities[productId] || 0;
+      const ironQty = ironQuantities[productId] || 0;
+      const normalQty = Math.max(0, maxQty - dcQty - ironQty);
+      const uNormal = Math.min(Math.max(0, parseInt(urgentNormalQty) || 0), normalQty);
+      const uDc = Math.min(Math.max(0, parseInt(urgentDcQty) || 0), dcQty);
+      const uIron = Math.min(Math.max(0, parseInt(urgentIronQty) || 0), ironQty);
+      setUrgentQuantities((prev) => ({
+        ...prev,
+        [`${productId}-normal`]: uNormal,
+        [`${productId}-dc`]: uDc,
+        [`${productId}-iron`]: uIron,
+      }));
     } else {
       const otherQty = type === "dc" ? (ironQuantities[productId] || 0) : (dcQuantities[productId] || 0);
       const clampedQty = Math.min(Math.max(0, qty), maxQty - otherQty);
@@ -914,45 +946,29 @@ export default function Products() {
       
       const dcQty = dcQuantities[productId] || 0;
       const ironQty = ironQuantities[productId] || 0;
-      const urgentQty = urgentQuantities[productId] || 0;
       const normalQty = Math.max(0, totalQty - dcQty - ironQty);
       
-      // Split normal items by urgent
+      const urgNormal = Math.min(urgentQuantities[`${productId}-normal`] || 0, normalQty);
+      const urgDc = Math.min(urgentQuantities[`${productId}-dc`] || 0, dcQty);
+      const urgIron = Math.min(urgentQuantities[`${productId}-iron`] || 0, ironQty);
+      
+      // Normal items split by urgent
       if (normalQty > 0) {
-        const urgentNormal = Math.min(urgentQty, normalQty);
-        const nonUrgentNormal = normalQty - urgentNormal;
-        if (nonUrgentNormal > 0) {
-          items.push({ product, quantity: nonUrgentNormal, serviceType: "normal", isUrgent: false });
-        }
-        if (urgentNormal > 0) {
-          items.push({ product, quantity: urgentNormal, serviceType: "normal", isUrgent: true });
-        }
+        const nonUrg = normalQty - urgNormal;
+        if (nonUrg > 0) items.push({ product, quantity: nonUrg, serviceType: "normal", isUrgent: false });
+        if (urgNormal > 0) items.push({ product, quantity: urgNormal, serviceType: "normal", isUrgent: true });
       }
-      // Split DC items by urgent (urgent remaining after normal)
+      // DC items split by urgent
       if (dcQty > 0) {
-        const urgentUsedByNormal = Math.min(urgentQty, normalQty);
-        const urgentRemaining = Math.max(0, urgentQty - urgentUsedByNormal);
-        const urgentDc = Math.min(urgentRemaining, dcQty);
-        const nonUrgentDc = dcQty - urgentDc;
-        if (nonUrgentDc > 0) {
-          items.push({ product, quantity: nonUrgentDc, serviceType: "dc", isUrgent: false });
-        }
-        if (urgentDc > 0) {
-          items.push({ product, quantity: urgentDc, serviceType: "dc", isUrgent: true });
-        }
+        const nonUrg = dcQty - urgDc;
+        if (nonUrg > 0) items.push({ product, quantity: nonUrg, serviceType: "dc", isUrgent: false });
+        if (urgDc > 0) items.push({ product, quantity: urgDc, serviceType: "dc", isUrgent: true });
       }
-      // Split Iron items by urgent
+      // Iron items split by urgent
       if (ironQty > 0) {
-        const urgentUsedByNormalAndDc = Math.min(urgentQty, normalQty + dcQty);
-        const urgentRemaining = Math.max(0, urgentQty - urgentUsedByNormalAndDc);
-        const urgentIron = Math.min(urgentRemaining, ironQty);
-        const nonUrgentIron = ironQty - urgentIron;
-        if (nonUrgentIron > 0) {
-          items.push({ product, quantity: nonUrgentIron, serviceType: "iron", isUrgent: false });
-        }
-        if (urgentIron > 0) {
-          items.push({ product, quantity: urgentIron, serviceType: "iron", isUrgent: true });
-        }
+        const nonUrg = ironQty - urgIron;
+        if (nonUrg > 0) items.push({ product, quantity: nonUrg, serviceType: "iron", isUrgent: false });
+        if (urgIron > 0) items.push({ product, quantity: urgIron, serviceType: "iron", isUrgent: true });
       }
     });
     
@@ -2248,11 +2264,16 @@ export default function Products() {
                       setUrgentQuantities({});
                     } else {
                       if (!window.confirm("Mark all items as urgent? All quantities will be set to urgent.")) return;
-                      const newUrgent: Record<number, number> = {};
+                      const newUrgent: Record<string, number> = {};
                       Object.entries(quantities).forEach(([pid, qty]) => {
                         const id = parseInt(pid);
                         if (qty > 0) {
-                          newUrgent[id] = qty;
+                          const dcQty = dcQuantities[id] || 0;
+                          const ironQty = ironQuantities[id] || 0;
+                          const normalQty = Math.max(0, qty - dcQty - ironQty);
+                          if (normalQty > 0) newUrgent[`${id}-normal`] = normalQty;
+                          if (dcQty > 0) newUrgent[`${id}-dc`] = dcQty;
+                          if (ironQty > 0) newUrgent[`${id}-iron`] = ironQty;
                         }
                       });
                       setUrgentQuantities(newUrgent);
@@ -2557,13 +2578,13 @@ export default function Products() {
                                   </div>
                                   <Button
                                     size="sm"
-                                    variant={(urgentQuantities[product.id] || 0) > 0 ? "default" : "outline"}
-                                    className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 gap-1 ${(urgentQuantities[product.id] || 0) > 0 ? "bg-orange-500 hover:bg-orange-600 text-white no-default-hover-elevate" : "text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700"}`}
+                                    variant={getTotalUrgent(product.id) > 0 ? "default" : "outline"}
+                                    className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 gap-1 ${getTotalUrgent(product.id) > 0 ? "bg-orange-500 hover:bg-orange-600 text-white no-default-hover-elevate" : "text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700"}`}
                                     onClick={() => openServiceTypeDialog(product.id, product.name, "urgent")}
                                     data-testid={`button-fav-urgent-${product.id}`}
                                   >
                                     <Zap className="w-3 h-3" />
-                                    Urgent {(urgentQuantities[product.id] || 0) > 0 ? `(${urgentQuantities[product.id]})` : ""}
+                                    Urgent {getTotalUrgent(product.id) > 0 ? `(${getTotalUrgent(product.id)})` : ""}
                                   </Button>
                                   <div className="flex gap-0.5">
                                     <Button
@@ -2831,13 +2852,13 @@ export default function Products() {
                                 </div>
                                 <Button
                                   size="sm"
-                                  variant={(urgentQuantities[product.id] || 0) > 0 ? "default" : "outline"}
-                                  className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 gap-1 ${(urgentQuantities[product.id] || 0) > 0 ? "bg-orange-500 hover:bg-orange-600 text-white no-default-hover-elevate" : "text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700"}`}
+                                  variant={getTotalUrgent(product.id) > 0 ? "default" : "outline"}
+                                  className={`w-full h-5 sm:h-6 md:h-7 text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-2 gap-1 ${getTotalUrgent(product.id) > 0 ? "bg-orange-500 hover:bg-orange-600 text-white no-default-hover-elevate" : "text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700"}`}
                                   onClick={() => openServiceTypeDialog(product.id, product.name, "urgent")}
                                   data-testid={`button-urgent-${product.id}`}
                                 >
                                   <Zap className="w-3 h-3" />
-                                  Urgent {(urgentQuantities[product.id] || 0) > 0 ? `(${urgentQuantities[product.id]})` : ""}
+                                  Urgent {getTotalUrgent(product.id) > 0 ? `(${getTotalUrgent(product.id)})` : ""}
                                 </Button>
                                 <div className="flex gap-0.5">
                                   <Button
@@ -3711,24 +3732,85 @@ export default function Products() {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                How many for {serviceTypeDialog?.type === "dc" ? "Dry Clean" : serviceTypeDialog?.type === "urgent" ? "Urgent" : "Iron Only"}?
-              </Label>
-              <Input
-                type="number"
-                min="0"
-                max={serviceTypeDialog?.maxQty || 0}
-                value={serviceTypeQty}
-                onChange={(e) => setServiceTypeQty(e.target.value)}
-                placeholder="0"
-                className="text-center text-lg font-bold"
-                data-testid="input-service-type-qty"
-              />
-              <div className="text-xs text-muted-foreground text-center">
-                {serviceTypeDialog?.type === "urgent" ? "Remaining will be Normal priority" : "Remaining will be Normal service"}
+            {serviceTypeDialog?.type === "urgent" ? (
+              <div className="space-y-3">
+                {(() => {
+                  const pid = serviceTypeDialog.productId;
+                  const totalQty = serviceTypeDialog.maxQty;
+                  const dcQty = dcQuantities[pid] || 0;
+                  const ironQty = ironQuantities[pid] || 0;
+                  const normalQty = Math.max(0, totalQty - dcQty - ironQty);
+                  return (
+                    <>
+                      {normalQty > 0 && (
+                        <div className="space-y-1">
+                          <Label className="text-xs font-semibold">Normal urgent ({normalQty} available)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max={normalQty}
+                            value={urgentNormalQty}
+                            onChange={(e) => setUrgentNormalQty(e.target.value)}
+                            placeholder="0"
+                            className="text-center text-lg font-bold"
+                            data-testid="input-urgent-normal-qty"
+                          />
+                        </div>
+                      )}
+                      {dcQty > 0 && (
+                        <div className="space-y-1">
+                          <Label className="text-xs font-semibold text-purple-600 dark:text-purple-400">DC urgent ({dcQty} available)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max={dcQty}
+                            value={urgentDcQty}
+                            onChange={(e) => setUrgentDcQty(e.target.value)}
+                            placeholder="0"
+                            className="text-center text-lg font-bold"
+                            data-testid="input-urgent-dc-qty"
+                          />
+                        </div>
+                      )}
+                      {ironQty > 0 && (
+                        <div className="space-y-1">
+                          <Label className="text-xs font-semibold text-orange-600 dark:text-orange-400">Iron urgent ({ironQty} available)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max={ironQty}
+                            value={urgentIronQty}
+                            onChange={(e) => setUrgentIronQty(e.target.value)}
+                            placeholder="0"
+                            className="text-center text-lg font-bold"
+                            data-testid="input-urgent-iron-qty"
+                          />
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  How many for {serviceTypeDialog?.type === "dc" ? "Dry Clean" : "Iron Only"}?
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max={serviceTypeDialog?.maxQty || 0}
+                  value={serviceTypeQty}
+                  onChange={(e) => setServiceTypeQty(e.target.value)}
+                  placeholder="0"
+                  className="text-center text-lg font-bold"
+                  data-testid="input-service-type-qty"
+                />
+                <div className="text-xs text-muted-foreground text-center">
+                  Remaining will be Normal service
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button
