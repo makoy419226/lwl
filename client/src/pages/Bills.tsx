@@ -2107,16 +2107,15 @@ export default function Bills() {
             {(() => {
               const client = clients.find(c => c.id === selectedBill?.clientId);
               const clientDeposit = parseFloat(client?.deposit || "0");
+              if (clientDeposit <= 0) return null;
               return (
                 <>
-                  {clientDeposit > 0 && (
-                    <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                      <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                        Customer has AED {clientDeposit.toFixed(2)} deposit balance available
-                      </p>
-                    </div>
-                  )}
-                  {paymentMethod === "cash" && clientDeposit > 0 && (
+                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                      Customer has AED {clientDeposit.toFixed(2)} deposit balance available
+                    </p>
+                  </div>
+                  {paymentMethod === "cash" && (
                     <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                       <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
                         Reminder: Customer still has deposit balance. Consider using "Deduct from Deposit" instead.
@@ -2128,17 +2127,17 @@ export default function Bills() {
             })()}
             <div>
               <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="deposit">Deduct from Deposit</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="bank">Bank Transfer</SelectItem>
-                </SelectContent>
-              </Select>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                data-testid="select-payment-method"
+              >
+                <option value="deposit">Deduct from Deposit</option>
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="bank">Bank Transfer</option>
+              </select>
             </div>
             <div>
               <Label htmlFor="notes">Notes (Optional)</Label>
