@@ -2815,28 +2815,33 @@ export default function Products() {
           </div>
         </main>
 
-        {/* Floating Cart Button - Only on tablet/mobile (hidden on xl+) */}
-        {hasOrderItems && (
-          <button
-            onClick={() => setShowCartPopup(true)}
-            className={`fixed bottom-4 right-4 z-50 flex xl:hidden items-center gap-2 px-4 py-3 rounded-full shadow-2xl ${
-              orderType === "urgent" 
+        {/* Floating Cart Button - Always visible on tablet/mobile (hidden on xl+) */}
+        <button
+          onClick={() => setShowCartPopup(true)}
+          className={`fixed bottom-4 right-4 z-50 flex xl:hidden items-center gap-2 px-4 py-3 rounded-full shadow-2xl ${
+            hasOrderItems
+              ? orderType === "urgent" 
                 ? "bg-gradient-to-r from-orange-500 to-red-500 text-white" 
                 : "bg-gradient-to-r from-primary to-primary/90 text-white"
-            }`}
-            data-testid="button-open-cart"
-          >
-            <div className="relative">
-              <ShoppingCart className="w-5 h-5" />
+              : "bg-gradient-to-r from-primary/80 to-primary/70 text-white"
+          }`}
+          data-testid="button-open-cart"
+        >
+          <div className="relative">
+            <ShoppingCart className="w-5 h-5" />
+            {hasOrderItems && (
               <span className="absolute -top-2 -right-2 w-5 h-5 bg-background text-primary text-xs font-bold rounded-full flex items-center justify-center border border-primary/20">
                 {orderItems.reduce((sum, item) => sum + item.quantity, 0) + customItems.reduce((sum, item) => sum + item.quantity, 0)}
               </span>
-            </div>
-            <span className="font-bold text-sm">
-              {orderType === "urgent" ? (orderTotal * 2).toFixed(0) : orderTotal.toFixed(0)} AED
-            </span>
-          </button>
-        )}
+            )}
+          </div>
+          <span className="font-bold text-sm">
+            {hasOrderItems 
+              ? `${orderType === "urgent" ? (orderTotal * 2).toFixed(0) : orderTotal.toFixed(0)} AED`
+              : "Order Slip"
+            }
+          </span>
+        </button>
       </div>
 
       {/* Right Sidebar - Order Slip (Only on xl+ screens) */}
