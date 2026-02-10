@@ -1688,12 +1688,13 @@ export default function Products() {
                     const search = clientSearchTerm.toLowerCase();
                     return (
                       client.name.toLowerCase().includes(search) ||
-                      (client.phone && client.phone.toLowerCase().includes(search))
+                      (client.phone && client.phone.toLowerCase().includes(search)) ||
+                      (client.address && client.address.toLowerCase().includes(search))
                     );
                   }).slice(0, 10).map((client) => (
                     <div
                       key={client.id}
-                      className="px-3 py-2 cursor-pointer hover:bg-accent text-sm"
+                      className="px-3 py-2 cursor-pointer hover:bg-accent text-sm overflow-hidden group/client"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         setIsWalkIn(false);
@@ -1706,7 +1707,12 @@ export default function Products() {
                       }}
                       data-testid={`option-client-${client.id}`}
                     >
-                      {client.name} - {client.phone || "No phone"}
+                      <div className="whitespace-nowrap overflow-hidden group-hover/client:overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+                        <span className="font-medium">{client.name}</span> - {client.phone || "No phone"}
+                        {client.address && (
+                          <span className="text-muted-foreground text-xs ml-1">| {client.address}</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
