@@ -286,12 +286,18 @@ export default function Bills() {
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase().replace(/^#/, "");
-      filtered = filtered.filter(b => 
-        b.referenceNumber?.toLowerCase().includes(term) ||
-        b.customerName?.toLowerCase().includes(term) ||
-        b.description?.toLowerCase().includes(term) ||
-        String(b.id).includes(term)
-      );
+      const isNumericSearch = /^\d+$/.test(term);
+      filtered = filtered.filter(b => {
+        if (isNumericSearch) {
+          return String(b.id) === term ||
+            String(b.id).startsWith(term) ||
+            b.customerName?.toLowerCase().includes(term) ||
+            b.description?.toLowerCase().includes(term);
+        }
+        return b.customerName?.toLowerCase().includes(term) ||
+          b.description?.toLowerCase().includes(term) ||
+          String(b.id).includes(term);
+      });
     }
     
     // Sort by most recent first (newest bills at top)
