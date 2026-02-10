@@ -150,6 +150,8 @@ export const orders = pgTable("orders", {
   verifiedByWorkerName: text("verified_by_worker_name"),
   itemCountAtIntake: integer("item_count_at_intake"),
   itemCountAtRelease: integer("item_count_at_release"),
+  adjustedTotal: numeric("adjusted_total", { precision: 12, scale: 2 }),
+  priceAdjustReason: text("price_adjust_reason"),
 });
 
 export const users = pgTable("users", {
