@@ -28,7 +28,7 @@ function SevenSegmentDigit({ digit, size = 48 }: { digit: string; size?: number 
   const segs = SEGMENTS[digit] || SEGMENTS["0"];
   const w = size * 0.6;
   const h = size;
-  const t = Math.max(size * 0.1, 3);
+  const t = Math.max(size * 0.14, 4);
   const gap = t * 0.3;
   const onColor = "currentColor";
   const offColor = "currentColor";
@@ -231,21 +231,21 @@ export default function TodaysWork() {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      <Card className="p-5" data-testid="card-digital-clock">
-        <div className="flex items-center justify-center gap-1 md:gap-2 text-foreground" data-testid="text-live-clock">
+      <Card className="p-6 md:p-8" data-testid="card-digital-clock">
+        <div className="flex items-center justify-center gap-1 md:gap-3 text-foreground" data-testid="text-live-clock">
           {String(uaeTime.getUTCHours()).padStart(2, "0").split("").map((d, i) => (
-            <SevenSegmentDigit key={`h${i}`} digit={d} size={64} />
+            <SevenSegmentDigit key={`h${i}`} digit={d} size={90} />
           ))}
-          <SevenSegmentColon size={64} />
+          <SevenSegmentColon size={90} />
           {String(uaeTime.getUTCMinutes()).padStart(2, "0").split("").map((d, i) => (
-            <SevenSegmentDigit key={`m${i}`} digit={d} size={64} />
+            <SevenSegmentDigit key={`m${i}`} digit={d} size={90} />
           ))}
-          <SevenSegmentColon size={64} />
+          <SevenSegmentColon size={90} />
           {String(uaeTime.getUTCSeconds()).padStart(2, "0").split("").map((d, i) => (
-            <SevenSegmentDigit key={`s${i}`} digit={d} size={64} />
+            <SevenSegmentDigit key={`s${i}`} digit={d} size={90} />
           ))}
         </div>
-        <p className="text-sm text-muted-foreground mt-3 text-center" data-testid="text-clock-date">
+        <p className="text-base md:text-lg font-semibold text-muted-foreground mt-4 text-center" data-testid="text-clock-date">
           {format(new Date(todayStartEpoch + 12 * 60 * 60 * 1000), "EEEE, MMMM d, yyyy")} — UAE Time (GMT+4)
         </p>
       </Card>
