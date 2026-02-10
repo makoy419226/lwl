@@ -934,7 +934,9 @@ export default function Products() {
       if (customPrices[priceKey] !== undefined) {
         price = customPrices[priceKey];
       } else if (item.serviceType === "iron") {
-        price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+        price = orderType === "urgent"
+          ? parseFloat(item.product.price || "0")
+          : parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
       } else if (item.serviceType === "dc") {
         price = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
       } else {
@@ -947,7 +949,7 @@ export default function Products() {
       0,
     );
     return productTotal + customTotal;
-  }, [orderItems, customItems, customPrices]);
+  }, [orderItems, customItems, customPrices, orderType]);
 
   const hasOrderItems = orderItems.length > 0 || customItems.length > 0 || carpetEntries.length > 0;
 
@@ -1669,7 +1671,9 @@ export default function Products() {
                 displayPrice = item.sqm < 5 ? Math.max(50, calcPrice) : calcPrice;
                 basePrice = displayPrice;
               } else if (item.serviceType === "iron") {
-                basePrice = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
+                basePrice = orderType === "urgent"
+                  ? parseFloat(item.product.price || "0")
+                  : parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
                 displayPrice = basePrice;
               } else if (item.serviceType === "dc") {
                 basePrice = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
