@@ -3332,13 +3332,36 @@ export default function Orders() {
               />
             )}
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setStageChecklistDialog(null)}
-              >
-                Close
-              </Button>
+              {stageChecklistDialog?.stage === "tagging" && (
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={() => {
+                    const orderId = stageChecklistDialog.order.id;
+                    setStageChecklistDialog(null);
+                    handleTagWithPin(orderId);
+                  }}
+                  data-testid="button-checklist-tag-done"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1" />
+                  Tag Done
+                </Button>
+              )}
+              {stageChecklistDialog?.stage === "packing" && (
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={() => {
+                    const orderId = stageChecklistDialog.order.id;
+                    setStageChecklistDialog(null);
+                    handlePackingWithPin(orderId);
+                  }}
+                  data-testid="button-checklist-pack-done"
+                >
+                  <Package className="w-4 h-4 mr-1" />
+                  Pack Done
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>
