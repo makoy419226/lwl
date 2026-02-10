@@ -1,10 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown, Truck, History, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, Package, Users, FileText, List, Phone, TrendingUp, LogOut, Shield, UserCog, Wallet, ClipboardList, HardHat, AlertTriangle, CircleDollarSign, Menu, X, FlaskConical, Settings, ChevronDown, Truck, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import logoImage from "@assets/image_1767220512226.png";
-import { useTheme } from "./ThemeProvider";
 
 interface UserInfo {
   id: number;
@@ -23,7 +22,6 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -238,24 +236,6 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
               >
                 <LogOut className="w-4 h-4" />
                 Logout
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-11 w-11 touch-manipulation relative overflow-hidden"
-                onClick={toggleTheme}
-                data-testid="button-theme-toggle"
-              >
-                <Sun className={`w-5 h-5 absolute transition-all duration-300 ${
-                  theme === "dark" 
-                    ? "rotate-0 scale-100 opacity-100" 
-                    : "rotate-90 scale-0 opacity-0"
-                }`} />
-                <Moon className={`w-5 h-5 absolute transition-all duration-300 ${
-                  theme === "light" 
-                    ? "rotate-0 scale-100 opacity-100" 
-                    : "-rotate-90 scale-0 opacity-0"
-                }`} />
               </Button>
             </div>
           </div>
