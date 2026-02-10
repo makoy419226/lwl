@@ -1745,6 +1745,46 @@ export async function registerRoutes(
         }
       }
       
+      // If urgent status is changing, recalculate totalAmount with per-unit 2x pricing
+      if (updates.urgent !== undefined) {
+        const existingOrder = await storage.getOrder(orderId);
+        if (existingOrder && existingOrder.urgent !== updates.urgent) {
+          const wasUrgent = existingOrder.urgent === true;
+          const nowUrgent = updates.urgent === true;
+          const currentTotal = parseFloat(existingOrder.totalAmount || "0");
+          
+          if (currentTotal > 0) {
+            let newTotal: number;
+            if (wasUrgent && !nowUrgent) {
+              newTotal = currentTotal / 2;
+            } else if (!wasUrgent && nowUrgent) {
+              newTotal = currentTotal * 2;
+            } else {
+              newTotal = currentTotal;
+            }
+            updates.totalAmount = newTotal.toFixed(2);
+            
+            const discountPercent = parseFloat(existingOrder.discountPercent || "0");
+            const tips = parseFloat(existingOrder.tips || "0");
+            const discountAmount = (newTotal * discountPercent) / 100;
+            const newFinal = newTotal - discountAmount + tips;
+            updates.finalAmount = newFinal.toFixed(2);
+            
+            if (existingOrder.billId) {
+              const bill = await storage.getBill(existingOrder.billId);
+              if (bill) {
+                const oldFinal = parseFloat(existingOrder.finalAmount || existingOrder.totalAmount || "0");
+                const billAmount = parseFloat(bill.amount || "0");
+                const newBillAmount = billAmount - oldFinal + newFinal;
+                await storage.updateBill(existingOrder.billId, {
+                  amount: newBillAmount.toFixed(2),
+                });
+              }
+            }
+          }
+        }
+      }
+      
       const order = await storage.updateOrder(orderId, updates);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
@@ -1803,6 +1843,7 @@ export async function registerRoutes(
       
       // Calculate new total from items
       const allProducts = await storage.getProducts();
+      const isUrgentOrder = order.urgent === true;
       let newTotal = 0;
       const itemsArray: string[] = [];
       
@@ -1818,7 +1859,8 @@ export async function registerRoutes(
         if (customPriceMatch) {
           const baseName = customPriceMatch[1].trim();
           customPrice = parseFloat(customPriceMatch[2]);
-          newTotal += customPrice * item.quantity;
+          const adjustedCustomPrice = isUrgentOrder ? customPrice * 2 : customPrice;
+          newTotal += adjustedCustomPrice * item.quantity;
           itemsArray.push(`${item.quantity}x ${item.name}`);
           continue;
         }
@@ -1838,24 +1880,20 @@ export async function registerRoutes(
         
         const product = allProducts.find((p: any) => p.name.toLowerCase() === baseProductName.toLowerCase());
         if (product) {
-          // Use dry clean price if [D] service type, otherwise normal price
-          const price = isDryClean 
+          const basePrice = isDryClean 
             ? parseFloat(product.dryCleanPrice || product.price || "0")
             : parseFloat(product.price || "0");
+          const price = isUrgentOrder ? basePrice * 2 : basePrice;
           newTotal += price * item.quantity;
           itemsArray.push(`${item.quantity}x ${item.name}`);
         } else {
-          // Custom item - try to find price from original order items
           itemsArray.push(`${item.quantity}x ${item.name}`);
-          // Look for price in original items - keep the item but price stays 0 if not found
         }
       }
       
       const newItemsText = itemsArray.join(", ");
       
-      // Check if urgent - multiply by 2
-      const isUrgent = order.urgent === true;
-      const subtotal = isUrgent ? newTotal * 2 : newTotal;
+      const subtotal = newTotal;
       
       // Apply discount if any
       const discountPercent = parseFloat(order.discountPercent || "0");

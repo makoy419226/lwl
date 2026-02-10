@@ -473,17 +473,14 @@ export default function Orders() {
     return 0;
   };
 
-  // Calculate total from edit items quantities
   const calculateEditItemsTotal = (): number => {
     if (!editItemsDialog) return 0;
     let total = 0;
+    const isUrgentOrder = editItemsDialog.urgent === true;
     Object.entries(editItemsQuantities).forEach(([name, qty]) => {
-      total += getItemPrice(name) * qty;
+      const unitPrice = getItemPrice(name);
+      total += (isUrgentOrder ? unitPrice * 2 : unitPrice) * qty;
     });
-    // Apply urgent 2x multiplier if order is urgent
-    if (editItemsDialog.urgent) {
-      total *= 2;
-    }
     return total;
   };
 
@@ -503,6 +500,7 @@ export default function Orders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/products/allocated-stock"],
       });
