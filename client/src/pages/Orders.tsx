@@ -249,7 +249,7 @@ export default function Orders() {
   const [showPaymentChoice, setShowPaymentChoice] = useState(false);
   const [payAllBills, setPayAllBills] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "transfer">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "transfer" | "deposit">("cash");
   const [paymentPin, setPaymentPin] = useState("");
   const [paymentPinError, setPaymentPinError] = useState("");
 
@@ -3978,6 +3978,27 @@ export default function Orders() {
               {showPaymentForm && (
                 <div className="border-t pt-4 mt-4 space-y-3">
                   <h4 className="font-medium text-sm">{payAllBills ? "Pay All Bills" : "Record Payment"}</h4>
+                  {(() => {
+                    const client = clients?.find(c => c.id === selectedBill?.clientId);
+                    const clientDeposit = parseFloat(client?.deposit || "0");
+                    if (clientDeposit <= 0) return null;
+                    return (
+                      <>
+                        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                          <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                            Customer has AED {clientDeposit.toFixed(2)} deposit balance available
+                          </p>
+                        </div>
+                        {paymentMethod !== "deposit" && (
+                          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                              Reminder: Customer still has deposit balance. Consider using "Deduct from Deposit" instead.
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Amount (AED)</Label>
@@ -3994,13 +4015,14 @@ export default function Orders() {
                       <Label className="text-xs">Method</Label>
                       <select
                         value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card" | "transfer")}
+                        onChange={(e) => setPaymentMethod(e.target.value as "cash" | "card" | "transfer" | "deposit")}
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         data-testid="select-payment-method"
                       >
                         <option value="cash">Cash</option>
                         <option value="card">Card</option>
                         <option value="transfer">Transfer</option>
+                        <option value="deposit">Deduct from Deposit</option>
                       </select>
                     </div>
                   </div>
