@@ -1745,59 +1745,6 @@ export async function registerRoutes(
         }
       }
       
-      // Helper to recalculate total/final/bill when urgent pricing changes
-      const recalcUrgentPricing = async (existingOrder: any, shouldDouble: boolean) => {
-        const currentTotal = parseFloat(existingOrder.totalAmount || "0");
-        if (currentTotal <= 0) return;
-        
-        const wasDoubled = existingOrder.urgent === true && existingOrder.deliveryType !== "iron_only";
-        if (shouldDouble === wasDoubled) return;
-        
-        const newTotal = shouldDouble ? currentTotal * 2 : currentTotal / 2;
-        updates.totalAmount = newTotal.toFixed(2);
-        
-        const discountPercent = parseFloat(existingOrder.discountPercent || "0");
-        const tips = parseFloat(existingOrder.tips || "0");
-        const discountAmount = (newTotal * discountPercent) / 100;
-        const newFinal = newTotal - discountAmount + tips;
-        updates.finalAmount = newFinal.toFixed(2);
-        
-        if (existingOrder.billId) {
-          const bill = await storage.getBill(existingOrder.billId);
-          if (bill) {
-            const oldFinal = parseFloat(existingOrder.finalAmount || existingOrder.totalAmount || "0");
-            const billAmount = parseFloat(bill.amount || "0");
-            const newBillAmount = billAmount - oldFinal + newFinal;
-            await storage.updateBill(existingOrder.billId, {
-              amount: newBillAmount.toFixed(2),
-            });
-          }
-        }
-      };
-      
-      // Recalculate when urgent status changes (skip iron_only orders)
-      if (updates.urgent !== undefined) {
-        const existingOrder = await storage.getOrder(orderId);
-        if (existingOrder && existingOrder.urgent !== updates.urgent) {
-          const effectiveDeliveryType = updates.deliveryType || existingOrder.deliveryType;
-          const nowUrgent = updates.urgent === true;
-          const shouldDouble = nowUrgent && effectiveDeliveryType !== "iron_only";
-          await recalcUrgentPricing(existingOrder, shouldDouble);
-        }
-      }
-      
-      // Recalculate when deliveryType changes to/from iron_only on an urgent order
-      if (updates.deliveryType !== undefined && updates.urgent === undefined) {
-        const existingOrder = await storage.getOrder(orderId);
-        if (existingOrder && existingOrder.urgent === true && existingOrder.deliveryType !== updates.deliveryType) {
-          const wasIronOnly = existingOrder.deliveryType === "iron_only";
-          const nowIronOnly = updates.deliveryType === "iron_only";
-          if (wasIronOnly !== nowIronOnly) {
-            await recalcUrgentPricing(existingOrder, !nowIronOnly);
-          }
-        }
-      }
-      
       const order = await storage.updateOrder(orderId, updates);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
@@ -1856,7 +1803,6 @@ export async function registerRoutes(
       
       // Calculate new total from items
       const allProducts = await storage.getProducts();
-      const isUrgentOrder = order.urgent === true && order.deliveryType !== "iron_only";
       let newTotal = 0;
       const itemsArray: string[] = [];
       
@@ -1872,8 +1818,7 @@ export async function registerRoutes(
         if (customPriceMatch) {
           const baseName = customPriceMatch[1].trim();
           customPrice = parseFloat(customPriceMatch[2]);
-          const adjustedCustomPrice = isUrgentOrder ? customPrice * 2 : customPrice;
-          newTotal += adjustedCustomPrice * item.quantity;
+          newTotal += customPrice * item.quantity;
           itemsArray.push(`${item.quantity}x ${item.name}`);
           continue;
         }
@@ -1896,8 +1841,7 @@ export async function registerRoutes(
           const basePrice = isDryClean 
             ? parseFloat(product.dryCleanPrice || product.price || "0")
             : parseFloat(product.price || "0");
-          const price = isUrgentOrder ? basePrice * 2 : basePrice;
-          newTotal += price * item.quantity;
+          newTotal += basePrice * item.quantity;
           itemsArray.push(`${item.quantity}x ${item.name}`);
         } else {
           itemsArray.push(`${item.quantity}x ${item.name}`);

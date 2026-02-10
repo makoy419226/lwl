@@ -476,11 +476,9 @@ export default function Orders() {
   const calculateEditItemsTotal = (): number => {
     if (!editItemsDialog) return 0;
     let total = 0;
-    const isUrgentOrder = editItemsDialog.urgent === true;
-    const isIronOnly = editItemsDialog.deliveryType === "iron_only";
     Object.entries(editItemsQuantities).forEach(([name, qty]) => {
       const unitPrice = getItemPrice(name);
-      total += (isUrgentOrder && !isIronOnly ? unitPrice * 2 : unitPrice) * qty;
+      total += unitPrice * qty;
     });
     return total;
   };
