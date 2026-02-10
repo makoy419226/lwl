@@ -4784,7 +4784,7 @@ export default function Orders() {
           <DialogHeader>
             <DialogTitle>Delete Order</DialogTitle>
             <DialogDescription>
-              Deleting this order will also delete its bill and the client history of the current bill to be deleted.
+              Deleting this order will also delete its linked bill and only the client transaction history of this specific bill. Other client history will not be affected.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
