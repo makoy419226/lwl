@@ -636,6 +636,14 @@ export default function Products() {
       return;
     }
     
+    const hangingDefaults = ["kandoora", "cover all", "ghutra"];
+    if (delta > 0 && product && !packingTypes[productId]) {
+      const nameLC = product.name.toLowerCase();
+      if (hangingDefaults.some(h => nameLC.includes(h))) {
+        setPackingTypes(prev => ({ ...prev, [productId]: "hanging" }));
+      }
+    }
+
     setQuantities((prev) => {
       const current = prev[productId] || 0;
       const newQty = Math.max(0, current + delta);
