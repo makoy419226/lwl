@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Order, BillPayment, Bill, Client } from "@shared/schema";
 import { Card } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, Package, Clock, CheckCircle2, Truck, HandCoins, TrendingUp, AlertCircle, AlertTriangle, ArrowUp, ArrowDown, Minus, Timer, X } from "lucide-react";
-import { format, isToday, isBefore, startOfDay, subDays } from "date-fns";
+import { format } from "date-fns";
 import { UserContext } from "@/App";
 
 type OrderWithClient = Order & { clientName?: string };
@@ -17,6 +17,21 @@ export default function TodaysWork() {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<OrderWithClient[]>([]);
   const [dialogTitle, setDialogTitle] = useState("");
+
+  useEffect(() => {
+    const checkForDayReset = () => {
+      const nowEpoch = Date.now();
+      const uaeNowMs = nowEpoch + 4 * 60 * 60 * 1000;
+      const uaeNowDate = new Date(uaeNowMs);
+      const uaeHour = uaeNowDate.getUTCHours();
+      const uaeMinute = uaeNowDate.getUTCMinutes();
+      if (uaeHour === 23 && uaeMinute >= 59) {
+        window.location.reload();
+      }
+    };
+    const interval = setInterval(checkForDayReset, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -43,21 +58,27 @@ export default function TodaysWork() {
     return "Walk-in";
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const uaeOffsetHours = 4;
+  const getUaeStartOfDay = (date: Date) => {
+    const uaeMs = date.getTime() + uaeOffsetHours * 60 * 60 * 1000;
+    const uaeDate = new Date(uaeMs);
+    return Date.UTC(uaeDate.getUTCFullYear(), uaeDate.getUTCMonth(), uaeDate.getUTCDate()) - uaeOffsetHours * 60 * 60 * 1000;
+  };
 
-  const yesterday = subDays(today, 1);
+  const todayStartEpoch = getUaeStartOfDay(new Date());
+  const tomorrowStartEpoch = todayStartEpoch + 24 * 60 * 60 * 1000;
+  const yesterdayStartEpoch = todayStartEpoch - 24 * 60 * 60 * 1000;
+
+  const today = new Date(todayStartEpoch);
 
   const todaysOrders = orders.filter((order) => {
-    const orderDate = new Date(order.entryDate);
-    orderDate.setHours(0, 0, 0, 0);
-    return orderDate.getTime() === today.getTime();
+    const orderTime = new Date(order.entryDate).getTime();
+    return orderTime >= todayStartEpoch && orderTime < tomorrowStartEpoch;
   });
 
   const yesterdaysOrders = orders.filter((order) => {
-    const orderDate = new Date(order.entryDate);
-    orderDate.setHours(0, 0, 0, 0);
-    return orderDate.getTime() === yesterday.getTime();
+    const orderTime = new Date(order.entryDate).getTime();
+    return orderTime >= yesterdayStartEpoch && orderTime < todayStartEpoch;
   });
 
   const pendingOrders = todaysOrders.filter(
@@ -82,14 +103,14 @@ export default function TodaysWork() {
 
   const expectedToday = orders.filter((order) => {
     if (!order.expectedDeliveryAt) return false;
-    const expectedDate = new Date(order.expectedDeliveryAt);
-    return isToday(expectedDate) && order.status !== "delivered";
+    const expectedTime = new Date(order.expectedDeliveryAt).getTime();
+    return expectedTime >= todayStartEpoch && expectedTime < tomorrowStartEpoch && order.status !== "delivered";
   });
 
   const overdueOrders = orders.filter((order) => {
     if (!order.expectedDeliveryAt) return false;
-    const expectedDate = startOfDay(new Date(order.expectedDeliveryAt));
-    return isBefore(expectedDate, today) && order.status !== "delivered";
+    const expectedTime = new Date(order.expectedDeliveryAt).getTime();
+    return expectedTime < todayStartEpoch && order.status !== "delivered";
   });
 
   const totalRevenue = todaysOrders.reduce((sum, order) => {
@@ -101,15 +122,15 @@ export default function TodaysWork() {
   }, 0);
 
   const paidAmount = billPayments.filter((payment) => {
-    const paymentDate = new Date(payment.paymentDate);
-    paymentDate.setHours(0, 0, 0, 0);
-    return paymentDate.getTime() === today.getTime();
+    const paymentTime = new Date(payment.paymentDate).getTime();
+    return paymentTime >= todayStartEpoch && paymentTime < tomorrowStartEpoch;
   }).reduce((sum, payment) => {
     return sum + parseFloat(payment.amount || "0");
   }, 0);
 
-  const unpaidBills = bills.filter((bill) => !bill.isPaid);
-  const totalUnpaidAmount = unpaidBills.reduce((sum, bill) => {
+  const todaysBillIds = Array.from(new Set(todaysOrders.map(o => o.billId).filter((id): id is number => id !== null && id !== undefined)));
+  const todaysUnpaidBills = bills.filter((bill) => todaysBillIds.includes(bill.id) && !bill.isPaid);
+  const todaysUnpaidAmount = todaysUnpaidBills.reduce((sum, bill) => {
     const billTotal = parseFloat(bill.amount || "0");
     const billPaid = parseFloat(bill.paidAmount || "0");
     return sum + (billTotal - billPaid);
@@ -176,7 +197,7 @@ export default function TodaysWork() {
         <div>
           <h1 className="text-2xl font-bold text-foreground" data-testid="heading-todays-work">Today's Work</h1>
           <p className="text-muted-foreground text-sm">
-            {format(new Date(), "EEEE, MMMM d, yyyy")}
+            {format(new Date(todayStartEpoch + 12 * 60 * 60 * 1000), "EEEE, MMMM d, yyyy")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -345,11 +366,11 @@ export default function TodaysWork() {
             <div className="flex items-center justify-between mb-2">
               <AlertCircle className="w-5 h-5 text-red-500" />
               <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" data-testid="text-unpaid-amount">
-                {totalUnpaidAmount.toFixed(0)} AED
+                {todaysUnpaidAmount.toFixed(0)} AED
               </Badge>
             </div>
             <h3 className="font-semibold text-sm text-foreground">UNPAID BILLS</h3>
-            <p className="text-xs text-muted-foreground" data-testid="text-unpaid-count">{unpaidBills.length} bills pending</p>
+            <p className="text-xs text-muted-foreground" data-testid="text-unpaid-count">{todaysUnpaidBills.length} bills pending</p>
           </Card>
         )}
 
@@ -391,8 +412,8 @@ export default function TodaysWork() {
                 <span className="font-bold text-lg text-green-600" data-testid="text-payments-received">{paidAmount.toFixed(0)} AED</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t">
-                <span className="text-muted-foreground text-sm">Total Outstanding</span>
-                <span className="font-bold text-lg text-red-600" data-testid="text-total-outstanding">{totalUnpaidAmount.toFixed(0)} AED</span>
+                <span className="text-muted-foreground text-sm">Today's Outstanding</span>
+                <span className="font-bold text-lg text-red-600" data-testid="text-total-outstanding">{todaysUnpaidAmount.toFixed(0)} AED</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="text-muted-foreground text-sm">Orders Count</span>
