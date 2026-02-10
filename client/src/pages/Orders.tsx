@@ -1223,9 +1223,6 @@ export default function Orders() {
       const data = await res.json();
       if (data.success && pendingDeleteOrderId !== null) {
         await apiRequest("DELETE", `/api/orders/${pendingDeleteOrderId}`);
-        queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
         toast({
           title: "Order Deleted",
           description: "The order and its linked bill have been removed.",
@@ -1234,6 +1231,7 @@ export default function Orders() {
         setPendingDeleteOrderId(null);
         setDeleteOrderAdminPassword("");
         setDeleteOrderAdminError("");
+        window.location.reload();
       } else {
         setDeleteOrderAdminError("Invalid admin password");
       }
