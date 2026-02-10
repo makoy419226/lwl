@@ -1957,9 +1957,10 @@ export async function registerRoutes(
     }
     // Deduct stock before deleting
     await storage.deductStockForOrder(orderId);
-    // Delete linked bill if exists
+    // Delete linked bill and its client transactions if exists
     if (order.billId) {
       try {
+        await db.delete(clientTransactions).where(eq(clientTransactions.billId, order.billId));
         await storage.deleteBill(order.billId);
       } catch {}
     }
