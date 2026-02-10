@@ -33,10 +33,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Accordion,
@@ -144,6 +144,10 @@ export default function Bills() {
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [timePeriod, setTimePeriod] = useState<"today" | "week" | "month" | "year" | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "unpaid" | "paid">("all");
+  const [deleteAdminDialog, setDeleteAdminDialog] = useState(false);
+  const [deleteAdminPassword, setDeleteAdminPassword] = useState("");
+  const [deleteAdminError, setDeleteAdminError] = useState("");
+  const [pendingDeleteBillId, setPendingDeleteBillId] = useState<number | null>(null);
   const [highlightedBillId, setHighlightedBillId] = useState<number | null>(null);
   
   useEffect(() => {
@@ -456,28 +460,61 @@ export default function Bills() {
   };
 
   const handleDelete = (billId: number) => {
-    if (confirm("Are you sure you want to delete this bill?")) {
-      deleteBill(billId, {
-        onSuccess: () => {
-          toast({
-            title: "Bill deleted",
-            description: "The bill has been removed.",
-          });
-        },
-        onError: (error: Error) => {
-          let message = "Failed to delete bill";
-          try {
-            const errorMsg = String(error.message || "");
-            const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
-            if (msgMatch) message = msgMatch[1];
-          } catch {}
-          toast({
-            title: "Error",
-            description: message,
-            variant: "destructive",
-          });
-        },
-      });
+    if (userRole === "admin") {
+      if (confirm("Are you sure you want to delete this bill?")) {
+        performDelete(billId);
+      }
+    } else {
+      setPendingDeleteBillId(billId);
+      setDeleteAdminPassword("");
+      setDeleteAdminError("");
+      setDeleteAdminDialog(true);
+    }
+  };
+
+  const performDelete = (billId: number) => {
+    deleteBill(billId, {
+      onSuccess: () => {
+        toast({
+          title: "Bill deleted",
+          description: "The bill has been removed.",
+        });
+      },
+      onError: (error: Error) => {
+        let message = "Failed to delete bill";
+        try {
+          const errorMsg = String(error.message || "");
+          const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+          if (msgMatch) message = msgMatch[1];
+        } catch {}
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const handleAdminDeleteConfirm = async () => {
+    if (!deleteAdminPassword.trim()) {
+      setDeleteAdminError("Please enter admin password");
+      return;
+    }
+    try {
+      const res = await apiRequest("POST", "/api/admin/verify", { adminPassword: deleteAdminPassword });
+      const data = await res.json();
+      if (data.success && pendingDeleteBillId !== null) {
+        performDelete(pendingDeleteBillId);
+        setDeleteAdminDialog(false);
+        setPendingDeleteBillId(null);
+        setDeleteAdminPassword("");
+        setDeleteAdminError("");
+      } else {
+        setDeleteAdminError("Invalid admin password");
+      }
+    } catch {
+      setDeleteAdminError("Invalid admin password");
     }
   };
 
@@ -2264,6 +2301,37 @@ export default function Bills() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteAdminDialog} onOpenChange={(open) => { if (!open) { setDeleteAdminDialog(false); setPendingDeleteBillId(null); setDeleteAdminPassword(""); setDeleteAdminError(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Admin Authorization Required</DialogTitle>
+            <DialogDescription>Enter admin password to delete this bill.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm">Admin Password</Label>
+              <Input
+                type="password"
+                value={deleteAdminPassword}
+                onChange={(e) => { setDeleteAdminPassword(e.target.value); setDeleteAdminError(""); }}
+                placeholder="Enter admin password"
+                onKeyDown={(e) => { if (e.key === "Enter") handleAdminDeleteConfirm(); }}
+                data-testid="input-admin-delete-password"
+              />
+              {deleteAdminError && <p className="text-xs text-destructive mt-1">{deleteAdminError}</p>}
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setDeleteAdminDialog(false); setPendingDeleteBillId(null); setDeleteAdminPassword(""); setDeleteAdminError(""); }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleAdminDeleteConfirm} data-testid="button-confirm-admin-delete">
+              Delete Bill
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
