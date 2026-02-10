@@ -2093,16 +2093,6 @@ export default function Orders() {
                                   <CheckCircle2 className="w-4 h-4 mr-1" />
                                   Tagging List
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="flex-1"
-                                  onClick={() => handleTagWithPin(order.id)}
-                                  data-testid={`button-mobile-tag-done-${order.id}`}
-                                >
-                                  <CheckCircle2 className="w-4 h-4 mr-1" />
-                                  Tag Done
-                                </Button>
                               </>
                             )}
 
@@ -2132,16 +2122,6 @@ export default function Orders() {
                                 >
                                   <CheckCircle2 className="w-4 h-4 mr-1" />
                                   Packing List
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="flex-1"
-                                  onClick={() => handlePackingWithPin(order.id)}
-                                  data-testid={`button-mobile-packing-${order.id}`}
-                                >
-                                  <Package className="w-4 h-4 mr-1" />
-                                  Pack Done
                                 </Button>
                               </>
                             )}
@@ -2729,22 +2709,6 @@ export default function Orders() {
                                                 Tagging List
                                               </span>
                                             </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="whitespace-nowrap touch-manipulation"
-                                              onClick={() =>
-                                                handleTagWithPin(order.id)
-                                              }
-                                              data-testid={`button-tag-done-${order.id}`}
-                                            >
-                                              <span className="sm:hidden">
-                                                Tag
-                                              </span>
-                                              <span className="hidden sm:inline">
-                                                Tag Done
-                                              </span>
-                                            </Button>
                                           </>
                                         )}
                                         {order.tagDone &&
@@ -2779,22 +2743,6 @@ export default function Orders() {
                                                 <CheckCircle2 className="w-3 h-3 sm:mr-1" />
                                                 <span className="hidden sm:inline">
                                                   Packing List
-                                                </span>
-                                              </Button>
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="whitespace-nowrap touch-manipulation"
-                                                onClick={() =>
-                                                  handlePackingWithPin(order.id)
-                                                }
-                                                data-testid={`button-packing-${order.id}`}
-                                              >
-                                                <span className="sm:hidden">
-                                                  Pack
-                                                </span>
-                                                <span className="hidden sm:inline">
-                                                  Packing Done
                                                 </span>
                                               </Button>
                                             </>
