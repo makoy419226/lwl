@@ -1502,7 +1502,8 @@ export default function Orders() {
       (client?.name || "").toLowerCase().includes(term) ||
       (client?.phone || "").toLowerCase().includes(term) ||
       (client?.address || "").toLowerCase().includes(term) ||
-      (order.deliveryAddress || "").toLowerCase().includes(term);
+      (order.deliveryAddress || "").toLowerCase().includes(term) ||
+      (order.billId && (bills?.find((b) => b.id === order.billId)?.referenceNumber || "").toLowerCase().includes(term));
 
     // Date filtering
     const orderDate = new Date(order.entryDate);
