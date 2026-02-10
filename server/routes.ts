@@ -2968,6 +2968,7 @@ export async function registerRoutes(
       deliveryPhotos: order.deliveryPhotos || [],
       deliveryPhoto: order.deliveryPhoto,
       notes: order.notes,
+      priceAdjustReason: order.priceAdjustReason,
     });
   });
 

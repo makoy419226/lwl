@@ -27,6 +27,7 @@ interface TrackOrderData {
   deliveryPhotos: string[];
   deliveryPhoto: string | null;
   notes: string | null;
+  priceAdjustReason: string | null;
 }
 
 export default function TrackOrder() {
@@ -303,10 +304,15 @@ export default function TrackOrder() {
                     ))}
                   </div>
                 </div>
-                {order.notes && (
-                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-2 mt-2">
+                {(order.notes || order.priceAdjustReason) && (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-2 mt-2 space-y-1">
                     <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Notes</p>
-                    <p className="text-sm text-amber-900 dark:text-amber-200">{order.notes}</p>
+                    {order.notes && (
+                      <p className="text-sm text-amber-900 dark:text-amber-200">{order.notes}</p>
+                    )}
+                    {order.priceAdjustReason && (
+                      <p className="text-sm text-orange-700 dark:text-orange-300 italic">Price adjusted: {order.priceAdjustReason}</p>
+                    )}
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t">
