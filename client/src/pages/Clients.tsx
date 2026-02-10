@@ -553,7 +553,7 @@ export default function Clients() {
       // Fetch both transactions and bills
       const [txRes, billsRes] = await Promise.all([
         fetch(`/api/clients/${client.id}/transactions`),
-        fetch(`/api/bills?clientId=${client.id}`)
+        fetch(`/api/clients/${client.id}/bills`)
       ]);
       
       const clientTransactions: ClientTransaction[] = txRes.ok ? await txRes.json() : [];
