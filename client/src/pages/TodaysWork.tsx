@@ -11,6 +11,71 @@ import { UserContext } from "@/App";
 
 type OrderWithClient = Order & { clientName?: string };
 
+const SEGMENTS: Record<string, boolean[]> = {
+  "0": [true, true, true, false, true, true, true],
+  "1": [false, false, true, false, false, true, false],
+  "2": [true, false, true, true, true, false, true],
+  "3": [true, false, true, true, false, true, true],
+  "4": [false, true, true, true, false, true, false],
+  "5": [true, true, false, true, false, true, true],
+  "6": [true, true, false, true, true, true, true],
+  "7": [true, false, true, false, false, true, false],
+  "8": [true, true, true, true, true, true, true],
+  "9": [true, true, true, true, false, true, true],
+};
+
+function SevenSegmentDigit({ digit, size = 48 }: { digit: string; size?: number }) {
+  const segs = SEGMENTS[digit] || SEGMENTS["0"];
+  const w = size * 0.6;
+  const h = size;
+  const t = Math.max(size * 0.1, 3);
+  const gap = t * 0.3;
+  const onColor = "currentColor";
+  const offColor = "currentColor";
+  const onOpacity = 1;
+  const offOpacity = 0.08;
+
+  const hSeg = (x: number, y: number, on: boolean) => (
+    <polygon
+      points={`${x + gap},${y} ${x + gap + t / 2},${y - t / 2} ${x + w - gap - t / 2},${y - t / 2} ${x + w - gap},${y} ${x + w - gap - t / 2},${y + t / 2} ${x + gap + t / 2},${y + t / 2}`}
+      fill={on ? onColor : offColor}
+      opacity={on ? onOpacity : offOpacity}
+    />
+  );
+
+  const vSeg = (x: number, y: number, on: boolean) => (
+    <polygon
+      points={`${x},${y + gap} ${x - t / 2},${y + gap + t / 2} ${x - t / 2},${y + h / 2 - gap - t / 2} ${x},${y + h / 2 - gap} ${x + t / 2},${y + h / 2 - gap - t / 2} ${x + t / 2},${y + gap + t / 2}`}
+      fill={on ? onColor : offColor}
+      opacity={on ? onOpacity : offOpacity}
+    />
+  );
+
+  return (
+    <svg width={w} height={h} viewBox={`${-t} ${-t} ${w + t * 2} ${h + t * 2}`} data-testid={`digit-${digit}`}>
+      {hSeg(0, 0, segs[0])}
+      {vSeg(0, 0, segs[1])}
+      {vSeg(w, 0, segs[2])}
+      {hSeg(0, h / 2, segs[3])}
+      {vSeg(0, h / 2, segs[4])}
+      {vSeg(w, h / 2, segs[5])}
+      {hSeg(0, h, segs[6])}
+    </svg>
+  );
+}
+
+function SevenSegmentColon({ size = 48 }: { size?: number }) {
+  const h = size;
+  const r = Math.max(size * 0.08, 2.5);
+  const w = r * 3;
+  return (
+    <svg width={w} height={h} viewBox={`0 ${-size * 0.1} ${w} ${h + size * 0.2}`} className="animate-pulse">
+      <circle cx={w / 2} cy={h * 0.3} r={r} fill="currentColor" />
+      <circle cx={w / 2} cy={h * 0.7} r={r} fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function TodaysWork() {
   const user = useContext(UserContext);
   const isSection = user?.role === "section";
@@ -166,15 +231,21 @@ export default function TodaysWork() {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      <Card className="p-5 text-center" data-testid="card-digital-clock">
-        <div className="font-mono text-5xl md:text-6xl lg:text-7xl font-bold tracking-widest text-foreground tabular-nums" data-testid="text-live-clock">
-          {String(uaeTime.getUTCHours()).padStart(2, "0")}
-          <span className="animate-pulse">:</span>
-          {String(uaeTime.getUTCMinutes()).padStart(2, "0")}
-          <span className="animate-pulse">:</span>
-          {String(uaeTime.getUTCSeconds()).padStart(2, "0")}
+      <Card className="p-5" data-testid="card-digital-clock">
+        <div className="flex items-center justify-center gap-1 md:gap-2 text-foreground" data-testid="text-live-clock">
+          {String(uaeTime.getUTCHours()).padStart(2, "0").split("").map((d, i) => (
+            <SevenSegmentDigit key={`h${i}`} digit={d} size={64} />
+          ))}
+          <SevenSegmentColon size={64} />
+          {String(uaeTime.getUTCMinutes()).padStart(2, "0").split("").map((d, i) => (
+            <SevenSegmentDigit key={`m${i}`} digit={d} size={64} />
+          ))}
+          <SevenSegmentColon size={64} />
+          {String(uaeTime.getUTCSeconds()).padStart(2, "0").split("").map((d, i) => (
+            <SevenSegmentDigit key={`s${i}`} digit={d} size={64} />
+          ))}
         </div>
-        <p className="text-sm text-muted-foreground mt-2" data-testid="text-clock-date">
+        <p className="text-sm text-muted-foreground mt-3 text-center" data-testid="text-clock-date">
           {format(new Date(todayStartEpoch + 12 * 60 * 60 * 1000), "EEEE, MMMM d, yyyy")} — UAE Time (GMT+4)
         </p>
       </Card>
