@@ -1691,7 +1691,7 @@ export default function Products() {
                       (client.phone && client.phone.toLowerCase().includes(search)) ||
                       (client.address && client.address.toLowerCase().includes(search))
                     );
-                  }).slice(0, 10).map((client) => (
+                  }).map((client) => (
                     <div
                       key={client.id}
                       className="px-3 py-2 cursor-pointer hover:bg-accent text-sm overflow-hidden group/client"
