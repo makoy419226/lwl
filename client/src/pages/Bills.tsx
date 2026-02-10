@@ -2175,11 +2175,13 @@ export default function Bills() {
               <Receipt className="w-5 h-5 text-primary" />
               Bill Details
             </DialogTitle>
-            <DialogDescription className="space-y-1">
-              <div>{viewBillDetails?.referenceNumber && `Reference: ${viewBillDetails.referenceNumber}`}</div>
-              {viewBillDetails?.createdBy && (
-                <div className="text-xs">Billed by: {viewBillDetails.createdBy}</div>
-              )}
+            <DialogDescription asChild>
+              <span className="space-y-1 block">
+                <span className="block">{viewBillDetails?.referenceNumber && `Reference: ${viewBillDetails.referenceNumber}`}</span>
+                {viewBillDetails?.createdBy && (
+                  <span className="block text-xs">Billed by: {viewBillDetails.createdBy}</span>
+                )}
+              </span>
             </DialogDescription>
           </DialogHeader>
           {viewBillDetails && (
