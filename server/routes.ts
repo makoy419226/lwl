@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { db } from "./db";
-import { users, passwordResetTokens, stageChecklists, packingWorkers, bills, orders, clientTransactions } from "@shared/schema";
+import { users, passwordResetTokens, stageChecklists, packingWorkers, bills, orders, clientTransactions, billPayments } from "@shared/schema";
 import { eq, and, gt, ne } from "drizzle-orm";
 import { sendPasswordResetEmail } from "./resend";
 import { sendDailySalesReportEmailSMTP, sendSalesReportEmailSMTP, type DailySalesData, type SalesReportData, type ReportPeriod } from "./smtp";
@@ -1957,12 +1957,66 @@ export async function registerRoutes(
     }
     // Deduct stock before deleting
     await storage.deductStockForOrder(orderId);
-    // Delete linked bill and its client transactions if exists
+    // Delete linked bill, revert payments/credits, and clean up transactions
     if (order.billId) {
       try {
-        await db.delete(clientTransactions).where(eq(clientTransactions.billId, order.billId));
+        const bill = await storage.getBill(order.billId);
+        if (bill && bill.clientId) {
+          const paidAmount = parseFloat(bill.paidAmount || "0");
+          
+          if (paidAmount > 0) {
+            // Check bill payments to find if any were paid by deposit/credit
+            const payments = await db.select().from(billPayments).where(eq(billPayments.billId, order.billId));
+            let depositPaid = 0;
+            for (const p of payments) {
+              if (p.paymentMethod === "deposit" || p.paymentMethod === "bulk_deposit") {
+                depositPaid += parseFloat(p.amount || "0");
+              }
+            }
+            
+            // Also check client transactions for deposit_used entries referencing this bill
+            const txns = await db.select().from(clientTransactions).where(eq(clientTransactions.clientId, bill.clientId));
+            for (const tx of txns) {
+              if ((tx.type === "deposit_used" || tx.type === "bulk_deposit_used") && 
+                  tx.description?.includes(`Bill #${order.billId}`)) {
+                depositPaid = Math.max(depositPaid, parseFloat(tx.amount || "0"));
+              }
+            }
+            
+            // Revert credit/deposit back to client if paid by deposit
+            if (depositPaid > 0) {
+              const client = await storage.getClient(bill.clientId);
+              if (client) {
+                const currentDeposit = parseFloat(client.deposit || "0");
+                const newDeposit = currentDeposit + depositPaid;
+                const currentAmount = parseFloat(client.amount || "0");
+                const newBalance = currentAmount - newDeposit;
+                await storage.updateClient(bill.clientId, {
+                  deposit: newDeposit.toFixed(2),
+                  balance: newBalance.toFixed(2),
+                });
+              }
+            }
+          }
+          
+          // Delete all transactions that reference this bill (payment, deposit_used, etc.)
+          const allTxns = await db.select().from(clientTransactions).where(eq(clientTransactions.clientId, bill.clientId));
+          for (const tx of allTxns) {
+            if (tx.billId === order.billId || 
+                tx.description?.includes(`Bill #${order.billId}:`) ||
+                tx.description?.includes(`Bill #${order.billId} `)) {
+              await db.delete(clientTransactions).where(eq(clientTransactions.id, tx.id));
+            }
+          }
+        }
+        
+        // Delete bill payments
+        await db.delete(billPayments).where(eq(billPayments.billId, order.billId));
+        // Delete the bill
         await storage.deleteBill(order.billId);
-      } catch {}
+      } catch (err) {
+        console.error("[DELETE ORDER] Error cleaning up bill/transactions:", err);
+      }
     }
     await storage.deleteOrder(orderId);
     res.status(204).send();
