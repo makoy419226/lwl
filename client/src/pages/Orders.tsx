@@ -94,6 +94,42 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+function parseDescriptionItems(description: string, products?: any[]): { name: string; qty: number; price: number; total: number }[] {
+  if (!description) return [];
+  const orderMatch = description.match(/Order #[A-Z0-9-]+:\s*/i);
+  const itemsText = orderMatch ? description.replace(orderMatch[0], '') : description;
+  const itemParts = itemsText.split(',').map(s => s.trim()).filter(Boolean);
+  return itemParts.map(part => {
+    const sqmMatch = part.match(/^([\d.]+)\s*sqm\s+(.+?)\s*@\s*([\d.]+)\s*AED/i);
+    if (sqmMatch) {
+      const sqm = parseFloat(sqmMatch[1]);
+      const productName = sqmMatch[2].trim();
+      const totalPrice = parseFloat(sqmMatch[3]);
+      return { name: `${sqm} sqm ${productName} (per SQ MTR) @ ${totalPrice.toFixed(2)} AED`, qty: 1, price: totalPrice, total: totalPrice };
+    }
+    const match = part.match(/^(\d+)x\s+(.+)$/i);
+    if (match) {
+      const qty = parseInt(match[1]);
+      const name = match[2].trim();
+      const embeddedPriceMatch = name.match(/@\s*([\d.]+)\s*AED/i);
+      if (embeddedPriceMatch) {
+        const price = parseFloat(embeddedPriceMatch[1]);
+        return { name, qty, price, total: qty * price };
+      }
+      const baseName = name.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s*\[[^\]]*\]\s*/g, '').trim();
+      let product = products?.find(p => p.name.toLowerCase() === name.toLowerCase());
+      if (!product) product = products?.find(p => p.name.toLowerCase() === baseName.toLowerCase());
+      if (!product) {
+        const nameWithoutSize = name.replace(/\s*\(Small\)|\(Medium\)|\(Large\)/gi, '').replace(/\s*\[[^\]]*\]/g, '').trim();
+        product = products?.find(p => p.name.toLowerCase() === nameWithoutSize.toLowerCase());
+      }
+      const price = product ? parseFloat(product.price || '0') : 0;
+      return { name, qty, price, total: qty * price };
+    }
+    return { name: part, qty: 1, price: 0, total: 0 };
+  });
+}
+
 const getCategoryIcon = (category: string | null, size: string = "w-4 h-4") => {
   switch (category) {
     case "Arabic Clothes":
@@ -3881,86 +3917,110 @@ export default function Orders() {
                   variant="outline"
                   className="flex-1"
                   onClick={() => {
+                    const parsedItems = parseDescriptionItems(selectedBill.description || '', products);
+                    const customerName = selectedBill.customerName || clients?.find((c) => c.id === selectedBill.clientId)?.name || 'Walk-in Customer';
+                    const billDate = selectedBill.billDate ? format(new Date(selectedBill.billDate), "dd/MM/yyyy HH:mm") : "";
+                    const amount = parseFloat(selectedBill.amount || "0").toFixed(2);
                     const client = clients?.find((c) => c.id === selectedBill.clientId);
-                    const currentBillDue = parseFloat(selectedBill.amount) - parseFloat(selectedBill.paidAmount || "0");
-                    const otherUnpaidBills = bills?.filter(
-                      (b) => b.clientId === selectedBill.clientId && 
-                             b.id !== selectedBill.id && 
-                             !b.isPaid
-                    ) || [];
-                    const totalPreviousDue = otherUnpaidBills.reduce((sum, b) => {
-                      return sum + (parseFloat(b.amount) - parseFloat(b.paidAmount || "0"));
-                    }, 0);
-                    const grandTotalDue = currentBillDue + totalPreviousDue;
 
-                    const printContent = `
-                      <html>
-                        <head>
-                          <title>Bill Summary - ${client?.name || 'Customer'}</title>
-                          <style>
-                            body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
-                            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1e5aa8; padding-bottom: 10px; }
-                            .header img { max-width: 100px; height: auto; margin-bottom: 8px; }
-                            .header h1 { margin: 0; font-size: 18px; color: #1e5aa8; }
-                            .header p { margin: 5px 0; font-size: 12px; color: #666; }
-                            .contact-info { display: flex; justify-content: center; gap: 15px; margin-top: 8px; font-size: 10px; color: #333; }
-                            .section { margin-bottom: 15px; }
-                            .section-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-                            .row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-                            .row.bold { font-weight: bold; }
-                            .total-box { background: #1e5aa8; color: white; padding: 10px; border-radius: 5px; margin-top: 10px; }
-                            .grand-total { font-size: 16px; font-weight: bold; text-align: center; }
-                            .footer { text-align: center; font-size: 10px; color: #999; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
-                          </style>
-                        </head>
-                        <body>
-                          <div class="header">
-                            <img src="${window.location.origin}/attached_assets/company_logo.png" alt="LWL" onerror="this.style.display='none'" />
-                            <h1>LIQUIDE WASHES LAUNDRY</h1>
-                            <p style="color: #3b82f6; font-size: 9px; margin-top: 2px;">SMARTNESS PARTNERS</p>
-                            <div class="contact-info">
-                              <span>Tel: 026 815 824</span>
-                              <span>Mobile: +971 56 338 0001</span>
-                            </div>
-                            <p style="margin-top: 8px;">Bill Summary</p>
-                            <p>${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
-                          </div>
-                          <div class="section">
-                            <div class="row"><span>Customer:</span><span>${client?.name || 'Walk-in Customer'}</span></div>
-                            ${client?.phone ? `<div class="row"><span>Phone:</span><span>${client.phone}</span></div>` : ''}
-                          </div>
-                          <div class="section">
-                            <div class="section-title">Current Bill #${selectedBill.id}</div>
-                            <div class="row"><span>Bill Date:</span><span>${format(new Date(selectedBill.billDate), "dd/MM/yyyy")}</span></div>
-                            <div class="row"><span>Total Amount:</span><span>${parseFloat(selectedBill.amount).toFixed(2)} AED</span></div>
-                            <div class="row"><span>Paid:</span><span>${parseFloat(selectedBill.paidAmount || "0").toFixed(2)} AED</span></div>
-                            <div class="row bold"><span>Balance:</span><span>${currentBillDue.toFixed(2)} AED</span></div>
-                            ${selectedBill.createdBy ? `<div class="row"><span>Billed by:</span><span>${selectedBill.createdBy}</span></div>` : ''}
-                          </div>
-                          ${otherUnpaidBills.length > 0 ? `
-                          <div class="section">
-                            <div class="section-title">Previous Unpaid Bills (${otherUnpaidBills.length})</div>
-                            ${otherUnpaidBills.map(bill => {
-                              const due = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
-                              return `<div class="row"><span>Bill #${bill.id} (${format(new Date(bill.billDate), "dd/MM/yy")})</span><span>${due.toFixed(2)} AED</span></div>`;
-                            }).join('')}
-                            <div class="row bold" style="margin-top: 5px; border-top: 1px dashed #999; padding-top: 5px;"><span>Previous Total:</span><span>${totalPreviousDue.toFixed(2)} AED</span></div>
-                          </div>
-                          ` : ''}
-                          <div class="total-box">
-                            <div class="grand-total">TOTAL AMOUNT DUE: ${grandTotalDue.toFixed(2)} AED</div>
-                          </div>
-                          <div class="footer">
-                            <p>Thank you for your business!</p>
-                          </div>
-                        </body>
-                      </html>
-                    `;
+                    const itemsHtml = parsedItems.length > 0 ? `
+                      <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px;">
+                        <thead>
+                          <tr>
+                            <th style="text-align: center; padding: 10px 8px; font-weight: bold; width: 8%; background: #1e40af; color: white; border: 1px solid #333;">S.No</th>
+                            <th style="text-align: left; padding: 10px 8px; font-weight: bold; width: 42%; background: #1e40af; color: white; border: 1px solid #333;">Item</th>
+                            <th style="text-align: center; padding: 10px 8px; font-weight: bold; width: 12%; background: #1e40af; color: white; border: 1px solid #333;">Qty</th>
+                            <th style="text-align: right; padding: 10px 8px; font-weight: bold; width: 18%; background: #1e40af; color: white; border: 1px solid #333;">Price</th>
+                            <th style="text-align: right; padding: 10px 8px; font-weight: bold; width: 20%; background: #1e40af; color: white; border: 1px solid #333;">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${parsedItems.map((item, idx) => `
+                            <tr style="background: ${idx % 2 === 1 ? '#f5f5f5' : 'white'};">
+                              <td style="text-align: center; padding: 10px 8px; border: 1px solid #333;">${idx + 1}</td>
+                              <td style="text-align: left; padding: 10px 8px; border: 1px solid #333;">${item.name}</td>
+                              <td style="text-align: center; padding: 10px 8px; border: 1px solid #333;">${item.qty}</td>
+                              <td style="text-align: right; padding: 10px 8px; border: 1px solid #333;">${item.price.toFixed(2)}</td>
+                              <td style="text-align: right; padding: 10px 8px; border: 1px solid #333; font-weight: 500;">${item.total.toFixed(2)}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    ` : '';
+
+                    const paidStamp = selectedBill.isPaid ? `
+                      <div style="text-align: center; margin: 20px 0;">
+                        <div style="display: inline-block; border: 3px solid #22c55e; color: #22c55e; padding: 8px 30px; font-size: 24px; font-weight: bold; border-radius: 5px; transform: rotate(-5deg);">
+                          PAID
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                          Payment Method: ${selectedBill.paymentMethod === 'deposit' ? 'Client Deposit' : (selectedBill.paymentMethod?.toUpperCase() || 'CASH')}
+                        </div>
+                      </div>
+                    ` : '';
+
                     const printWindow = window.open('', '_blank');
                     if (printWindow) {
-                      printWindow.document.write(printContent);
+                      printWindow.document.write(`
+                        <html>
+                          <head>
+                            <title>Bill - ${selectedBill.referenceNumber || selectedBill.id}</title>
+                            <style>
+                              @page { size: A4; margin: 20mm; }
+                              body { font-family: Arial, sans-serif; font-size: 14px; padding: 20px; max-width: 210mm; margin: 0 auto; line-height: 1.5; }
+                              @media print {
+                                body { margin: 0; padding: 20mm; }
+                                th { background: #1e40af !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                              }
+                            </style>
+                          </head>
+                          <body>
+                            <div style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 12px; margin-bottom: 12px;">
+                              <img src="${logoBase64 || logoImage}" alt="Logo" style="width: 120px; height: auto; margin: 0 auto 10px; display: block;" />
+                              <div style="font-size: 12px;">Centra Market D/109, Al Dhanna City</div>
+                              <div style="font-size: 12px;">Al Ruwais, Abu Dhabi-UAE</div>
+                              <div style="font-size: 12px; margin-top: 8px;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
+                            </div>
+                            <div style="text-align: center; font-weight: bold; font-size: 18px; margin: 15px 0;">INVOICE</div>
+                            <div style="font-size: 12px; margin-bottom: 15px;">
+                              <div>Ref: ${selectedBill.referenceNumber || selectedBill.id}</div>
+                              <div>Date: ${billDate}</div>
+                              <div>Customer: ${customerName}</div>
+                              ${client?.phone ? `<div>Phone: ${client.phone}</div>` : ''}
+                              ${selectedBill.createdBy ? `<div>Billed by: ${selectedBill.createdBy}</div>` : ''}
+                            </div>
+                            ${itemsHtml}
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; border-top: 1px solid #000; padding-top: 10px;">
+                              <span>TOTAL:</span>
+                              <span>AED ${amount}</span>
+                            </div>
+                            ${paidStamp}
+                          </body>
+                        </html>
+                      `);
                       printWindow.document.close();
-                      printWindow.print();
+                      printWindow.focus();
+                      const images = printWindow.document.images;
+                      if (images.length === 0) {
+                        printWindow.print();
+                      } else {
+                        let loaded = 0;
+                        const checkAllLoaded = () => {
+                          loaded++;
+                          if (loaded >= images.length) {
+                            printWindow.print();
+                          }
+                        };
+                        for (let i = 0; i < images.length; i++) {
+                          if (images[i].complete) {
+                            checkAllLoaded();
+                          } else {
+                            images[i].onload = checkAllLoaded;
+                            images[i].onerror = checkAllLoaded;
+                          }
+                        }
+                      }
                     }
                   }}
                   data-testid="button-print-bill-summary"
