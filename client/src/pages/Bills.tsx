@@ -141,6 +141,8 @@ export default function Bills() {
   const [, setLocation] = useLocation();
   const urlSearch = new URLSearchParams(searchParams).get("search") || "";
   const urlHighlightBill = new URLSearchParams(searchParams).get("highlightBill");
+  const urlBillId = new URLSearchParams(searchParams).get("billId");
+  const urlPayNow = new URLSearchParams(searchParams).get("payNow");
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [timePeriod, setTimePeriod] = useState<"today" | "week" | "month" | "year" | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "unpaid" | "paid">("all");
@@ -785,12 +787,17 @@ export default function Bills() {
     setShowPaymentDialog(true);
   };
 
-  const handlePayNow = (bill: Bill) => {
-    // Require PIN verification first
-    setPendingPaymentAction({ type: 'bill', bill });
-    setShowPinDialog(true);
-    setCashierPin("");
-    setPinError("");
+  const handlePayNow = (bill: Bill, skipPin = false) => {
+    if (skipPin) {
+      // Direct payment without PIN (from Order Slip redirect)
+      proceedWithPayment(bill);
+    } else {
+      // Require PIN verification first
+      setPendingPaymentAction({ type: 'bill', bill });
+      setShowPinDialog(true);
+      setCashierPin("");
+      setPinError("");
+    }
   };
 
   const payBillMutation = useMutation({

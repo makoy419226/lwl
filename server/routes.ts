@@ -12,6 +12,7 @@ import PDFDocument from "pdfkit";
 import bcrypt from "bcryptjs";
 
 import { seedDatabase } from "./seed";
+import { mergeClientAccounts } from "./mergeClients";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -916,6 +917,40 @@ export async function registerRoutes(
     
     await storage.deleteClient(clientId);
     res.json({ message: "Client deleted successfully" });
+  });
+
+  // Merge client accounts (requires admin password)
+  app.post("/api/clients/merge", async (req, res) => {
+    try {
+      const { sourceClientId, targetClientId, adminPassword } = req.body;
+      
+      console.log("[MERGE] Request received:", { sourceClientId, targetClientId });
+      
+      if (!adminPassword) {
+        return res.status(400).json({ message: "Admin password required" });
+      }
+      
+      const adminUser = await storage.getUserByUsername("admin");
+      if (!adminUser || adminUser.password !== adminPassword) {
+        return res.status(403).json({ message: "Invalid admin password" });
+      }
+      
+      if (!sourceClientId || !targetClientId) {
+        return res.status(400).json({ message: "Both source and target client IDs required" });
+      }
+      
+      if (sourceClientId === targetClientId) {
+        return res.status(400).json({ message: "Cannot merge client with itself" });
+      }
+      
+      console.log("[MERGE] Starting merge...");
+      const result = await mergeClientAccounts(sourceClientId, targetClientId);
+      console.log("[MERGE] Success:", result);
+      return res.status(200).json({ success: true, message: "Clients merged successfully", result });
+    } catch (err: any) {
+      console.error("[MERGE] Error:", err);
+      return res.status(500).json({ message: err.message || "Failed to merge clients" });
+    }
   });
 
   // Clear client transaction history (requires admin password)

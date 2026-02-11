@@ -937,17 +937,11 @@ export default function Products() {
       if (customPrices[priceKey] !== undefined) {
         price = customPrices[priceKey];
       } else if (item.serviceType === "iron") {
-        if (orderType === "urgent") {
-          price = parseFloat(item.product.price || "0");
-        } else {
-          price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
-        }
+        price = parseFloat(item.product.ironOnlyPrice || item.product.price || "0");
       } else if (item.serviceType === "dc") {
         price = parseFloat(item.product.dryCleanPrice || item.product.price || "0");
-        if (orderType === "urgent") price *= 2;
       } else {
         price = parseFloat(item.product.price || "0");
-        if (orderType === "urgent") price *= 2;
       }
       return sum + price * item.quantity;
     }, 0);
@@ -956,7 +950,7 @@ export default function Products() {
       0,
     );
     return productTotal + customTotal;
-  }, [orderItems, customItems, customPrices, orderType]);
+  }, [orderItems, customItems, customPrices]);
 
   const hasOrderItems = orderItems.length > 0 || customItems.length > 0 || carpetEntries.length > 0;
 
@@ -1026,16 +1020,12 @@ export default function Products() {
       setCustomerName("");
       setSearchTerm("");
       
-      // If Pay Now was clicked, redirect to bills page with highlighted bill
+      // If Pay Now was clicked, redirect to bills page and highlight the bill
       if (payNowAfterOrder) {
         setPayNowAfterOrder(false);
         clearOrder();
-        // Navigate to bills page and highlight the corresponding bill
         if (data.billId) {
           navigate(`/bills?highlightBill=${data.billId}`);
-        } else {
-          // Fallback to orders page if no bill ID
-          navigate(`/orders?payOrder=${data.id}`);
         }
         return;
       }
@@ -2235,17 +2225,14 @@ export default function Products() {
               className={`flex-1 h-10 font-bold ${clientMatch ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : ""}`}
               onClick={() => {
                 if (isPopup) setShowCartPopup(false);
+                setPayNowAfterOrder(false);
                 handleCreateOrder();
               }}
               disabled={createOrderMutation.isPending || (!selectedClientId && !isWalkIn) || !!clientMatch}
               data-testid={isPopup ? "popup-button-place-order" : "sidebar-button-place-order"}
             >
               {createOrderMutation.isPending && !payNowAfterOrder ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {clientMatch ? "Use existing" : `${(() => {
-                const discountAmt = (orderTotal * (parseFloat(discountPercent) || 0)) / 100;
-                const tipsAmt = parseFloat(tips) || 0;
-                return (orderTotal - discountAmt + tipsAmt).toFixed(2);
-              })()} AED`}
+              {clientMatch ? "Use existing" : `Place Order`}
             </Button>
             <Button
               variant="outline"

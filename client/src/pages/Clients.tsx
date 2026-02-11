@@ -28,6 +28,7 @@ import {
   Pencil,
   DollarSign,
   ArrowUpDown,
+  Merge,
 } from "lucide-react";
 import {
   Dialog,
@@ -111,6 +112,11 @@ export default function Clients() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [showMergeDialog, setShowMergeDialog] = useState(false);
+  const [mergeSourceId, setMergeSourceId] = useState<number | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState<number | null>(null);
+  const [mergePassword, setMergePassword] = useState("");
+  const [mergeError, setMergeError] = useState("");
   const [invoiceData, setInvoiceData] = useState<{
     invoiceNumber: string;
     date: string;
@@ -479,6 +485,59 @@ export default function Clients() {
         title: "Transaction updated",
         description: "Transaction has been updated and balance recalculated.",
       });
+    },
+  });
+
+  const mergeClientsMutation = useMutation({
+    mutationFn: async ({ sourceClientId, targetClientId, adminPassword }: { sourceClientId: number; targetClientId: number; adminPassword: string }) => {
+      console.log('[MERGE] Starting mutation with:', { sourceClientId, targetClientId });
+      try {
+        const res = await fetch("/api/clients/merge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sourceClientId, targetClientId, adminPassword }),
+          credentials: "include",
+        });
+        console.log('[MERGE] Response received:', res.status, res.statusText);
+        
+        const responseText = await res.text();
+        console.log('[MERGE] Response body (first 500 chars):', responseText.substring(0, 500));
+        
+        if (!res.ok) {
+          console.error('[MERGE] Error response:', responseText);
+          throw new Error(responseText || "Failed to merge clients");
+        }
+        
+        const data = JSON.parse(responseText);
+        console.log('[MERGE] Data parsed:', data);
+        return data;
+      } catch (error) {
+        console.error('[MERGE] Error in mutationFn:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bills"] });
+      setShowMergeDialog(false);
+      setMergeSourceId(null);
+      setMergeTargetId(null);
+      setMergePassword("");
+      setMergeError("");
+      toast({
+        title: "Clients merged",
+        description: "Client accounts have been successfully merged.",
+      });
+    },
+    onError: (error: Error) => {
+      let message = "Failed to merge clients";
+      try {
+        const errorMsg = String(error.message || "");
+        const msgMatch = errorMsg.match(/"message"\s*:\s*"([^"]+)"/);
+        if (msgMatch) message = msgMatch[1];
+      } catch {}
+      setMergeError(message);
     },
   });
 
@@ -1239,6 +1298,19 @@ export default function Clients() {
                           title="Download Excel Summary"
                         >
                           <FileSpreadsheet className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-blue-600"
+                          onClick={() => {
+                            setMergeSourceId(client.id);
+                            setShowMergeDialog(true);
+                          }}
+                          title="Merge Client"
+                          data-testid={`button-merge-${client.id}`}
+                        >
+                          <Merge className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -2435,6 +2507,105 @@ export default function Clients() {
                 data-testid="button-confirm-pay-all"
               >
                 {payAllBillsMutation.isPending ? "Processing..." : "Pay Now"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Merge Clients Dialog */}
+      <Dialog open={showMergeDialog} onOpenChange={(open) => {
+        setShowMergeDialog(open);
+        if (!open) {
+          setMergeSourceId(null);
+          setMergeTargetId(null);
+          setMergePassword("");
+          setMergeError("");
+        }
+      }}>
+        <DialogContent aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Merge className="w-5 h-5" />
+              Merge Client Accounts
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Merge two client accounts. All orders, bills, transactions, and credits from the source client will be transferred to the target client.
+            </p>
+            <div className="space-y-2">
+              <Label>Source Client (will be deleted)</Label>
+              <select
+                className="w-full p-2 border rounded-md bg-background"
+                value={mergeSourceId || ""}
+                onChange={(e) => setMergeSourceId(e.target.value ? Number(e.target.value) : null)}
+                data-testid="select-merge-source"
+              >
+                <option value="">Select source client...</option>
+                {clients?.map(c => (
+                  <option key={c.id} value={c.id} disabled={c.id === mergeTargetId}>
+                    {c.name} - {c.phone}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Target Client (will receive all data)</Label>
+              <select
+                className="w-full p-2 border rounded-md bg-background"
+                value={mergeTargetId || ""}
+                onChange={(e) => setMergeTargetId(e.target.value ? Number(e.target.value) : null)}
+                data-testid="select-merge-target"
+              >
+                <option value="">Select target client...</option>
+                {clients?.map(c => (
+                  <option key={c.id} value={c.id} disabled={c.id === mergeSourceId}>
+                    {c.name} - {c.phone}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="merge-password">Admin Password</Label>
+              <Input
+                id="merge-password"
+                type="password"
+                placeholder="Enter admin password"
+                value={mergePassword}
+                onChange={(e) => {
+                  setMergePassword(e.target.value);
+                  setMergeError("");
+                }}
+                autoComplete="current-password"
+                data-testid="input-merge-password"
+              />
+              {mergeError && (
+                <p className="text-sm text-destructive">{mergeError}</p>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowMergeDialog(false)}
+                data-testid="button-cancel-merge"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (mergeSourceId && mergeTargetId && mergePassword) {
+                    mergeClientsMutation.mutate({
+                      sourceClientId: mergeSourceId,
+                      targetClientId: mergeTargetId,
+                      adminPassword: mergePassword,
+                    });
+                  }
+                }}
+                disabled={mergeClientsMutation.isPending || !mergeSourceId || !mergeTargetId || !mergePassword}
+                data-testid="button-confirm-merge"
+              >
+                {mergeClientsMutation.isPending ? "Merging..." : "Merge Clients"}
               </Button>
             </div>
           </div>

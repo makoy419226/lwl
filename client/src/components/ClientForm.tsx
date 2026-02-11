@@ -179,7 +179,7 @@ export function ClientForm({ mode, client, onSuccess }: ClientFormProps) {
               title: "Client updated",
               description: `${data.name} has been updated successfully.`,
             });
-            onSuccess?.();
+            window.location.reload();
           },
           onError: (error) => {
             toast({

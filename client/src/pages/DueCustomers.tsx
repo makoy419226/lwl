@@ -437,15 +437,7 @@ export default function DueCustomers() {
                             {bill.referenceNumber || `BILL-${bill.id}`}
                           </TableCell>
                           <TableCell>
-                            {client ? (
-                              <Link href={`/clients/${client.id}`}>
-                                <span className="text-primary hover:underline cursor-pointer">
-                                  {client.name}
-                                </span>
-                              </Link>
-                            ) : (
-                              bill.customerName || "-"
-                            )}
+                            {client ? client.name : (bill.customerName || "-")}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {bill.billDate ? new Date(bill.billDate).toLocaleDateString() : "-"}

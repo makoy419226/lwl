@@ -293,6 +293,7 @@ export default function Orders() {
   const [adjustPricePin, setAdjustPricePin] = useState("");
   const [adjustPricePinError, setAdjustPricePinError] = useState("");
   const [isAdjustingPrice, setIsAdjustingPrice] = useState(false);
+  const packingPinInputRef = useRef<HTMLInputElement>(null);
 
   const { data: orders, isLoading, refetch: refetchOrders } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -358,27 +359,34 @@ export default function Orders() {
     }
   }, [urlBillId, urlClientId, bills]);
 
-  // Handle Pay Now redirect from Products page
+  // Handle Pay Now redirect - open bill payment popup
   useEffect(() => {
     if (urlPayOrderId && orders && bills) {
       const orderId = parseInt(urlPayOrderId);
       const order = orders.find((o) => o.id === orderId);
-      if (order) {
-        const bill = bills.find((b) => b.clientId === order.clientId && !b.isPaid);
-        if (bill) {
-          setSelectedBill(bill);
-          setShowBillDialog(true);
-          setShowPaymentForm(true);
-          const paidAmount = parseFloat(bill.paidAmount || "0");
-          const totalAmount = parseFloat(bill.amount);
-          const remaining = totalAmount - paidAmount;
-          setPaymentAmount(remaining > 0 ? remaining.toFixed(2) : bill.amount);
+      if (order && order.billId) {
+        const bill = bills.find((b) => b.id === order.billId);
+        if (bill && !bill.isPaid) {
+          setLocation("/orders", { replace: true });
+          setTimeout(() => {
+            setSelectedBill(bill);
+            setShowBillDialog(true);
+            const otherUnpaidBills = bills.filter(
+              (b) => b.clientId === bill.clientId && b.id !== bill.id && !b.isPaid
+            );
+            if (otherUnpaidBills.length > 0) {
+              setShowPaymentChoice(true);
+            } else {
+              const billDue = parseFloat(bill.amount) - parseFloat(bill.paidAmount || "0");
+              setPaymentAmount(billDue.toFixed(2));
+              setPayAllBills(false);
+              setShowPaymentForm(true);
+            }
+          }, 100);
         }
       }
-      // Clear the URL parameter
-      setLocation("/orders", { replace: true });
     }
-  }, [urlPayOrderId, orders, bills]);
+  }, [urlPayOrderId, orders, bills, setLocation]);
 
   const handleDialogClose = (open: boolean) => {
     setIsCreateOpen(open);
@@ -503,6 +511,12 @@ export default function Orders() {
       });
     }
   }, [dueSoonOrders?.length]);
+
+  useEffect(() => {
+    if (packingPinDialog && packingPinInputRef.current) {
+      setTimeout(() => packingPinInputRef.current?.focus(), 100);
+    }
+  }, [packingPinDialog]);
 
   const updateOrderMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
@@ -649,112 +663,139 @@ export default function Orders() {
       return sum + (billTotal - billPaid);
     }, 0);
 
-    const itemsHtml = parsedItems
-      .map(
-        (item, idx) => {
-          const unitPrice = getItemPrice(item.name, order.deliveryType, order.urgent === true);
-          const lineTotal = unitPrice * item.quantity;
-          return `<tr style="border-bottom: 1px solid #e5e5e5;">
-        <td style="padding: 5px 4px; font-size: 9px;">${idx + 1}</td>
-        <td style="padding: 5px 4px; font-size: 9px;">${item.name}</td>
-        <td style="padding: 5px 4px; font-size: 9px; text-align: center; font-weight: bold;">${item.quantity}</td>
-        <td style="padding: 5px 4px; font-size: 9px; text-align: right;">${lineTotal.toFixed(2)}</td>
-      </tr>`;
-        },
-      )
-      .join("");
+    // Aggressive font scaling to fit everything on 1 page
+    const totalItems = parsedItems.length + unpaidBills.length;
+    const baseFontSize = totalItems > 30 ? 6 : totalItems > 25 ? 7 : totalItems > 20 ? 7.5 : 8;
+    const headerSize = baseFontSize + 2;
+    const titleSize = baseFontSize + 4;
+
+    // Always use 2-column grid for items
+    const midpoint = Math.ceil(parsedItems.length / 2);
+    const col1 = parsedItems.slice(0, midpoint);
+    const col2 = parsedItems.slice(midpoint);
 
     const content = document.createElement("div");
     content.innerHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 15px; max-width: 190mm; color: #000; background: #fff;">
-        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
-          <div style="font-size: 18px; font-weight: bold; letter-spacing: 1px;">LIQUID WASHES LAUNDRY</div>
-          <div style="font-size: 10px; margin-top: 4px; color: #666;">Professional Laundry Services - UAE</div>
-          <div style="font-size: 9px; margin-top: 2px; color: #888;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
+      <div style="font-family: Arial, sans-serif; padding: 8px; max-width: 190mm; color: #000; background: #fff; font-size: ${baseFontSize}px;">
+        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 8px;">
+          <div style="font-size: ${titleSize}px; font-weight: bold; letter-spacing: 1px;">LIQUID WASHES LAUNDRY</div>
+          <div style="font-size: ${baseFontSize}px; margin-top: 2px; color: #666;">Professional Laundry Services - UAE</div>
+          <div style="font-size: ${baseFontSize - 1}px; margin-top: 1px; color: #888;">Tel: 026 815 824 | Mobile: +971 56 338 0001</div>
         </div>
         
-        ${isUrgent ? `<div style="text-align: center; padding: 8px; margin: 10px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: 12px; border-radius: 4px;">*** URGENT ORDER ***</div>` : ""}
+        ${isUrgent ? `<div style="text-align: center; padding: 4px; margin: 6px 0; background: #fef2f2; border: 2px solid #dc2626; font-weight: bold; color: #dc2626; font-size: ${headerSize}px; border-radius: 3px;">*** URGENT ORDER ***</div>` : ""}
         
-        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-          <div style="flex: 1;">
-            <div style="font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 3px;">Order Number</div>
-            <div style="font-size: 20px; font-weight: bold; color: #000; border: 2px dashed #000; padding: 8px 12px; display: inline-block;">${order.orderNumber}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+          <div>
+            <div style="font-size: ${baseFontSize - 1}px; color: #666; text-transform: uppercase; margin-bottom: 2px;">Order Number</div>
+            <div style="font-size: ${titleSize}px; font-weight: bold; color: #000; border: 2px dashed #000; padding: 4px 8px; display: inline-block;">${order.orderNumber}</div>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 9px; color: #666;">Entry Date</div>
-            <div style="font-size: 11px; font-weight: bold;">${format(new Date(order.entryDate), "dd MMM yyyy")}</div>
-            <div style="font-size: 10px; color: #666;">${format(new Date(order.entryDate), "hh:mm a")}</div>
+            <div style="font-size: ${baseFontSize - 1}px; color: #666;">Entry Date</div>
+            <div style="font-size: ${headerSize}px; font-weight: bold;">${format(new Date(order.entryDate), "dd MMM yyyy")}</div>
+            <div style="font-size: ${baseFontSize}px; color: #666;">${format(new Date(order.entryDate), "hh:mm a")}</div>
             ${
               order.expectedDeliveryAt
                 ? `
-            <div style="font-size: 9px; color: #666; margin-top: 5px;">Expected Delivery</div>
-            <div style="font-size: 11px; font-weight: bold; color: #2563eb;">${format(new Date(order.expectedDeliveryAt), "dd MMM yyyy")}</div>
+            <div style="font-size: ${baseFontSize - 1}px; color: #666; margin-top: 3px;">Expected Delivery</div>
+            <div style="font-size: ${headerSize}px; font-weight: bold; color: #2563eb;">${format(new Date(order.expectedDeliveryAt), "dd MMM yyyy")}</div>
             `
                 : ""
             }
           </div>
         </div>
         
-        <div style="background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 4px; padding: 10px; margin-bottom: 15px;">
-          <div style="font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #ddd; padding-bottom: 3px;">Client Information</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div style="background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 3px; padding: 6px; margin-bottom: 8px;">
+          <div style="font-size: ${baseFontSize - 1}px; color: #666; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid #ddd; padding-bottom: 2px;">Client Information</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
             <div>
-              <div style="font-size: 8px; color: #888;">Name</div>
-              <div style="font-size: 12px; font-weight: bold;">${client?.name || order.customerName || "Walk-in Customer"}</div>
+              <div style="font-size: ${baseFontSize - 2}px; color: #888;">Name</div>
+              <div style="font-size: ${headerSize}px; font-weight: bold;">${client?.name || order.customerName || "Walk-in Customer"}</div>
             </div>
             <div>
-              <div style="font-size: 8px; color: #888;">Phone</div>
-              <div style="font-size: 12px; font-weight: bold;">${client?.phone || "-"}</div>
+              <div style="font-size: ${baseFontSize - 2}px; color: #888;">Phone</div>
+              <div style="font-size: ${headerSize}px; font-weight: bold;">${client?.phone || "-"}</div>
             </div>
             <div style="grid-column: span 2;">
-              <div style="font-size: 8px; color: #888;">Address</div>
-              <div style="font-size: 10px;">${client?.address || "-"}</div>
+              <div style="font-size: ${baseFontSize - 2}px; color: #888;">Address</div>
+              <div style="font-size: ${baseFontSize}px;">${client?.address || "-"}</div>
             </div>
           </div>
         </div>
         
         ${order.notes ? `
-        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; padding: 10px; margin-bottom: 15px;">
-          <div style="font-size: 9px; color: #92400e; text-transform: uppercase; margin-bottom: 4px; font-weight: bold;">Notes</div>
-          <div style="font-size: 11px; color: #78350f;">${order.notes}</div>
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 3px; padding: 6px; margin-bottom: 8px;">
+          <div style="font-family: Arial, sans-serif; font-size: ${baseFontSize - 1}px; color: #92400e; text-transform: uppercase; margin-bottom: 2px; font-weight: bold;">Notes</div>
+          <div style="font-family: Arial, sans-serif; font-size: ${baseFontSize}px; color: #78350f;">${order.notes}</div>
         </div>
         ` : ''}
         
-        <div style="margin-bottom: 15px;">
-          <div style="font-size: 11px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px;">ITEMS DETAIL</div>
-          <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
-            <thead>
-              <tr style="background: #f0f0f0;">
-                <th style="padding: 6px 4px; text-align: left; font-size: 9px; border-bottom: 1px solid #000; width: 30px;">#</th>
-                <th style="padding: 6px 4px; text-align: left; font-size: 9px; border-bottom: 1px solid #000;">Item Description</th>
-                <th style="padding: 6px 4px; text-align: center; font-size: 9px; border-bottom: 1px solid #000; width: 40px;">Qty</th>
-                <th style="padding: 6px 4px; text-align: right; font-size: 9px; border-bottom: 1px solid #000; width: 60px;">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-            <tfoot>
-              <tr style="background: #f8f9fa; border-top: 1px solid #000;">
-                <td colspan="2" style="padding: 6px 4px; font-size: 10px; font-weight: bold;">Total: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} items</td>
-                <td colspan="2" style="padding: 6px 4px; font-size: 12px; font-weight: bold; text-align: right;">AED ${parseFloat(order.adjustedTotal != null ? order.adjustedTotal : (order.finalAmount ?? order.totalAmount)).toFixed(2)}</td>
-              </tr>
-              ${order.priceAdjustReason ? `<tr><td colspan="4" style="padding: 4px; font-size: 9px; color: #b45309; font-style: italic;">Price adjusted: ${order.priceAdjustReason}</td></tr>` : ''}
-            </tfoot>
-          </table>
+        <div style="margin-bottom: 8px;">
+          <div style="font-size: ${headerSize}px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #000; padding-bottom: 2px;">ITEMS DETAIL</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+              <thead>
+                <tr style="background: #f0f0f0;">
+                  <th style="padding: 3px 2px; text-align: left; font-size: ${baseFontSize - 1}px; border-bottom: 1px solid #000; width: 18px;">#</th>
+                  <th style="padding: 3px 2px; text-align: left; font-size: ${baseFontSize - 1}px; border-bottom: 1px solid #000;">Item</th>
+                  <th style="padding: 3px 2px; text-align: center; font-size: ${baseFontSize - 1}px; border-bottom: 1px solid #000; width: 25px;">Qty</th>
+                  <th style="padding: 3px 2px; text-align: right; font-size: ${baseFontSize - 1}px; border-bottom: 1px solid #000; width: 40px;">Amt</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${col1.map((item, idx) => {
+                  const unitPrice = getItemPrice(item.name, order.deliveryType, order.urgent === true);
+                  const lineTotal = unitPrice * item.quantity;
+                  return `<tr style="border-bottom: 1px solid #e5e5e5;">
+                    <td style="padding: 2px; font-size: ${baseFontSize}px;">${idx + 1}</td>
+                    <td style="padding: 2px; font-size: ${baseFontSize}px;">${item.name}</td>
+                    <td style="padding: 2px; font-size: ${baseFontSize}px; text-align: center; font-weight: bold;">${item.quantity}</td>
+                    <td style="padding: 2px; font-size: ${baseFontSize}px; text-align: right;">${lineTotal.toFixed(2)}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+              <thead>
+                <tr style="background: #f0f0f0;">
+                  <th style="padding: 3px 2px; text-align: left; font-size: ${baseFontSize - 1}px; border-bottom: 1px solid #000; width: 18px;">#</th>
+                  <th style="padding: 3px 2px; text-align: left; font-size: ${baseFontSize - 1}px; border-bottom: 1px solid #000;">Item</th>
+                  <th style="padding: 3px 2px; text-align: center; font-size: ${baseFontSize - 1}px; border-bottom: 1px solid #000; width: 25px;">Qty</th>
+                  <th style="padding: 3px 2px; text-align: right; font-size: ${baseFontSize - 1}px; border-bottom: 1px solid #000; width: 40px;">Amt</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${col2.map((item, idx) => {
+                  const unitPrice = getItemPrice(item.name, order.deliveryType, order.urgent === true);
+                  const lineTotal = unitPrice * item.quantity;
+                  return `<tr style="border-bottom: 1px solid #e5e5e5;">
+                    <td style="padding: 2px; font-size: ${baseFontSize}px;">${midpoint + idx + 1}</td>
+                    <td style="padding: 2px; font-size: ${baseFontSize}px;">${item.name}</td>
+                    <td style="padding: 2px; font-size: ${baseFontSize}px; text-align: center; font-weight: bold;">${item.quantity}</td>
+                    <td style="padding: 2px; font-size: ${baseFontSize}px; text-align: right;">${lineTotal.toFixed(2)}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div style="background: #f8f9fa; border: 1px solid #ddd; border-top: 2px solid #000; padding: 4px; margin-top: 2px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: ${baseFontSize + 1}px; font-weight: bold;">Total: ${parsedItems.reduce((sum, item) => sum + item.quantity, 0)} items</span>
+            <span style="font-size: ${headerSize + 2}px; font-weight: bold;">AED ${parseFloat(order.adjustedTotal != null ? order.adjustedTotal : (order.finalAmount ?? order.totalAmount)).toFixed(2)}</span>
+          </div>
+          ${order.priceAdjustReason ? `<div style="padding: 2px; font-size: ${baseFontSize}px; color: #b45309; font-style: italic;">Price adjusted: ${order.priceAdjustReason}</div>` : ''}
         </div>
         
         ${
           totalPreviousDue > 0
             ? `
-        <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 4px; padding: 10px; margin-bottom: 10px;">
-          <div style="font-size: 11px; font-weight: bold; color: #856404; margin-bottom: 8px; border-bottom: 1px solid #ffc107; padding-bottom: 4px;">PREVIOUS OUTSTANDING BILLS (${unpaidBills.length})</div>
-          <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+        <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 4px; padding: 8px; margin-bottom: 8px;">
+          <div style="font-size: ${headerSize}px; font-weight: bold; color: #856404; margin-bottom: 6px; border-bottom: 1px solid #ffc107; padding-bottom: 3px;">PREVIOUS BILLS (${unpaidBills.length})</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: ${baseFontSize}px;">
             <thead>
               <tr style="background: #ffeeba;">
-                <th style="padding: 4px; text-align: left; border-bottom: 1px solid #d39e00;">Bill #</th>
-                <th style="padding: 4px; text-align: left; border-bottom: 1px solid #d39e00;">Date</th>
-                <th style="padding: 4px; text-align: right; border-bottom: 1px solid #d39e00;">Due</th>
+                <th style="padding: 3px; text-align: left; border-bottom: 1px solid #d39e00;">Bill #</th>
+                <th style="padding: 3px; text-align: left; border-bottom: 1px solid #d39e00;">Date</th>
+                <th style="padding: 3px; text-align: right; border-bottom: 1px solid #d39e00;">Due</th>
               </tr>
             </thead>
             <tbody>
@@ -763,16 +804,16 @@ export default function Orders() {
                 const billPaid = parseFloat(bill.paidAmount || "0") || 0;
                 const billDue = billTotal - billPaid;
                 return `<tr style="border-bottom: 1px dashed #d39e00;">
-                  <td style="padding: 3px 4px;">#${bill.referenceNumber || bill.id}</td>
-                  <td style="padding: 3px 4px;">${format(new Date(bill.billDate), "dd/MM/yy")}</td>
-                  <td style="padding: 3px 4px; text-align: right; font-weight: bold; color: #dc3545;">${billDue.toFixed(2)}</td>
+                  <td style="padding: 2px 3px;">#${bill.referenceNumber || bill.id}</td>
+                  <td style="padding: 2px 3px;">${format(new Date(bill.billDate), "dd/MM/yy")}</td>
+                  <td style="padding: 2px 3px; text-align: right; font-weight: bold; color: #dc3545;">${billDue.toFixed(2)}</td>
                 </tr>`;
               }).join('')}
             </tbody>
           </table>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 6px; border-top: 2px solid #d39e00;">
-            <span style="font-size: 10px; font-weight: bold; color: #856404;">TOTAL PREVIOUS DUE:</span>
-            <span style="font-size: 14px; font-weight: bold; color: #dc3545;">AED ${totalPreviousDue.toFixed(2)}</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding-top: 4px; border-top: 2px solid #d39e00;">
+            <span style="font-size: ${baseFontSize + 1}px; font-weight: bold; color: #856404;">TOTAL PREVIOUS DUE:</span>
+            <span style="font-size: ${baseFontSize + 4}px; font-weight: bold; color: #dc3545;">AED ${totalPreviousDue.toFixed(2)}</span>
           </div>
         </div>
         `
@@ -817,16 +858,15 @@ export default function Orders() {
     `;
 
     const opt = {
-      margin: 10,
+      margin: [6, 6, 6, 6] as [number, number, number, number],
       filename: `Tag_${order.orderNumber}.pdf`,
       image: { type: "jpeg" as const, quality: 0.98 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: {
         unit: "mm",
         format: "a4" as const,
         orientation: "portrait" as const,
       },
-      pagebreak: { mode: 'avoid-all' as const },
     };
 
     html2pdf().set(opt).from(content).save();
@@ -1842,7 +1882,7 @@ export default function Orders() {
                     className="text-xl lg:text-2xl font-bold"
                     data-testid="text-washing-count"
                   >
-                    {dateFilteredOrders?.filter((o) => o.washingDone && !o.packingDone)
+                    {dateFilteredOrders?.filter((o) => o.tagDone && !o.packingDone)
                       .length || 0}
                   </p>
                 </div>
@@ -2367,7 +2407,13 @@ export default function Orders() {
                                   size="sm"
                                   variant="outline"
                                   className="flex-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                                  onClick={() => generateWashingReceipt(order)}
+                                  onClick={() => {
+                                    updateOrderMutation.mutate({
+                                      id: order.id,
+                                      updates: { washingDone: true, washingDate: new Date().toISOString() },
+                                    });
+                                    generateWashingReceipt(order);
+                                  }}
                                   data-testid={`button-mobile-washing-${order.id}`}
                                 >
                                   <Printer className="w-4 h-4 mr-1" />
@@ -3034,9 +3080,13 @@ export default function Orders() {
                                                 size="sm"
                                                 variant="outline"
                                                 className="bg-blue-100 text-blue-700 border-blue-300 whitespace-nowrap touch-manipulation"
-                                                onClick={() =>
-                                                  generateWashingReceipt(order)
-                                                }
+                                                onClick={() => {
+                                                  updateOrderMutation.mutate({
+                                                    id: order.id,
+                                                    updates: { washingDone: true, washingDate: new Date().toISOString() },
+                                                  });
+                                                  generateWashingReceipt(order);
+                                                }}
                                                 data-testid={`button-washing-receipt-${order.id}`}
                                               >
                                                 <Printer className="w-3 h-3 sm:mr-1" />
@@ -3448,14 +3498,8 @@ export default function Orders() {
             <p className="text-sm text-muted-foreground">
               Add notes if needed, then enter your PIN to confirm packing.
             </p>
-            <Textarea
-              placeholder="Notes (e.g., missing clothes, damage report...)"
-              value={packingNotes}
-              onChange={(e) => setPackingNotes(e.target.value)}
-              className="min-h-[60px]"
-              data-testid="input-packing-notes"
-            />
             <Input
+              ref={packingPinInputRef}
               id="packing-pin"
               type="tel"
               inputMode="numeric"
@@ -3471,6 +3515,13 @@ export default function Orders() {
               onKeyDown={(e) => e.key === "Enter" && submitPackingPin()}
               className="text-center text-2xl tracking-widest [-webkit-text-security:disc]"
               data-testid="input-packing-pin"
+            />
+            <Textarea
+              placeholder="Notes (e.g., missing clothes, damage report...)"
+              value={packingNotes}
+              onChange={(e) => setPackingNotes(e.target.value)}
+              className="min-h-[60px]"
+              data-testid="input-packing-notes"
             />
             {pinError && (
               <p className="text-sm text-destructive text-center">{pinError}</p>

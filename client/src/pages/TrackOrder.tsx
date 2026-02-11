@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, Search, ArrowLeft, AlertCircle, X, Camera } from "lucide-react";
+import { Loader2, CheckCircle, Clock, Package, Truck, Shirt, Search, ArrowLeft, AlertCircle, X, Camera, Edit2, Save } from "lucide-react";
 import { format } from "date-fns";
 import logoImage from "@assets/image_1767220512226.png";
+import { useToast } from "@/hooks/use-toast";
 
 interface TrackOrderData {
   orderNumber: string;
@@ -33,7 +35,10 @@ interface TrackOrderData {
 export default function TrackOrder() {
   const [orderNumber, setOrderNumber] = useState("");
   const [searchedOrder, setSearchedOrder] = useState("");
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [editedNotes, setEditedNotes] = useState("");
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   
   const isLoggedIn = !!localStorage.getItem("user");
   
@@ -45,7 +50,7 @@ export default function TrackOrder() {
     }
   };
 
-  const { data: order, isLoading, error, isFetching } = useQuery<TrackOrderData>({
+  const { data: order, isLoading, error, isFetching, refetch } = useQuery<TrackOrderData>({
     queryKey: ["/api/orders/track", searchedOrder],
     queryFn: async () => {
       if (!searchedOrder) throw new Error("No order number");
@@ -60,6 +65,27 @@ export default function TrackOrder() {
     retry: false,
   });
 
+  const updateNotesMutation = useMutation({
+    mutationFn: async (notes: string) => {
+      if (!order) return;
+      const res = await fetch(`/api/orders/${order.orderNumber}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+      if (!res.ok) throw new Error("Failed to update notes");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Notes updated", description: "Order notes have been saved." });
+      setIsEditingNotes(false);
+      refetch();
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update notes", variant: "destructive" });
+    },
+  });
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (orderNumber.trim()) {
@@ -70,6 +96,22 @@ export default function TrackOrder() {
   const handleReset = () => {
     setOrderNumber("");
     setSearchedOrder("");
+    setIsEditingNotes(false);
+    setEditedNotes("");
+  };
+
+  const handleEditNotes = () => {
+    setEditedNotes(order?.notes || "");
+    setIsEditingNotes(true);
+  };
+
+  const handleSaveNotes = () => {
+    updateNotesMutation.mutate(editedNotes);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingNotes(false);
+    setEditedNotes("");
   };
 
   const getStatusStep = () => {
@@ -304,14 +346,67 @@ export default function TrackOrder() {
                     ))}
                   </div>
                 </div>
-                {(order.notes || order.priceAdjustReason) && (
-                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-2 mt-2 space-y-1">
-                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Notes</p>
-                    {order.notes && (
-                      <p className="text-sm text-amber-900 dark:text-amber-200">{order.notes}</p>
-                    )}
-                    {order.priceAdjustReason && (
-                      <p className="text-sm text-orange-700 dark:text-orange-300 italic">Price adjusted: {order.priceAdjustReason}</p>
+                {(order.notes || order.priceAdjustReason || isLoggedIn) && (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Notes</p>
+                      {isLoggedIn && !isEditingNotes && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleEditNotes}
+                          className="h-6 px-2 text-xs"
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                    {isEditingNotes ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editedNotes}
+                          onChange={(e) => setEditedNotes(e.target.value)}
+                          className="min-h-[80px] font-normal resize-none"
+                          style={{ fontFamily: 'Arial, sans-serif' }}
+                          placeholder="Add notes about this order..."
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={handleSaveNotes}
+                            disabled={updateNotesMutation.isPending}
+                            className="flex-1"
+                          >
+                            {updateNotesMutation.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            ) : (
+                              <Save className="h-3 w-3 mr-1" />
+                            )}
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                            disabled={updateNotesMutation.isPending}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {order.notes ? (
+                          <p className="text-sm text-amber-900 dark:text-amber-200 font-normal whitespace-pre-wrap" style={{ fontFamily: 'Arial, sans-serif' }}>{order.notes}</p>
+                        ) : isLoggedIn ? (
+                          <p className="text-sm text-amber-600 dark:text-amber-400 italic">No notes added yet</p>
+                        ) : null}
+                        {order.priceAdjustReason && (
+                          <p className="text-sm text-orange-700 dark:text-orange-300 font-normal italic" style={{ fontFamily: 'Arial, sans-serif' }}>Price adjusted: {order.priceAdjustReason}</p>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
