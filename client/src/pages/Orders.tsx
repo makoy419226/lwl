@@ -178,9 +178,10 @@ export default function Orders() {
     }
   }, [searchParams]);
   const [activeTab, setActiveTab] = useState("all");
-  const [dateFilter, setDateFilter] = useState<"all_time" | "today" | "yesterday" | "custom">("today");
+  const [dateFilter, setDateFilter] = useState<"all_time" | "today" | "yesterday" | "exact_date" | "custom">("today");
   const [customDateFrom, setCustomDateFrom] = useState("");
   const [customDateTo, setCustomDateTo] = useState("");
+  const [exactDate, setExactDate] = useState("");
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [packingPinDialog, setPackingPinDialog] = useState<{
     orderId: number;
@@ -1609,6 +1610,12 @@ export default function Orders() {
       const orderDay = new Date(orderDate);
       orderDay.setHours(0, 0, 0, 0);
       return orderDay.getTime() === yesterday.getTime();
+    } else if (dateFilter === "exact_date" && exactDate) {
+      const selectedDate = new Date(exactDate);
+      selectedDate.setHours(0, 0, 0, 0);
+      const orderDay = new Date(orderDate);
+      orderDay.setHours(0, 0, 0, 0);
+      return orderDay.getTime() === selectedDate.getTime();
     } else if (dateFilter === "custom" && customDateFrom && customDateTo) {
       const fromDate = new Date(customDateFrom);
       fromDate.setHours(0, 0, 0, 0);
@@ -1796,6 +1803,14 @@ export default function Orders() {
               All Time
             </Button>
             <Button
+              variant={dateFilter === "exact_date" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateFilter("exact_date")}
+              data-testid="button-filter-exact-date"
+            >
+              Exact Date Filter
+            </Button>
+            <Button
               variant={dateFilter === "yesterday" ? "default" : "outline"}
               size="sm"
               onClick={() => setDateFilter("yesterday")}
@@ -1820,6 +1835,18 @@ export default function Orders() {
               Custom
             </Button>
           </div>
+          {dateFilter === "exact_date" && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={exactDate}
+                onChange={(e) => setExactDate(e.target.value)}
+                className="h-8 w-36 text-sm"
+                placeholder="Select date"
+                data-testid="input-exact-date"
+              />
+            </div>
+          )}
           {dateFilter === "custom" && (
             <div className="flex items-center gap-2 flex-wrap">
               <Input
